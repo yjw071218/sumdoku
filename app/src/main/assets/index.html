@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.14</div>
+          <div class="version-chip" id="app-version-chip">v1.0.15</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -252,6 +252,10 @@
             <span id="game-diff-label" class="sub-val">전문가</span>
             <span id="game-mode-tag" class="game-mode-tag mode-standard">일반</span>
           </div>
+          <button id="btn-cage-multi-calc" class="sub-bar-cage-btn" title="여러 케이지 영역의 합계를 계산합니다">
+            <span class="cm-icon">➕</span>
+            <span class="cm-label">영역 합산</span>
+          </button>
           <div class="sub-bar-item mistakes-item">
             <span class="sub-label">실수</span>
             <span id="mistakes-count" class="sub-val">0 / 3</span>
@@ -259,6 +263,18 @@
           <div class="sub-bar-item timer-item" id="timer-box">
             <span class="sub-label">시간</span>
             <span id="timer-display" class="sub-val">00:00</span>
+          </div>
+        </div>
+
+        <!-- Mobile/Floating Multi-Cage Calculator Banner -->
+        <div id="multi-cage-banner" class="multi-cage-banner hidden">
+          <div class="mc-banner-info">
+            <span class="mc-badge">영역 합산</span>
+            <span id="mc-banner-text" class="mc-text">케이지들을 선택하세요</span>
+          </div>
+          <div class="mc-banner-btns">
+            <button id="btn-mc-reset" class="mc-btn">초기화</button>
+            <button id="btn-mc-close" class="mc-btn mc-btn-close">✕</button>
           </div>
         </div>
 
@@ -291,8 +307,9 @@
               <div class="assistant-header">
                 <span class="assistant-tag">추론 도우미</span>
                 <span id="assistant-cage-name">케이지 실시간 분석</span>
+                <button id="btn-assistant-multi-toggle" class="btn-assistant-multi" title="여러 영역 합산 모드">➕ 영역 합산</button>
               </div>
-              <div class="assistant-metrics">
+              <div class="assistant-metrics" id="assistant-metrics-single">
                 <div class="metric-box">
                   <span class="m-label">칸 수</span>
                   <span class="m-val" id="assistant-cells">-</span>
@@ -306,6 +323,21 @@
                   <span class="m-val" id="assistant-rem">-</span>
                 </div>
               </div>
+
+              <!-- Multi-Cage Sum Box for Tablet Assistant -->
+              <div class="multi-cage-panel hidden" id="assistant-multi-panel">
+                <div class="mc-panel-header">
+                  <span class="mc-panel-title">선택 영역 합산 결과</span>
+                  <button id="btn-assistant-multi-reset" class="mc-reset-chip">초기화</button>
+                </div>
+                <div class="mc-panel-total">
+                  <span class="mc-total-label">총합:</span>
+                  <span class="mc-total-num" id="assistant-multi-total">0</span>
+                  <span class="mc-total-cells" id="assistant-multi-cells">(0칸)</span>
+                </div>
+                <div class="mc-panel-formula" id="assistant-multi-formula">영역을 터치하여 추가하세요</div>
+              </div>
+
               <div class="assistant-tip-box" id="assistant-tip">
                 칸을 선택하면 케이지 합계와 후보수 분석이 실시간 제공됩니다.
               </div>
@@ -343,23 +375,18 @@
                 <span class="tool-label">메모</span>
               </button>
 
-              <button id="btn-type-memo" class="tool-btn" title="직접 타이핑 메모">
+              <button id="btn-scratchpad" class="tool-btn" title="자유 메모장">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-                    <line x1="6" y1="8" x2="6.01" y2="8"></line>
-                    <line x1="10" y1="8" x2="10.01" y2="8"></line>
-                    <line x1="14" y1="8" x2="14.01" y2="8"></line>
-                    <line x1="18" y1="8" x2="18.01" y2="8"></line>
-                    <line x1="6" y1="12" x2="6.01" y2="12"></line>
-                    <line x1="10" y1="12" x2="10.01" y2="12"></line>
-                    <line x1="14" y1="12" x2="14.01" y2="12"></line>
-                    <line x1="18" y1="12" x2="18.01" y2="12"></line>
-                    <line x1="8" y1="16" x2="16" y2="16"></line>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
                   </svg>
-                  <span id="type-memo-badge" class="badge">⌨️</span>
+                  <span id="scratchpad-badge" class="badge">📝</span>
                 </div>
-                <span class="tool-label">타이핑</span>
+                <span class="tool-label">메모장</span>
               </button>
 
               <button id="btn-hint" class="tool-btn" title="힌트">
@@ -375,21 +402,23 @@
               </button>
             </nav>
 
-            <!-- Direct Typing Bar (실시간 자유 타이핑 메모 바) -->
-            <div id="direct-typing-bar" class="direct-typing-bar hidden">
-              <div class="typing-bar-header">
-                <span class="typing-bar-title">⌨️ 직접 타이핑 메모 (<span id="typing-cell-coord">선택된 칸</span>)</span>
-                <button id="btn-close-typing" class="btn-close-mini" title="닫기">✕</button>
+            <!-- Scratchpad Drawer (자유 메모장 드로어) -->
+            <div id="scratchpad-drawer" class="scratchpad-drawer hidden">
+              <div class="scratchpad-header">
+                <div class="scratchpad-title">
+                  <span class="sp-icon">📝</span>
+                  <span class="sp-text">자유 메모장</span>
+                  <span class="sp-sub">(계산 및 풀이 노트)</span>
+                </div>
+                <div class="scratchpad-actions">
+                  <button id="btn-scratchpad-clear" class="sp-action-btn" title="메모 비우기">비우기</button>
+                  <button id="btn-scratchpad-close" class="sp-close-btn" title="닫기">✕</button>
+                </div>
               </div>
-              <div class="typing-input-row">
-                <input type="text" id="input-direct-notes" class="typing-input"
-                       placeholder="자유 메모 입력 (예: 139, 홀수, 합10, 1or4)..."
-                       maxlength="20" autocomplete="off" spellcheck="false">
-                <button id="btn-typing-clear" class="btn-typing-action" title="메모 지우기">지우기</button>
-                <button id="btn-typing-apply" class="btn-typing-action btn-apply" title="다음 칸 이동">다음 칸</button>
-              </div>
-              <div class="typing-quick-hints">
-                <span>💡 숫자나 텍스트를 자유롭게 입력하면 칸에 실시간 반영됩니다 (Enter: 다음 빈 칸)</span>
+              <div class="scratchpad-body">
+                <textarea id="scratchpad-input" class="scratchpad-textarea"
+                          placeholder="여기에 자유롭게 계산이나 풀이 메모를 작성하세요...&#10;예: 1행+2행 합계 90&#10;17케이지 = {8, 9}&#10;4열에 1, 5, 7 필요"
+                          rows="4" spellcheck="false"></textarea>
               </div>
             </div>
 
@@ -843,7 +872,7 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.14</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.15</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                   <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 업데이트</button>

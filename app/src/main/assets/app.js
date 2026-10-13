@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.14";
+const APP_VERSION = "1.0.15";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -656,6 +656,9 @@ class SumdokuApp {
     this.replayPlayInterval = null;
     this.hintsRemaining = 3;
     this.isMobileHubInDetail = false;
+    this.scratchpadText = localStorage.getItem('sumdoku_scratchpad') || '';
+    this.isMultiCageMode = false;
+    this.selectedCages = new Set();
 
     this.initDOM();
     this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
@@ -1011,6 +1014,7 @@ class SumdokuApp {
         score: this.score,
         combo: this.combo,
         hintsRemaining: this.hintsRemaining !== undefined ? this.hintsRemaining : 3,
+        scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate
       };
@@ -1060,6 +1064,8 @@ class SumdokuApp {
       this.score = state.score || 0;
       this.combo = state.combo || 0;
       this.hintsRemaining = state.hintsRemaining !== undefined ? state.hintsRemaining : 3;
+      this.scratchpadText = state.scratchpadText || this.scratchpadText || '';
+      if (this.dom.scratchpadInput) this.dom.scratchpadInput.value = this.scratchpadText;
       this.isDaily = !!state.isDaily;
       this.dailyDate = state.dailyDate || null;
       this.isBattle = false;
@@ -1194,13 +1200,27 @@ class SumdokuApp {
       gameModeTag: document.getElementById('game-mode-tag'),
       pencilBadge: document.getElementById('pencil-badge'),
       btnPencil: document.getElementById('btn-pencil'),
-      btnTypeMemo: document.getElementById('btn-type-memo'),
-      directTypingBar: document.getElementById('direct-typing-bar'),
-      inputDirectNotes: document.getElementById('input-direct-notes'),
-      typingCellCoord: document.getElementById('typing-cell-coord'),
-      btnCloseTyping: document.getElementById('btn-close-typing'),
-      btnTypingClear: document.getElementById('btn-typing-clear'),
-      btnTypingApply: document.getElementById('btn-typing-apply'),
+      btnScratchpad: document.getElementById('btn-scratchpad'),
+      scratchpadBadge: document.getElementById('scratchpad-badge'),
+      scratchpadDrawer: document.getElementById('scratchpad-drawer'),
+      scratchpadInput: document.getElementById('scratchpad-input'),
+      btnScratchpadClear: document.getElementById('btn-scratchpad-clear'),
+      btnScratchpadClose: document.getElementById('btn-scratchpad-close'),
+
+      // Multi-Cage Sum Calculator
+      btnCageMultiCalc: document.getElementById('btn-cage-multi-calc'),
+      multiCageBanner: document.getElementById('multi-cage-banner'),
+      mcBannerText: document.getElementById('mc-banner-text'),
+      btnMcReset: document.getElementById('btn-mc-reset'),
+      btnMcClose: document.getElementById('btn-mc-close'),
+      btnAssistantMultiToggle: document.getElementById('btn-assistant-multi-toggle'),
+      assistantMultiPanel: document.getElementById('assistant-multi-panel'),
+      assistantMetricsSingle: document.getElementById('assistant-metrics-single'),
+      assistantMultiTotal: document.getElementById('assistant-multi-total'),
+      assistantMultiCells: document.getElementById('assistant-multi-cells'),
+      assistantMultiFormula: document.getElementById('assistant-multi-formula'),
+      btnAssistantMultiReset: document.getElementById('btn-assistant-multi-reset'),
+
       btnUndo: document.getElementById('btn-undo'),
       btnErase: document.getElementById('btn-erase'),
       btnHint: document.getElementById('btn-hint'),
@@ -1790,65 +1810,57 @@ class SumdokuApp {
 
     // 툴바 액션
     this.dom.btnPencil.addEventListener('click', () => this.togglePencilMode());
-    if (this.dom.btnTypeMemo) {
-      this.dom.btnTypeMemo.addEventListener('click', () => this.toggleDirectTyping());
+    if (this.dom.btnScratchpad) {
+      this.dom.btnScratchpad.addEventListener('click', () => this.toggleScratchpad());
     }
+    if (this.dom.btnScratchpadClose) {
+      this.dom.btnScratchpadClose.addEventListener('click', () => this.closeScratchpad());
+    }
+    if (this.dom.btnScratchpadClear) {
+      this.dom.btnScratchpadClear.addEventListener('click', () => {
+        this.sound.play('click');
+        this.scratchpadText = '';
+        if (this.dom.scratchpadInput) this.dom.scratchpadInput.value = '';
+        localStorage.removeItem('sumdoku_scratchpad');
+        this.updateScratchpadBadge();
+        this.saveOngoingGame();
+      });
+    }
+    if (this.dom.scratchpadInput) {
+      this.dom.scratchpadInput.addEventListener('input', (e) => {
+        this.scratchpadText = e.target.value;
+        localStorage.setItem('sumdoku_scratchpad', this.scratchpadText);
+        this.updateScratchpadBadge();
+        this.saveOngoingGame();
+      });
+    }
+
+    // 케이지 다중 선택 & 합계 계산기 액션
+    if (this.dom.btnCageMultiCalc) {
+      this.dom.btnCageMultiCalc.addEventListener('click', () => this.toggleMultiCageMode());
+    }
+    if (this.dom.btnAssistantMultiToggle) {
+      this.dom.btnAssistantMultiToggle.addEventListener('click', () => this.toggleMultiCageMode());
+    }
+    if (this.dom.btnMcReset) {
+      this.dom.btnMcReset.addEventListener('click', () => {
+        this.sound.play('click');
+        this.resetMultiCageSelection();
+      });
+    }
+    if (this.dom.btnAssistantMultiReset) {
+      this.dom.btnAssistantMultiReset.addEventListener('click', () => {
+        this.sound.play('click');
+        this.resetMultiCageSelection();
+      });
+    }
+    if (this.dom.btnMcClose) {
+      this.dom.btnMcClose.addEventListener('click', () => this.toggleMultiCageMode());
+    }
+
     this.dom.btnUndo.addEventListener('click', () => this.undo());
     this.dom.btnErase.addEventListener('click', () => this.erase());
     this.dom.btnHint.addEventListener('click', () => this.useHint());
-
-    // 직접 타이핑 메모 바 이벤트
-    if (this.dom.btnCloseTyping) {
-      this.dom.btnCloseTyping.addEventListener('click', () => this.closeDirectTyping());
-    }
-    if (this.dom.btnTypingClear) {
-      this.dom.btnTypingClear.addEventListener('click', () => {
-        if (this.selected.r < 0 || this.selected.c < 0) return;
-        const cellData = this.board[this.selected.r][this.selected.c];
-        this.saveSnapshot();
-        cellData.notes.clear();
-        cellData.customMemo = '';
-        this.updateBoardDisplay();
-        this.sound.play('erase');
-        if (this.dom.inputDirectNotes) this.dom.inputDirectNotes.value = '';
-        this.saveOngoingGame();
-      });
-    }
-    if (this.dom.btnTypingApply) {
-      this.dom.btnTypingApply.addEventListener('click', () => {
-        this.sound.play('click');
-        this.moveToNextEmptyCell();
-      });
-    }
-    if (this.dom.inputDirectNotes) {
-      this.dom.inputDirectNotes.addEventListener('input', (e) => {
-        if (this.selected.r < 0 || this.selected.c < 0) return;
-        const cellData = this.board[this.selected.r][this.selected.c];
-
-        this.saveSnapshot();
-        const rawVal = e.target.value;
-
-        // 순수 1-9 숫자로만 구성되어 있거나 공백/쉼표로 구분된 숫자인지 판별
-        const digitsOnly = rawVal.replace(/[\s,]/g, '');
-        const isNumericOnly = /^[1-9]+$/.test(digitsOnly);
-
-        if (isNumericOnly && digitsOnly.length > 0) {
-          const digits = Array.from(new Set(digitsOnly.split('').map(Number))).sort((a, b) => a - b);
-          cellData.notes = new Set(digits);
-          cellData.customMemo = '';
-        } else {
-          // 한글, 영문, 기호 또는 임의의 자유 텍스트 메모
-          cellData.customMemo = rawVal;
-          if (!rawVal.trim()) {
-            cellData.customMemo = '';
-          }
-        }
-
-        this.updateBoardDisplay();
-        this.sound.play('click');
-        this.saveOngoingGame();
-      });
-    }
 
     // 키패드 터치
     this.dom.keyBtns.forEach(btn => {
@@ -1861,22 +1873,18 @@ class SumdokuApp {
     window.addEventListener('keydown', (e) => {
       if (this.currentView !== 'game' || this.isPaused) return;
 
-      // 직접 타이핑 인풋 포커스 상태 처리
-      if (this.dom.inputDirectNotes && document.activeElement === this.dom.inputDirectNotes) {
-        if (e.key === 'Enter') {
+      // 메모장 인풋 포커스 상태 처리 (ESC로 닫기, 키패드 숫자 간섭 방지)
+      if (this.dom.scratchpadInput && document.activeElement === this.dom.scratchpadInput) {
+        if (e.key === 'Escape') {
           e.preventDefault();
-          this.sound.play('click');
-          this.moveToNextEmptyCell();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          this.closeDirectTyping();
+          this.closeScratchpad();
         }
         return;
       }
 
-      // T / t: 직접 타이핑 바 열기/닫기
-      if (e.key === 't' || e.key === 'T') {
-        this.toggleDirectTyping();
+      // M / m: 자유 메모장 토글
+      if (e.key === 'm' || e.key === 'M') {
+        this.toggleScratchpad();
         return;
       }
 
@@ -2652,82 +2660,154 @@ class SumdokuApp {
 
   selectCell(r, c) {
     this.selected = { r, c };
+
+    // 케이지 다중 합계 모드일 때 클릭한 칸의 케이지 토글 선택
+    if (this.isMultiCageMode) {
+      const cageIdx = this.cellCageMap[`${r},${c}`];
+      if (cageIdx !== undefined) {
+        if (this.selectedCages.has(cageIdx)) {
+          this.selectedCages.delete(cageIdx);
+        } else {
+          this.selectedCages.add(cageIdx);
+        }
+        this.updateMultiCageCalculation();
+      }
+    }
+
     this.updateHighlights();
     this.updateTabletCageHelper(r, c);
-    this.updateDirectTypingInput();
   }
 
-  openDirectTyping() {
-    if (this.currentView !== 'game' || this.isPaused) return;
-    this.isDirectTypingOpen = true;
-    if (this.dom.directTypingBar) this.dom.directTypingBar.classList.remove('hidden');
-    if (this.dom.btnTypeMemo) this.dom.btnTypeMemo.classList.add('active');
-    this.updateDirectTypingInput();
+  // ----------------- 점수 가감 인터랙션 애니메이션 표시 -----------------
+  showScoreDelta(delta, r, c, extraText = '') {
+    if (r === undefined || c === undefined || r < 0 || c < 0 || r > 8 || c > 8) return;
+    const cellEl = this.getCellElement(r, c);
+    if (!cellEl) return;
+
+    const deltaEl = document.createElement('div');
+    const isPlus = delta >= 0;
+    deltaEl.className = `floating-score-delta ${isPlus ? 'score-plus' : 'score-minus'}`;
+    const sign = isPlus ? `+${delta}` : `${delta}`;
+    deltaEl.textContent = extraText ? `${sign} ${extraText}` : sign;
+    cellEl.appendChild(deltaEl);
+
     setTimeout(() => {
-      if (this.dom.inputDirectNotes && !this.dom.inputDirectNotes.disabled) {
-        this.dom.inputDirectNotes.focus();
-        this.dom.inputDirectNotes.select();
+      if (deltaEl.parentNode) {
+        deltaEl.parentNode.removeChild(deltaEl);
       }
-    }, 60);
+    }, 1150);
   }
 
-  closeDirectTyping() {
-    this.isDirectTypingOpen = false;
-    if (this.dom.directTypingBar) this.dom.directTypingBar.classList.add('hidden');
-    if (this.dom.btnTypeMemo) this.dom.btnTypeMemo.classList.remove('active');
-    if (this.dom.inputDirectNotes) this.dom.inputDirectNotes.blur();
-  }
-
-  toggleDirectTyping() {
+  // ----------------- 자유 메모장 (Scratchpad) 시스템 -----------------
+  toggleScratchpad() {
     this.sound.play('click');
-    if (this.isDirectTypingOpen) {
-      this.closeDirectTyping();
+    if (!this.dom.scratchpadDrawer) return;
+    const isHidden = this.dom.scratchpadDrawer.classList.contains('hidden');
+    if (isHidden) {
+      this.openScratchpad();
     } else {
-      this.openDirectTyping();
+      this.closeScratchpad();
     }
   }
 
-  updateDirectTypingInput() {
-    if (!this.dom.directTypingBar || this.dom.directTypingBar.classList.contains('hidden')) return;
-    if (this.selected.r < 0 || this.selected.c < 0) return;
-    const { r, c } = this.selected;
-    if (this.dom.typingCellCoord) {
-      this.dom.typingCellCoord.textContent = `${r + 1}행 ${c + 1}열`;
+  openScratchpad() {
+    if (!this.dom.scratchpadDrawer) return;
+    this.dom.scratchpadDrawer.classList.remove('hidden');
+    if (this.dom.btnScratchpad) this.dom.btnScratchpad.classList.add('active');
+    if (this.dom.scratchpadInput) {
+      this.dom.scratchpadInput.value = this.scratchpadText || '';
+      setTimeout(() => this.dom.scratchpadInput.focus(), 60);
     }
-    const cellData = this.board[r][c];
-    if (!this.dom.inputDirectNotes) return;
-    this.dom.inputDirectNotes.disabled = false;
-    if (cellData.customMemo) {
-      this.dom.inputDirectNotes.value = cellData.customMemo;
-      this.dom.inputDirectNotes.placeholder = '자유 메모 입력 (예: 139, 홀수, 합10)...';
-    } else if (cellData.notes && cellData.notes.size > 0) {
-      const sorted = Array.from(cellData.notes).sort((a, b) => a - b).join('');
-      this.dom.inputDirectNotes.value = sorted;
-      this.dom.inputDirectNotes.placeholder = '자유 메모 입력 (예: 139, 홀수, 합10)...';
-    } else {
-      this.dom.inputDirectNotes.value = '';
-      this.dom.inputDirectNotes.placeholder = cellData.val > 0
-        ? `확정값 ${cellData.val} (자유 메모 작성 가능)`
-        : '자유 메모 입력 (예: 139, 홀수, 합10)...';
+    this.updateScratchpadBadge();
+  }
+
+  closeScratchpad() {
+    if (!this.dom.scratchpadDrawer) return;
+    this.dom.scratchpadDrawer.classList.add('hidden');
+    if (this.dom.btnScratchpad) this.dom.btnScratchpad.classList.remove('active');
+    if (this.dom.scratchpadInput) {
+      this.scratchpadText = this.dom.scratchpadInput.value;
+      localStorage.setItem('sumdoku_scratchpad', this.scratchpadText);
+      this.dom.scratchpadInput.blur();
+    }
+    this.updateScratchpadBadge();
+  }
+
+  updateScratchpadBadge() {
+    if (this.dom.scratchpadBadge) {
+      this.dom.scratchpadBadge.style.display = (this.scratchpadText && this.scratchpadText.trim().length > 0) ? 'inline-block' : 'none';
     }
   }
 
-  moveToNextEmptyCell() {
-    if (this.selected.r < 0) return;
-    let currIdx = this.selected.r * 9 + this.selected.c;
-    for (let offset = 1; offset < 81; offset++) {
-      const idx = (currIdx + offset) % 81;
-      const nr = Math.floor(idx / 9);
-      const nc = idx % 9;
-      if (this.board[nr][nc].val === 0) {
-        this.selectCell(nr, nc);
-        if (this.dom.inputDirectNotes && !this.dom.inputDirectNotes.disabled) {
-          this.dom.inputDirectNotes.focus();
-          this.dom.inputDirectNotes.select();
+  // ----------------- 합계 영역(케이지) 다중 선택 & 총합 계산기 -----------------
+  toggleMultiCageMode() {
+    this.sound.play('click');
+    this.isMultiCageMode = !this.isMultiCageMode;
+
+    if (this.isMultiCageMode) {
+      // 현재 선택된 칸이 속한 케이지를 1차로 자동 추가
+      if (this.selected.r >= 0 && this.selected.c >= 0) {
+        const cIdx = this.cellCageMap[`${this.selected.r},${this.selected.c}`];
+        if (cIdx !== undefined) {
+          this.selectedCages.add(cIdx);
         }
-        return;
+      }
+      if (this.dom.btnCageMultiCalc) this.dom.btnCageMultiCalc.classList.add('active');
+      if (this.dom.btnAssistantMultiToggle) this.dom.btnAssistantMultiToggle.classList.add('active');
+      if (this.dom.multiCageBanner) this.dom.multiCageBanner.classList.remove('hidden');
+      if (this.dom.assistantMultiPanel) this.dom.assistantMultiPanel.classList.remove('hidden');
+      if (this.dom.assistantMetricsSingle) this.dom.assistantMetricsSingle.classList.add('hidden');
+    } else {
+      this.resetMultiCageSelection();
+      if (this.dom.btnCageMultiCalc) this.dom.btnCageMultiCalc.classList.remove('active');
+      if (this.dom.btnAssistantMultiToggle) this.dom.btnAssistantMultiToggle.classList.remove('active');
+      if (this.dom.multiCageBanner) this.dom.multiCageBanner.classList.add('hidden');
+      if (this.dom.assistantMultiPanel) this.dom.assistantMultiPanel.classList.add('hidden');
+      if (this.dom.assistantMetricsSingle) this.dom.assistantMetricsSingle.classList.remove('hidden');
+    }
+
+    this.updateMultiCageCalculation();
+    this.updateHighlights();
+  }
+
+  resetMultiCageSelection() {
+    this.selectedCages.clear();
+    this.updateMultiCageCalculation();
+    this.updateHighlights();
+  }
+
+  updateMultiCageCalculation() {
+    if (!this.cages || this.cages.length === 0) return;
+    const cageList = Array.from(this.selectedCages).map(idx => this.cages[idx]).filter(Boolean);
+    const count = cageList.length;
+
+    let totalSum = 0;
+    let totalCells = 0;
+    const sumList = [];
+
+    cageList.forEach(cg => {
+      totalSum += cg.sum;
+      totalCells += cg.cells.length;
+      sumList.push(cg.sum);
+    });
+
+    const formulaStr = sumList.length > 0 ? `${sumList.join(' + ')} = ${totalSum}` : '선택 없음';
+
+    if (this.dom.mcBannerText) {
+      if (count === 0) {
+        this.dom.mcBannerText.textContent = '영역(케이지)들을 클릭하여 합계를 계산하세요.';
+      } else {
+        const diff45 = totalSum - 45;
+        const diffText = (totalCells === 9 || totalCells === 18 || totalCells === 27)
+          ? ` (45규칙 기준: ${diff45 >= 0 ? '+' : ''}${diff45})`
+          : '';
+        this.dom.mcBannerText.textContent = `${count}개 영역 총합: ${totalSum} (${totalCells}칸) [${formulaStr}]${diffText}`;
       }
     }
+
+    if (this.dom.assistantMultiTotal) this.dom.assistantMultiTotal.textContent = totalSum;
+    if (this.dom.assistantMultiCells) this.dom.assistantMultiCells.textContent = `${totalCells}칸 (${count}개 영역)`;
+    if (this.dom.assistantMultiFormula) this.dom.assistantMultiFormula.textContent = formulaStr;
   }
 
   toggleNoteInSelected(num) {
@@ -2741,14 +2821,13 @@ class SumdokuApp {
       cellData.notes.add(num);
     }
     this.updateBoardDisplay();
-    this.updateDirectTypingInput();
     this.sound.play('click');
   }
 
   updateHighlights() {
     const { r: selR, c: selC } = this.selected;
-    const selCellData = this.board[selR][selC];
-    const selVal = selCellData.val;
+    const selCellData = (this.board[selR] && this.board[selR][selC]) ? this.board[selR][selC] : null;
+    const selVal = selCellData ? selCellData.val : 0;
     const selCageIdx = this.cellCageMap[`${selR},${selC}`];
     const selBoxR = Math.floor(selR / 3), selBoxC = Math.floor(selC / 3);
 
@@ -2759,7 +2838,12 @@ class SumdokuApp {
         const cageIdx = this.cellCageMap[`${r},${c}`];
         const boxR = Math.floor(r / 3), boxC = Math.floor(c / 3);
 
-        cellEl.classList.remove('selected', 'highlight-crosshair', 'highlight-cage', 'highlight-same-num');
+        cellEl.classList.remove('selected', 'highlight-crosshair', 'highlight-cage', 'highlight-same-num', 'highlight-multi-cage');
+
+        // 케이지 다중 계산 모드 선택 하이라이트
+        if (this.isMultiCageMode && cageIdx !== undefined && this.selectedCages.has(cageIdx)) {
+          cellEl.classList.add('highlight-multi-cage');
+        }
 
         if (r === selR && c === selC) {
           cellEl.classList.add('selected');
@@ -2767,7 +2851,7 @@ class SumdokuApp {
           if (this.settings.highlightCross && (r === selR || c === selC || (boxR === selBoxR && boxC === selBoxC))) {
             cellEl.classList.add('highlight-crosshair');
           }
-          if (cageIdx === selCageIdx) {
+          if (cageIdx === selCageIdx && !this.isMultiCageMode) {
             cellEl.classList.add('highlight-cage');
           }
           if (this.settings.highlightSame && selVal > 0 && cellData.val === selVal) {
@@ -2867,6 +2951,7 @@ class SumdokuApp {
           cellData.error = true;
           this.combo = 0;
           this.score = Math.max(0, this.score - 50);
+          this.showScoreDelta(-50, r, c);
           this.dom.gameScore.textContent = this.score;
 
           this.mistakes++;
@@ -2895,14 +2980,16 @@ class SumdokuApp {
           const comboMultiplier = Math.min(this.combo, 5);
           const basePoints = 100 * comboMultiplier;
           this.score += basePoints;
+          this.showScoreDelta(basePoints, r, c, comboMultiplier > 1 ? `(콤보 x${comboMultiplier})` : '');
 
           // 케이지 완성 보너스 (+cage.sum * 15)
           const myCageIdx = this.cellCageMap[`${r},${c}`];
           const cage = this.cages[myCageIdx];
-          const isCageComplete = cage.cells.every(([cr, cc]) => this.board[cr][cc].val === this.solution[cr][cc]);
+          const isCageComplete = cage && cage.cells.every(([cr, cc]) => this.board[cr][cc].val === this.solution[cr][cc]);
           if (isCageComplete) {
             const cageBonus = cage.sum * 15;
             this.score += cageBonus;
+            setTimeout(() => this.showScoreDelta(cageBonus, r, c, '케이지 완성!'), 200);
             this.showToast(`케이지 완성 보너스! (+${cageBonus}점)`);
           }
 
@@ -3030,10 +3117,12 @@ class SumdokuApp {
       if (this.hintsRemaining > 0) {
         this.hintsRemaining--;
         this.score = Math.max(0, this.score - 30);
+        this.showScoreDelta(-30, r, c, '힌트');
         hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
       } else {
         // 0개 상태에서도 추가 힌트 제공 ("0점에서 더 주는 것도 가능하게")
         this.score = Math.max(0, this.score - 50);
+        this.showScoreDelta(-50, r, c, '추가 힌트');
         hintMsg = `[추가 힌트] 케이지 제약으로 ${answer} 확정! (보너스 힌트 제공, -50점)`;
       }
       this.updateHintBadge();
@@ -3513,6 +3602,16 @@ class SumdokuApp {
         valSpan.className = 'cell-value';
         cell.appendChild(valSpan);
 
+        const notesEl = document.createElement('div');
+        notesEl.className = 'cell-notes';
+        for (let n = 1; n <= 9; n++) {
+          const sp = document.createElement('span');
+          sp.className = 'note-num';
+          sp.dataset.note = n;
+          notesEl.appendChild(sp);
+        }
+        cell.appendChild(notesEl);
+
         boardEl.appendChild(cell);
       }
     }
@@ -3526,16 +3625,23 @@ class SumdokuApp {
     this.replayStep = targetStep;
 
     const cellValues = Array.from({ length: 9 }, () => Array(9).fill(0));
+    const cellNotes = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
     let lastMove = null;
 
     for (let i = 0; i < targetStep; i++) {
       const m = replay.moves[i];
-      if (!m.isPencil) {
-        if (m.type === 'erase') {
-          cellValues[m.r][m.c] = 0;
+      if (m.isPencil) {
+        if (cellNotes[m.r][m.c].has(m.num)) {
+          cellNotes[m.r][m.c].delete(m.num);
         } else {
-          cellValues[m.r][m.c] = m.num;
+          cellNotes[m.r][m.c].add(m.num);
         }
+      } else if (m.type === 'erase') {
+        cellValues[m.r][m.c] = 0;
+        cellNotes[m.r][m.c].clear();
+      } else {
+        cellValues[m.r][m.c] = m.num;
+        cellNotes[m.r][m.c].clear();
       }
       if (i === targetStep - 1) lastMove = m;
     }
@@ -3547,9 +3653,26 @@ class SumdokuApp {
           const cellEl = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
           if (cellEl) {
             const valSpan = cellEl.querySelector('.cell-value');
+            const notesEl = cellEl.querySelector('.cell-notes');
             const v = cellValues[r][c];
-            if (valSpan) valSpan.textContent = v > 0 ? v : '';
-            cellEl.classList.remove('selected', 'error');
+            const notes = cellNotes[r][c];
+
+            cellEl.classList.remove('selected', 'error', 'user-input');
+
+            if (v > 0) {
+              if (valSpan) valSpan.textContent = v;
+              if (notesEl) notesEl.style.display = 'none';
+              cellEl.classList.add('user-input');
+            } else {
+              if (valSpan) valSpan.textContent = '';
+              if (notesEl) {
+                notesEl.style.display = 'grid';
+                for (let n = 1; n <= 9; n++) {
+                  const sp = notesEl.querySelector(`[data-note="${n}"]`);
+                  if (sp) sp.textContent = notes.has(n) ? n : '';
+                }
+              }
+            }
 
             if (lastMove && lastMove.r === r && lastMove.c === c) {
               cellEl.classList.add('selected');
