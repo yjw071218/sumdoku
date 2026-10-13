@@ -235,6 +235,10 @@ body, html {
 
 .daily-hero-icon {
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .daily-hero-info {
@@ -333,22 +337,26 @@ body, html {
 
 .btn-icon {
   font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
-.btn-content {
-  display: flex;
-  flex-direction: column;
-}
 
 .btn-title {
   font-size: 0.94rem;
   font-weight: 700;
+  word-break: keep-all;
 }
 
 .btn-desc {
   font-size: 0.71rem;
   color: var(--text-secondary);
   margin-top: 1px;
+  word-break: keep-all;
 }
 
 .home-footer {
@@ -403,6 +411,11 @@ body, html {
 .tab-icon {
   font-size: 1.25rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
 }
 
 .tab-label {
@@ -1737,8 +1750,11 @@ input:checked + .slider::before {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.theme-dark .diff-card-desc {
-  color: #94a3b8;
+.diff-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  word-break: keep-all;
 }
 
 .diff-card-header {
@@ -1746,12 +1762,14 @@ input:checked + .slider::before {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
+  gap: 8px;
 }
 
 .diff-hint-count {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .highlight-expert {
@@ -1760,12 +1778,16 @@ input:checked + .slider::before {
   padding: 2px 7px;
   border-radius: 6px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
-.diff-card-desc {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  line-height: 1.3;
+.mode-select-btn {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.modal-card h3, .modal-card p, .rules-body p {
+  word-break: keep-all;
 }
 
 .modal-footer {
@@ -1865,21 +1887,78 @@ input:checked + .slider::before {
 .update-notes-box {
   background: var(--bg-surface-glass);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 10px 12px;
-  max-height: 140px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  max-height: 190px;
   overflow-y: auto;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  line-height: 1.45;
+  line-height: 1.6;
   margin-bottom: 14px;
+  word-break: keep-all;
 }
 
-.update-notes-box pre {
-  margin: 0;
-  font-family: inherit;
-  white-space: pre-wrap;
-  word-break: break-word;
+.update-notes-box .md-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.update-notes-box .md-h2,
+.update-notes-box .md-h3,
+.update-notes-box .md-h4 {
+  margin: 8px 0 3px 0;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+.update-notes-box .md-h2 { font-size: 1.02rem; color: #2563eb; }
+.update-notes-box .md-h3 { font-size: 0.94rem; }
+.update-notes-box .md-h4 { font-size: 0.88rem; }
+
+.update-notes-box .md-p {
+  margin: 0 0 4px 0;
+}
+
+.update-notes-box .md-quote {
+  margin: 6px 0;
+  padding: 6px 12px;
+  background: rgba(37, 99, 235, 0.08);
+  border-left: 3.5px solid #2563eb;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.update-notes-box .md-ul {
+  margin: 4px 0 6px 16px;
+  padding: 0;
+  list-style: disc;
+}
+
+.update-notes-box .md-li {
+  margin-bottom: 3px;
+  line-height: 1.5;
+}
+
+.update-notes-box .md-code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  color: #2563eb;
+  font-family: monospace;
+}
+
+.theme-dark .update-notes-box .md-code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #93c5fd;
+}
+
+.theme-dark .update-notes-box .md-quote {
+  background: rgba(37, 99, 235, 0.15);
+  border-left-color: #60a5fa;
+  color: #f1f5f9;
 }
 
 /* In-App Progress Box */
@@ -4621,55 +4700,68 @@ input:checked + .slider:before {
   100% { transform: scale(1.08); opacity: 1; }
 }
 
-/* 3. Home Auto Update Banner */
+/* 3. Home Auto Update Banner (More Compact & Refined) */
 .home-update-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(147, 51, 234, 0.12));
-  border: 1.5px solid rgba(59, 130, 246, 0.45);
-  border-radius: 16px;
-  padding: 12px 16px;
-  margin: 0 16px 14px 16px;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 0 4px 8px 4px;
+  width: 100%;
+  box-sizing: border-box;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  animation: bannerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  animation: bannerSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-update-banner:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 .update-banner-icon {
-  font-size: 1.8rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .update-banner-info {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 .update-banner-title {
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   color: #2563eb;
+  line-height: 1.3;
 }
 .theme-dark .update-banner-title {
   color: #60a5fa;
 }
 .update-banner-sub {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .update-banner-btn {
   background: #2563eb;
   color: #ffffff;
   border: none;
-  border-radius: 10px;
-  padding: 7px 14px;
+  border-radius: 8px;
+  padding: 5px 11px;
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 @keyframes bannerSlideDown {
   from { opacity: 0; transform: translateY(-12px); }

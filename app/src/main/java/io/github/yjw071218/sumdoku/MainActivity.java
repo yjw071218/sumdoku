@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.0.21";
+            return "1.0.22";
         }
     }
 
@@ -162,6 +162,11 @@ public class MainActivity extends Activity {
             deleteDir(customDir);
             prefs.edit().remove(KEY_HOT_VERSION).apply();
             hotVersion = null;
+        }
+
+        // 구버전 파일이 www 폴더에 남아있는 경우 정리
+        if (hotVersion == null && customDir.exists()) {
+            deleteDir(customDir);
         }
 
         if (hotVersion != null && customIndex.exists()) {
@@ -401,7 +406,7 @@ public class MainActivity extends Activity {
         public void copyToClipboard(final String text) {
             mainHandler.post(() -> {
                 try {
-                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) MainActivity.this.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
                     if (clipboard != null) {
                         android.content.ClipData clip = android.content.ClipData.newPlainText("Sumdoku Room Code", text);
                         clipboard.setPrimaryClip(clip);

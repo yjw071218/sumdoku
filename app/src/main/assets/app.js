@@ -2321,8 +2321,8 @@ class SumdokuApp {
         }
 
         document.getElementById('update-modal-title').textContent = `새 버전 발견! (v${latestTag})`;
-        document.getElementById('update-modal-version').textContent = `현재 버전: v${currentVersion} ➔ 최신 버전: v${latestTag}`;
-        this.dom.updateNotes.innerHTML = `<pre>${release.body || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.'}</pre>`;
+        // 마크다운 파싱 및 렌더링 (*, #, -, 링크, 줄바꿈)
+        this.dom.updateNotes.innerHTML = this.renderMarkdown(release.body || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.');
 
         this.dom.updateActionsNormal.classList.remove('hidden');
         this.dom.updateProgressContainer.classList.add('hidden');
@@ -2372,6 +2372,46 @@ class SumdokuApp {
       if (r < l) return false;
     }
     return false;
+  }
+
+  renderMarkdown(text) {
+    if (!text) return '';
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // 헤더 (###, ##, #)
+    html = html.replace(/^### (.*$)/gim, '<h4 class="md-h4">$1</h4>');
+    html = html.replace(/^## (.*$)/gim, '<h3 class="md-h3">$1</h3>');
+    html = html.replace(/^# (.*$)/gim, '<h2 class="md-h2">$1</h2>');
+
+    // 블록 인용 (> ...)
+    html = html.replace(/^\> (.*$)/gim, '<blockquote class="md-quote">$1</blockquote>');
+
+    // 굵게 (**...**) & 기울임 (*...*)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // 인라인 코드 (`...`)
+    html = html.replace(/`(.*?)`/g, '<code class="md-code">$1</code>');
+
+    // 리스트 항목 (- ... 또는 * ...)
+    html = html.replace(/^[\*\-] (.*$)/gim, '<li class="md-li">$1</li>');
+
+    // li 연속 항목을 ul로 래핑
+    html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>)/gim, '<ul class="md-ul">$1</ul>');
+    // 중복 생성된 ul 태그 병합
+    html = html.replace(/<\/ul>\s*<ul class="md-ul">/gim, '');
+
+    // 단락 및 줄바꿈 (연속 줄바꿈 -> 단락)
+    html = html.replace(/\n\n+/g, '</p><p class="md-p">');
+    html = html.replace(/\n/g, '<br>');
+    html = `<div class="md-content"><p class="md-p">${html}</p></div>`;
+
+    // 빈 태그 정리
+    html = html.replace(/<p class="md-p"><\/p>/g, '');
+    return html;
   }
 
   // ============================================================================
