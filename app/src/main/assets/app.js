@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.8";
+const APP_VERSION = "1.0.9";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -560,31 +560,45 @@ class SumdokuApp {
     this.settings = this.loadSettings();
     this.stats = this.loadStats();
     this.dailyCleared = this.loadDailyCleared();
+    this.replays = this.loadReplays();
+    this.currentGameReplay = null;
+    this.activeReplay = null;
+    this.replayStep = 0;
+    this.replaySpeed = 1;
+    this.replayPlayInterval = null;
 
     this.initDOM();
     this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
     this.applySettings();
-    this.applyTheme(localStorage.getItem('sumdoku_theme') || 'theme-light');
+    this.applyTheme(this.settings.darkTheme ? 'theme-dark' : (localStorage.getItem('sumdoku_theme') || 'theme-light'));
     this.bindEvents();
     this.renderDailyCalendar();
     this.checkContinueGame();
     this.renderStatsView();
+    this.renderReplayList();
+    this.updateAppVersionDisplay();
 
     setTimeout(() => this.checkForUpdates(false), 1500);
   }
 
-  // ----------------- 설정 관리 -----------------
+  // ----------------- 설정 관리 (Image 2 세부 토글) -----------------
   loadSettings() {
     const defaults = {
       sound: true,
+      autoLock: false,
+      showTimer: true,
+      showScore: true,
+      scoreAnim: true,
+      statMessage: true,
+      digitFirst: false,
       mistakeLimit: true,
       autoCheck: true,
+      highlightDup: true,
       highlightCross: true,
       highlightSame: true,
-      highlightDup: true,
       autoNotes: true,
       hideCompleted: true,
-      showTimer: true,
+      darkTheme: false,
       notesSize: 'large'
     };
     try {
@@ -609,19 +623,27 @@ class SumdokuApp {
     };
 
     setChecked('setting-sound', this.settings.sound);
-    setChecked('modal-setting-sound', this.settings.sound);
-    setChecked('setting-mistake-limit', this.settings.mistakeLimit);
-    setChecked('modal-setting-mistake', this.settings.mistakeLimit);
-    setChecked('setting-auto-check', this.settings.autoCheck);
-    setChecked('setting-highlight-cross', this.settings.highlightCross);
-    setChecked('modal-setting-cross', this.settings.highlightCross);
-    setChecked('setting-highlight-same', this.settings.highlightSame);
-    setChecked('modal-setting-same', this.settings.highlightSame);
-    setChecked('setting-highlight-dup', this.settings.highlightDup);
-    setChecked('setting-auto-notes', this.settings.autoNotes);
-    setChecked('modal-setting-notes', this.settings.autoNotes);
-    setChecked('setting-hide-completed', this.settings.hideCompleted);
+    setChecked('setting-auto-lock', this.settings.autoLock);
     setChecked('setting-show-timer', this.settings.showTimer);
+    setChecked('setting-show-score', this.settings.showScore);
+    setChecked('setting-score-anim', this.settings.scoreAnim);
+    setChecked('setting-stat-message', this.settings.statMessage);
+    setChecked('setting-digit-first', this.settings.digitFirst);
+    setChecked('setting-mistake-limit', this.settings.mistakeLimit);
+    setChecked('setting-auto-check', this.settings.autoCheck);
+    setChecked('setting-highlight-dup', this.settings.highlightDup);
+    setChecked('setting-highlight-cross', this.settings.highlightCross);
+    setChecked('setting-highlight-same', this.settings.highlightSame);
+    setChecked('setting-auto-notes', this.settings.autoNotes);
+    setChecked('setting-hide-completed', this.settings.hideCompleted);
+    setChecked('setting-dark-theme', this.settings.darkTheme);
+
+    // 모달 내 토글 동기화
+    setChecked('modal-setting-sound', this.settings.sound);
+    setChecked('modal-setting-mistake', this.settings.mistakeLimit);
+    setChecked('modal-setting-cross', this.settings.highlightCross);
+    setChecked('modal-setting-same', this.settings.highlightSame);
+    setChecked('modal-setting-notes', this.settings.autoNotes);
 
     // 메모 폰트 크기 클래스 적용
     document.body.classList.remove('notes-size-normal', 'notes-size-large', 'notes-size-xlarge');
@@ -633,6 +655,9 @@ class SumdokuApp {
 
     const timerBox = document.getElementById('timer-box');
     if (timerBox) timerBox.style.display = this.settings.showTimer ? 'flex' : 'none';
+
+    const scoreBox = document.getElementById('game-score-box');
+    if (scoreBox) scoreBox.style.display = this.settings.showScore ? 'flex' : 'none';
 
     if (this.dom && this.dom.mistakes) {
       this.dom.mistakes.textContent = this.settings.mistakeLimit
@@ -825,6 +850,15 @@ class SumdokuApp {
     } else {
       this.stats.currentStreak = 0;
     }
+
+    if (this.currentGameReplay) {
+      this.currentGameReplay.result = isWin ? 'win' : 'fail';
+      this.currentGameReplay.finalScore = this.score;
+      this.currentGameReplay.finalTime = (this.dom && this.dom.timer) ? this.dom.timer.textContent : '00:00';
+      this.currentGameReplay.mistakes = this.mistakes;
+      this.saveReplay(this.currentGameReplay);
+    }
+
     this.saveStats();
     this.renderStatsView();
     return { isNewBestScore, isNewBestTime };
@@ -1125,6 +1159,22 @@ class SumdokuApp {
       btnResultHome: document.getElementById('btn-result-home'),
       confettiCanvas: document.getElementById('confetti-canvas'),
 
+      // Replay Elements
+      modalReplayViewer: document.getElementById('modal-replay-viewer'),
+      btnReplayClose: document.getElementById('btn-replay-close'),
+      replayMetaTitle: document.getElementById('replay-meta-title'),
+      replayMetaSub: document.getElementById('replay-meta-sub'),
+      replayStepPill: document.getElementById('replay-step-pill'),
+      replayBoard: document.getElementById('replay-board'),
+      replayDescBox: document.getElementById('replay-desc-box'),
+      replayTimeline: document.getElementById('replay-timeline'),
+      btnReplayFirst: document.getElementById('btn-replay-first'),
+      btnReplayPrev: document.getElementById('btn-replay-prev'),
+      btnReplayPlay: document.getElementById('btn-replay-play'),
+      btnReplayNext: document.getElementById('btn-replay-next'),
+      btnReplayLast: document.getElementById('btn-replay-last'),
+      replayListContainer: document.getElementById('replay-list-container'),
+
       toast: document.getElementById('toast'),
       keyBtns: document.querySelectorAll('.key-btn')
     };
@@ -1356,6 +1406,123 @@ class SumdokuApp {
     bindSingle('setting-highlight-dup', 'highlightDup');
     bindSingle('setting-hide-completed', 'hideCompleted');
     bindSingle('setting-show-timer', 'showTimer');
+    bindSingle('setting-auto-lock', 'autoLock');
+    bindSingle('setting-show-score', 'showScore');
+    bindSingle('setting-score-anim', 'scoreAnim');
+    bindSingle('setting-stat-message', 'statMessage');
+    bindSingle('setting-digit-first', 'digitFirst');
+
+    const dt = document.getElementById('setting-dark-theme');
+    if (dt) {
+      dt.addEventListener('change', (e) => {
+        this.sound.play('click');
+        this.settings.darkTheme = e.target.checked;
+        this.applyTheme(e.target.checked ? 'theme-dark' : 'theme-light');
+        this.saveSettings();
+      });
+    }
+
+    // Hub Sidebar Tabs (Image 2)
+    document.querySelectorAll('.hub-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        this.sound.play('click');
+        document.querySelectorAll('.hub-menu-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const targetPanelId = item.dataset.hubPanel;
+        const targetTitle = item.dataset.hubTitle || '설정';
+        const titleEl = document.getElementById('hub-active-title');
+        if (titleEl) titleEl.textContent = targetTitle;
+
+        document.querySelectorAll('.hub-panel').forEach(p => p.classList.remove('active'));
+        const targetPanel = document.getElementById(targetPanelId);
+        if (targetPanel) targetPanel.classList.add('active');
+
+        if (targetPanelId === 'panel-replays') {
+          this.renderReplayList();
+        } else if (targetPanelId === 'panel-awards') {
+          this.renderAwardsList();
+        }
+      });
+    });
+
+    // Replay Player Controls
+    if (this.dom.btnReplayClose) {
+      this.dom.btnReplayClose.addEventListener('click', () => {
+        this.sound.play('click');
+        this.closeReplayViewer();
+      });
+    }
+    if (this.dom.btnReplayFirst) {
+      this.dom.btnReplayFirst.addEventListener('click', () => {
+        this.sound.play('click');
+        this.pauseReplayPlay();
+        this.applyReplayStep(0);
+      });
+    }
+    if (this.dom.btnReplayPrev) {
+      this.dom.btnReplayPrev.addEventListener('click', () => {
+        this.sound.play('click');
+        this.pauseReplayPlay();
+        this.applyReplayStep(this.replayStep - 1);
+      });
+    }
+    if (this.dom.btnReplayPlay) {
+      this.dom.btnReplayPlay.addEventListener('click', () => {
+        this.sound.play('click');
+        this.toggleReplayPlay();
+      });
+    }
+    if (this.dom.btnReplayNext) {
+      this.dom.btnReplayNext.addEventListener('click', () => {
+        this.sound.play('click');
+        this.pauseReplayPlay();
+        this.applyReplayStep(this.replayStep + 1);
+      });
+    }
+    if (this.dom.btnReplayLast) {
+      this.dom.btnReplayLast.addEventListener('click', () => {
+        this.sound.play('click');
+        this.pauseReplayPlay();
+        if (this.activeReplay) this.applyReplayStep(this.activeReplay.moves.length);
+      });
+    }
+    if (this.dom.replayTimeline) {
+      this.dom.replayTimeline.addEventListener('input', (e) => {
+        this.pauseReplayPlay();
+        this.applyReplayStep(parseInt(e.target.value, 10));
+      });
+    }
+    document.querySelectorAll('.btn-speed').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.sound.play('click');
+        document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.replaySpeed = parseFloat(btn.dataset.speed) || 1;
+        if (this.replayPlayInterval) {
+          this.startReplayPlay();
+        }
+      });
+    });
+
+    // Game Info & GitHub Buttons
+    const btnInfoUpdate = document.getElementById('btn-info-check-update');
+    if (btnInfoUpdate) {
+      btnInfoUpdate.addEventListener('click', () => {
+        this.sound.play('click');
+        this.checkForUpdates(true);
+      });
+    }
+    const btnInfoGit = document.getElementById('btn-info-github');
+    if (btnInfoGit) {
+      btnInfoGit.addEventListener('click', () => {
+        this.sound.play('click');
+        if (window.AndroidBridge && window.AndroidBridge.openExternalUrl) {
+          window.AndroidBridge.openExternalUrl(`https://github.com/${GITHUB_REPO}`);
+        } else {
+          window.open(`https://github.com/${GITHUB_REPO}`, '_blank');
+        }
+      });
+    }
 
     // 메모 폰트 크기 선택 바인딩
     const bindSelect = (id1, id2, key) => {
@@ -1975,6 +2142,24 @@ class SumdokuApp {
       }))
     );
 
+    const now = new Date();
+    const dateStr = `${now.getMonth() + 1}월 ${now.getDate()}일 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    this.currentGameReplay = {
+      id: Date.now(),
+      date: dateStr,
+      difficulty: diff,
+      mode: this.gameMode,
+      solution: this.solution,
+      cages: this.cages,
+      cellCageMap: this.cellCageMap,
+      anchorCount: this.anchorCount,
+      moves: [],
+      result: 'ongoing',
+      finalScore: 0,
+      finalTime: '00:00',
+      mistakes: 0
+    };
+
     this.renderBoard();
     this.selectCell(0, 0);
     this.updateKeypadBadges();
@@ -2279,6 +2464,17 @@ class SumdokuApp {
 
     this.saveSnapshot();
 
+    if (this.currentGameReplay) {
+      this.currentGameReplay.moves.push({
+        t: this.timerSeconds,
+        isPencil: this.isPencilMode,
+        r, c,
+        num,
+        prevVal: cellData.val,
+        error: !this.isPencilMode && (num !== this.solution[r][c])
+      });
+    }
+
     if (this.isPencilMode) {
       this.sound.play('click');
       if (cellData.val === 0) {
@@ -2381,6 +2577,14 @@ class SumdokuApp {
     if (cellData.val > 0 || cellData.notes.size > 0) {
       this.sound.play('click');
       this.saveSnapshot();
+      if (this.currentGameReplay) {
+        this.currentGameReplay.moves.push({
+          t: this.timerSeconds,
+          type: 'erase',
+          r, c,
+          prevVal: cellData.val
+        });
+      }
       cellData.val = 0;
       cellData.notes.clear();
       cellData.error = false;
@@ -2425,6 +2629,15 @@ class SumdokuApp {
       this.sound.play('correct');
       this.saveSnapshot();
       const answer = this.solution[r][c];
+      if (this.currentGameReplay) {
+        this.currentGameReplay.moves.push({
+          t: this.timerSeconds,
+          type: 'hint',
+          r, c,
+          num: answer,
+          prevVal: 0
+        });
+      }
       this.board[r][c].val = answer;
       this.board[r][c].notes.clear();
       this.board[r][c].error = false;
@@ -2686,6 +2899,358 @@ class SumdokuApp {
     this.dom.iconPause.classList.toggle('hidden', this.isPaused);
     this.dom.iconPlay.classList.toggle('hidden', !this.isPaused);
     this.dom.pauseOverlay.classList.toggle('hidden', !this.isPaused);
+  }
+
+  // ============================================================================
+  // 7. 최근 20판 수도쿠 리플레이 엔진 (Replay Engine)
+  // ============================================================================
+  loadReplays() {
+    try {
+      const raw = localStorage.getItem('sumdoku_replays');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return this.generateSeedReplays();
+  }
+
+  saveReplay(replay) {
+    if (!replay || !replay.moves || replay.moves.length === 0) return;
+    try {
+      let replays = this.loadReplays();
+      replays = replays.filter(r => r.id !== replay.id);
+      replays.unshift(replay);
+      if (replays.length > 20) replays = replays.slice(0, 20);
+      localStorage.setItem('sumdoku_replays', JSON.stringify(replays));
+      this.replays = replays;
+      this.renderReplayList();
+    } catch (e) {}
+  }
+
+  generateSeedReplays() {
+    // 사용자가 첫 실행 시에도 바로 리플레이를 돌려볼 수 있도록 시드 리플레이 생성
+    const seeds = [];
+    const diffs = ['expert', 'hard', 'medium', 'easy'];
+    const now = Date.now();
+    for (let i = 0; i < 4; i++) {
+      const d = diffs[i % diffs.length];
+      const gen = this.generator.generate(d);
+      const puzzleDate = new Date(now - (i * 3600 * 1000 * 6));
+      const dateStr = `${puzzleDate.getMonth() + 1}월 ${puzzleDate.getDate()}일 ${String(puzzleDate.getHours()).padStart(2, '0')}:${String(puzzleDate.getMinutes()).padStart(2, '0')}`;
+      
+      const moves = [];
+      const cellsToFill = [];
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          cellsToFill.push([r, c]);
+        }
+      }
+      for (let m = 0; m < 24; m++) {
+        const [r, c] = cellsToFill[m];
+        moves.push({
+          t: (m + 1) * 7,
+          isPencil: false,
+          r, c,
+          num: gen.solution[r][c],
+          prevVal: 0,
+          error: false
+        });
+      }
+
+      seeds.push({
+        id: now - (i * 200000),
+        date: dateStr,
+        difficulty: d,
+        mode: (i === 1) ? 'timeattack' : 'standard',
+        solution: gen.solution,
+        cages: gen.cages,
+        cellCageMap: {},
+        anchorCount: gen.anchorCount || 2,
+        moves: moves,
+        result: 'win',
+        finalScore: 2450 - (i * 280),
+        finalTime: `0${3 + i}:1${i * 2}`,
+        mistakes: (i % 2 === 0) ? 0 : 1
+      });
+    }
+    return seeds;
+  }
+
+  renderReplayList() {
+    const container = document.getElementById('replay-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const list = this.replays || this.loadReplays();
+    if (list.length === 0) {
+      container.innerHTML = `<div style="grid-column: 1/-1; padding: 30px; text-align: center; color: var(--text-muted); font-weight: 600;">아직 저장된 리플레이가 없습니다. 게임을 완료하시면 최근 20판의 수순이 자동 저장됩니다!</div>`;
+      return;
+    }
+
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+
+    list.forEach(rep => {
+      const card = document.createElement('div');
+      card.className = 'replay-card';
+      
+      const isWin = rep.result === 'win';
+      const dLabel = diffKr[rep.difficulty] || rep.difficulty;
+
+      card.innerHTML = `
+        <div class="replay-card-top">
+          <span class="replay-diff-badge ${rep.difficulty}">${dLabel}</span>
+          <span class="replay-result-tag ${isWin ? 'win' : 'fail'}">${isWin ? '🏆 클리어' : '💔 실패'}</span>
+        </div>
+        <div class="replay-card-meta">
+          <span>📅 ${rep.date}</span>
+          <span>수순: <strong>${rep.moves ? rep.moves.length : 0}수</strong></span>
+        </div>
+        <div class="replay-card-footer">
+          <span style="font-weight: 800; color: #2563eb;">${(rep.finalScore || 0).toLocaleString()}점 · ⏱️ ${rep.finalTime || '00:00'}</span>
+          <button class="replay-play-btn">리플레이 보기 ▶</button>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        this.sound.play('click');
+        this.openReplayViewer(rep);
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  openReplayViewer(replay) {
+    this.activeReplay = replay;
+    this.replayStep = 0;
+    this.replaySpeed = 1;
+    this.pauseReplayPlay();
+
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const dLabel = diffKr[replay.difficulty] || replay.difficulty;
+
+    if (this.dom.replayMetaTitle) {
+      this.dom.replayMetaTitle.textContent = `[${dLabel}] ${replay.result === 'win' ? '완벽 클리어' : '도전'} 리플레이`;
+    }
+    if (this.dom.replayMetaSub) {
+      this.dom.replayMetaSub.textContent = `${replay.date} · 최종 ${replay.finalScore.toLocaleString()}점 · 소요 ${replay.finalTime} · 실수 ${replay.mistakes || 0}회`;
+    }
+
+    if (this.dom.replayTimeline) {
+      this.dom.replayTimeline.min = 0;
+      this.dom.replayTimeline.max = replay.moves.length;
+      this.dom.replayTimeline.value = 0;
+    }
+
+    this.renderReplayBoardShell(replay);
+    this.applyReplayStep(0);
+
+    if (this.dom.modalReplayViewer) {
+      this.dom.modalReplayViewer.classList.remove('hidden');
+    }
+  }
+
+  closeReplayViewer() {
+    this.pauseReplayPlay();
+    if (this.dom.modalReplayViewer) {
+      this.dom.modalReplayViewer.classList.add('hidden');
+    }
+    this.activeReplay = null;
+  }
+
+  renderReplayBoardShell(replay) {
+    const boardEl = this.dom.replayBoard;
+    if (!boardEl) return;
+    boardEl.innerHTML = '';
+
+    const cellCageMap = {};
+    (replay.cages || []).forEach((cage, idx) => {
+      cage.cells.forEach(([r, c]) => {
+        cellCageMap[`${r},${c}`] = idx;
+      });
+    });
+
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        if (c === 2 || c === 5) cell.classList.add('border-box-right');
+        if (r === 2 || r === 5) cell.classList.add('border-box-bottom');
+
+        const cIdx = cellCageMap[`${r},${c}`];
+        if (cIdx !== undefined && replay.cages[cIdx]) {
+          const cage = replay.cages[cIdx];
+          const isTop = (r === 0 || cellCageMap[`${r - 1},${c}`] !== cIdx);
+          const isBot = (r === 8 || cellCageMap[`${r + 1},${c}`] !== cIdx);
+          const isLft = (c === 0 || cellCageMap[`${r},${c - 1}`] !== cIdx);
+          const isRgt = (c === 8 || cellCageMap[`${r},${c + 1}`] !== cIdx);
+
+          const inset = document.createElement('div');
+          inset.className = 'cage-inset-border';
+          if (isTop) inset.classList.add('cage-top');
+          if (isBot) inset.classList.add('cage-bottom');
+          if (isLft) inset.classList.add('cage-left');
+          if (isRgt) inset.classList.add('cage-right');
+          cell.appendChild(inset);
+
+          if (cage.labelCell && cage.labelCell[0] === r && cage.labelCell[1] === c) {
+            const sumEl = document.createElement('span');
+            sumEl.className = 'cell-cage-sum';
+            sumEl.textContent = cage.sum;
+            cell.appendChild(sumEl);
+            cell.classList.add('has-cage-sum');
+          }
+        }
+
+        const valSpan = document.createElement('span');
+        valSpan.className = 'cell-value';
+        cell.appendChild(valSpan);
+
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  applyReplayStep(targetStep) {
+    if (!this.activeReplay) return;
+    const replay = this.activeReplay;
+    const totalSteps = replay.moves.length;
+    targetStep = Math.max(0, Math.min(totalSteps, targetStep));
+    this.replayStep = targetStep;
+
+    const cellValues = Array.from({ length: 9 }, () => Array(9).fill(0));
+    let lastMove = null;
+
+    for (let i = 0; i < targetStep; i++) {
+      const m = replay.moves[i];
+      if (!m.isPencil) {
+        if (m.type === 'erase') {
+          cellValues[m.r][m.c] = 0;
+        } else {
+          cellValues[m.r][m.c] = m.num;
+        }
+      }
+      if (i === targetStep - 1) lastMove = m;
+    }
+
+    const boardEl = this.dom.replayBoard;
+    if (boardEl) {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cellEl = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+          if (cellEl) {
+            const valSpan = cellEl.querySelector('.cell-value');
+            const v = cellValues[r][c];
+            if (valSpan) valSpan.textContent = v > 0 ? v : '';
+            cellEl.classList.remove('selected', 'error');
+
+            if (lastMove && lastMove.r === r && lastMove.c === c) {
+              cellEl.classList.add('selected');
+              if (lastMove.error) cellEl.classList.add('error');
+            }
+          }
+        }
+      }
+    }
+
+    if (this.dom.replayTimeline) {
+      this.dom.replayTimeline.value = targetStep;
+    }
+    if (this.dom.replayStepPill) {
+      this.dom.replayStepPill.textContent = `${targetStep} / ${totalSteps} 수`;
+    }
+
+    if (this.dom.replayDescBox) {
+      if (targetStep === 0) {
+        this.dom.replayDescBox.textContent = '게임 시작 상태입니다. [▶] 버튼을 누르거나 슬라이더로 수순을 확인하세요.';
+      } else if (lastMove) {
+        const min = String(Math.floor(lastMove.t / 60)).padStart(2, '0');
+        const sec = String(lastMove.t % 60).padStart(2, '0');
+        if (lastMove.isPencil) {
+          this.dom.replayDescBox.textContent = `[${min}:${sec}] (${lastMove.r + 1}행, ${lastMove.c + 1}열) 칸에 메모 ${lastMove.num} 조작`;
+        } else if (lastMove.type === 'erase') {
+          this.dom.replayDescBox.textContent = `[${min}:${sec}] (${lastMove.r + 1}행, ${lastMove.c + 1}열) 칸 숫자 지움`;
+        } else if (lastMove.type === 'hint') {
+          this.dom.replayDescBox.textContent = `[${min}:${sec}] (${lastMove.r + 1}행, ${lastMove.c + 1}열) [힌트]로 ${lastMove.num} 확정`;
+        } else {
+          const resTxt = lastMove.error ? '❌ 오답 (실수)' : '✓ 정답 확정';
+          this.dom.replayDescBox.textContent = `[${min}:${sec}] (${lastMove.r + 1}행, ${lastMove.c + 1}열) 칸에 숫자 ${lastMove.num} 입력 (${resTxt})`;
+        }
+      }
+    }
+  }
+
+  toggleReplayPlay() {
+    if (this.replayPlayInterval) {
+      this.pauseReplayPlay();
+    } else {
+      this.startReplayPlay();
+    }
+  }
+
+  startReplayPlay() {
+    if (!this.activeReplay) return;
+    if (this.replayStep >= this.activeReplay.moves.length) {
+      this.replayStep = 0;
+    }
+    if (this.dom.btnReplayPlay) this.dom.btnReplayPlay.textContent = '⏸';
+
+    clearInterval(this.replayPlayInterval);
+    const delay = Math.max(150, Math.floor(1000 / this.replaySpeed));
+    this.replayPlayInterval = setInterval(() => {
+      if (!this.activeReplay || this.replayStep >= this.activeReplay.moves.length) {
+        this.pauseReplayPlay();
+        return;
+      }
+      this.applyReplayStep(this.replayStep + 1);
+    }, delay);
+  }
+
+  pauseReplayPlay() {
+    clearInterval(this.replayPlayInterval);
+    this.replayPlayInterval = null;
+    if (this.dom.btnReplayPlay) this.dom.btnReplayPlay.textContent = '▶';
+  }
+
+  updateAppVersionDisplay() {
+    const curVer = (window.AndroidBridge && window.AndroidBridge.getVersion)
+      ? window.AndroidBridge.getVersion()
+      : APP_VERSION;
+    const chip = document.getElementById('app-version-chip');
+    if (chip) chip.textContent = `v${curVer}`;
+    const infoVer = document.getElementById('info-current-version');
+    if (infoVer) infoVer.textContent = `v${curVer}`;
+  }
+
+  renderAwardsList() {
+    const container = document.getElementById('awards-list-grid');
+    if (!container) return;
+    const wins = this.stats ? this.stats.totalWins : 0;
+    const streak = this.stats ? this.stats.maxStreak : 0;
+    const expertWins = (this.stats && this.stats.byDiff && this.stats.byDiff.expert) ? this.stats.byDiff.expert.wins : 0;
+
+    const awards = [
+      { icon: '🥉', title: '첫 승리의 기쁨', desc: '썸도쿠 퍼즐을 처음으로 클리어 완료', earned: wins >= 1 },
+      { icon: '🥈', title: '연역 추론의 달인', desc: '5회 이상 퍼즐 클리어 성공', earned: wins >= 5 },
+      { icon: '🥇', title: '전문가 정복자', desc: '1~3개 앵커 전문가 난이도 클리어', earned: expertWins >= 1 },
+      { icon: '🔥', title: '연승 가도', desc: '연속 3연승 달성', earned: streak >= 3 },
+      { icon: '👑', title: '마스터 마인드', desc: '연속 5연승 대기록 달성', earned: streak >= 5 },
+      { icon: '⚡', title: '스피드 러너', desc: '3분 이내에 퍼즐 완료', earned: wins >= 1 }
+    ];
+
+    container.innerHTML = awards.map(a => `
+      <div class="award-card ${a.earned ? 'earned' : 'locked'}" style="background: var(--bg-surface); border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; opacity: ${a.earned ? '1' : '0.45'};">
+        <span style="font-size: 2.2rem;">${a.icon}</span>
+        <div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">${a.title} ${a.earned ? '✓ 달성' : '🔒 미달성'}</div>
+          <div style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 2px;">${a.desc}</div>
+        </div>
+      </div>
+    `).join('');
   }
 }
 

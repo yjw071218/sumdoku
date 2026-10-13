@@ -114,7 +114,60 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        webView.loadUrl("file:///android_asset/index.html");
+        loadApp();
+    }
+
+    private String getApkVersionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "1.0.9";
+        }
+    }
+
+    private static boolean isVersionGreater(String v1, String v2) {
+        if (v1 == null) return false;
+        if (v2 == null) return true;
+        try {
+            String[] parts1 = v1.replace("v", "").trim().split("\\.");
+            String[] parts2 = v2.replace("v", "").trim().split("\\.");
+            int max = Math.max(parts1.length, parts2.length);
+            for (int i = 0; i < max; i++) {
+                int n1 = i < parts1.length ? Integer.parseInt(parts1[i].replaceAll("\\D+", "")) : 0;
+                int n2 = i < parts2.length ? Integer.parseInt(parts2[i].replaceAll("\\D+", "")) : 0;
+                if (n1 > n2) return true;
+                if (n1 < n2) return false;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private static boolean isVersionGreaterOrEqual(String v1, String v2) {
+        if (v1 == null && v2 == null) return true;
+        if (v1 != null && v1.equals(v2)) return true;
+        return isVersionGreater(v1, v2);
+    }
+
+    private void loadApp() {
+        File customDir = new File(getFilesDir(), "www");
+        File customIndex = new File(customDir, "index.html");
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String hotVersion = prefs.getString(KEY_HOT_VERSION, null);
+        String apkVersion = getApkVersionName();
+
+        // APK 버전이 기존 hot_update 버전과 같거나 더 높으면 불필요한 구버전 캐시 삭제 후 APK 에셋 로드
+        if (hotVersion != null && isVersionGreaterOrEqual(apkVersion, hotVersion)) {
+            deleteDir(customDir);
+            prefs.edit().remove(KEY_HOT_VERSION).apply();
+            hotVersion = null;
+        }
+
+        if (hotVersion != null && customIndex.exists()) {
+            webView.loadUrl("file://" + customIndex.getAbsolutePath());
+        } else {
+            webView.loadUrl("file:///android_asset/index.html");
+        }
     }
 
     private BattleServer battleServer;
@@ -161,14 +214,11 @@ public class MainActivity extends Activity {
         public String getVersion() {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
             String hotVersion = prefs.getString(KEY_HOT_VERSION, null);
-            if (hotVersion != null && !hotVersion.isEmpty()) {
+            String apkVersion = getApkVersionName();
+            if (hotVersion != null && !hotVersion.isEmpty() && isVersionGreater(hotVersion, apkVersion)) {
                 return hotVersion;
             }
-            try {
-                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            } catch (Exception e) {
-                return "1.0.4";
-            }
+            return apkVersion;
         }
 
         @JavascriptInterface
@@ -222,7 +272,7 @@ public class MainActivity extends Activity {
 
                         mainHandler.postDelayed(() -> {
                             Toast.makeText(MainActivity.this, "v" + versionTag + " 버전으로 인앱 업데이트되었습니다!", Toast.LENGTH_SHORT).show();
-                            webView.reload();
+                            loadApp();
                         }, 500);
                     } else {
                         sendError("다운로드된 파일 검증에 실패했습니다.");
@@ -308,7 +358,7 @@ public class MainActivity extends Activity {
             }
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
             prefs.edit().remove(KEY_HOT_VERSION).apply();
-            mainHandler.post(() -> webView.reload());
+            mainHandler.post(() -> loadApp());
         }
     }
 

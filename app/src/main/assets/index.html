@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.8</div>
+          <div class="version-chip" id="app-version-chip">v1.0.9</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -111,7 +111,7 @@
         </button>
         <button class="nav-tab" data-tab="stats">
           <span class="tab-icon">👤</span>
-          <span class="tab-label">설정/전적</span>
+          <span class="tab-label">나</span>
         </button>
       </nav>
     </section>
@@ -175,7 +175,7 @@
         </button>
         <button class="nav-tab" data-tab="stats">
           <span class="tab-icon">👤</span>
-          <span class="tab-label">설정/전적</span>
+          <span class="tab-label">나</span>
         </button>
       </nav>
     </section>
@@ -442,198 +442,437 @@
          4. 설정 및 전적 화면 (Settings & Stats View - Images 3, 5, 6)
          ==================================================================== -->
     <section id="view-stats" class="view">
-      <div class="stats-container">
-        <header class="stats-header">
-          <button class="glass-icon-btn btn-back-home">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h2>설정 및 전적</h2>
-          <div style="width:36px;"></div>
+      <div class="hub-container">
+        
+        <!-- Hub Top Header (Image 2: Left '나', Right '설정') -->
+        <header class="hub-header">
+          <div class="hub-header-left">
+            <button class="glass-icon-btn btn-back-home mobile-only" title="메인으로">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <h2 class="hub-col-title">나</h2>
+          </div>
+          <div class="hub-header-right">
+            <h2 class="hub-col-title" id="hub-active-title">설정</h2>
+          </div>
         </header>
 
-        <main class="stats-content">
-          <!-- Overview Cards -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="stat-label">총 게임</span>
-              <span class="stat-value" id="stat-total-games">0</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">승리 수</span>
-              <span class="stat-value" id="stat-total-wins">0</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">승률</span>
-              <span class="stat-value" id="stat-win-rate">0%</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">최고 연승</span>
-              <span class="stat-value" id="stat-max-streak">0연승</span>
-            </div>
-          </div>
-
-          <!-- 4 Difficulty Breakdown -->
-          <h3 class="section-title">난이도별 최단 기록 (4단계)</h3>
-          <div class="diff-records">
-            <div class="diff-record-item">
-              <div class="diff-info">
-                <span class="diff-tag easy">초급</span>
-                <span class="diff-wins" id="stat-easy-wins">0승</span>
-              </div>
-              <div class="best-time" id="stat-easy-best">기록 없음</div>
-            </div>
-
-            <div class="diff-record-item">
-              <div class="diff-info">
-                <span class="diff-tag medium">중급</span>
-                <span class="diff-wins" id="stat-medium-wins">0승</span>
-              </div>
-              <div class="best-time" id="stat-medium-best">기록 없음</div>
-            </div>
-
-            <div class="diff-record-item">
-              <div class="diff-info">
-                <span class="diff-tag hard">고급</span>
-                <span class="diff-wins" id="stat-hard-wins">0승</span>
-              </div>
-              <div class="best-time" id="stat-hard-best">기록 없음</div>
-            </div>
-
-            <div class="diff-record-item">
-              <div class="diff-info">
-                <span class="diff-tag expert">전문가</span>
-                <span class="diff-wins" id="stat-expert-wins">0승</span>
-              </div>
-              <div class="best-time" id="stat-expert-best">기록 없음</div>
-            </div>
-          </div>
-
-          <!-- Gameplay Settings List (Image 3, 5, 6 스타일 토글) -->
-          <h3 class="section-title">게임 플레이 설정</h3>
-          <div class="settings-list-card">
+        <div class="hub-main-split">
+          <!-- LEFT COLUMN: Card Groups (Image 2) -->
+          <aside class="hub-sidebar">
             
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">사운드 효과</span>
-                <span class="s-desc">입력, 정답 및 승리 효과음을 재생합니다</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-sound" checked>
-                <span class="slider"></span>
-              </label>
+            <!-- Group 1: 어워드 -->
+            <div class="hub-card-group">
+              <button class="hub-menu-item" data-hub-panel="panel-awards" data-hub-title="어워드">
+                <span class="hub-icon-box icon-trophy">🏆</span>
+                <span class="hub-item-label">어워드</span>
+              </button>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">실수 한도 (3회 제한)</span>
-                <span class="s-desc">게임당 실수 한도를 3회로 엄격히 제한합니다</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-mistake-limit" checked>
-                <span class="slider"></span>
-              </label>
+            <!-- Group 2: 통계 & 리플레이 -->
+            <div class="hub-card-group">
+              <button class="hub-menu-item" data-hub-panel="panel-stats" data-hub-title="통계">
+                <span class="hub-icon-box icon-stats">📊</span>
+                <span class="hub-item-label">통계</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-replays" data-hub-title="최근 리플레이 (20판)">
+                <span class="hub-icon-box icon-replays">🎬</span>
+                <div class="hub-item-content">
+                  <span class="hub-item-label">최근 리플레이</span>
+                  <span class="hub-item-badge">20판</span>
+                </div>
+              </button>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">실수 자동 확인</span>
-                <span class="s-desc">최종 정답과 일치하지 않는 숫자를 즉시 표시합니다</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-auto-check" checked>
-                <span class="slider"></span>
-              </label>
+            <!-- Group 3: 설정 (Active) & 플레이 방법 -->
+            <div class="hub-card-group">
+              <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="설정">
+                <span class="hub-icon-box icon-settings">⚙️</span>
+                <span class="hub-item-label">설정</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-howtoplay" data-hub-title="플레이 방법">
+                <span class="hub-icon-box icon-guide">🎓</span>
+                <span class="hub-item-label">플레이 방법</span>
+              </button>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">영역 강조 표시</span>
-                <span class="s-desc">선택된 셀에 대한 블록, 열 및 행을 강조 표시합니다</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-highlight-cross" checked>
-                <span class="slider"></span>
-              </label>
+            <!-- Group 4: 도움말, 게임 정보, 개인정보 -->
+            <div class="hub-card-group">
+              <button class="hub-menu-item" data-hub-panel="panel-help" data-hub-title="도움말">
+                <span class="hub-icon-box icon-help">❓</span>
+                <span class="hub-item-label">도움말</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-gameinfo" data-hub-title="게임 정보">
+                <span class="hub-icon-box icon-info">ℹ️</span>
+                <span class="hub-item-label">게임 정보</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-privacy" data-hub-title="개인 정보 보호 권리">
+                <span class="hub-icon-box icon-privacy">📋</span>
+                <span class="hub-item-label">개인 정보 보호 권리</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-privacy-opt" data-hub-title="개인정보 판매 거부">
+                <span class="hub-icon-box icon-optout">👤</span>
+                <span class="hub-item-label">내 개인정보 판매 및 공유하지 않기</span>
+              </button>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">같은 숫자 강조 표시</span>
-                <span class="s-desc">숫자가 있는 셀을 선택하면 같은 숫자들을 강조 표시합니다</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-highlight-same" checked>
-                <span class="slider"></span>
-              </label>
+            <!-- Group 5: 수학 퍼즐, 광고 제거 -->
+            <div class="hub-card-group">
+              <button class="hub-menu-item" data-hub-panel="panel-math" data-hub-title="수학 퍼즐">
+                <span class="hub-icon-box icon-math">🔢</span>
+                <span class="hub-item-label">수학 퍼즐</span>
+              </button>
+              <button class="hub-menu-item" data-hub-panel="panel-noads" data-hub-title="광고 제거">
+                <span class="hub-icon-box icon-noads">🚫</span>
+                <span class="hub-item-label">광고 제거</span>
+              </button>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">중복 강조</span>
-                <span class="s-desc">각 행, 열, 블록에서 중복되는 숫자를 강조 표시합니다</span>
+          </aside>
+
+          <!-- RIGHT COLUMN: Active Panel -->
+          <main class="hub-content">
+            
+            <!-- PANEL: 설정 (Matching Image 2 Toggles) -->
+            <div id="panel-settings" class="hub-panel active">
+              <div class="settings-list-card">
+                
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">사운드</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-sound" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">자동 잠금</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-auto-lock">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">타이머</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-show-timer" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">점수</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-show-score" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">점수 애니메이션</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-score-anim" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">통계 메시지</span>
+                    <span class="s-desc">레벨을 완료한 사람들의 수에 관한 메시지 표시</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-stat-message" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">숫자 우선 입력</span>
+                    <span class="s-desc">숫자를 길게 눌러서 잠그고 여러 셀에 사용합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-digit-first">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">실수 한도</span>
+                    <span class="s-desc">게임당 실수 한도를 3회로 제한합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-mistake-limit" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">실수 자동 확인</span>
+                    <span class="s-desc">최종 스도쿠 해답과 일치하지 않는 숫자를 표시합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-auto-check" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">중복 강조</span>
+                    <span class="s-desc">각 행, 열, 블록에서 중복되는 숫자를 강조 표시합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-highlight-dup" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">영역 강조 표시</span>
+                    <span class="s-desc">선택된 셀에 대한 블록, 열 및 행을 강조 표시합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-highlight-cross" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">같은 숫자 강조 표시</span>
+                    <span class="s-desc">선택한 숫자와 동일한 모든 숫자를 강조합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-highlight-same" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">메모 자동 제거</span>
+                    <span class="s-desc">셀이 채워지면 해당 숫자를 관련 메모에서 자동 삭제합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-auto-notes" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">사용한 숫자 숨기기</span>
+                    <span class="s-desc">9개의 셀에 모두 채워 넣은 숫자를 키패드에서 비활성화합니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-hide-completed" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">다크 모드</span>
+                    <span class="s-desc">어두운 화면 테마로 눈의 피로를 줄입니다</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="setting-dark-theme">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
+                    <span class="s-title">메모(연필) 폰트 크기</span>
+                    <span class="s-desc">칸에 표시되는 후보수 메모 숫자의 크기를 조절합니다</span>
+                  </div>
+                  <select id="setting-notes-size" class="settings-select">
+                    <option value="normal">보통</option>
+                    <option value="large" selected>크게 (기본)</option>
+                    <option value="xlarge">아주 크게</option>
+                  </select>
+                </div>
+
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-highlight-dup" checked>
-                <span class="slider"></span>
-              </label>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">메모 자동 제거</span>
-                <span class="s-desc">셀이 채워지면 해당 숫자를 관련 메모에서 자동 삭제합니다</span>
+            <!-- PANEL: 최근 리플레이 (최근 20판) -->
+            <div id="panel-replays" class="hub-panel">
+              <div class="replay-panel-desc">
+                최근 플레이한 최대 20판의 수순을 한 수씩 돌려보거나 슬라이더로 재생할 수 있습니다.
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-auto-notes" checked>
-                <span class="slider"></span>
-              </label>
+              <div id="replay-list-container" class="replay-list-grid">
+                <!-- Javascript renders 20 replay cards -->
+              </div>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">사용한 숫자 숨기기</span>
-                <span class="s-desc">9개의 셀에 모두 채워 넣은 숫자를 키패드에서 비활성화합니다</span>
+            <!-- PANEL: 통계 -->
+            <div id="panel-stats" class="hub-panel">
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <span class="stat-label">총 게임</span>
+                  <span class="stat-value" id="stat-total-games">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">승리 수</span>
+                  <span class="stat-value" id="stat-total-wins">0</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">승률</span>
+                  <span class="stat-value" id="stat-win-rate">0%</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">최고 연승</span>
+                  <span class="stat-value" id="stat-max-streak">0연승</span>
+                </div>
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-hide-completed" checked>
-                <span class="slider"></span>
-              </label>
+
+              <h3 class="section-title">난이도별 최단 기록 (4단계)</h3>
+              <div class="diff-records">
+                <div class="diff-record-item">
+                  <div class="diff-info">
+                    <span class="diff-tag easy">초급</span>
+                    <span class="diff-wins" id="stat-easy-wins">0승</span>
+                  </div>
+                  <div class="best-time" id="stat-easy-best">기록 없음</div>
+                </div>
+
+                <div class="diff-record-item">
+                  <div class="diff-info">
+                    <span class="diff-tag medium">중급</span>
+                    <span class="diff-wins" id="stat-medium-wins">0승</span>
+                  </div>
+                  <div class="best-time" id="stat-medium-best">기록 없음</div>
+                </div>
+
+                <div class="diff-record-item">
+                  <div class="diff-info">
+                    <span class="diff-tag hard">고급</span>
+                    <span class="diff-wins" id="stat-hard-wins">0승</span>
+                  </div>
+                  <div class="best-time" id="stat-hard-best">기록 없음</div>
+                </div>
+
+                <div class="diff-record-item">
+                  <div class="diff-info">
+                    <span class="diff-tag expert">전문가</span>
+                    <span class="diff-wins" id="stat-expert-wins">0승</span>
+                  </div>
+                  <div class="best-time" id="stat-expert-best">기록 없음</div>
+                </div>
+              </div>
+
+              <div class="stats-actions">
+                <button id="btn-stats-reset" class="btn btn-secondary">전적 초기화</button>
+              </div>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">타이머 표시</span>
-                <span class="s-desc">게임 상단에 경과 시간 타이머를 표시합니다</span>
+            <!-- PANEL: 어워드 -->
+            <div id="panel-awards" class="hub-panel">
+              <div class="awards-grid" id="awards-list-grid">
+                <!-- Dynamically rendered awards -->
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="setting-show-timer" checked>
-                <span class="slider"></span>
-              </label>
             </div>
 
-            <div class="settings-item">
-              <div class="settings-info">
-                <span class="s-title">메모(연필) 폰트 크기</span>
-                <span class="s-desc">칸에 표시되는 후보수 메모 숫자의 크기를 조절합니다</span>
+            <!-- PANEL: 플레이 방법 -->
+            <div id="panel-howtoplay" class="hub-panel">
+              <div class="info-card">
+                <h3>🧩 썸도쿠(Sumdoku) 기본 규칙</h3>
+                <p>1. 각 행과 열, 3×3 블록에 1부터 9까지의 숫자가 중복 없이 하나씩 들어갑니다.</p>
+                <p>2. 점선으로 둘러싸인 케이지(Cage) 안의 숫자 합은 좌측 상단에 표시된 합계와 정확히 일치해야 합니다.</p>
+                <p>3. 하나의 케이지 안에서는 동일한 숫자가 중복될 수 없습니다.</p>
+                <h3 style="margin-top:16px;">💡 100% 연역 추론 기법</h3>
+                <p>• <strong>전문가 앵커 추론:</strong> 전문가는 1~3개의 확정 단서(1칸 케이지 또는 고유 케이지)로부터 논리적 실마리를 풀어갑니다.</p>
+                <p>• <strong>45의 법칙 (Rule of 45):</strong> 3×3 블록 또는 1개 행의 모든 수의 합은 항상 45입니다. 박스를 삐져나온 케이지의 차이로 특정 칸을 100% 확정할 수 있습니다.</p>
+                <p>• <strong>유일 조합 케이지:</strong> 2칸 3(1+2), 2칸 4(1+3), 2칸 16(7+9), 2칸 17(8+9) 등은 후보수를 급격히 좁혀줍니다.</p>
               </div>
-              <select id="setting-notes-size" class="settings-select">
-                <option value="normal">보통</option>
-                <option value="large" selected>크게 (기본)</option>
-                <option value="xlarge">아주 크게</option>
-              </select>
             </div>
 
-          </div>
+            <!-- PANEL: 도움말 -->
+            <div id="panel-help" class="hub-panel">
+              <div class="info-card">
+                <h3>❓ 자주 묻는 질문 (FAQ)</h3>
+                <p>• <strong>Q. 숫자를 메모(Pencil)하려면 어떻게 하나요?</strong><br>
+                하단의 <strong>[메모]</strong> 토글 버튼을 켜시거나, 칸을 빠르게 두 번 탭(더블 탭)하시면 직접 타이핑 키보드가 열립니다.</p>
+                <p>• <strong>Q. 찍어서 풀어야 하나요?</strong><br>
+                아닙니다. 썸도쿠의 모든 퍼즐은 찍기 없이 100% 연역적 추론만으로 정답이 유일하게 풀리도록 정밀 검증되어 생성됩니다.</p>
+                <p>• <strong>Q. Wi-Fi 배틀은 어떻게 하나요?</strong><br>
+                동일한 Wi-Fi(공유기)에 연결된 두 기기 중 한 기기가 방을 만들고, 다른 기기에서 화면에 표시된 방 번호나 IP를 입력하여 참가합니다.</p>
+              </div>
+            </div>
 
-          <div class="stats-actions">
-            <button id="btn-stats-reset" class="btn btn-secondary">전적 초기화</button>
-          </div>
-        </main>
+            <!-- PANEL: 게임 정보 -->
+            <div id="panel-gameinfo" class="hub-panel">
+              <div class="info-card">
+                <h3>ℹ️ 게임 정보 & 업데이트</h3>
+                <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.9</strong></p>
+                <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
+                <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 인앱 업데이트</button>
+                  <button id="btn-info-github" class="btn btn-secondary">GitHub 방문</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL: 개인 정보 보호 권리 -->
+            <div id="panel-privacy" class="hub-panel">
+              <div class="info-card">
+                <h3>📋 개인 정보 보호 정책</h3>
+                <p>• 썸도쿠는 사용자의 어떠한 개인정보도 외부 서버로 수집, 저장 또는 전송하지 않습니다.</p>
+                <p>• 모든 게임 전적, 최근 20판 리플레이, 개인 설정은 기기 로컬 저장소에만 안전하게 보관됩니다.</p>
+              </div>
+            </div>
+
+            <!-- PANEL: 내 개인정보 판매 및 공유하지 않기 -->
+            <div id="panel-privacy-opt" class="hub-panel">
+              <div class="info-card">
+                <h3>👤 개인정보 판매 및 공유 거부 권리</h3>
+                <p>• 본 앱은 외부 광고 SDK나 사용자 추적 코드가 일절 포함되어 있지 않습니다.</p>
+                <p>• 따라서 어떠한 개인정보도 판매되거나 제3자에게 제공되지 않습니다.</p>
+              </div>
+            </div>
+
+            <!-- PANEL: 수학 퍼즐 -->
+            <div id="panel-math" class="hub-panel">
+              <div class="info-card">
+                <h3>🔢 수학 퍼즐 모드</h3>
+                <p>케이지 합계 추론과 결합된 수학 퍼즐 모드(스피드 레이스, 타임어택 점수전)를 홈 화면 및 새 게임 모달에서 자유롭게 즐기실 수 있습니다.</p>
+              </div>
+            </div>
+
+            <!-- PANEL: 광고 제거 -->
+            <div id="panel-noads" class="hub-panel">
+              <div class="info-card">
+                <h3>🚫 100% 완전 무광고 (Ad-Free)</h3>
+                <p>🎉 썸도쿠는 영구적으로 광고가 전혀 없는 순수 오픈소스 퍼즐 앱입니다.</p>
+                <p>결제나 광고 시청 없이 모든 기능, 모드, 전적, 리플레이를 무료로 무제한 이용하실 수 있습니다.</p>
+              </div>
+            </div>
+
+          </main>
+        </div>
       </div>
 
-      <!-- Bottom Navigation Bar -->
+      <!-- Bottom Navigation Bar (Image 2: 메인, 일일 도전, 나) -->
       <nav class="bottom-nav">
         <button class="nav-tab" data-tab="home">
           <span class="tab-icon">🏠</span>
@@ -645,7 +884,7 @@
         </button>
         <button class="nav-tab active" data-tab="stats">
           <span class="tab-icon">👤</span>
-          <span class="tab-label">설정/전적</span>
+          <span class="tab-label">나</span>
         </button>
       </nav>
     </section>
@@ -1013,6 +1252,65 @@
             <button id="btn-result-home" class="btn btn-outline">홈으로</button>
           </div>
         </div>
+    <!-- Replay Viewer Studio Modal (최근 20판 리플레이 플레이어) -->
+    <div id="modal-replay-viewer" class="modal-backdrop hidden">
+      <div class="modal-card modal-replay-card">
+        
+        <!-- Replay Header -->
+        <header class="replay-header">
+          <button id="btn-replay-close" class="glass-icon-btn" title="닫기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <div class="replay-title-wrap">
+            <div class="replay-title" id="replay-meta-title">수도쿠 리플레이</div>
+            <div class="replay-subtitle" id="replay-meta-sub">2026-10-13 · 전문가 · 2,400점</div>
+          </div>
+          <div class="replay-step-pill" id="replay-step-pill">0 / 0 수</div>
+        </header>
+
+        <!-- Replay Main Content -->
+        <div class="replay-main">
+          <!-- 9x9 Board Frame for Replay -->
+          <div class="replay-board-wrap">
+            <div id="replay-board" class="board-grid"></div>
+          </div>
+
+          <!-- Replay Controls & Timeline -->
+          <div class="replay-controls-panel">
+            
+            <!-- Move Description -->
+            <div class="replay-desc-box" id="replay-desc-box">
+              재생 버튼을 누르거나 슬라이더를 움직여 수순을 확인하세요.
+            </div>
+
+            <!-- Slider Scrub -->
+            <div class="replay-slider-wrap">
+              <input type="range" id="replay-timeline" min="0" max="0" value="0" class="replay-slider">
+            </div>
+
+            <!-- Playback Buttons -->
+            <div class="replay-playback-bar">
+              <button id="btn-replay-first" class="btn-ctrl" title="처음으로">⏮</button>
+              <button id="btn-replay-prev" class="btn-ctrl" title="이전 수">◀</button>
+              <button id="btn-replay-play" class="btn-ctrl btn-play-main" title="재생/일시정지">▶</button>
+              <button id="btn-replay-next" class="btn-ctrl" title="다음 수">▶</button>
+              <button id="btn-replay-last" class="btn-ctrl" title="마지막으로">⏭</button>
+            </div>
+
+            <!-- Speed & Extra options -->
+            <div class="replay-speed-bar">
+              <span class="speed-label">배속:</span>
+              <button class="btn-speed active" data-speed="1">1x</button>
+              <button class="btn-speed" data-speed="2">2x</button>
+              <button class="btn-speed" data-speed="4">4x</button>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
 
