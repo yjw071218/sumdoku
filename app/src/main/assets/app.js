@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.21";
+const APP_VERSION = "1.0.22";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -945,6 +945,11 @@ class SumdokuApp {
       genSubtitle: document.getElementById('gen-subtitle'),
       genPreviewBoard: document.getElementById('gen-preview-board'),
       genPreviewBadge: document.getElementById('gen-preview-badge'),
+      genPreviewSubtext: document.getElementById('gen-preview-subtext'),
+      genStep1: document.getElementById('gen-step-1'),
+      genStep2: document.getElementById('gen-step-2'),
+      genStep25: document.getElementById('gen-step-25'),
+      genStep3: document.getElementById('gen-step-3'),
 
       modalSettings: document.getElementById('modal-settings'),
       btnSettingsClose: document.getElementById('btn-settings-close'),
@@ -1117,25 +1122,28 @@ class SumdokuApp {
   }
 
   // ----------------- 맵 생성 진행 오버레이 및 실시간 스마트 케이지 시각화 -----------------
-  showGeneratingOverlay(diff = 'expert') {
+  showGeneratingOverlay(diff = 'expert', customTitle = null) {
     if (!this.dom.generatingOverlay) return;
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const diffKr = diffNames[diff] || diff;
     if (this.dom.genTitle) {
-      this.dom.genTitle.textContent = `${diffKr} 연역 추론 맵 생성 중`;
+      this.dom.genTitle.textContent = customTitle || `${diffKr} 연역 추론 맵 생성 중`;
     }
     if (this.dom.genSubtitle) {
-      this.dom.genSubtitle.textContent = '찍지 않고 100% 논리로만 풀 수 있는 퍼즐을 생성하고 검증합니다';
+      this.dom.genSubtitle.textContent = '1 ➔ 2 ➔ ★2.5 ➔ 3단계 파이프라인으로 순수 연역 퍼즐을 생성합니다';
     }
     if (this.dom.genProgressBar) {
-      this.dom.genProgressBar.style.width = '12%';
+      this.dom.genProgressBar.style.width = '15%';
     }
     if (this.dom.genStatusText) {
-      this.dom.genStatusText.textContent = '솔루션 베이스 빌드 중...';
+      this.dom.genStatusText.textContent = '1단계: 9×9 정답판 생성 중...';
     }
     if (this.dom.genPercent) {
-      this.dom.genPercent.textContent = '12%';
+      this.dom.genPercent.textContent = '15%';
     }
+
+    // 4단계 파이프라인 스텝 배지 초기화
+    this.updatePipelineStepBadges('1', 'active');
 
     // 81칸 미니 프리뷰 보드 초기화
     if (this.dom.genPreviewBoard) {
@@ -1150,10 +1158,39 @@ class SumdokuApp {
       }
     }
     if (this.dom.genPreviewBadge) {
-      this.dom.genPreviewBadge.textContent = '✨ 스마트 케이지 실시간 분할 및 연역 추론 시각화';
+      this.dom.genPreviewBadge.textContent = '✨ 4계층 연역 파이프라인 실시간 시각화';
+    }
+    if (this.dom.genPreviewSubtext) {
+      this.dom.genPreviewSubtext.textContent = '컴퓨터 솔버 0.1ms 컷트 & 연역 엔진 가동 중';
     }
 
     this.dom.generatingOverlay.classList.remove('hidden');
+  }
+
+  updatePipelineStepBadges(currentStep, status = 'active') {
+    const steps = [
+      { key: '1', el: this.dom.genStep1 },
+      { key: '2', el: this.dom.genStep2 },
+      { key: '2.5', el: this.dom.genStep25 },
+      { key: '3', el: this.dom.genStep3 }
+    ];
+
+    const stepOrder = ['1', '2', '2.5', '3'];
+    const curIdx = stepOrder.indexOf(String(currentStep));
+
+    steps.forEach((s, idx) => {
+      if (!s.el) return;
+      s.el.className = 'gen-step-badge';
+      if (idx < curIdx) {
+        s.el.classList.add('passed');
+      } else if (idx === curIdx) {
+        if (status === 'rejected') s.el.classList.add('rejected');
+        else if (status === 'passed' || status === 'completed') s.el.classList.add('passed');
+        else s.el.classList.add('active');
+      } else {
+        s.el.classList.add('pending');
+      }
+    });
   }
 
   updateGeneratingProgress(p) {
@@ -1168,7 +1205,31 @@ class SumdokuApp {
       this.dom.genPercent.textContent = `${p.percent || 15}%`;
     }
 
-    // 스마트 케이지 실시간 프리뷰 렌더링
+    // 1, 2, 2.5, 3단계 스텝 배지 상태 갱신
+    if (p.step) {
+      this.updatePipelineStepBadges(p.step, p.stepStatus || 'active');
+    }
+
+    // 서브텍스트 상세 안내
+    if (this.dom.genPreviewSubtext) {
+      if (p.step === '2.5' && p.stepStatus === 'rejected') {
+        this.dom.genPreviewSubtext.textContent = `⚡ 0.1ms 컷트: 복수해 불량 맵 #${p.rejectedCount || p.attempt}회 즉시 탈락`;
+      } else if (p.step === '2.5' && p.stepStatus === 'passed') {
+        this.dom.genPreviewSubtext.textContent = `✓ 유일해 통과: 불량 맵 #${p.rejectedCount || 0}회 컷트 후 유일해 확보!`;
+      } else if (p.step === '3') {
+        if (p.stepStatus === 'completed') {
+          this.dom.genPreviewSubtext.textContent = `🎉 100% 순수 연역 논리 판별 성공! (81/81칸 확정)`;
+        } else {
+          this.dom.genPreviewSubtext.textContent = `인간 연역 추론 검증 중 (${p.solvedCount || 0}/81칸 · 시도 #${p.attempt})`;
+        }
+      } else if (p.step === '2') {
+        this.dom.genPreviewSubtext.textContent = `2단계: 2~4칸 스마트 폴리오미노 분할 완료`;
+      } else {
+        this.dom.genPreviewSubtext.textContent = `1단계: 9×9 라틴 방진 완성 스도쿠 판 생성`;
+      }
+    }
+
+    // 스마트 케이지 및 연역 확정 칸 미니 프리뷰 렌더링
     if (p.cages && this.dom.genPreviewBoard) {
       const palette = [
         '#bfdbfe', '#bbf7d0', '#fef08a', '#fed7aa', '#fbcfe8',
@@ -1191,9 +1252,24 @@ class SumdokuApp {
           }
         });
       });
+
+      // 3단계에서 연역 확정된 셀 하이라이트
+      if (p.solvedCells && Array.isArray(p.solvedCells)) {
+        p.solvedCells.forEach(([r, c]) => {
+          const el = document.getElementById(`gen-cell-${r}-${c}`);
+          if (el && !el.classList.contains('anchor')) {
+            el.classList.add('solved');
+            if (p.solution && p.solution[r]) {
+              el.textContent = p.solution[r][c];
+            }
+          }
+        });
+      }
+
       if (this.dom.genPreviewBadge) {
-        const solvedTxt = p.solvedCount !== undefined ? ` · 81칸 중 ${p.solvedCount}칸 연역 완료` : '';
-        this.dom.genPreviewBadge.textContent = `✨ 케이지 ${p.cages.length}개 실시간 형성${solvedTxt}`;
+        const solvedTxt = p.solvedCount !== undefined ? ` · 확정 ${p.solvedCount}/81칸` : '';
+        const cutTxt = p.rejectedCount ? ` · 컷트 ${p.rejectedCount}회` : '';
+        this.dom.genPreviewBadge.textContent = `✨ 케이지 ${p.cages.length}개${solvedTxt}${cutTxt}`;
       }
     }
   }

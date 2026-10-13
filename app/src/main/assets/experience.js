@@ -142,6 +142,7 @@ const baseOpenDifficulty = SumdokuApp.prototype.openDifficultyModal;
 SumdokuApp.prototype.openDifficultyModal = function() {baseOpenDifficulty.call(this); this.syncQuickSettings();};
 
 SumdokuApp.prototype.cancelRoomPreparation = function() {
+  this.hideGeneratingOverlay();
   this.roomGeneration = (this.roomGeneration || 0) + 1;
   if (this.roomWorker) this.roomWorker.terminate();
   this.roomWorker = null;
@@ -190,13 +191,18 @@ SumdokuApp.prototype.prepareBattleRoom = function() {
   button.disabled = true; button.textContent = '퍼즐 준비 중…';
   this.dom.battleWaitText.textContent = '화면을 자유롭게 조작할 수 있습니다. 닫으면 준비가 취소됩니다.';
   
+  // 실시간 1, 2, 2.5, 3단계 생성 UI 오버레이 즉시 오픈
+  this.showGeneratingOverlay(this.battleDiff || 'expert', '배틀 퍼즐 생성 중 (방 준비)');
+
   const fail = message => {
+    this.hideGeneratingOverlay();
     if (token !== this.roomGeneration) return;
     if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
     button.disabled = false; button.textContent = '다시 준비하기'; this.dom.battleWaitText.textContent = message;
   };
 
   const publishRoom = puzzleData => {
+    this.hideGeneratingOverlay();
     if (token !== this.roomGeneration) return;
     if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
     try {
@@ -231,47 +237,21 @@ SumdokuApp.prototype.prepareBattleRoom = function() {
     button.textContent = '퍼즐 준비 중…';
     this.generator.generateAsync(this.battleDiff || 'expert', null, progress => {
       if (token !== this.roomGeneration) return;
+      this.updateGeneratingProgress(progress);
       if (progress && progress.attempt) button.textContent = `퍼즐 준비 중 · ${progress.attempt}회`;
     }).then(puzzle => {
+      this.hideGeneratingOverlay();
       if (token !== this.roomGeneration) return;
       if (puzzle) publishRoom(puzzle);
       else fail('퍼즐 생성에 실패했습니다. 다시 시도해 주세요.');
     }).catch(err => {
+      this.hideGeneratingOverlay();
       fail(err?.message || '퍼즐 생성 중 오류가 발생했습니다.');
     });
   };
 
-  // Android WebView의 file:/// 스키마에서는 Web Worker 외부 스크립트 로딩이 기본 차단되므로 안전하게 비동기 생성기로 직행
-  const isFileProtocol = window.location.protocol === 'file:';
-  if (isFileProtocol || typeof Worker === 'undefined') {
-    startMainThreadAsyncGeneration();
-    return;
-  }
-
-  try {
-    this.roomWorker = new Worker('puzzle-worker.js');
-    this.roomWorker.onerror = () => {
-      console.warn('Worker onerror 발생, 메인 비동기 생성기로 자동 전환합니다.');
-      if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
-      startMainThreadAsyncGeneration();
-    };
-    this.roomWorker.onmessage = async ({data}) => {
-      if (token !== this.roomGeneration) return;
-      if (data.error) {
-        console.warn('Worker 에러 발생, 메인 비동기 생성기로 자동 전환합니다:', data.error);
-        if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
-        startMainThreadAsyncGeneration();
-        return;
-      }
-      if (data.progress) { button.textContent = `퍼즐 검증 중 · ${data.progress.attempt}회`; return; }
-      if (!data.puzzle) return;
-      publishRoom(data.puzzle);
-    };
-    this.roomWorker.postMessage({difficulty:this.battleDiff || 'expert'});
-  } catch (error) {
-    console.warn('Worker 인스턴스 생성 실패, 메인 비동기 생성기로 자동 전환합니다:', error);
-    startMainThreadAsyncGeneration();
-  }
+  // 1, 2, 2.5, 3단계 생성 UI를 실시간으로 직접 스트리밍하기 위해 비동기 생성기로 직행
+  startMainThreadAsyncGeneration();
 };
 
 SumdokuApp.prototype.connectToHost = async function() {

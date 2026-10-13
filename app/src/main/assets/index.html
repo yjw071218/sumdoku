@@ -27,7 +27,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.21</div>
+          <div class="version-chip" id="app-version-chip">v1.0.22</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -1505,12 +1505,36 @@
           </div>
         </div>
 
+        <!-- 4-Stage Pipeline Stepper (1 -> 2 -> 2.5 -> 3) -->
+        <div class="gen-pipeline-steps" id="gen-pipeline-steps">
+          <div class="gen-step-badge pending" id="gen-step-1">
+            <span class="gen-step-num">1</span>
+            <span class="gen-step-name">정답판</span>
+          </div>
+          <div class="gen-step-arrow">➔</div>
+          <div class="gen-step-badge pending" id="gen-step-2">
+            <span class="gen-step-num">2</span>
+            <span class="gen-step-name">케이지</span>
+          </div>
+          <div class="gen-step-arrow">➔</div>
+          <div class="gen-step-badge pending" id="gen-step-25">
+            <span class="gen-step-num">★2.5</span>
+            <span class="gen-step-name">초고속 유일해</span>
+          </div>
+          <div class="gen-step-arrow">➔</div>
+          <div class="gen-step-badge pending" id="gen-step-3">
+            <span class="gen-step-num">3</span>
+            <span class="gen-step-name">인간 연역</span>
+          </div>
+        </div>
+
         <!-- Real-time Smart Cage Visualizer -->
         <div class="gen-preview-container">
           <div class="gen-preview-badge" id="gen-preview-badge">✨ 스마트 케이지 실시간 분할 및 연역 추론 시각화</div>
           <div class="gen-preview-board-wrap">
             <div id="gen-preview-board" class="gen-preview-board"></div>
           </div>
+          <div class="gen-preview-subtext" id="gen-preview-subtext">초고속 백트래킹 솔버로 불량 맵 즉시 컷트 중</div>
         </div>
         
         <div class="gen-progress-track">

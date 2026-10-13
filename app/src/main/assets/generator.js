@@ -98,7 +98,7 @@ class SumdokuGenerator {
     throw new Error('추론 가능한 퍼즐을 찾지 못했습니다. 다시 시도해 주세요.');
   }
 
-  // 비동기 맵 생성 및 진행 상황 실시간 피드백 지원
+  // 비동기 맵 생성 및 1, 2, 2.5, 3단계 진행 상황 실시간 피드백 지원
   async generateAsync(diff = 'expert', customRng = null, onProgress = null) {
     const rng = customRng || this.rng;
 
@@ -113,17 +113,22 @@ class SumdokuGenerator {
     const diffKr = diffNames[diff] || diff;
 
     let attempts = 0;
+    let rejectedCount = 0;
     const maxAttempts = 5000;
 
+    // [1단계 시작 알림]
     if (onProgress) {
       onProgress({
         diffKr,
-        step: 1,
-        message: '9x9 기본 완성 스도쿠 판 생성 중...',
+        step: '1',
+        stepStatus: 'active',
+        stepName: '정답판 생성',
+        message: '1단계: 9×9 완성 스도쿠 정답판 생성 중...',
         percent: 15,
-        attempt: 0
+        attempt: 0,
+        rejectedCount: 0
       });
-      await new Promise(r => setTimeout(r, 16));
+      await new Promise(r => setTimeout(r, 20));
     }
 
     while (attempts < maxAttempts) {
@@ -141,42 +146,87 @@ class SumdokuGenerator {
       const singles = cages.filter(c => c.cells.length === 1);
       if (singles.length !== currentAnchors) continue;
 
+      // 첫 1~2회 시도에서는 2단계 케이지 형성 모습을 즉각 UI에 전송
+      if (attempts <= 2 && onProgress) {
+        onProgress({
+          diffKr,
+          step: '2',
+          stepStatus: 'active',
+          stepName: '케이지 분할',
+          message: `2단계: 스마트 케이지 분할 (${cages.length}개 케이지 형성)`,
+          percent: 30,
+          attempt: attempts,
+          rejectedCount,
+          cages,
+          solution
+        });
+        await new Promise(r => setTimeout(r, 10));
+      }
+
       // [★ 2.5단계: 초고속 컴퓨터 솔버 검증]
       // 복수해/무해 맵을 0.1ms 만에 컷트
       const isUnique = this.isSolutionUniqueFast(cages);
       if (!isUnique) {
-        if (attempts % 4 === 0 && onProgress) {
-          const pct = Math.min(92, 15 + Math.floor((attempts / 60) * 75));
+        rejectedCount++;
+        if ((attempts % 3 === 0 || attempts <= 2) && onProgress) {
+          const pct = Math.min(85, 25 + Math.floor((attempts / 50) * 60));
           onProgress({
             diffKr,
-            step: 2,
-            message: `스마트 케이지 생성 및 초고속 검증 중... (${attempts}회)`,
+            step: '2.5',
+            stepStatus: 'rejected',
+            stepName: '초고속 컷트',
+            message: `★ 2.5단계: 복수해 불량 맵 즉시 컷트 (0.1ms 컷트 #${rejectedCount}회)`,
             percent: pct,
             attempt: attempts,
-            cages
+            rejectedCount,
+            cages,
+            solution
           });
           await new Promise(r => setTimeout(r, 0));
         }
         continue;
       }
 
+      // 유일해 통과 시 알림
+      if (onProgress) {
+        onProgress({
+          diffKr,
+          step: '2.5',
+          stepStatus: 'passed',
+          stepName: '유일해 통과',
+          message: `★ 2.5단계: 유일해 검증 통과! (불량 맵 #${rejectedCount}회 컷트 완료)`,
+          percent: 88,
+          attempt: attempts,
+          rejectedCount,
+          cages,
+          solution
+        });
+        await new Promise(r => setTimeout(r, 16));
+      }
+
       // [3단계: 인간 모사 연역 솔버 검증]
-      const solvedCount = this.solveDeductivelyAdvanced(solution, cages);
+      const detailed = this.solveDeductivelyAdvanced(solution, cages, true);
+      const solvedCount = detailed.solvedCount;
+      const solvedCells = detailed.solvedCells;
 
       // 81칸 모두 순수 연역 논리로 완성된 경우 최종 채택!
       if (solvedCount === 81) {
         if (onProgress) {
           onProgress({
             diffKr,
-            step: 3,
-            message: `100% 순수 연역 논리 검증 완료! (81/81칸 확정 · ${attempts}회 시도)`,
+            step: '3',
+            stepStatus: 'completed',
+            stepName: '연역 검증 완료',
+            message: `3단계: 100% 순수 연역 논리 검증 완료! (81/81칸 확정)`,
             percent: 100,
             attempt: attempts,
+            rejectedCount,
             cages,
             solvedCount: 81,
+            solvedCells,
             solution
           });
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise(r => setTimeout(r, 60));
         }
         return {
           solution,
@@ -187,15 +237,20 @@ class SumdokuGenerator {
 
       // 유일해는 통과했으나 인간 연역 100%가 아닌 경우 프로그레스 업데이트
       if (onProgress) {
-        const pct = Math.min(95, 20 + Math.floor((attempts / 60) * 75));
+        const pct = Math.min(95, 35 + Math.floor((attempts / 50) * 55));
         onProgress({
           diffKr,
-          step: 2,
-          message: `유일해 통과 ➔ 연역 추론 검증 중... (${solvedCount}/81칸 · ${attempts}회 시도)`,
+          step: '3',
+          stepStatus: 'retry',
+          stepName: '연역 판별 중',
+          message: `3단계: 인간 연역 판별 중... (${solvedCount}/81칸 확정 · 시도 #${attempts})`,
           percent: pct,
           attempt: attempts,
+          rejectedCount,
           cages,
-          solvedCount
+          solvedCount,
+          solvedCells,
+          solution
         });
         await new Promise(r => setTimeout(r, 0));
       }
@@ -349,7 +404,7 @@ class SumdokuGenerator {
   // [3단계] 인간 모사 순수 연역 솔버 (Deductive Advanced Solver)
   // 찍기 없이 사람이 생각하는 논리 규칙만으로 81칸이 풀리는지 검증
   // ============================================================================
-  solveDeductivelyAdvanced(solution, cages) {
+  solveDeductivelyAdvanced(solution, cages, returnDetailed = false) {
     const cands = Array.from({ length: 9 }, () => new Int32Array(9));
     const ALL_CANDS = 0x3FE; // bits 1..9
 
@@ -612,12 +667,16 @@ class SumdokuGenerator {
     }
 
     let solvedCount = 0;
+    const solvedCells = [];
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
-        if (popcount(cands[r][c]) === 1) solvedCount++;
+        if (popcount(cands[r][c]) === 1) {
+          solvedCount++;
+          solvedCells.push([r, c]);
+        }
       }
     }
-    return solvedCount;
+    return returnDetailed ? { solvedCount, solvedCells } : solvedCount;
   }
 
   // 100% 비재귀 반복문 백트래킹 (기본 완성 수도쿠 판 생성)

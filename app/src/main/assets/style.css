@@ -4768,8 +4768,98 @@ input:checked + .slider:before {
   z-index: 2;
 }
 .gen-preview-cell.solved {
-  outline: 1.5px solid #10b981;
+  outline: 1.5px solid #10b981 !important;
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
   font-weight: 900;
+}
+.theme-dark .gen-preview-cell.solved {
+  outline: 1.5px solid #34d399 !important;
+  background-color: #064e3b !important;
+  color: #a7f3d0 !important;
+}
+
+/* 4-Stage Pipeline Stepper Styles */
+.gen-pipeline-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+}
+.gen-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-secondary);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+.theme-dark .gen-step-badge {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+}
+.gen-step-badge.pending {
+  opacity: 0.55;
+}
+.gen-step-badge.active {
+  opacity: 1;
+  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.55);
+  transform: scale(1.05);
+}
+.gen-step-badge.passed {
+  opacity: 1;
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+}
+.gen-step-badge.rejected {
+  opacity: 1;
+  background: linear-gradient(135deg, #ea580c, #f97316) !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+  animation: badgeCutShake 0.22s ease;
+}
+@keyframes badgeCutShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+.gen-step-num {
+  font-weight: 900;
+  font-size: 0.66rem;
+}
+.gen-step-name {
+  font-size: 0.64rem;
+}
+.gen-step-arrow {
+  color: #94a3b8;
+  font-size: 0.6rem;
+  user-select: none;
+  opacity: 0.6;
+}
+.gen-preview-subtext {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  text-align: center;
+  font-weight: 600;
+  min-height: 1.1rem;
+}
+.theme-dark .gen-preview-subtext {
+  color: #94a3b8;
 }
 
 
