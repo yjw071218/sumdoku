@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.12";
+const APP_VERSION = "1.0.13";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -958,6 +958,11 @@ class SumdokuApp {
       if (el) el.textContent = txt;
     };
 
+    const setHtml = (id, html) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    };
+
     setTxt('stat-total-games', this.stats.totalGames);
     setTxt('stat-total-wins', this.stats.totalWins);
     const winRate = this.stats.totalGames > 0
@@ -967,24 +972,24 @@ class SumdokuApp {
     setTxt('stat-max-streak', `${this.stats.maxStreak}연승`);
 
     const formatTime = (secs) => {
-      if (!secs) return '기록 없음';
+      if (!secs) return '<span class="diff-empty-txt">기록 없음</span>';
       const m = String(Math.floor(secs / 60)).padStart(2, '0');
       const s = String(secs % 60).padStart(2, '0');
       return `${m}:${s}`;
     };
 
     setTxt('stat-easy-wins', `${this.stats.byDiff.easy.wins}승`);
-    setTxt('stat-easy-best', formatTime(this.stats.byDiff.easy.bestTime));
+    setHtml('stat-easy-best', formatTime(this.stats.byDiff.easy.bestTime));
     setTxt('stat-medium-wins', `${this.stats.byDiff.medium.wins}승`);
-    setTxt('stat-medium-best', formatTime(this.stats.byDiff.medium.bestTime));
+    setHtml('stat-medium-best', formatTime(this.stats.byDiff.medium.bestTime));
 
     if (this.stats.byDiff.hard) {
       setTxt('stat-hard-wins', `${this.stats.byDiff.hard.wins}승`);
-      setTxt('stat-hard-best', formatTime(this.stats.byDiff.hard.bestTime));
+      setHtml('stat-hard-best', formatTime(this.stats.byDiff.hard.bestTime));
     }
 
     setTxt('stat-expert-wins', `${this.stats.byDiff.expert.wins}승`);
-    setTxt('stat-expert-best', formatTime(this.stats.byDiff.expert.bestTime));
+    setHtml('stat-expert-best', formatTime(this.stats.byDiff.expert.bestTime));
   }
 
   // ----------------- 이어하기 -----------------
@@ -994,7 +999,7 @@ class SumdokuApp {
       const state = {
         solution: this.solution,
         cages: this.cages,
-        board: this.board.map(r => r.map(c => ({ val: c.val, notes: [...c.notes], error: c.error }))),
+        board: this.board.map(r => r.map(c => ({ val: c.val, notes: [...c.notes], customMemo: c.customMemo || '', error: c.error }))),
         timerSeconds: this.timerSeconds,
         timeRemaining: this.timeRemaining,
         gameMode: this.gameMode,
@@ -1067,6 +1072,7 @@ class SumdokuApp {
       this.board = state.board.map(r => r.map(c => ({
         val: c.val,
         notes: new Set(c.notes),
+        customMemo: c.customMemo || '',
         isGiven: false,
         error: c.error
       })));
@@ -1733,12 +1739,13 @@ class SumdokuApp {
       this.dom.btnTypingClear.addEventListener('click', () => {
         if (this.selected.r < 0 || this.selected.c < 0) return;
         const cellData = this.board[this.selected.r][this.selected.c];
-        if (cellData.val > 0) return;
-        this.pushUndoState();
+        this.saveSnapshot();
         cellData.notes.clear();
+        cellData.customMemo = '';
         this.updateBoardDisplay();
         this.sound.play('erase');
         if (this.dom.inputDirectNotes) this.dom.inputDirectNotes.value = '';
+        this.saveOngoingGame();
       });
     }
     if (this.dom.btnTypingApply) {
@@ -1751,17 +1758,29 @@ class SumdokuApp {
       this.dom.inputDirectNotes.addEventListener('input', (e) => {
         if (this.selected.r < 0 || this.selected.c < 0) return;
         const cellData = this.board[this.selected.r][this.selected.c];
-        if (cellData.val > 0) return;
 
-        const val = e.target.value;
-        const digits = Array.from(new Set(val.replace(/[^1-9]/g, '').split('').map(Number))).sort((a, b) => a - b);
+        this.saveSnapshot();
+        const rawVal = e.target.value;
 
-        this.pushUndoState();
-        cellData.notes = new Set(digits);
+        // 순수 1-9 숫자로만 구성되어 있거나 공백/쉼표로 구분된 숫자인지 판별
+        const digitsOnly = rawVal.replace(/[\s,]/g, '');
+        const isNumericOnly = /^[1-9]+$/.test(digitsOnly);
+
+        if (isNumericOnly && digitsOnly.length > 0) {
+          const digits = Array.from(new Set(digitsOnly.split('').map(Number))).sort((a, b) => a - b);
+          cellData.notes = new Set(digits);
+          cellData.customMemo = '';
+        } else {
+          // 한글, 영문, 기호 또는 임의의 자유 텍스트 메모
+          cellData.customMemo = rawVal;
+          if (!rawVal.trim()) {
+            cellData.customMemo = '';
+          }
+        }
+
         this.updateBoardDisplay();
         this.sound.play('click');
-
-        e.target.value = digits.join('');
+        this.saveOngoingGame();
       });
     }
 
@@ -2408,6 +2427,7 @@ class SumdokuApp {
       Array.from({ length: 9 }, () => ({
         val: 0,
         notes: new Set(),
+        customMemo: '',
         isGiven: false,
         error: false
       }))
@@ -2515,6 +2535,11 @@ class SumdokuApp {
         }
         cellEl.appendChild(notesEl);
 
+        const customMemoEl = document.createElement('div');
+        customMemoEl.className = 'cell-custom-memo';
+        customMemoEl.style.display = 'none';
+        cellEl.appendChild(customMemoEl);
+
         cellEl.addEventListener('click', () => {
           this.sound.play('click');
           const now = Date.now();
@@ -2537,6 +2562,7 @@ class SumdokuApp {
         const cellData = this.board[r][c];
         const valEl = cellEl.querySelector('.cell-value');
         const notesEl = cellEl.querySelector('.cell-notes');
+        const memoEl = cellEl.querySelector('.cell-custom-memo');
 
         cellEl.classList.toggle('user-input', cellData.val > 0);
         cellEl.classList.toggle('error', this.settings.autoCheck && cellData.error);
@@ -2550,6 +2576,16 @@ class SumdokuApp {
           for (let n = 1; n <= 9; n++) {
             const noteSpan = notesEl.querySelector(`[data-note="${n}"]`);
             noteSpan.textContent = cellData.notes.has(n) ? n : '';
+          }
+        }
+
+        if (memoEl) {
+          if (cellData.customMemo && cellData.customMemo.trim().length > 0) {
+            memoEl.textContent = cellData.customMemo;
+            memoEl.style.display = 'block';
+          } else {
+            memoEl.textContent = '';
+            memoEl.style.display = 'none';
           }
         }
       }
@@ -2607,15 +2643,19 @@ class SumdokuApp {
     }
     const cellData = this.board[r][c];
     if (!this.dom.inputDirectNotes) return;
-    if (cellData.val > 0) {
-      this.dom.inputDirectNotes.value = '';
-      this.dom.inputDirectNotes.placeholder = `확정된 칸 (값: ${cellData.val})`;
-      this.dom.inputDirectNotes.disabled = true;
-    } else {
-      this.dom.inputDirectNotes.disabled = false;
-      this.dom.inputDirectNotes.placeholder = '메모할 숫자 입력 (예: 139)...';
+    this.dom.inputDirectNotes.disabled = false;
+    if (cellData.customMemo) {
+      this.dom.inputDirectNotes.value = cellData.customMemo;
+      this.dom.inputDirectNotes.placeholder = '자유 메모 입력 (예: 139, 홀수, 합10)...';
+    } else if (cellData.notes && cellData.notes.size > 0) {
       const sorted = Array.from(cellData.notes).sort((a, b) => a - b).join('');
       this.dom.inputDirectNotes.value = sorted;
+      this.dom.inputDirectNotes.placeholder = '자유 메모 입력 (예: 139, 홀수, 합10)...';
+    } else {
+      this.dom.inputDirectNotes.value = '';
+      this.dom.inputDirectNotes.placeholder = cellData.val > 0
+        ? `확정값 ${cellData.val} (자유 메모 작성 가능)`
+        : '자유 메모 입력 (예: 139, 홀수, 합10)...';
     }
   }
 
@@ -2641,7 +2681,7 @@ class SumdokuApp {
     if (this.selected.r < 0 || this.selected.c < 0) return;
     const cellData = this.board[this.selected.r][this.selected.c];
     if (cellData.val > 0) return;
-    this.pushUndoState();
+    this.saveSnapshot();
     if (cellData.notes.has(num)) {
       cellData.notes.delete(num);
     } else {
@@ -2722,6 +2762,7 @@ class SumdokuApp {
       row.map(cell => ({
         val: cell.val,
         notes: new Set(cell.notes),
+        customMemo: cell.customMemo || '',
         isGiven: cell.isGiven,
         error: cell.error
       }))
@@ -2848,7 +2889,7 @@ class SumdokuApp {
     const { r, c } = this.selected;
     const cellData = this.board[r][c];
 
-    if (cellData.val > 0 || cellData.notes.size > 0) {
+    if (cellData.val > 0 || cellData.notes.size > 0 || (cellData.customMemo && cellData.customMemo.length > 0)) {
       this.sound.play('click');
       this.saveSnapshot();
       if (this.currentGameReplay) {
@@ -2861,10 +2902,12 @@ class SumdokuApp {
       }
       cellData.val = 0;
       cellData.notes.clear();
+      cellData.customMemo = '';
       cellData.error = false;
       this.updateBoardDisplay();
       this.updateKeypadBadges();
       this.updateTabletCageHelper(r, c);
+      this.updateDirectTypingInput();
       this.saveOngoingGame();
     }
   }
@@ -2877,6 +2920,7 @@ class SumdokuApp {
       row.map(cell => ({
         val: cell.val,
         notes: new Set(cell.notes),
+        customMemo: cell.customMemo || '',
         isGiven: cell.isGiven,
         error: cell.error
       }))
@@ -2884,6 +2928,7 @@ class SumdokuApp {
     this.updateBoardDisplay();
     this.updateKeypadBadges();
     this.updateTabletCageHelper(this.selected.r, this.selected.c);
+    this.updateDirectTypingInput();
     this.showToast('실행 취소되었습니다.');
     this.saveOngoingGame();
   }
@@ -3206,10 +3251,21 @@ class SumdokuApp {
       const raw = localStorage.getItem('sumdoku_replays');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // 기존에 저장되었던 더미/목 리플레이(moves 길이가 정확히 24수이거나 빈 cellCageMap인 가짜 기록) 완전 필터링
+          const filtered = parsed.filter(r => {
+            if (!r || !r.moves || !r.solution || !r.cages) return false;
+            const isDummy = (!r.cellCageMap || Object.keys(r.cellCageMap).length === 0) || (r.moves.length === 24 && r.moves[0] && r.moves[0].t === 7);
+            return !isDummy;
+          });
+          if (filtered.length !== parsed.length) {
+            localStorage.setItem('sumdoku_replays', JSON.stringify(filtered));
+          }
+          return filtered;
+        }
       }
     } catch (e) {}
-    return this.generateSeedReplays();
+    return [];
   }
 
   saveReplay(replay) {
@@ -3225,63 +3281,20 @@ class SumdokuApp {
     } catch (e) {}
   }
 
-  generateSeedReplays() {
-    // 사용자가 첫 실행 시에도 바로 리플레이를 돌려볼 수 있도록 시드 리플레이 생성
-    const seeds = [];
-    const diffs = ['expert', 'hard', 'medium', 'easy'];
-    const now = Date.now();
-    for (let i = 0; i < 4; i++) {
-      const d = diffs[i % diffs.length];
-      const gen = this.generator.generate(d);
-      const puzzleDate = new Date(now - (i * 3600 * 1000 * 6));
-      const dateStr = `${puzzleDate.getMonth() + 1}월 ${puzzleDate.getDate()}일 ${String(puzzleDate.getHours()).padStart(2, '0')}:${String(puzzleDate.getMinutes()).padStart(2, '0')}`;
-      
-      const moves = [];
-      const cellsToFill = [];
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          cellsToFill.push([r, c]);
-        }
-      }
-      for (let m = 0; m < 24; m++) {
-        const [r, c] = cellsToFill[m];
-        moves.push({
-          t: (m + 1) * 7,
-          isPencil: false,
-          r, c,
-          num: gen.solution[r][c],
-          prevVal: 0,
-          error: false
-        });
-      }
-
-      seeds.push({
-        id: now - (i * 200000),
-        date: dateStr,
-        difficulty: d,
-        mode: (i === 1) ? 'timeattack' : 'standard',
-        solution: gen.solution,
-        cages: gen.cages,
-        cellCageMap: {},
-        anchorCount: gen.anchorCount || 2,
-        moves: moves,
-        result: 'win',
-        finalScore: 2450 - (i * 280),
-        finalTime: `0${3 + i}:1${i * 2}`,
-        mistakes: (i % 2 === 0) ? 0 : 1
-      });
-    }
-    return seeds;
-  }
-
   renderReplayList() {
     const container = document.getElementById('replay-list-container');
     if (!container) return;
     container.innerHTML = '';
 
     const list = this.replays || this.loadReplays();
-    if (list.length === 0) {
-      container.innerHTML = `<div style="grid-column: 1/-1; padding: 30px; text-align: center; color: var(--text-muted); font-weight: 600;">아직 저장된 리플레이가 없습니다. 게임을 완료하시면 최근 20판의 수순이 자동 저장됩니다!</div>`;
+    if (!list || list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--text-muted); font-weight: 600; line-height: 1.7;">
+          <div style="font-size: 38px; margin-bottom: 12px;">🎬</div>
+          <div style="font-size: 16px; color: var(--text-main); margin-bottom: 6px;">아직 저장된 리플레이가 없습니다</div>
+          <div style="font-size: 13px;">퍼즐을 클리어하거나 게임을 종료하면 최근 20판의 수순이 이곳에 자동으로 기록됩니다!</div>
+        </div>
+      `;
       return;
     }
 

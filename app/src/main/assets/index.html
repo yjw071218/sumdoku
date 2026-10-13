@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.12</div>
+          <div class="version-chip" id="app-version-chip">v1.0.13</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -375,21 +375,21 @@
               </button>
             </nav>
 
-            <!-- Direct Typing Bar (실시간 타이핑 메모 바) -->
+            <!-- Direct Typing Bar (실시간 자유 타이핑 메모 바) -->
             <div id="direct-typing-bar" class="direct-typing-bar hidden">
               <div class="typing-bar-header">
                 <span class="typing-bar-title">⌨️ 직접 타이핑 메모 (<span id="typing-cell-coord">선택된 칸</span>)</span>
                 <button id="btn-close-typing" class="btn-close-mini" title="닫기">✕</button>
               </div>
               <div class="typing-input-row">
-                <input type="tel" id="input-direct-notes" class="typing-input"
-                       placeholder="숫자 타이핑 (예: 139)..."
-                       maxlength="9" inputmode="numeric" pattern="[1-9]*" autocomplete="off">
+                <input type="text" id="input-direct-notes" class="typing-input"
+                       placeholder="자유 메모 입력 (예: 139, 홀수, 합10, 1or4)..."
+                       maxlength="20" autocomplete="off" spellcheck="false">
                 <button id="btn-typing-clear" class="btn-typing-action" title="메모 지우기">지우기</button>
                 <button id="btn-typing-apply" class="btn-typing-action btn-apply" title="다음 칸 이동">다음 칸</button>
               </div>
               <div class="typing-quick-hints">
-                <span>💡 키보드로 숫자 1~9를 입력하면 실시간 메모가 반영됩니다 (Enter: 다음 칸)</span>
+                <span>💡 숫자나 텍스트를 자유롭게 입력하면 칸에 실시간 반영됩니다 (Enter: 다음 빈 칸)</span>
               </div>
             </div>
 
@@ -827,7 +827,7 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.12</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.13</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                   <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 인앱 업데이트</button>
@@ -1263,6 +1263,9 @@
             <button id="btn-result-home" class="btn btn-outline">홈으로</button>
           </div>
         </div>
+      </div>
+    </div>
+
     <!-- Replay Viewer Studio Modal (최근 20판 리플레이 플레이어) -->
     <div id="modal-replay-viewer" class="modal-backdrop hidden">
       <div class="modal-card modal-replay-card">
@@ -1286,7 +1289,7 @@
         <div class="replay-main">
           <!-- 9x9 Board Frame for Replay -->
           <div class="replay-board-wrap">
-            <div id="replay-board" class="board-grid"></div>
+            <div id="replay-board" class="sudoku-grid"></div>
           </div>
 
           <!-- Replay Controls & Timeline -->
