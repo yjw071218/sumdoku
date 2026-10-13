@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.22";
+const APP_VERSION = "1.0.21";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -224,6 +224,9 @@ class SumdokuApp {
     this.themes = ['theme-light', 'theme-dark', 'theme-sepia'];
     this.currentThemeIndex = 0;
 
+    // 0. 앱 삭제 후 재설치 시에도 데이터 영구 유지를 위한 공용 외부 저장소 백업 복원
+    this.restorePersistentBackup();
+
     // 설정 및 전적 로드
     this.settings = this.loadSettings();
     this.stats = this.loadStats();
@@ -290,9 +293,46 @@ class SumdokuApp {
     return defaults;
   }
 
+  restorePersistentBackup() {
+    if (!window.AndroidBridge || !window.AndroidBridge.loadPersistentBackup) return;
+    try {
+      const backupStr = window.AndroidBridge.loadPersistentBackup();
+      if (backupStr) {
+        const backupData = JSON.parse(backupStr);
+        let restoredCount = 0;
+        for (const [k, v] of Object.entries(backupData)) {
+          if (!localStorage.getItem(k) && v !== null && v !== undefined) {
+            localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+            restoredCount++;
+          }
+        }
+        if (restoredCount > 0) {
+          console.log(`[Sumdoku] 영구 백업 데이터 ${restoredCount}개 항목 자동 복원 완료`);
+        }
+      }
+    } catch (e) {
+      console.warn('[Sumdoku] 영구 백업 복원 중 오류:', e);
+    }
+  }
+
+  syncPersistentBackup() {
+    if (!window.AndroidBridge || !window.AndroidBridge.savePersistentBackup) return;
+    try {
+      const backupObj = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('sumdoku_')) {
+          backupObj[k] = localStorage.getItem(k);
+        }
+      }
+      window.AndroidBridge.savePersistentBackup(JSON.stringify(backupObj));
+    } catch (e) {}
+  }
+
   saveSettings() {
     try {
       localStorage.setItem('sumdoku_settings', JSON.stringify(this.settings));
+      this.syncPersistentBackup();
     } catch (e) {}
   }
 
@@ -509,6 +549,7 @@ class SumdokuApp {
   saveStats() {
     try {
       localStorage.setItem('sumdoku_stats', JSON.stringify(this.stats));
+      this.syncPersistentBackup();
     } catch (e) {}
   }
 
@@ -2681,13 +2722,13 @@ class SumdokuApp {
 
     if (this.dom.mcBannerText) {
       if (count === 0) {
-        this.dom.mcBannerText.textContent = '영역(케이지)들을 클릭하여 합계를 계산하세요.';
+        this.dom.mcBannerText.textContent = '영역 터치 시 합산';
       } else {
         const diff45 = totalSum - 45;
         const diffText = (totalCells === 9 || totalCells === 18 || totalCells === 27)
-          ? ` (45규칙 기준: ${diff45 >= 0 ? '+' : ''}${diff45})`
+          ? ` (45제약: ${diff45 >= 0 ? '+' : ''}${diff45})`
           : '';
-        this.dom.mcBannerText.textContent = `${count}개 영역 총합: ${totalSum} (${totalCells}칸) [${formulaStr}]${diffText}`;
+        this.dom.mcBannerText.textContent = `합계: ${totalSum} (${totalCells}칸 · ${count}영역)${diffText}`;
       }
     }
 
@@ -3401,6 +3442,7 @@ class SumdokuApp {
       }
       this.replays = replays;
       this.renderReplayList();
+      this.syncPersistentBackup();
     } catch (e) {
       console.error('Failed to save replay:', e);
     }

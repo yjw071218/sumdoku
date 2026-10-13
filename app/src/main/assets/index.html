@@ -27,7 +27,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.22</div>
+          <div class="version-chip" id="app-version-chip">v1.0.21</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -283,24 +283,22 @@
           </div>
         </div>
 
-        <!-- Mobile/Floating Multi-Cage Calculator Banner -->
-        <div id="multi-cage-banner" class="multi-cage-banner hidden">
-          <div class="mc-banner-info">
-            <span class="mc-badge">영역 합산</span>
-            <span id="mc-banner-text" class="mc-text">케이지들을 선택하세요</span>
-          </div>
-          <div class="mc-banner-btns">
-            <button id="btn-mc-reset" class="mc-btn">초기화</button>
-            <button id="btn-mc-close" class="mc-btn mc-btn-close">✕</button>
-          </div>
-        </div>
-
         <!-- Main Content Area: Board + Controls (Adaptive for Phone & Tablet) -->
         <div class="game-main-content">
 
           <!-- 9x9 Sudoku Board Column -->
           <div class="board-column">
             <div class="board-frame" id="board-frame">
+              <!-- Floating Minimalist Multi-Cage Pill (Zero Layout Shift) -->
+              <div id="multi-cage-banner" class="multi-cage-banner hidden">
+                <span class="mc-pill-icon">➕</span>
+                <span id="mc-banner-text" class="mc-text">영역 터치 시 합산</span>
+                <div class="mc-banner-btns">
+                  <button id="btn-mc-reset" class="mc-btn" title="선택 초기화">↺</button>
+                  <button id="btn-mc-close" class="mc-btn mc-btn-close" title="닫기">✕</button>
+                </div>
+              </div>
+
               <div id="sudoku-board" class="sudoku-grid">
                 <!-- 81 cells dynamically created with inset dashed cages -->
               </div>

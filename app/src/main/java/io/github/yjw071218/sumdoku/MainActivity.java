@@ -7,6 +7,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -121,7 +122,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.0.22";
+            return "1.0.21";
         }
     }
 
@@ -361,6 +362,39 @@ public class MainActivity extends Activity {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
             prefs.edit().remove(KEY_HOT_VERSION).apply();
             mainHandler.post(() -> loadApp());
+        }
+
+        /**
+         * 3. 앱 삭제 후 재설치 시에도 데이터 보존을 위한 공용 외부 저장소 영구 백업
+         * - 공용 Documents 폴더(Documents/Sumdoku/sumdoku_persistent_data.json)는 앱을 삭제해도 보존됨
+         */
+        @JavascriptInterface
+        public void savePersistentBackup(final String jsonData) {
+            new Thread(() -> {
+                try {
+                    File docDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                    File sumdokuDir = new File(docDir, "Sumdoku");
+                    if (!sumdokuDir.exists()) sumdokuDir.mkdirs();
+                    File backupFile = new File(sumdokuDir, "sumdoku_persistent_data.json");
+                    writeFile(backupFile, jsonData.getBytes("UTF-8"));
+                } catch (Exception ignored) {}
+            }).start();
+        }
+
+        @JavascriptInterface
+        public String loadPersistentBackup() {
+            try {
+                File docDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                File backupFile = new File(new File(docDir, "Sumdoku"), "sumdoku_persistent_data.json");
+                if (backupFile.exists() && backupFile.length() > 0) {
+                    byte[] bytes = new byte[(int) backupFile.length()];
+                    FileInputStream fis = new FileInputStream(backupFile);
+                    fis.read(bytes);
+                    fis.close();
+                    return new String(bytes, "UTF-8");
+                }
+            } catch (Exception ignored) {}
+            return null;
         }
     }
 
