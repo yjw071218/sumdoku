@@ -124,7 +124,7 @@ body, html {
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 20px 80px 20px;
+  padding: 16px 20px calc(90px + env(safe-area-inset-bottom, 24px)) 20px;
 }
 
 .home-header {
@@ -316,6 +316,13 @@ body, html {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
+.menu-btn.btn-battle {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1.5px solid #fecaca;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+}
+
 .menu-btn.btn-update {
   background: #f1f5f9;
   color: var(--text-primary);
@@ -344,7 +351,9 @@ body, html {
 
 .home-footer {
   text-align: center;
-  margin-bottom: 8px;
+  margin-top: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
 }
 
 .github-link {
@@ -410,7 +419,7 @@ body, html {
   max-width: 480px;
   margin: 0 auto;
   width: 100%;
-  padding: 10px 18px 80px 18px;
+  padding: 10px 18px calc(90px + env(safe-area-inset-bottom, 24px)) 18px;
 }
 
 .daily-header {
@@ -782,15 +791,15 @@ body, html {
 /* 케이지 좌상단 합계 숫자 (Image 2 스타일: 점선 안쪽 상단에 작고 깔끔하게 표시) */
 .cell-cage-sum {
   position: absolute;
-  top: 2px;
-  left: 3px;
-  font-size: 9px;
-  font-weight: 800;
-  color: #1e293b;
+  top: 3.5px;
+  left: 4.5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #1e3a8a;
   line-height: 1;
   pointer-events: none;
   z-index: 3;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.2px;
 }
 
 .cell.single-cage .cell-cage-sum {
@@ -837,7 +846,7 @@ body, html {
 /* Pencil Notes */
 .cell-notes {
   position: absolute;
-  inset: 2px;
+  inset: 3px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -849,43 +858,21 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 900;
-  color: #334155;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
   line-height: 1;
 }
 
 /* Sizing Modifiers for Notes */
 body.notes-size-normal .note-num {
-  font-size: 12px;
+  font-size: 10px;
 }
 body.notes-size-large .note-num {
-  font-size: 14.5px;
+  font-size: 11.5px;
 }
 body.notes-size-xlarge .note-num {
-  font-size: 16.5px;
-}
-
-/* 케이지 합계 숫자가 있는 셀에서 메모 1번 겹침 방지 */
-.cell.has-cage-sum .cell-notes {
-  padding-top: 1px;
-  padding-left: 1px;
-}
-
-.cell.has-cage-sum .note-num[data-note="1"] {
-  align-self: flex-end;
-  justify-self: flex-end;
-  transform: translate(2.5px, 2.5px);
-  font-size: 12px;
-}
-body.notes-size-normal .cell.has-cage-sum .note-num[data-note="1"] {
-  font-size: 10.5px;
-}
-body.notes-size-large .cell.has-cage-sum .note-num[data-note="1"] {
-  font-size: 12.5px;
-}
-body.notes-size-xlarge .cell.has-cage-sum .note-num[data-note="1"] {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Controls Column */
@@ -1083,41 +1070,23 @@ body.notes-size-xlarge .cell.has-cage-sum .note-num[data-note="1"] {
 
   .cell-cage-sum {
     font-size: 11px;
-    top: 3px;
-    left: 4.5px;
+    top: 4.5px;
+    left: 5.5px;
+    font-weight: 700;
   }
 
   .note-num {
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 13.5px;
+    font-weight: 600;
   }
   body.notes-size-normal .note-num {
-    font-size: 15.5px;
+    font-size: 12px;
   }
   body.notes-size-large .note-num {
-    font-size: 18.5px;
+    font-size: 13.5px;
   }
   body.notes-size-xlarge .note-num {
-    font-size: 21.5px;
-  }
-
-  .cell.has-cage-sum .cell-notes {
-    padding-top: 2px;
-    padding-left: 2px;
-  }
-
-  .cell.has-cage-sum .note-num[data-note="1"] {
-    transform: translate(3.5px, 3.5px);
     font-size: 15px;
-  }
-  body.notes-size-normal .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 13px;
-  }
-  body.notes-size-large .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 15.5px;
-  }
-  body.notes-size-xlarge .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 18px;
   }
 
   .controls-column {
@@ -1235,41 +1204,23 @@ body.notes-size-xlarge .cell.has-cage-sum .note-num[data-note="1"] {
 
   .cell-cage-sum {
     font-size: 11px;
-    top: 3px;
-    left: 4.5px;
+    top: 4.5px;
+    left: 5.5px;
+    font-weight: 700;
   }
 
   .note-num {
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 13.5px;
+    font-weight: 600;
   }
   body.notes-size-normal .note-num {
-    font-size: 15.5px;
+    font-size: 12px;
   }
   body.notes-size-large .note-num {
-    font-size: 18.5px;
+    font-size: 13.5px;
   }
   body.notes-size-xlarge .note-num {
-    font-size: 21.5px;
-  }
-
-  .cell.has-cage-sum .cell-notes {
-    padding-top: 2px;
-    padding-left: 2px;
-  }
-
-  .cell.has-cage-sum .note-num[data-note="1"] {
-    transform: translate(3.5px, 3.5px);
     font-size: 15px;
-  }
-  body.notes-size-normal .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 13px;
-  }
-  body.notes-size-large .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 15.5px;
-  }
-  body.notes-size-xlarge .cell.has-cage-sum .note-num[data-note="1"] {
-    font-size: 18px;
   }
 
   .controls-column {
@@ -1880,9 +1831,9 @@ input:checked + .slider::before {
 }
 
 .theme-dark .note-num {
-  color: #f8fafc !important;
-  font-weight: 900;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.25);
+  color: #94a3b8 !important;
+  font-weight: 600;
+  text-shadow: none;
 }
 
 .theme-dark .key-btn {
@@ -2601,7 +2552,7 @@ input:checked + .slider::before {
   max-width: 1200px;
   height: 100%;
   margin: 0 auto;
-  padding: 12px 20px 84px 20px;
+  padding: 12px 20px calc(80px + env(safe-area-inset-bottom, 16px)) 20px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -2648,7 +2599,9 @@ input:checked + .slider::before {
   width: 280px;
   flex-shrink: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+  padding-bottom: 70px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2740,7 +2693,9 @@ input:checked + .slider::before {
 .hub-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+  padding-bottom: 70px;
 }
 
 .hub-panel {
