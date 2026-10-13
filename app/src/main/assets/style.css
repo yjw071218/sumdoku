@@ -709,12 +709,16 @@ body, html {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* 보드의 width:min(100%, …) 계산 기준이 되도록 반드시 확정 폭을 가져야 함 (없으면 폭 0으로 붕괴) */
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .board-frame {
   position: relative;
-  width: min(100%, 420px, 48vh);
-  height: min(100%, 420px, 48vh);
+  width: min(calc(100vw - 28px), 420px, 48vh);
+  height: min(calc(100vw - 28px), 420px, 48vh);
   aspect-ratio: 1 / 1;
   background: var(--bg-surface);
   border: var(--grid-thick);

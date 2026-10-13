@@ -75,8 +75,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
   .replay-title-wrap { min-width:0; }
   .scratchpad-header { flex-wrap:wrap; gap:8px; }
   .app-root { padding-bottom:env(safe-area-inset-bottom); }
-  .board-frame { width:min(100%,420px)!important; height:auto!important; aspect-ratio:1; }
-  .board-frame .sudoku-grid { position:absolute; inset:0; }
+  .board-frame { width:min(calc(100vw - 28px), 420px, 48vh)!important; height:min(calc(100vw - 28px), 420px, 48vh)!important; aspect-ratio:1!important; }
+  .board-frame .sudoku-grid { width:100%!important; height:100%!important; }
 }
 @media (max-width:360px) { .quick-settings-grid { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion:reduce) { .pulse-dot, .floating-score-delta { animation:none!important; } }
