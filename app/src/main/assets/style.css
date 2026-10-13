@@ -782,14 +782,15 @@ body, html {
 /* 케이지 좌상단 합계 숫자 (Image 2 스타일: 점선 안쪽 상단에 작고 깔끔하게 표시) */
 .cell-cage-sum {
   position: absolute;
-  top: 4px;
-  left: 5px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #334155;
+  top: 2px;
+  left: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #1e293b;
   line-height: 1;
   pointer-events: none;
   z-index: 3;
+  letter-spacing: -0.4px;
 }
 
 .cell.single-cage .cell-cage-sum {
@@ -836,7 +837,7 @@ body, html {
 /* Pencil Notes */
 .cell-notes {
   position: absolute;
-  inset: 4px;
+  inset: 3px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -848,10 +849,23 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
-  font-weight: 700;
-  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  color: #334155;
   line-height: 1;
+}
+
+/* 케이지 합계 숫자가 있는 셀에서 메모 1번 겹침 방지 */
+.cell.has-cage-sum .cell-notes {
+  padding-top: 1px;
+  padding-left: 1px;
+}
+
+.cell.has-cage-sum .note-num[data-note="1"] {
+  align-self: flex-end;
+  justify-self: flex-end;
+  transform: translate(2px, 2px);
+  font-size: 9.5px;
 }
 
 /* Controls Column */
@@ -1049,8 +1063,22 @@ body, html {
 
   .cell-cage-sum {
     font-size: 11px;
-    top: 5px;
-    left: 6px;
+    top: 3px;
+    left: 4.5px;
+  }
+
+  .note-num {
+    font-size: 13.5px;
+  }
+
+  .cell.has-cage-sum .cell-notes {
+    padding-top: 2px;
+    padding-left: 2px;
+  }
+
+  .cell.has-cage-sum .note-num[data-note="1"] {
+    transform: translate(3px, 3px);
+    font-size: 12px;
   }
 
   .controls-column {
@@ -1164,6 +1192,26 @@ body, html {
   .board-frame {
     width: min(500px, 86vw, 46vh);
     height: min(500px, 86vw, 46vh);
+  }
+
+  .cell-cage-sum {
+    font-size: 11px;
+    top: 3px;
+    left: 4.5px;
+  }
+
+  .note-num {
+    font-size: 13.5px;
+  }
+
+  .cell.has-cage-sum .cell-notes {
+    padding-top: 2px;
+    padding-left: 2px;
+  }
+
+  .cell.has-cage-sum .note-num[data-note="1"] {
+    transform: translate(3px, 3px);
+    font-size: 12px;
   }
 
   .controls-column {
@@ -1774,8 +1822,8 @@ input:checked + .slider::before {
 }
 
 .theme-dark .note-num {
-  color: #cbd5e1 !important;
-  font-weight: 700;
+  color: #e2e8f0 !important;
+  font-weight: 800;
 }
 
 .theme-dark .key-btn {

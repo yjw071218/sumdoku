@@ -1,8 +1,10 @@
 /**
- * Sumdoku (썸도쿠) v1.0.5 - 100% 연역 추론 보장 합계 수도쿠
+ * Sumdoku (썸도쿠) v1.0.6 - 100% 연역 추론 보장 합계 수도쿠
  * 
  * - 홈 화면, 게임 화면(폰/태블릿 반응형 스튜디오), 일일 도전 캘린더, 설정 및 전적 시스템
  * - 전문가 난이도: 단 1개의 시작 앵커만 주어지는 경우도 100% 순수 연역 추론으로 풀림 보장
+ * - 메모(연필) 크기 가독성 대폭 향상 (모바일 11px, 태블릿 13.5px, bold 800)
+ * - 좌측 상단 케이지 합계 숫자와 메모 1번 간의 겹침 현상 원천 해결
  * - 다크모드 고대비 가독성 대폭 향상 (숫자, 메모, 케이지 합계 골드/시안 텍스트, 하이라이트)
  * - 일반 기록 모드 & 타임어택 시간 제한 모드 (카운트다운 타이머 & 보너스 점수)
  * - 고도화된 점수 시스템 (콤보 배율 + 케이지 완성 보너스 + 타임 보너스)
@@ -10,7 +12,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.5";
+const APP_VERSION = "1.0.6";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -1793,6 +1795,7 @@ class SumdokuApp {
           sumEl.className = 'cell-cage-sum';
           sumEl.textContent = cage.sum;
           cellEl.appendChild(sumEl);
+          cellEl.classList.add('has-cage-sum');
         }
 
         const valEl = document.createElement('span');
