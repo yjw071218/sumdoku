@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.13";
+const APP_VERSION = "1.0.14";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -186,14 +186,14 @@ class SumdokuGenerator {
   generate(diff = 'expert', customRng = null) {
     const rng = customRng || this.rng;
 
-    // ★ 전문가 난이도: 단 1개의 앵커만 주어지는 경우도 포함 ([1, 2, 2, 3])
+    // ★ 전문가 난이도: 0개(순수 케이지 합계만으로 풀림)부터 1, 2, 3개 앵커까지 지원
     const anchorMap = {
       easy: 7,
       medium: 5,
       hard: 4,
-      expert: [1, 2, 2, 3][Math.floor(rng() * 4)]
+      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
     };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [1, 2, 2, 3][Math.floor(rng() * 4)];
+    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
 
     let attempts = 0;
     while (attempts++ < 1000) {
@@ -225,9 +225,9 @@ class SumdokuGenerator {
       easy: 7,
       medium: 5,
       hard: 4,
-      expert: [1, 2, 2, 3][Math.floor(rng() * 4)]
+      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
     };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [1, 2, 2, 3][Math.floor(rng() * 4)];
+    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const diffKr = diffNames[diff] || diff;
 
@@ -654,6 +654,8 @@ class SumdokuApp {
     this.replayStep = 0;
     this.replaySpeed = 1;
     this.replayPlayInterval = null;
+    this.hintsRemaining = 3;
+    this.isMobileHubInDetail = false;
 
     this.initDOM();
     this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
@@ -1008,6 +1010,7 @@ class SumdokuApp {
         anchorCount: this.anchorCount,
         score: this.score,
         combo: this.combo,
+        hintsRemaining: this.hintsRemaining !== undefined ? this.hintsRemaining : 3,
         isDaily: this.isDaily,
         dailyDate: this.dailyDate
       };
@@ -1056,6 +1059,7 @@ class SumdokuApp {
       this.mistakes = state.mistakes;
       this.score = state.score || 0;
       this.combo = state.combo || 0;
+      this.hintsRemaining = state.hintsRemaining !== undefined ? state.hintsRemaining : 3;
       this.isDaily = !!state.isDaily;
       this.dailyDate = state.dailyDate || null;
       this.isBattle = false;
@@ -1084,6 +1088,7 @@ class SumdokuApp {
         : `${this.mistakes}`;
       this.dom.gameScore.textContent = this.score;
 
+      this.updateHintBadge();
       this.updateModeDisplay();
       this.renderBoard();
       this.selectCell(0, 0);
@@ -1116,6 +1121,7 @@ class SumdokuApp {
     } else if (viewName === 'game') {
       if (!this.isPaused) this.startTimer();
     } else if (viewName === 'stats') {
+      this.exitMobileHubDetail();
       this.renderStatsView();
     } else if (viewName === 'daily') {
       this.renderDailyCalendar();
@@ -1123,6 +1129,17 @@ class SumdokuApp {
   }
 
   handleBackKey() {
+    // 1. 리플레이 뷰어 모달이 열려있는 경우
+    if (this.dom.modalReplayViewer && !this.dom.modalReplayViewer.classList.contains('hidden')) {
+      this.closeReplayViewer();
+      return "handled";
+    }
+    // 2. 설정 모달이 열려있는 경우
+    if (this.dom.modalSettings && !this.dom.modalSettings.classList.contains('hidden')) {
+      this.closeSettingsModal();
+      return "handled";
+    }
+    // 3. 게임 화면인 경우
     if (this.currentView === 'game') {
       if (this.isBattle) {
         this.promptBattleForfeit();
@@ -1130,11 +1147,39 @@ class SumdokuApp {
       }
       this.switchView('home');
       return "handled";
-    } else if (this.currentView === 'daily' || this.currentView === 'stats') {
+    } else if (this.currentView === 'stats') {
+      // 4. 모바일 설정 상세 페이지에 있는 경우 설정 목록으로 복귀
+      if (this.isMobileHubInDetail) {
+        this.exitMobileHubDetail();
+        return "handled";
+      }
+      this.switchView('home');
+      return "handled";
+    } else if (this.currentView === 'daily') {
       this.switchView('home');
       return "handled";
     }
     return false;
+  }
+
+  // 모바일 안드로이드 스타일 설정 상세 화면 진입
+  enterMobileHubDetail(title = '설정') {
+    this.isMobileHubInDetail = true;
+    const hubContainer = document.querySelector('.hub-container');
+    if (hubContainer) hubContainer.classList.add('mobile-detail-mode');
+    if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.remove('hidden');
+    if (this.dom.btnHubHome) this.dom.btnHubHome.classList.add('hidden');
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = title;
+  }
+
+  // 모바일 안드로이드 스타일 설정 목록 화면으로 복귀
+  exitMobileHubDetail() {
+    this.isMobileHubInDetail = false;
+    const hubContainer = document.querySelector('.hub-container');
+    if (hubContainer) hubContainer.classList.remove('mobile-detail-mode');
+    if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.add('hidden');
+    if (this.dom.btnHubHome) this.dom.btnHubHome.classList.remove('hidden');
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = '설정';
   }
 
   // ----------------- DOM 및 이벤트 바인딩 -----------------
@@ -1203,10 +1248,14 @@ class SumdokuApp {
       modalRules: document.getElementById('modal-rules'),
       btnRulesClose: document.getElementById('btn-rules-close'),
 
+      // Hub Navigation (Android Settings Style)
+      btnHubHome: document.getElementById('btn-hub-home'),
+      btnHubDetailBack: document.getElementById('btn-hub-detail-back'),
+      hubHeaderTitle: document.getElementById('hub-header-title'),
+
       // In-App Update
       modalUpdate: document.getElementById('modal-update'),
       btnUpdateDismiss: document.getElementById('btn-update-dismiss'),
-      btnUpdateHot: document.getElementById('btn-update-hot'),
       btnUpdateApk: document.getElementById('btn-update-apk'),
       updateNotes: document.getElementById('update-modal-notes'),
       updateProgressContainer: document.getElementById('update-progress-container'),
@@ -1602,7 +1651,21 @@ class SumdokuApp {
       });
     }
 
-    // Hub Sidebar Tabs (Image 2)
+    // Hub Navigation Back & Home
+    if (this.dom.btnHubHome) {
+      this.dom.btnHubHome.addEventListener('click', () => {
+        this.sound.play('click');
+        this.switchView('home');
+      });
+    }
+    if (this.dom.btnHubDetailBack) {
+      this.dom.btnHubDetailBack.addEventListener('click', () => {
+        this.sound.play('click');
+        this.exitMobileHubDetail();
+      });
+    }
+
+    // Hub Sidebar Tabs (Android Master-Detail Navigation)
     document.querySelectorAll('.hub-menu-item').forEach(item => {
       item.addEventListener('click', () => {
         this.sound.play('click');
@@ -1622,6 +1685,9 @@ class SumdokuApp {
         } else if (targetPanelId === 'panel-awards') {
           this.renderAwardsList();
         }
+
+        // 모바일 화면에서는 안드로이드 설정처럼 상세 화면으로 전환
+        this.enterMobileHubDetail(targetTitle);
       });
     });
 
@@ -2305,36 +2371,21 @@ class SumdokuApp {
           if (apkAsset) apkDownloadUrl = apkAsset.browser_download_url;
         }
 
-        // 1. 인앱 즉시 업데이트 (OTA 핫 리소스)
-        this.dom.btnUpdateHot.onclick = () => {
-          this.sound.play('click');
-          this.dom.updateActionsNormal.classList.add('hidden');
-          this.dom.updateProgressContainer.classList.remove('hidden');
-          this.handleUpdateProgress(10, '인앱 리소스 업데이트 시작...');
+        // 최신 버전 업데이트 APK 설치기
+        if (this.dom.btnUpdateApk) {
+          this.dom.btnUpdateApk.onclick = () => {
+            this.sound.play('click');
+            this.dom.updateActionsNormal.classList.add('hidden');
+            this.dom.updateProgressContainer.classList.remove('hidden');
+            this.handleUpdateProgress(5, '최신 버전 APK 다운로드 연결 중...');
 
-          if (window.AndroidBridge && window.AndroidBridge.downloadAndApplyWebUpdate) {
-            window.AndroidBridge.downloadAndApplyWebUpdate(latestTag);
-          } else {
-            setTimeout(() => {
-              this.handleUpdateProgress(100, '웹 환경: 페이지를 새로고침합니다...');
-              setTimeout(() => window.location.reload(), 600);
-            }, 1000);
-          }
-        };
-
-        // 2. 인앱 APK 원클릭 설치기
-        this.dom.btnUpdateApk.onclick = () => {
-          this.sound.play('click');
-          this.dom.updateActionsNormal.classList.add('hidden');
-          this.dom.updateProgressContainer.classList.remove('hidden');
-          this.handleUpdateProgress(5, '인앱 APK 다운로드 연결 중...');
-
-          if (window.AndroidBridge && window.AndroidBridge.downloadAndInstallApk) {
-            window.AndroidBridge.downloadAndInstallApk(apkDownloadUrl);
-          } else {
-            window.open(apkDownloadUrl, '_system');
-          }
-        };
+            if (window.AndroidBridge && window.AndroidBridge.downloadAndInstallApk) {
+              window.AndroidBridge.downloadAndInstallApk(apkDownloadUrl);
+            } else {
+              window.open(apkDownloadUrl, '_system');
+            }
+          };
+        }
 
         this.dom.modalUpdate.classList.remove('hidden');
         if (descEl) descEl.textContent = `새 버전 (v${latestTag}) 인앱 업데이트 가능!`;
@@ -2383,6 +2434,8 @@ class SumdokuApp {
       : `0`;
     this.undoStack = [];
     this.isWin = false;
+    this.hintsRemaining = 3;
+    this.updateHintBadge();
 
     // 타임어택 제한 시간 설정
     if (this.gameMode === 'timeattack') {
@@ -2941,6 +2994,18 @@ class SumdokuApp {
     this.showToast(this.isPencilMode ? '메모(Pencil) 모드 켜짐' : '일반 입력 모드');
   }
 
+  updateHintBadge() {
+    if (!this.dom.hintBadge) return;
+    if (this.hintsRemaining > 0) {
+      this.dom.hintBadge.textContent = this.hintsRemaining;
+      this.dom.hintBadge.classList.remove('badge-extra');
+    } else {
+      // 0개 소진 상태에서도 추가 힌트 가능하도록 '+' 표시
+      this.dom.hintBadge.textContent = '+';
+      this.dom.hintBadge.classList.add('badge-extra');
+    }
+  }
+
   useHint() {
     if (this.currentView !== 'game' || this.isPaused) return;
     const { r, c } = this.selected;
@@ -2960,7 +3025,18 @@ class SumdokuApp {
       this.board[r][c].val = answer;
       this.board[r][c].notes.clear();
       this.board[r][c].error = false;
-      this.score = Math.max(0, this.score - 30);
+
+      let hintMsg = '';
+      if (this.hintsRemaining > 0) {
+        this.hintsRemaining--;
+        this.score = Math.max(0, this.score - 30);
+        hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
+      } else {
+        // 0개 상태에서도 추가 힌트 제공 ("0점에서 더 주는 것도 가능하게")
+        this.score = Math.max(0, this.score - 50);
+        hintMsg = `[추가 힌트] 케이지 제약으로 ${answer} 확정! (보너스 힌트 제공, -50점)`;
+      }
+      this.updateHintBadge();
       this.dom.gameScore.textContent = this.score;
 
       if (this.settings.autoNotes) {
@@ -2969,8 +3045,7 @@ class SumdokuApp {
       this.updateBoardDisplay();
       this.updateKeypadBadges();
       this.updateTabletCageHelper(r, c);
-      const cage = this.cages[this.cellCageMap[`${r},${c}`]];
-      this.showToast(`[힌트] 케이지 합계(${cage.sum}) 제약으로 ${answer} 확정! (-30점)`);
+      this.showToast(hintMsg);
       this.checkWinCondition();
       this.saveOngoingGame();
       return;
@@ -3317,10 +3392,20 @@ class SumdokuApp {
           <span>수순: <strong>${rep.moves ? rep.moves.length : 0}수</strong></span>
         </div>
         <div class="replay-card-footer">
-          <span style="font-weight: 800; color: #2563eb;">${(rep.finalScore || 0).toLocaleString()}점 · ⏱️ ${rep.finalTime || '00:00'}</span>
+          <span style="font-weight: 800; color: #2563eb;">${Number(rep.finalScore || 0).toLocaleString()}점 · ⏱️ ${rep.finalTime || '00:00'}</span>
           <button class="replay-play-btn">리플레이 보기 ▶</button>
         </div>
       `;
+
+      // 카드 전체 클릭 및 리플레이 보기 버튼 클릭 모두 지원
+      const playBtn = card.querySelector('.replay-play-btn');
+      if (playBtn) {
+        playBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.sound.play('click');
+          this.openReplayViewer(rep);
+        });
+      }
 
       card.addEventListener('click', () => {
         this.sound.play('click');
@@ -3332,24 +3417,30 @@ class SumdokuApp {
   }
 
   openReplayViewer(replay) {
+    if (!replay) return;
     this.activeReplay = replay;
     this.replayStep = 0;
     this.replaySpeed = 1;
     this.pauseReplayPlay();
 
     const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
-    const dLabel = diffKr[replay.difficulty] || replay.difficulty;
+    const dLabel = diffKr[replay.difficulty] || replay.difficulty || '일반';
 
     if (this.dom.replayMetaTitle) {
       this.dom.replayMetaTitle.textContent = `[${dLabel}] ${replay.result === 'win' ? '완벽 클리어' : '도전'} 리플레이`;
     }
     if (this.dom.replayMetaSub) {
-      this.dom.replayMetaSub.textContent = `${replay.date} · 최종 ${replay.finalScore.toLocaleString()}점 · 소요 ${replay.finalTime} · 실수 ${replay.mistakes || 0}회`;
+      const scoreTxt = Number(replay.finalScore || 0).toLocaleString();
+      const timeTxt = replay.finalTime || '00:00';
+      const dateTxt = replay.date || '';
+      const mistakesCount = replay.mistakes || 0;
+      this.dom.replayMetaSub.textContent = `${dateTxt} · 최종 ${scoreTxt}점 · 소요 ${timeTxt} · 실수 ${mistakesCount}회`;
     }
 
+    const movesCount = (replay.moves && replay.moves.length) || 0;
     if (this.dom.replayTimeline) {
       this.dom.replayTimeline.min = 0;
-      this.dom.replayTimeline.max = replay.moves.length;
+      this.dom.replayTimeline.max = movesCount;
       this.dom.replayTimeline.value = 0;
     }
 
@@ -3358,6 +3449,7 @@ class SumdokuApp {
 
     if (this.dom.modalReplayViewer) {
       this.dom.modalReplayViewer.classList.remove('hidden');
+      this.dom.modalReplayViewer.style.display = 'flex';
     }
   }
 
@@ -3365,6 +3457,7 @@ class SumdokuApp {
     this.pauseReplayPlay();
     if (this.dom.modalReplayViewer) {
       this.dom.modalReplayViewer.classList.add('hidden');
+      this.dom.modalReplayViewer.style.display = 'none';
     }
     this.activeReplay = null;
   }

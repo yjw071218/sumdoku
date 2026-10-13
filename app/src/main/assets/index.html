@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.13</div>
+          <div class="version-chip" id="app-version-chip">v1.0.14</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -447,23 +447,28 @@
     <section id="view-stats" class="view">
       <div class="hub-container">
         
-        <!-- Hub Top Header (Image 2: Left '나', Right '설정') -->
+        <!-- Hub Top Header (Android Settings & Tablet Master-Detail) -->
         <header class="hub-header">
           <div class="hub-header-left">
-            <button class="glass-icon-btn btn-back-home mobile-only" title="메인으로">
+            <button id="btn-hub-home" class="glass-icon-btn btn-back-home" title="메인으로">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
-            <h2 class="hub-col-title">나</h2>
+            <button id="btn-hub-detail-back" class="glass-icon-btn btn-hub-detail-back hidden" title="설정 목록으로">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <h2 class="hub-col-title" id="hub-header-title">설정</h2>
           </div>
-          <div class="hub-header-right">
+          <div class="hub-header-right tablet-only">
             <h2 class="hub-col-title" id="hub-active-title">설정</h2>
           </div>
         </header>
 
         <div class="hub-main-split">
-          <!-- LEFT COLUMN: Card Groups (Image 2) -->
+          <!-- LEFT COLUMN: Android Style Settings Menu List -->
           <aside class="hub-sidebar">
             
             <!-- Group 1: 어워드 -->
@@ -471,6 +476,7 @@
               <button class="hub-menu-item" data-hub-panel="panel-awards" data-hub-title="어워드">
                 <span class="hub-icon-box icon-trophy">🏆</span>
                 <span class="hub-item-label">어워드</span>
+                <span class="hub-chevron">›</span>
               </button>
             </div>
 
@@ -479,6 +485,7 @@
               <button class="hub-menu-item" data-hub-panel="panel-stats" data-hub-title="통계">
                 <span class="hub-icon-box icon-stats">📊</span>
                 <span class="hub-item-label">통계</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-replays" data-hub-title="최근 리플레이 (20판)">
                 <span class="hub-icon-box icon-replays">🎬</span>
@@ -486,18 +493,21 @@
                   <span class="hub-item-label">최근 리플레이</span>
                   <span class="hub-item-badge">20판</span>
                 </div>
+                <span class="hub-chevron">›</span>
               </button>
             </div>
 
             <!-- Group 3: 설정 (Active) & 플레이 방법 -->
             <div class="hub-card-group">
-              <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="설정">
+              <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="게임 설정">
                 <span class="hub-icon-box icon-settings">⚙️</span>
-                <span class="hub-item-label">설정</span>
+                <span class="hub-item-label">게임 설정</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-howtoplay" data-hub-title="플레이 방법">
                 <span class="hub-icon-box icon-guide">🎓</span>
                 <span class="hub-item-label">플레이 방법</span>
+                <span class="hub-chevron">›</span>
               </button>
             </div>
 
@@ -506,18 +516,22 @@
               <button class="hub-menu-item" data-hub-panel="panel-help" data-hub-title="도움말">
                 <span class="hub-icon-box icon-help">❓</span>
                 <span class="hub-item-label">도움말</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-gameinfo" data-hub-title="게임 정보">
                 <span class="hub-icon-box icon-info">ℹ️</span>
                 <span class="hub-item-label">게임 정보</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-privacy" data-hub-title="개인 정보 보호 권리">
                 <span class="hub-icon-box icon-privacy">📋</span>
                 <span class="hub-item-label">개인 정보 보호 권리</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-privacy-opt" data-hub-title="개인정보 판매 거부">
                 <span class="hub-icon-box icon-optout">👤</span>
                 <span class="hub-item-label">내 개인정보 판매 및 공유하지 않기</span>
+                <span class="hub-chevron">›</span>
               </button>
             </div>
 
@@ -526,10 +540,12 @@
               <button class="hub-menu-item" data-hub-panel="panel-math" data-hub-title="수학 퍼즐">
                 <span class="hub-icon-box icon-math">🔢</span>
                 <span class="hub-item-label">수학 퍼즐</span>
+                <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-noads" data-hub-title="광고 제거">
                 <span class="hub-icon-box icon-noads">🚫</span>
                 <span class="hub-item-label">광고 제거</span>
+                <span class="hub-chevron">›</span>
               </button>
             </div>
 
@@ -827,10 +843,10 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.13</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.14</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
-                  <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 인앱 업데이트</button>
+                  <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 업데이트</button>
                   <button id="btn-info-github" class="btn btn-secondary">GitHub 방문</button>
                 </div>
               </div>
@@ -1066,14 +1082,9 @@
 
         <!-- In-App Update Actions -->
         <div class="update-choices-box" id="update-actions-normal">
-          <button id="btn-update-hot" class="btn btn-primary btn-inapp-update">
-            <span class="btn-main-label">⚡ 인앱 즉시 업데이트</span>
-            <span class="btn-sub-label">APK 다운로드 없이 3초 만에 즉시 적용</span>
-          </button>
-
-          <button id="btn-update-apk" class="btn btn-secondary btn-apk-install">
-            <span class="btn-main-label">📦 인앱 APK 원클릭 설치</span>
-            <span class="btn-sub-label">앱 내에서 다운로드 후 바로 설치 창 실행</span>
+          <button id="btn-update-apk" class="btn btn-primary btn-apk-install">
+            <span class="btn-main-label">📦 최신 버전 업데이트 설치</span>
+            <span class="btn-sub-label">최신 APK를 다운로드하여 앱을 업데이트합니다</span>
           </button>
         </div>
 
