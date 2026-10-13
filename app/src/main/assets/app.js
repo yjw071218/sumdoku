@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.24";
+const APP_VERSION = "1.0.26";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -578,6 +578,16 @@ class SumdokuApp {
   }
 
   recordGameEnd(isWin) {
+    isWin = isWin && this.score >= 0;
+    const completed = this.board && this.solution && this.board.every((row,r) => row.every((cell,c) => cell.val === this.solution[r][c]));
+    const eligible = !!(isWin && completed && this.resultReason !== 'forfeit');
+    const detail = this.stats.byDiff[this.difficulty];
+    if (detail) {
+      detail.trackedGames = (detail.trackedGames || 0) + 1;
+      detail.trackedWins = (detail.trackedWins || 0) + (isWin ? 1 : 0);
+      detail.currentStreak = isWin ? (detail.currentStreak || 0) + 1 : 0;
+      detail.maxStreak = Math.max(detail.maxStreak || 0, detail.currentStreak);
+    }
     this.stats.totalGames++;
     let isNewBestScore = false;
     let isNewBestTime = false;
@@ -589,7 +599,7 @@ class SumdokuApp {
       }
 
       const diffStats = this.stats.byDiff[this.difficulty];
-      if (diffStats) {
+      if (diffStats && eligible) {
         diffStats.wins++;
         diffStats.totalTime += this.timerSeconds;
         if (!diffStats.bestTime || this.timerSeconds < diffStats.bestTime) {
@@ -654,6 +664,8 @@ class SumdokuApp {
 
     if (this.currentGameReplay) {
       this.currentGameReplay.result = isWin ? 'win' : 'fail';
+      this.currentGameReplay.recordEligible = eligible;
+      this.currentGameReplay.endReason = this.resultReason || (completed ? 'completed' : 'ended');
       this.currentGameReplay.finalScore = this.score;
       this.currentGameReplay.finalTime = (this.dom && this.dom.timer) ? this.dom.timer.textContent : '00:00';
       this.currentGameReplay.mistakes = this.mistakes;
@@ -722,6 +734,7 @@ class SumdokuApp {
         score: this.score,
         combo: this.combo,
         hintsRemaining: this.hintsRemaining !== undefined ? this.hintsRemaining : 3,
+        hintsUsed: this.hintsUsed || 0,
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate,
@@ -774,6 +787,7 @@ class SumdokuApp {
       this.score = state.score || 0;
       this.combo = state.combo || 0;
       this.hintsRemaining = state.hintsRemaining !== undefined ? state.hintsRemaining : 3;
+      this.hintsUsed = state.hintsUsed || 0;
       this.scratchpadText = state.scratchpadText || this.scratchpadText || '';
       if (this.dom.scratchpadInput) this.dom.scratchpadInput.value = this.scratchpadText;
       this.isDaily = !!state.isDaily;
@@ -866,7 +880,7 @@ class SumdokuApp {
     const targetItem = document.querySelector(`.hub-menu-item[data-hub-panel="${panelId}"]`);
     const targetTitle = title || targetItem?.dataset?.hubTitle || '설정';
     const titleEl = document.getElementById('hub-active-title');
-    if (titleEl) titleEl.textContent = targetTitle;
+    if (titleEl) titleEl.textContent = '설정';
 
     document.querySelectorAll('.hub-panel').forEach(p => p.classList.remove('active'));
     const targetPanel = document.getElementById(panelId);
@@ -924,7 +938,7 @@ class SumdokuApp {
     if (hubContainer) hubContainer.classList.add('mobile-detail-mode');
     if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.remove('hidden');
     if (this.dom.btnHubHome) this.dom.btnHubHome.classList.add('hidden');
-    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = title;
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = '설정';
   }
 
   // 모바일 안드로이드 스타일 설정 목록 화면으로 복귀
@@ -1689,7 +1703,8 @@ class SumdokuApp {
     if (this.dom.btnHubDetailBack) {
       this.dom.btnHubDetailBack.addEventListener('click', () => {
         this.sound.play('click');
-        this.exitMobileHubDetail();
+        if (window.innerWidth > 680) this.switchView('home');
+        else this.exitMobileHubDetail();
       });
     }
 
@@ -2302,6 +2317,8 @@ class SumdokuApp {
 
   handleBattleEnd(isVictory, reason) {
     if (!this.isBattle) return;
+    this.resultReason = /기권/.test(reason) ? 'forfeit' : 'battle';
+    if (this.score < 0) { isVictory = false; reason = '점수가 음수여서 실패 처리되었습니다.'; }
     this.closeForfeitModal();
     this.stopTimer();
     clearInterval(this.battlePollInterval);
@@ -2599,6 +2616,7 @@ class SumdokuApp {
     this.dom.mistakes.textContent = `0 / ${maxMistakesDisplay}`;
     this.undoStack = [];
     this.isWin = false;
+    this.resultReason = null;
     this.hintsRemaining = (this.rules.initialHints === 'unlimited') ? 999999 : parseInt(this.rules.initialHints || 3, 10);
     this.updateHintBadge();
 
@@ -3138,7 +3156,7 @@ class SumdokuApp {
           this.sound.play('error');
           cellData.error = true;
           this.resetCombo('오답 입력으로 콤보 리셋');
-          this.score = Math.max(0, this.score - 50);
+          this.score -= 50;
           this.showScoreDelta(-50, r, c);
           this.dom.gameScore.textContent = this.score;
 
@@ -3524,16 +3542,16 @@ class SumdokuApp {
 
     let hintMsg = '';
     if (this.rules.initialHints === 'unlimited') {
-      this.score = Math.max(0, this.score - 30);
+      this.score -= 30;
       this.showScoreDelta(-30, r, c, '힌트');
       hintMsg = `[힌트] ${answer} 확정! (무제한 힌트, -30점)`;
     } else if (this.hintsRemaining > 0) {
       this.hintsRemaining--;
-      this.score = Math.max(0, this.score - 30);
+      this.score -= 30;
       this.showScoreDelta(-30, r, c, '힌트');
       hintMsg = `[힌트] ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
     } else {
-      this.score = Math.max(0, this.score - 50);
+      this.score -= 50;
       this.showScoreDelta(-50, r, c, '추가 힌트');
       hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -50점)`;
     }
@@ -3577,6 +3595,7 @@ class SumdokuApp {
         }
       }
     }
+    if (this.score < 0) { this.finishNegativeScore(); return false; }
     this.isWin = true;
     this.sound.play('win');
     this.stopTimer();
@@ -3629,7 +3648,7 @@ class SumdokuApp {
         sub: sub,
         score: this.score,
         time: this.dom.timer.textContent,
-        mistakes: `${this.mistakes} / 3`,
+        mistakes: `${this.mistakes} / ${this.maxMistakes}`,
         difficulty: diffKr,
         isNewBestScore: endStats ? endStats.isNewBestScore : false,
         isNewBestTime: endStats ? endStats.isNewBestTime : false
@@ -3721,7 +3740,7 @@ class SumdokuApp {
         sub: '타임어택 제한 시간이 모두 소진되었습니다. 다음엔 더 빠르게 풀어보세요!',
         score: this.score,
         time: '00:00',
-        mistakes: `${this.mistakes} / 3`,
+        mistakes: `${this.mistakes} / ${this.maxMistakes}`,
         difficulty: diffKr,
         isNewBestScore: false,
         isNewBestTime: false
@@ -3855,7 +3874,7 @@ class SumdokuApp {
   }
 
   saveReplay(replay) {
-    if (!replay || !replay.moves || replay.moves.length === 0) return;
+    if (!replay || !replay.moves) return;
     try {
       // 용량 최적화: cellCageMap은 replay.cages에서 뷰어가 즉시 동적 생성하므로 저장 시 제외
       const cleanReplay = Object.assign({}, replay);
