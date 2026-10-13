@@ -790,14 +790,14 @@ body, html {
   background: rgba(37, 99, 235, 0.04);
 }
 
-/* 케이지 좌상단 합계 숫자 (Image 2 스타일: 점선 안쪽 상단에 작고 깔끔하게 표시) */
+/* 케이지 좌상단 합계 숫자 (점선 안쪽 상단에 컴팩트하게 정렬) */
 .cell-cage-sum {
   position: absolute;
-  top: 3.5px;
-  left: 4.5px;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: #1e3a8a;
+  top: 2.5px;
+  left: 3.5px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #1e40af;
   line-height: 1;
   pointer-events: none;
   z-index: 3;
@@ -806,7 +806,7 @@ body, html {
 
 .cell.single-cage .cell-cage-sum {
   color: #2563eb;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .cell-value {
@@ -856,25 +856,46 @@ body, html {
   z-index: 1;
 }
 
+/* 케이지 합계 숫자가 있는 셀: 상단 여백(padding-top)을 주어 합계 숫자와 1번 메모의 겹침을 완전 방지하고 1~9 메모 정렬 균형 유지 */
+.cell.has-cage-sum .cell-notes {
+  padding-top: 5.5px;
+  padding-left: 1px;
+}
+
 .note-num {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: #64748b;
   line-height: 1;
+}
+
+.cell.has-cage-sum .note-num {
+  font-size: 9.8px;
 }
 
 /* Sizing Modifiers for Notes */
 body.notes-size-normal .note-num {
   font-size: 10px;
 }
+body.notes-size-normal .cell.has-cage-sum .note-num {
+  font-size: 9px;
+}
+
 body.notes-size-large .note-num {
   font-size: 11.5px;
 }
+body.notes-size-large .cell.has-cage-sum .note-num {
+  font-size: 10.2px;
+}
+
 body.notes-size-xlarge .note-num {
-  font-size: 13px;
+  font-size: 12.8px;
+}
+body.notes-size-xlarge .cell.has-cage-sum .note-num {
+  font-size: 11.2px;
 }
 
 /* Controls Column */
@@ -1071,10 +1092,15 @@ body.notes-size-xlarge .note-num {
   }
 
   .cell-cage-sum {
-    font-size: 11px;
-    top: 4.5px;
-    left: 5.5px;
-    font-weight: 700;
+    font-size: 9.5px;
+    top: 3px;
+    left: 4px;
+    font-weight: 800;
+  }
+
+  .cell.has-cage-sum .cell-notes {
+    padding-top: 7px;
+    padding-left: 2px;
   }
 
   .note-num {
@@ -1205,10 +1231,15 @@ body.notes-size-xlarge .note-num {
   }
 
   .cell-cage-sum {
-    font-size: 11px;
-    top: 4.5px;
-    left: 5.5px;
-    font-weight: 700;
+    font-size: 9.5px;
+    top: 3px;
+    left: 4px;
+    font-weight: 800;
+  }
+
+  .cell.has-cage-sum .cell-notes {
+    padding-top: 7px;
+    padding-left: 2px;
   }
 
   .note-num {
@@ -1579,6 +1610,65 @@ input:checked + .slider::before {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
+/* Play Mode Select Buttons (일반 / 타임어택) */
+.mode-select-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.mode-select-btn:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.mode-select-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+.theme-dark .mode-select-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.theme-dark .mode-select-btn.active {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+.theme-dark .diff-card-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.theme-dark .diff-card-btn.active {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.theme-dark .diff-card-desc {
+  color: #94a3b8;
+}
+
 .diff-card-header {
   display: flex;
   justify-content: space-between;
@@ -1903,19 +1993,56 @@ input:checked + .slider::before {
 }
 
 .game-mode-tag {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 2.5px 7px;
   border-radius: 6px;
-  margin-left: 4px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+.mode-standard {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 .mode-timeattack {
   background: #fee2e2;
   color: #dc2626;
+  border: 1px solid #fecaca;
 }
 .mode-battle {
   background: #fef3c7;
   color: #d97706;
+  border: 1px solid #fde68a;
+}
+.mode-daily {
+  background: #ccfbf1;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.theme-dark .mode-standard {
+  background: rgba(30, 64, 175, 0.35);
+  color: #93c5fd;
+  border-color: #1e40af;
+}
+.theme-dark .mode-timeattack {
+  background: rgba(153, 27, 27, 0.35);
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+.theme-dark .mode-battle {
+  background: rgba(146, 64, 14, 0.35);
+  color: #fde68a;
+  border-color: #92400e;
+}
+.theme-dark .mode-daily {
+  background: rgba(17, 94, 89, 0.35);
+  color: #5eead4;
+  border-color: #115e59;
 }
 
 /* ==========================================================================
@@ -2071,6 +2198,52 @@ input:checked + .slider::before {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 12px;
+}
+
+/* Battle Difficulty Pills Selector */
+.battle-diff-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.battle-diff-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.battle-diff-btn:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.battle-diff-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+.theme-dark .battle-diff-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.theme-dark .battle-diff-btn.active {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
 }
 
 .battle-mode-card {
@@ -3113,28 +3286,84 @@ input:checked + .slider:before {
   border-color: #3b82f6;
 }
 
-/* Responsive Replay on Narrow Screens */
+/* Responsive Replay & Mobile Hub Redesign on Narrow Screens */
 @media (max-width: 680px) {
+  .hub-container {
+    padding: 10px 12px 70px 12px;
+  }
+  .hub-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
   .hub-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: auto;
+  }
+  .hub-header-right {
+    display: none; /* 모바일에서는 탭 선택 알약 바가 명확히 상단에 위치하므로 중복 타이틀 제거 */
   }
   .hub-main-split {
     flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
   }
   .hub-sidebar {
     width: 100%;
+    display: flex;
     flex-direction: row;
+    gap: 8px;
     overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  .hub-card-group {
-    flex-direction: row;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 2px 10px 2px;
     flex-shrink: 0;
   }
+  .hub-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .hub-card-group {
+    display: contents; /* 그룹 테두리를 풀고 모든 메뉴 아이템을 단일 슬림 칩 캐러셀로 통일 */
+  }
   .hub-menu-item {
-    padding: 10px 14px;
-    border-bottom: none;
-    border-right: 1px solid #f1f5f9;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 7px 14px;
+    border-radius: 9999px; /* 모던 세그먼트 알약 스타일 */
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.84rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+    min-height: 36px;
+    transition: all 0.16s ease;
+  }
+  .hub-menu-item.active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35) !important;
+    font-weight: 700;
+  }
+  .hub-menu-item.active .hub-item-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+  }
+  .hub-content-area {
+    padding-right: 0;
+  }
+  .settings-list-card {
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
   .replay-main {
     flex-direction: column;
@@ -3184,6 +3413,152 @@ input:checked + .slider:before {
   background: #1e293b;
   border-color: #475569;
   color: #f8fafc;
+}
+
+@media (max-width: 680px) {
+  .theme-dark .hub-menu-item {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+  }
+  .theme-dark .hub-menu-item.active {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4) !important;
+  }
+}
+
+/* ==========================================================================
+   MAP GENERATION PROGRESS OVERLAY (연역 추론 맵 생성 진행 오버레이)
+   ========================================================================== */
+.generating-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 1;
+  transition: opacity 0.22s ease;
+}
+
+.generating-overlay.hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.generating-modal-card {
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 26px 22px;
+  width: min(340px, 90vw);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.gen-spinner-box {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.gen-spinner-ring {
+  position: absolute;
+  inset: 0;
+  border: 4px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-right-color: #60a5fa;
+  border-radius: 50%;
+  animation: gen-spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+
+@keyframes gen-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.gen-spinner-icon {
+  font-size: 24px;
+  animation: gen-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes gen-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+.gen-title {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.gen-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.gen-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.gen-progress-fill {
+  height: 100%;
+  width: 15%;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-radius: 999px;
+  transition: width 0.15s ease-out;
+}
+
+.gen-status-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gen-percent {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.theme-dark .generating-modal-card {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
+}
+
+.theme-dark .gen-spinner-ring {
+  border-color: #334155;
+  border-top-color: #60a5fa;
+}
+
+.theme-dark .gen-progress-track {
+  background: #334155;
 }
 
 

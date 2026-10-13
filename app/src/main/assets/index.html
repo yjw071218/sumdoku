@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.11</div>
+          <div class="version-chip" id="app-version-chip">v1.0.12</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -827,7 +827,7 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.11</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.12</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                   <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 인앱 업데이트</button>
@@ -1121,6 +1121,14 @@
             </div>
           </div>
 
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-top: 10px; margin-bottom: 6px;">배틀 난이도 선택</div>
+          <div class="battle-diff-pills" id="battle-diff-selector">
+            <button class="battle-diff-btn" data-bdiff="easy">초급</button>
+            <button class="battle-diff-btn" data-bdiff="medium">중급</button>
+            <button class="battle-diff-btn" data-bdiff="hard">고급</button>
+            <button class="battle-diff-btn active" data-bdiff="expert">전문가</button>
+          </div>
+
           <div class="battle-ip-box">
             <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">내 방 코드 (동일 Wi-Fi 접속용)</div>
             <div id="battle-my-code" class="battle-code-display">대기 중...</div>
@@ -1314,6 +1322,27 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Map Generation Progress Overlay -->
+    <div id="generating-overlay" class="generating-overlay hidden">
+      <div class="generating-modal-card">
+        <div class="gen-spinner-box">
+          <div class="gen-spinner-ring"></div>
+          <div class="gen-spinner-icon">🧩</div>
+        </div>
+        <h3 class="gen-title" id="gen-title">100% 연역 추론 맵 생성 중</h3>
+        <p class="gen-subtitle" id="gen-subtitle">찍지 않고 풀 수 있는 퍼즐을 생성하고 검증합니다</p>
+        
+        <div class="gen-progress-track">
+          <div class="gen-progress-fill" id="gen-progress-bar"></div>
+        </div>
+        
+        <div class="gen-status-row">
+          <span class="gen-status-text" id="gen-status-text">솔루션 베이스 빌드 중...</span>
+          <span class="gen-percent" id="gen-percent">15%</span>
+        </div>
       </div>
     </div>
 

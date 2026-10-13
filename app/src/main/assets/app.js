@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.11";
+const APP_VERSION = "1.0.12";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -214,6 +214,92 @@ class SumdokuGenerator {
     // 안전 백업
     const solution = this.createSolutionIterative(rng);
     const cages = this.createSmartCages(solution, targetAnchors, rng);
+    return { solution, cages, anchorCount: targetAnchors };
+  }
+
+  // 비동기 맵 생성 및 진행 상황 피드백 콜백 지원
+  async generateAsync(diff = 'expert', customRng = null, onProgress = null) {
+    const rng = customRng || this.rng;
+
+    const anchorMap = {
+      easy: 7,
+      medium: 5,
+      hard: 4,
+      expert: [1, 2, 2, 3][Math.floor(rng() * 4)]
+    };
+    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [1, 2, 2, 3][Math.floor(rng() * 4)];
+    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const diffKr = diffNames[diff] || diff;
+
+    let attempts = 0;
+    const maxAttempts = 1000;
+
+    if (onProgress) {
+      onProgress({
+        diffKr,
+        step: 1,
+        message: '9x9 기본 완성 스도쿠 판 생성 중...',
+        percent: 15,
+        attempt: 0
+      });
+      await new Promise(r => setTimeout(r, 16));
+    }
+
+    while (attempts < maxAttempts) {
+      attempts++;
+
+      const solution = this.createSolutionIterative(rng);
+      const cages = this.createSmartCages(solution, targetAnchors, rng);
+      const singles = cages.filter(c => c.cells.length === 1);
+
+      // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
+      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
+        if (onProgress) {
+          onProgress({
+            diffKr,
+            step: 3,
+            message: `100% 순수 연역 논리 검증 완료! (시도: ${attempts}회)`,
+            percent: 100,
+            attempt: attempts
+          });
+          await new Promise(r => setTimeout(r, 60));
+        }
+        return {
+          solution,
+          cages,
+          anchorCount: targetAnchors
+        };
+      }
+
+      // 4회 시도마다 비동기 틱 양보 및 프로그레스 갱신
+      if (attempts % 4 === 0) {
+        if (onProgress) {
+          const pct = Math.min(95, 20 + Math.floor((attempts / 45) * 75));
+          onProgress({
+            diffKr,
+            step: 2,
+            message: `스마트 케이지 연역 추론 검증 중... (${attempts}회 시도)`,
+            percent: pct,
+            attempt: attempts
+          });
+        }
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    // 안전 백업
+    const solution = this.createSolutionIterative(rng);
+    const cages = this.createSmartCages(solution, targetAnchors, rng);
+    if (onProgress) {
+      onProgress({
+        diffKr,
+        step: 3,
+        message: '퍼즐 준비 완료!',
+        percent: 100,
+        attempt: attempts
+      });
+      await new Promise(r => setTimeout(r, 50));
+    }
     return { solution, cages, anchorCount: targetAnchors };
   }
 
@@ -531,7 +617,8 @@ class SumdokuApp {
     this.timerInterval = null;
     this.isPaused = false;
     this.undoStack = [];
-    this.difficulty = 'expert';
+    this.selectedDifficulty = localStorage.getItem('sumdoku_selected_diff') || 'expert';
+    this.difficulty = this.selectedDifficulty;
     this.anchorCount = 2;
     this.score = 0;
     this.combo = 0;
@@ -548,6 +635,7 @@ class SumdokuApp {
     this.isBattle = false;
     this.battleRole = 1; // 1: Host, 2: Guest
     this.battleMode = 'race'; // race, score, survival
+    this.battleDiff = 'expert'; // 배틀 난이도 선택 지원 (초급, 중급, 고급, 전문가)
     this.battleHostUrl = '';
     this.battlePollInterval = null;
     this.oppState = { filled: 0, score: 0, mistakes: 0, isWin: false };
@@ -983,7 +1071,8 @@ class SumdokuApp {
         error: c.error
       })));
 
-      this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : this.difficulty.toUpperCase();
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty.toUpperCase();
+      this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
       this.dom.mistakes.textContent = this.settings.mistakeLimit
         ? `${this.mistakes} / ${this.maxMistakes}`
         : `${this.mistakes}`;
@@ -1092,6 +1181,14 @@ class SumdokuApp {
       btnDiffCancel: document.getElementById('btn-diff-cancel'),
       btnDiffStart: document.getElementById('btn-diff-start'),
 
+      // Map Generation Progress Overlay
+      generatingOverlay: document.getElementById('generating-overlay'),
+      genProgressBar: document.getElementById('gen-progress-bar'),
+      genStatusText: document.getElementById('gen-status-text'),
+      genPercent: document.getElementById('gen-percent'),
+      genTitle: document.getElementById('gen-title'),
+      genSubtitle: document.getElementById('gen-subtitle'),
+
       modalSettings: document.getElementById('modal-settings'),
       btnSettingsClose: document.getElementById('btn-settings-close'),
       btnSettingsDone: document.getElementById('btn-settings-done'),
@@ -1178,6 +1275,60 @@ class SumdokuApp {
     };
   }
 
+  // ----------------- 난이도 & 모드 모달 동기화 -----------------
+  openDifficultyModal() {
+    const diffToSelect = this.selectedDifficulty || this.difficulty || 'expert';
+    document.querySelectorAll('.diff-card-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.diff === diffToSelect);
+    });
+    const modeToSelect = this.gameMode || 'standard';
+    document.querySelectorAll('.mode-select-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === modeToSelect);
+    });
+    this.dom.modalDiff.classList.remove('hidden');
+  }
+
+  // ----------------- 맵 생성 진행 오버레이 -----------------
+  showGeneratingOverlay(diff = 'expert') {
+    if (!this.dom.generatingOverlay) return;
+    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const diffKr = diffNames[diff] || diff;
+    if (this.dom.genTitle) {
+      this.dom.genTitle.textContent = `${diffKr} 연역 추론 맵 생성 중`;
+    }
+    if (this.dom.genSubtitle) {
+      this.dom.genSubtitle.textContent = '찍지 않고 100% 논리로만 풀 수 있는 퍼즐을 생성하고 검증합니다';
+    }
+    if (this.dom.genProgressBar) {
+      this.dom.genProgressBar.style.width = '12%';
+    }
+    if (this.dom.genStatusText) {
+      this.dom.genStatusText.textContent = '솔루션 베이스 빌드 중...';
+    }
+    if (this.dom.genPercent) {
+      this.dom.genPercent.textContent = '12%';
+    }
+    this.dom.generatingOverlay.classList.remove('hidden');
+  }
+
+  updateGeneratingProgress(p) {
+    if (!this.dom.generatingOverlay || this.dom.generatingOverlay.classList.contains('hidden')) return;
+    if (this.dom.genProgressBar) {
+      this.dom.genProgressBar.style.width = `${p.percent || 15}%`;
+    }
+    if (this.dom.genStatusText) {
+      this.dom.genStatusText.textContent = p.message || '검증 진행 중...';
+    }
+    if (this.dom.genPercent) {
+      this.dom.genPercent.textContent = `${p.percent || 15}%`;
+    }
+  }
+
+  hideGeneratingOverlay() {
+    if (!this.dom.generatingOverlay) return;
+    this.dom.generatingOverlay.classList.add('hidden');
+  }
+
   bindEvents() {
     // 하단 탭 내비게이션
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1212,7 +1363,7 @@ class SumdokuApp {
     });
     this.dom.btnHomeNew.addEventListener('click', () => {
       this.sound.play('click');
-      this.dom.modalDiff.classList.remove('hidden');
+      this.openDifficultyModal();
     });
     this.dom.btnHomeBattle.addEventListener('click', () => {
       this.sound.play('click');
@@ -1327,6 +1478,8 @@ class SumdokuApp {
         const card = e.currentTarget;
         card.classList.add('active');
         this.difficulty = card.dataset.diff;
+        this.selectedDifficulty = card.dataset.diff;
+        localStorage.setItem('sumdoku_selected_diff', card.dataset.diff);
       });
     });
 
@@ -1335,7 +1488,19 @@ class SumdokuApp {
       this.dom.modalDiff.classList.add('hidden');
       this.isDaily = false;
       this.isBattle = false;
-      this.startNewGame(this.difficulty, null, this.gameMode);
+
+      // 화면에 활성화된(active) 난이도와 모드를 정확하게 읽어서 시작 (Expert 선택 시 Medium 시작 버그 원천 차단)
+      const activeCard = document.querySelector('.diff-card-btn.active');
+      const selectedDiff = activeCard ? activeCard.dataset.diff : (this.selectedDifficulty || this.difficulty || 'expert');
+      this.difficulty = selectedDiff;
+      this.selectedDifficulty = selectedDiff;
+      localStorage.setItem('sumdoku_selected_diff', selectedDiff);
+
+      const activeModeBtn = document.querySelector('.mode-select-btn.active');
+      const selectedMode = activeModeBtn ? activeModeBtn.dataset.mode : (this.gameMode || 'standard');
+      this.gameMode = selectedMode;
+
+      this.startNewGame(selectedDiff, null, selectedMode);
     });
 
     // 게임 헤더 액션
@@ -1370,7 +1535,7 @@ class SumdokuApp {
     this.dom.btnSettingsRestart.addEventListener('click', () => {
       this.sound.play('click');
       this.dom.modalSettings.classList.add('hidden');
-      this.dom.modalDiff.classList.remove('hidden');
+      this.openDifficultyModal();
     });
 
     // 설정 스위치 양방향 바인딩
@@ -1717,6 +1882,18 @@ class SumdokuApp {
       });
     });
 
+    // 배틀 난이도 버튼 선택
+    document.querySelectorAll('.battle-diff-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.sound.play('click');
+        document.querySelectorAll('.battle-diff-btn').forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget;
+        target.classList.add('active');
+        this.battleDiff = target.dataset.bdiff;
+        this.setupHostRoom();
+      });
+    });
+
     // 호스트 게임 시작
     this.dom.btnBattleStartMatch.addEventListener('click', async () => {
       this.sound.play('click');
@@ -1747,6 +1924,9 @@ class SumdokuApp {
     this.dom.tabBattleJoin.classList.remove('active');
     this.dom.battleHostView.classList.remove('hidden');
     this.dom.battleJoinView.classList.add('hidden');
+    document.querySelectorAll('.battle-diff-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.bdiff === (this.battleDiff || 'expert'));
+    });
     this.setupHostRoom();
   }
 
@@ -1758,8 +1938,10 @@ class SumdokuApp {
     }
     this.battleHostIp = localIp;
 
-    // 대전용 동일 맵 사전 생성
-    const puzzle = this.generator.generate(this.difficulty);
+    const bDiff = this.battleDiff || 'expert';
+    // 대전용 동일 맵 사전 생성 (선택한 난이도로 생성)
+    const puzzle = this.generator.generate(bDiff);
+    puzzle.difficulty = bDiff;
     this.battlePuzzleData = puzzle;
 
     const timeLimitSec = (this.battleMode === 'score') ? 300 : 0;
@@ -1767,7 +1949,7 @@ class SumdokuApp {
     let resJson = { ok: true, code: '88' };
     if (window.AndroidBridge && window.AndroidBridge.startBattleServer) {
       try {
-        const raw = window.AndroidBridge.startBattleServer(this.battleMode, this.difficulty, timeLimitSec, JSON.stringify(puzzle));
+        const raw = window.AndroidBridge.startBattleServer(this.battleMode, bDiff, timeLimitSec, JSON.stringify(puzzle));
         resJson = JSON.parse(raw);
       } catch (e) {}
     }
@@ -1874,7 +2056,8 @@ class SumdokuApp {
     this.dom.battleP2Bar.style.width = '0%';
 
     // 배틀 퍼즐은 둘 다 100% 동일한 맵으로 시작
-    this.startNewGame(puzzleData.difficulty || 'medium', null, 'battle', puzzleData);
+    const matchDiff = (puzzleData && puzzleData.difficulty) || this.battleDiff || 'expert';
+    this.startNewGame(matchDiff, null, 'battle', puzzleData);
     this.showToast(`⚔️ 1:1 배틀 시작! (${modeKr})`);
 
     // 실시간 대전 데이터 동기화 루프 (500ms 간격)
@@ -2161,10 +2344,15 @@ class SumdokuApp {
   // ============================================================================
   // 6. 게임 플레이 (신규 게임, 보드 렌더링, 타이머 & 점수)
   // ============================================================================
-  startNewGame(diff = 'expert', customRng = null, mode = 'standard', existingPuzzle = null) {
+  async startNewGame(diff = 'expert', customRng = null, mode = 'standard', existingPuzzle = null) {
     this.difficulty = diff;
+    if (!this.isDaily && !this.isBattle) {
+      this.selectedDifficulty = diff;
+      localStorage.setItem('sumdoku_selected_diff', diff);
+    }
     this.gameMode = mode;
-    this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diff.toUpperCase();
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || diff.toUpperCase();
+    this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
     this.updateModeDisplay();
 
     this.mistakes = 0;
@@ -2189,8 +2377,19 @@ class SumdokuApp {
 
     this.resetTimer();
 
-    // 퍼즐 생성 또는 배틀 동일 퍼즐 로드
-    const generated = existingPuzzle || this.generator.generate(diff, customRng);
+    // 퍼즐 생성 또는 배틀 동일 퍼즐 로드 (생성 진행 오버레이 피드백)
+    let generated = existingPuzzle;
+    if (!generated) {
+      this.showGeneratingOverlay(diff);
+      try {
+        generated = await this.generator.generateAsync(diff, customRng, (p) => {
+          this.updateGeneratingProgress(p);
+        });
+      } finally {
+        this.hideGeneratingOverlay();
+      }
+    }
+
     this.solution = generated.solution;
     this.cages = generated.cages;
     this.anchorCount = generated.anchorCount;
@@ -2238,7 +2437,6 @@ class SumdokuApp {
     this.startTimer();
     this.switchView('game');
 
-    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || diff;
     const modeKr = (this.gameMode === 'timeattack') ? '타임어택' : (this.gameMode === 'battle' ? 'Wi-Fi 배틀' : '일반');
     this.showToast(`100% 연역 추론 보장! (${diffKr} · 시작 앵커 ${this.anchorCount}개 · ${modeKr})`);
   }
@@ -2246,14 +2444,18 @@ class SumdokuApp {
   updateModeDisplay() {
     if (!this.dom.gameModeTag) return;
     this.dom.gameModeTag.className = 'game-mode-tag';
-    if (this.gameMode === 'timeattack') {
-      this.dom.gameModeTag.textContent = '타임어택';
+    if (this.isDaily) {
+      this.dom.gameModeTag.textContent = '📅 일일 도전';
+      this.dom.gameModeTag.classList.add('mode-daily');
+    } else if (this.gameMode === 'timeattack') {
+      this.dom.gameModeTag.textContent = '⏳ 타임어택';
       this.dom.gameModeTag.classList.add('mode-timeattack');
     } else if (this.gameMode === 'battle') {
-      this.dom.gameModeTag.textContent = '배틀';
+      this.dom.gameModeTag.textContent = '⚔️ 배틀';
       this.dom.gameModeTag.classList.add('mode-battle');
     } else {
-      this.dom.gameModeTag.textContent = '일반';
+      this.dom.gameModeTag.textContent = '⏱️ 일반 모드';
+      this.dom.gameModeTag.classList.add('mode-standard');
     }
   }
 
