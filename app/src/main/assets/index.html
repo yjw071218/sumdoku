@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.3</div>
+          <div class="version-chip" id="app-version-chip">v1.0.4</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -695,17 +695,47 @@
       </div>
     </div>
 
-    <!-- Auto-Update Modal -->
+    <!-- In-App Auto-Update Modal -->
     <div id="modal-update" class="modal-backdrop hidden">
-      <div class="modal-card">
-        <h3 id="update-modal-title">새 버전 발견!</h3>
-        <p id="update-modal-version">최신 버전이 출시되었습니다.</p>
+      <div class="modal-card modal-update-card">
+        <div class="modal-update-header">
+          <div class="update-icon-badge">🚀</div>
+          <div class="update-header-text">
+            <h3 id="update-modal-title">새 버전 발견!</h3>
+            <p id="update-modal-version" class="update-ver-tag">최신 업데이트가 준비되었습니다.</p>
+          </div>
+        </div>
+
         <div class="update-notes-box" id="update-modal-notes">
           <!-- Release notes injected here -->
         </div>
-        <div class="modal-footer">
+
+        <!-- In-App Download Progress Container -->
+        <div id="update-progress-container" class="update-progress-box hidden">
+          <div class="progress-info-row">
+            <span id="update-progress-status" class="progress-status-text">다운로드 준비 중...</span>
+            <span id="update-progress-percent" class="progress-percent-text">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="update-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- In-App Update Actions -->
+        <div class="update-choices-box" id="update-actions-normal">
+          <button id="btn-update-hot" class="btn btn-primary btn-inapp-update">
+            <span class="btn-main-label">⚡ 인앱 즉시 업데이트</span>
+            <span class="btn-sub-label">APK 다운로드 없이 3초 만에 즉시 적용</span>
+          </button>
+
+          <button id="btn-update-apk" class="btn btn-secondary btn-apk-install">
+            <span class="btn-main-label">📦 인앱 APK 원클릭 설치</span>
+            <span class="btn-sub-label">앱 내에서 다운로드 후 바로 설치 창 실행</span>
+          </button>
+        </div>
+
+        <div class="modal-footer update-footer">
           <button id="btn-update-dismiss" class="btn btn-secondary">나중에</button>
-          <button id="btn-update-download" class="btn btn-primary">지금 다운로드</button>
         </div>
       </div>
     </div>

@@ -1602,3 +1602,140 @@ input:checked + .slider::before {
   opacity: 0;
   transform: translate(-50%, 15px);
 }
+
+/* In-App Update Center Modal */
+.modal-update-card {
+  max-width: 360px;
+}
+
+.modal-update-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.update-icon-badge {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+}
+
+.update-header-text h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.update-ver-tag {
+  font-size: 0.8rem;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.update-notes-box {
+  background: var(--bg-surface-glass);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
+.update-notes-box pre {
+  margin: 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* In-App Progress Box */
+.update-progress-box {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.progress-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.progress-status-text {
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 75%;
+}
+
+.progress-percent-text {
+  color: #2563eb;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  border-radius: 4px;
+  transition: width 0.15s ease-out;
+}
+
+/* Update Choice Buttons */
+.update-choices-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.btn-inapp-update, .btn-apk-install {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.btn-main-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.btn-sub-label {
+  font-size: 0.73rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 3px;
+}
+
+.update-footer {
+  justify-content: center;
+}
+

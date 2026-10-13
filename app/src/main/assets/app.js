@@ -1,7 +1,8 @@
 /**
- * Sumdoku (썸도쿠) v1.0.3 - 100% 연역 추론 보장 합계 수도쿠
+ * Sumdoku (썸도쿠) v1.0.4 - 100% 연역 추론 보장 합계 수도쿠
  * 
  * - 홈 화면, 게임 화면(폰/태블릿 반응형 스튜디오), 일일 도전 캘린더, 설정 및 전적 시스템
+ * - 인앱 즉시 업데이트 (OTA 핫 리소스 업데이트) 및 인앱 원클릭 APK 설치기 탑재
  * - 인셋 점선 케이지: 칸보다 3px 작은 미려한 둥근 점선 테두리 (Image 2 스타일)
  * - 4단계 난이도 (초급, 중급, 고급, 전문가: 2~3개 확정 앵커로 100% 논리 풀림)
  * - 실시간 점수 시스템 및 사운드 효과음 (Web Audio API)
@@ -10,7 +11,7 @@
  * - GitHub 연동 실시간 자동 업데이트 체커
  */
 
-const APP_VERSION = "1.0.3";
+const APP_VERSION = "1.0.4";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -943,8 +944,14 @@ class SumdokuApp {
 
       modalUpdate: document.getElementById('modal-update'),
       btnUpdateDismiss: document.getElementById('btn-update-dismiss'),
-      btnUpdateDownload: document.getElementById('btn-update-download'),
+      btnUpdateHot: document.getElementById('btn-update-hot'),
+      btnUpdateApk: document.getElementById('btn-update-apk'),
       updateNotes: document.getElementById('update-modal-notes'),
+      updateProgressContainer: document.getElementById('update-progress-container'),
+      updateProgressStatus: document.getElementById('update-progress-status'),
+      updateProgressPercent: document.getElementById('update-progress-percent'),
+      updateProgressFill: document.getElementById('update-progress-fill'),
+      updateActionsNormal: document.getElementById('update-actions-normal'),
 
       toast: document.getElementById('toast'),
       keyBtns: document.querySelectorAll('.key-btn')
@@ -1187,11 +1194,27 @@ class SumdokuApp {
     }, duration);
   }
 
-  // ----------------- 자동 업데이트 엔진 (GitHub Releases) -----------------
+  handleUpdateProgress(percent, message) {
+    if (this.dom.updateProgressPercent) this.dom.updateProgressPercent.textContent = `${percent}%`;
+    if (this.dom.updateProgressFill) this.dom.updateProgressFill.style.width = `${percent}%`;
+    if (this.dom.updateProgressStatus) this.dom.updateProgressStatus.textContent = message;
+  }
+
+  handleUpdateError(message) {
+    if (this.dom.updateProgressContainer) this.dom.updateProgressContainer.classList.add('hidden');
+    if (this.dom.updateActionsNormal) this.dom.updateActionsNormal.classList.remove('hidden');
+    this.showToast(message, 3500);
+  }
+
+  // ----------------- 자동 업데이트 엔진 (In-App Hot Update & In-App APK) -----------------
   async checkForUpdates(manual = false) {
     const descEl = document.getElementById('update-status-desc');
     if (manual) this.showToast('최신 버전 업데이트 확인 중...');
     if (descEl) descEl.textContent = 'GitHub 릴리스 확인 중...';
+
+    const currentVersion = (window.AndroidBridge && window.AndroidBridge.getVersion)
+      ? window.AndroidBridge.getVersion()
+      : APP_VERSION;
 
     try {
       const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
@@ -1201,26 +1224,58 @@ class SumdokuApp {
       const release = await resp.json();
       const latestTag = (release.tag_name || '').replace(/^v/, '');
 
-      if (this.isNewerVersion(latestTag, APP_VERSION)) {
+      if (this.isNewerVersion(latestTag, currentVersion)) {
         document.getElementById('update-modal-title').textContent = `새 버전 발견! (v${latestTag})`;
-        document.getElementById('update-modal-version').textContent = `현재 버전: v${APP_VERSION} ➔ 최신 버전: v${latestTag}`;
+        document.getElementById('update-modal-version').textContent = `현재 버전: v${currentVersion} ➔ 최신 버전: v${latestTag}`;
         this.dom.updateNotes.innerHTML = `<pre>${release.body || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.'}</pre>`;
-        
-        let downloadUrl = release.html_url;
+
+        // UI 상태 초기화
+        this.dom.updateActionsNormal.classList.remove('hidden');
+        this.dom.updateProgressContainer.classList.add('hidden');
+        this.handleUpdateProgress(0, '준비 중...');
+
+        let apkDownloadUrl = release.html_url;
         if (release.assets && release.assets.length > 0) {
           const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
-          if (apkAsset) downloadUrl = apkAsset.browser_download_url;
+          if (apkAsset) apkDownloadUrl = apkAsset.browser_download_url;
         }
 
-        this.dom.btnUpdateDownload.onclick = () => {
-          window.open(downloadUrl, '_system');
+        // 1. 인앱 즉시 업데이트 (OTA 핫 리소스 업데이트 - APK 다운로드 불필요)
+        this.dom.btnUpdateHot.onclick = () => {
+          this.sound.play('click');
+          this.dom.updateActionsNormal.classList.add('hidden');
+          this.dom.updateProgressContainer.classList.remove('hidden');
+          this.handleUpdateProgress(10, '인앱 리소스 업데이트 시작...');
+
+          if (window.AndroidBridge && window.AndroidBridge.downloadAndApplyWebUpdate) {
+            window.AndroidBridge.downloadAndApplyWebUpdate(latestTag);
+          } else {
+            setTimeout(() => {
+              this.handleUpdateProgress(100, '웹 환경: 페이지를 새로고침합니다...');
+              setTimeout(() => window.location.reload(), 600);
+            }, 1000);
+          }
+        };
+
+        // 2. 인앱 APK 원클릭 설치기 (브라우저 이동 없이 앱 내 다운로드 & 설치창 호출)
+        this.dom.btnUpdateApk.onclick = () => {
+          this.sound.play('click');
+          this.dom.updateActionsNormal.classList.add('hidden');
+          this.dom.updateProgressContainer.classList.remove('hidden');
+          this.handleUpdateProgress(5, '인앱 APK 다운로드 연결 중...');
+
+          if (window.AndroidBridge && window.AndroidBridge.downloadAndInstallApk) {
+            window.AndroidBridge.downloadAndInstallApk(apkDownloadUrl);
+          } else {
+            window.open(apkDownloadUrl, '_system');
+          }
         };
 
         this.dom.modalUpdate.classList.remove('hidden');
-        if (descEl) descEl.textContent = `새 버전 (v${latestTag}) 다운로드 가능!`;
+        if (descEl) descEl.textContent = `새 버전 (v${latestTag}) 인앱 업데이트 가능!`;
       } else {
-        if (manual) this.showToast(`현재 최신 버전(v${APP_VERSION})을 사용 중입니다.`);
-        if (descEl) descEl.textContent = `현재 버전(v${APP_VERSION})이 최신입니다`;
+        if (manual) this.showToast(`현재 최신 버전(v${currentVersion})을 사용 중입니다.`);
+        if (descEl) descEl.textContent = `현재 버전(v${currentVersion})이 최신입니다`;
       }
     } catch (e) {
       if (manual) this.showToast('업데이트 확인 실패 (인터넷 연결 확인)');
@@ -1731,3 +1786,13 @@ class SumdokuApp {
 window.addEventListener('DOMContentLoaded', () => {
   window.app = new SumdokuApp();
 });
+
+// Native Android Bridge Global Callbacks
+window.onUpdateProgress = (percent, message) => {
+  if (window.app) window.app.handleUpdateProgress(percent, message);
+};
+
+window.onUpdateError = (message) => {
+  if (window.app) window.app.handleUpdateError(message);
+};
+
