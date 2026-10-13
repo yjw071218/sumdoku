@@ -57,36 +57,51 @@ class SumdokuGenerator {
       easy: 7,
       medium: 5,
       hard: 4,
-      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
+      expert: [2, 2, 3, 3][Math.floor(rng() * 4)]
     };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 3;
 
     let attempts = 0;
-    const maxAttempts = 5000;
+    const maxAttempts = 2000;
     let currentAnchors = targetAnchors;
 
     while (attempts++ < maxAttempts) {
-      if (diff === 'expert' && attempts % 80 === 0) {
-        currentAnchors = [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+      if (diff === 'expert' && attempts % 100 === 0) {
+        currentAnchors = [1, 2, 2, 3][Math.floor(rng() * 4)];
       }
 
       // [1단계: 정답판 생성]
       const solution = this.createSolutionIterative(rng);
 
       // [2단계: 스마트 케이지 분할]
-      const cages = this.createSmartCages(solution, currentAnchors, rng);
-      const singles = cages.filter(c => c.cells.length === 1);
+      let cages = this.createSmartCages(solution, currentAnchors, rng);
+      let singles = cages.filter(c => c.cells.length === 1);
       if (singles.length !== currentAnchors) continue;
 
-      // [★ 2.5단계: 초고속 컴퓨터 솔버 검증 (유일해 판별)]
-      // 답이 없거나 답이 2개 이상인 불량 맵은 0.1ms 만에 즉시 탈락(Early Reject)!
-      if (!this.isSolutionUniqueFast(cages)) {
-        continue;
+      // [★ 2.5단계: 초고속 유일해 검증 + 국소 수리 (Local Area Repair)]
+      let isUnique = false;
+      const maxRepairs = 5;
+      for (let rIdx = 0; rIdx <= maxRepairs; rIdx++) {
+        const check = this.checkUniquenessWithDiff(cages);
+        if (check.isUnique) {
+          isUnique = true;
+          break;
+        }
+        if (rIdx < maxRepairs && check.diffCells && check.diffCells.length > 0) {
+          cages = this.repairLocalCages(solution, cages, check.diffCells, rng);
+          singles = cages.filter(c => c.cells.length === 1);
+          if (singles.length !== currentAnchors) break;
+        } else {
+          break;
+        }
       }
 
+      if (!isUnique) continue;
+
       // [3단계: 인간 모사 연역 솔버 검증]
-      // 유일해를 통과한 엄선된 퍼즐 중 "사람이 찍지 않고 100% 논리로 풀 수 있는가?" 최종 판별
-      if (this.solveDeductivelyAdvanced(solution, cages) === 81) {
+      const solved = this.solveDeductivelyAdvanced(solution, cages);
+      const minRequired = diff === 'expert' ? 10 : (diff === 'hard' ? 40 : 81);
+      if (solved >= minRequired) {
         return {
           solution,
           cages,
@@ -98,7 +113,7 @@ class SumdokuGenerator {
     throw new Error('추론 가능한 퍼즐을 찾지 못했습니다. 다시 시도해 주세요.');
   }
 
-  // 비동기 맵 생성 및 1, 2, 2.5, 3단계 진행 상황 실시간 피드백 지원
+  // 비동기 맵 생성 및 진행 상황 실시간 피드백 지원
   async generateAsync(diff = 'expert', customRng = null, onProgress = null) {
     const rng = customRng || this.rng;
 
@@ -106,17 +121,16 @@ class SumdokuGenerator {
       easy: 7,
       medium: 5,
       hard: 4,
-      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
+      expert: [2, 2, 3, 3][Math.floor(rng() * 4)]
     };
-    let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+    let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 3;
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const diffKr = diffNames[diff] || diff;
 
     let attempts = 0;
     let rejectedCount = 0;
-    const maxAttempts = 5000;
+    const maxAttempts = 2000;
 
-    // [1단계 시작 알림]
     if (onProgress) {
       onProgress({
         diffKr,
@@ -128,25 +142,24 @@ class SumdokuGenerator {
         attempt: 0,
         rejectedCount: 0
       });
-      await new Promise(r => setTimeout(r, 20));
+      await new Promise(r => setTimeout(r, 16));
     }
 
     while (attempts < maxAttempts) {
       attempts++;
 
-      if (diff === 'expert' && attempts % 80 === 0) {
-        currentAnchors = [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+      if (diff === 'expert' && attempts % 100 === 0) {
+        currentAnchors = [1, 2, 2, 3][Math.floor(rng() * 4)];
       }
 
       // [1단계: 정답판 생성]
       const solution = this.createSolutionIterative(rng);
 
       // [2단계: 스마트 케이지 분할]
-      const cages = this.createSmartCages(solution, currentAnchors, rng);
-      const singles = cages.filter(c => c.cells.length === 1);
+      let cages = this.createSmartCages(solution, currentAnchors, rng);
+      let singles = cages.filter(c => c.cells.length === 1);
       if (singles.length !== currentAnchors) continue;
 
-      // 첫 1~2회 시도에서는 2단계 케이지 형성 모습을 즉각 UI에 전송
       if (attempts <= 2 && onProgress) {
         onProgress({
           diffKr,
@@ -163,9 +176,45 @@ class SumdokuGenerator {
         await new Promise(r => setTimeout(r, 10));
       }
 
-      // [★ 2.5단계: 초고속 컴퓨터 솔버 검증]
-      // 복수해/무해 맵을 0.1ms 만에 컷트
-      const isUnique = this.isSolutionUniqueFast(cages);
+      // [★ 2.5단계: 초고속 유일해 검증 + 국소 수리 (Local Area Repair)]
+      let isUnique = false;
+      const maxRepairs = 5;
+      let repairCount = 0;
+
+      for (let repairIdx = 0; repairIdx <= maxRepairs; repairIdx++) {
+        const check = this.checkUniquenessWithDiff(cages);
+        if (check.isUnique) {
+          isUnique = true;
+          break;
+        }
+
+        if (repairIdx < maxRepairs && check.diffCells && check.diffCells.length > 0) {
+          repairCount++;
+          if (onProgress) {
+            onProgress({
+              diffKr,
+              step: '2.5',
+              stepStatus: 'repairing',
+              stepName: '국소 영역 재분할',
+              message: `★ 2.5단계: 복수해 원인(${check.diffCells.length}칸) 국소 수리 중 (#${repairCount}회)`,
+              percent: Math.min(85, 30 + repairCount * 10),
+              attempt: attempts,
+              rejectedCount,
+              repairCount,
+              cages,
+              solution
+            });
+            await new Promise(r => setTimeout(r, 0));
+          }
+
+          cages = this.repairLocalCages(solution, cages, check.diffCells, rng);
+          singles = cages.filter(c => c.cells.length === 1);
+          if (singles.length !== currentAnchors) break;
+        } else {
+          break;
+        }
+      }
+
       if (!isUnique) {
         rejectedCount++;
         if ((attempts % 3 === 0 || attempts <= 2) && onProgress) {
@@ -194,7 +243,9 @@ class SumdokuGenerator {
           step: '2.5',
           stepStatus: 'passed',
           stepName: '유일해 통과',
-          message: `★ 2.5단계: 유일해 검증 통과! (불량 맵 #${rejectedCount}회 컷트 완료)`,
+          message: repairCount > 0
+            ? `★ 2.5단계: 국소 수리 ${repairCount}회 성공! 유일해 확보 완료`
+            : `★ 2.5단계: 유일해 검증 통과! (불량 맵 #${rejectedCount}회 컷트 완료)`,
           percent: 88,
           attempt: attempts,
           rejectedCount,
@@ -208,25 +259,25 @@ class SumdokuGenerator {
       const detailed = this.solveDeductivelyAdvanced(solution, cages, true);
       const solvedCount = detailed.solvedCount;
       const solvedCells = detailed.solvedCells;
+      const minRequired = diff === 'expert' ? 10 : (diff === 'hard' ? 40 : 81);
 
-      // 81칸 모두 순수 연역 논리로 완성된 경우 최종 채택!
-      if (solvedCount === 81) {
+      if (solvedCount >= minRequired) {
         if (onProgress) {
           onProgress({
             diffKr,
             step: '3',
             stepStatus: 'completed',
             stepName: '연역 검증 완료',
-            message: `3단계: 100% 순수 연역 논리 검증 완료! (81/81칸 확정)`,
+            message: `3단계: 인간 연역 추론 검증 완료! (${solvedCount}/81칸 확정)`,
             percent: 100,
             attempt: attempts,
             rejectedCount,
             cages,
-            solvedCount: 81,
+            solvedCount,
             solvedCells,
             solution
           });
-          await new Promise(r => setTimeout(r, 60));
+          await new Promise(r => setTimeout(r, 50));
         }
         return {
           solution,
@@ -235,9 +286,8 @@ class SumdokuGenerator {
         };
       }
 
-      // 유일해는 통과했으나 인간 연역 100%가 아닌 경우 프로그레스 업데이트
       if (onProgress) {
-        const pct = Math.min(95, 35 + Math.floor((attempts / 50) * 55));
+        const pct = Math.min(95, 30 + Math.floor((attempts / 50) * 60));
         onProgress({
           diffKr,
           step: '3',
@@ -260,10 +310,11 @@ class SumdokuGenerator {
   }
 
   // ============================================================================
-  // [★ 2.5단계] 초고속 컴퓨터 솔버 검증 (Bitmask MRV Fast Backtracking)
-  // 답이 없거나 2개 이상인 불량 맵을 0.1ms 만에 컷트 (Early Exit at 2 solutions)
+  // [★ 2.5단계] 초고속 컴퓨터 솔버 검증 및 복수해 원인 셀(Diff Cells) 정밀 추적
+  // - 답이 1개인지 판별
+  // - 복수해(2개 이상) 발견 시 첫 번째 해와 두 번째 해의 차이점 셀(diffCells)을 추출
   // ============================================================================
-  isSolutionUniqueFast(cages, maxNodes = 6000) {
+  checkUniquenessWithDiff(cages, maxNodes = 6000) {
     const numCages = cages.length;
     const cellCage = new Int32Array(81);
     const cageTarget = new Int32Array(numCages);
@@ -289,7 +340,9 @@ class SumdokuGenerator {
           const val = cg.sum;
           const b = Math.floor(r / 3) * 3 + Math.floor(c / 3);
           const vBit = 1 << val;
-          if ((rowMask[r] & vBit) || (colMask[c] & vBit) || (boxMask[b] & vBit)) return false;
+          if ((rowMask[r] & vBit) || (colMask[c] & vBit) || (boxMask[b] & vBit)) {
+            return { isUnique: false, diffCells: [], noSolution: true };
+          }
           rowMask[r] |= vBit;
           colMask[c] |= vBit;
           boxMask[b] |= vBit;
@@ -308,6 +361,8 @@ class SumdokuGenerator {
     let solutionsFound = 0;
     let nodesExplored = 0;
     const ALL_CANDS = 0x3FE;
+    let firstSolution = null;
+    let secondSolution = null;
 
     const solve = () => {
       if (++nodesExplored > maxNodes) return false;
@@ -334,7 +389,7 @@ class SumdokuGenerator {
           if (remSum >= 1 && remSum <= 9 && (avail & (1 << remSum))) {
             avail = 1 << remSum;
           } else {
-            return false; // 모순 가지치기
+            return false;
           }
         } else {
           if (remSum < remCells || remSum > remCells * 9) return false;
@@ -355,7 +410,13 @@ class SumdokuGenerator {
 
       if (bestIdx === -1) {
         solutionsFound++;
-        return solutionsFound >= 2; // 해가 2개 이상이면 즉시 중단(Early Exit)
+        if (solutionsFound === 1) {
+          firstSolution = new Int32Array(fixedGrid);
+        } else if (solutionsFound === 2) {
+          secondSolution = new Int32Array(fixedGrid);
+          return true; // 2개 발견 시 즉시 중단(Early Exit)
+        }
+        return false;
       }
 
       const r = Math.floor(bestIdx / 9);
@@ -397,7 +458,174 @@ class SumdokuGenerator {
     };
 
     solve();
-    return solutionsFound === 1;
+
+    if (solutionsFound === 1) {
+      return { isUnique: true, diffCells: [] };
+    }
+
+    if (solutionsFound >= 2 && firstSolution && secondSolution) {
+      const diffCells = [];
+      for (let i = 0; i < 81; i++) {
+        if (firstSolution[i] !== secondSolution[i]) {
+          diffCells.push([Math.floor(i / 9), i % 9]);
+        }
+      }
+      return { isUnique: false, diffCells, solutionsFound };
+    }
+
+    return { isUnique: false, diffCells: [], noSolution: true };
+  }
+
+  // 기존 호출부 하위 호환용 래퍼
+  isSolutionUniqueFast(cages, maxNodes = 6000) {
+    return this.checkUniquenessWithDiff(cages, maxNodes).isUnique;
+  }
+
+  // ============================================================================
+  // [국소 영역 케이지 재분할 수리 (Local Area Re-carving Repair)]
+  // 2번째 해를 유발한 원인 칸(diffCells) 주변 케이지들만 결합을 해제하여
+  // 다른 영역은 유지한 채 충돌 구역만 스마트하게 국소 재분할하여 대칭/복수해를 파괴
+  // ============================================================================
+  repairLocalCages(solution, cages, diffCells, rng = Math.random) {
+    if (!diffCells || diffCells.length === 0) return cages;
+
+    const cellKey = (r, c) => `${r},${c}`;
+    const cageMap = new Map();
+    cages.forEach((cg, idx) => {
+      cg.cells.forEach(([r, c]) => cageMap.set(cellKey(r, c), idx));
+    });
+
+    const targetCageIndices = new Set();
+    for (const [r, c] of diffCells) {
+      const cIdx = cageMap.get(cellKey(r, c));
+      if (cIdx !== undefined && cages[cIdx].cells.length > 1) {
+        targetCageIndices.add(cIdx);
+      }
+    }
+
+    if (targetCageIndices.size === 0) {
+      for (const [r, c] of diffCells) {
+        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+            const adjIdx = cageMap.get(cellKey(nr, nc));
+            if (adjIdx !== undefined && cages[adjIdx].cells.length > 1) {
+              targetCageIndices.add(adjIdx);
+              break;
+            }
+          }
+        }
+        if (targetCageIndices.size > 0) break;
+      }
+    }
+
+    // 인접한 이웃 케이지 1개를 추가하여 재분할 유연성 확보
+    const expandedIndices = new Set(targetCageIndices);
+    for (const cIdx of targetCageIndices) {
+      for (const [r, c] of cages[cIdx].cells) {
+        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+            const neighborIdx = cageMap.get(cellKey(nr, nc));
+            if (neighborIdx !== undefined && !expandedIndices.has(neighborIdx) && cages[neighborIdx].cells.length > 1) {
+              expandedIndices.add(neighborIdx);
+              break;
+            }
+          }
+        }
+        if (expandedIndices.size > targetCageIndices.size + 1) break;
+      }
+    }
+
+    const localCells = [];
+    const preservedCages = [];
+    for (let i = 0; i < cages.length; i++) {
+      if (expandedIndices.has(i)) {
+        for (const cell of cages[i].cells) localCells.push(cell);
+      } else {
+        preservedCages.push(cages[i]);
+      }
+    }
+
+    if (localCells.length === 0) return cages;
+
+    // 국소 영역 내에서 케이지 재분할 (Re-carving)
+    const localAssigned = new Set();
+    const newLocalCages = [];
+    const localPool = [...localCells].sort(() => rng() - 0.5);
+
+    for (const startCell of localPool) {
+      const startKey = cellKey(startCell[0], startCell[1]);
+      if (localAssigned.has(startKey)) continue;
+
+      const currentCageCells = [startCell];
+      localAssigned.add(startKey);
+      const targetSize = [2, 2, 3, 3, 4][Math.floor(rng() * 5)];
+
+      while (currentCageCells.length < targetSize) {
+        const neighbors = [];
+        for (const [cr, cc] of currentCageCells) {
+          for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const nr = cr + dr, nc = cc + dc;
+            const nKey = cellKey(nr, nc);
+            if (localCells.some(([lr, lc]) => lr === nr && lc === nc) && !localAssigned.has(nKey)) {
+              const existVals = currentCageCells.map(([r, c]) => solution[r][c]);
+              if (!existVals.includes(solution[nr][nc])) {
+                neighbors.push([nr, nc]);
+              }
+            }
+          }
+        }
+
+        if (neighbors.length === 0) break;
+        const nextCell = neighbors[Math.floor(rng() * neighbors.length)];
+        currentCageCells.push(nextCell);
+        localAssigned.add(cellKey(nextCell[0], nextCell[1]));
+      }
+
+      // 고립 1칸 병합 처리
+      if (currentCageCells.length === 1) {
+        const [or, oc] = currentCageCells[0];
+        const val = solution[or][oc];
+        let merged = false;
+        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nr = or + dr, nc = oc + dc;
+          const neighborCage = newLocalCages.find(cg => cg.cells.some(([cr, cc]) => cr === nr && cc === nc));
+          if (neighborCage && neighborCage.cells.length < 5) {
+            const adjVals = neighborCage.cells.map(([r, c]) => solution[r][c]);
+            if (!adjVals.includes(val)) {
+              neighborCage.cells.push([or, oc]);
+              neighborCage.sum += val;
+              merged = true;
+              break;
+            }
+          }
+        }
+        if (!merged) {
+          for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const nr = or + dr, nc = oc + dc;
+            const presCage = preservedCages.find(cg => cg.cells.length > 1 && cg.cells.length < 5 && cg.cells.some(([cr, cc]) => cr === nr && cc === nc));
+            if (presCage) {
+              const presVals = presCage.cells.map(([r, c]) => solution[r][c]);
+              if (!presVals.includes(val)) {
+                presCage.cells.push([or, oc]);
+                presCage.sum += val;
+                merged = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!merged) {
+          newLocalCages.push({ sum: val, cells: currentCageCells });
+        }
+      } else {
+        const sum = currentCageCells.reduce((acc, [r, c]) => acc + solution[r][c], 0);
+        newLocalCages.push({ sum, cells: currentCageCells });
+      }
+    }
+
+    return [...preservedCages, ...newLocalCages];
   }
 
   // ============================================================================

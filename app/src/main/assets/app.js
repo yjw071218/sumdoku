@@ -1253,7 +1253,9 @@ class SumdokuApp {
 
     // 서브텍스트 상세 안내
     if (this.dom.genPreviewSubtext) {
-      if (p.step === '2.5' && p.stepStatus === 'rejected') {
+      if (p.step === '2.5' && p.stepStatus === 'repairing') {
+        this.dom.genPreviewSubtext.textContent = `🔧 국소 수리: 복수해 유발 셀 주변만 스마트 재분할 진행 중`;
+      } else if (p.step === '2.5' && p.stepStatus === 'rejected') {
         this.dom.genPreviewSubtext.textContent = `⚡ 0.1ms 컷트: 복수해 불량 맵 #${p.rejectedCount || p.attempt}회 즉시 탈락`;
       } else if (p.step === '2.5' && p.stepStatus === 'passed') {
         this.dom.genPreviewSubtext.textContent = `✓ 유일해 통과: 불량 맵 #${p.rejectedCount || 0}회 컷트 후 유일해 확보!`;
@@ -3227,7 +3229,7 @@ class SumdokuApp {
           })
         }).catch(() => {});
       } catch (e) {}
-      this.handleBattleEnd(false, '실수 3회 초과로 탈락했습니다! 패배!');
+      this.handleBattleEnd(false, `허용 실수(${this.maxMistakes}회) 초과로 탈락했습니다! 패배!`);
       return;
     }
 
@@ -3236,13 +3238,20 @@ class SumdokuApp {
 
     setTimeout(() => {
       const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      const isUnlimited = this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit;
+      const maxDisplay = isUnlimited ? '∞' : this.maxMistakes;
+      const mistakeTitle = isUnlimited ? '실수' : `${this.maxMistakes}회 실수`;
+      const mistakeSub = isUnlimited
+        ? '허용된 실수를 초과했습니다. 다시 도전해 보세요!'
+        : `허용된 실수 횟수(${this.maxMistakes}회)를 모두 초과했습니다. 다시 도전해 보세요!`;
+
       this.showGameResultModal({
         status: 'fail',
-        title: '게임 오버 (3회 실수)',
-        sub: '허용된 실수 횟수(3회)를 모두 초과했습니다. 다시 도전해 보세요!',
+        title: `게임 오버 (${mistakeTitle})`,
+        sub: mistakeSub,
         score: this.score,
         time: this.dom.timer.textContent,
-        mistakes: '3 / 3 (초과)',
+        mistakes: `${this.mistakes} / ${maxDisplay} (초과)`,
         difficulty: diffKr,
         isNewBestScore: false,
         isNewBestTime: false

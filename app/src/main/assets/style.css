@@ -689,6 +689,15 @@ body, html {
   min-width: 0;
 }
 
+.board-frame-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .board-frame {
   position: relative;
   width: min(100%, 420px, 48vh);
@@ -885,7 +894,7 @@ body, html {
   z-index: 5;
 }
 
-/* Pencil Notes */
+/* Pencil Notes (합계 숫자 유무와 무관하게 모든 셀에서 1~9 메모 위치를 100% 동일하게 통일) */
 .cell-notes {
   position: absolute;
   inset: 3px;
@@ -894,9 +903,11 @@ body, html {
   grid-template-rows: repeat(3, 1fr);
   pointer-events: none;
   z-index: 1;
+  padding-top: 5.5px;
+  padding-left: 1px;
+  box-sizing: border-box;
 }
 
-/* 케이지 합계 숫자가 있는 셀: 상단 여백(padding-top)을 주어 합계 숫자와 1번 메모의 겹침을 완전 방지하고 1~9 메모 정렬 균형 유지 */
 .cell.has-cage-sum .cell-notes {
   padding-top: 5.5px;
   padding-left: 1px;
@@ -1157,6 +1168,7 @@ body.notes-size-xlarge .note-num {
     font-weight: 800;
   }
 
+  .cell-notes,
   .cell.has-cage-sum .cell-notes {
     padding-top: 7px;
     padding-left: 2px;
@@ -1296,6 +1308,7 @@ body.notes-size-xlarge .note-num {
     font-weight: 800;
   }
 
+  .cell-notes,
   .cell.has-cage-sum .cell-notes {
     padding-top: 7px;
     padding-left: 2px;
@@ -4168,17 +4181,18 @@ input:checked + .slider:before {
 
 .multi-cage-banner {
   position: absolute;
-  top: 6px;
+  bottom: calc(100% + 7px);
+  top: auto;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1.5px solid #10b981;
   border-radius: 999px;
-  padding: 4px 10px 4px 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  padding: 3px 10px 3px 13px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4192,7 +4206,7 @@ input:checked + .slider:before {
 }
 
 @keyframes mcPillPop {
-  from { opacity: 0; transform: translate(-50%, -6px) scale(0.92); }
+  from { opacity: 0; transform: translate(-50%, 6px) scale(0.92); }
   to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
