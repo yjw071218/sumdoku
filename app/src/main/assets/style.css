@@ -120,11 +120,11 @@ body, html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 20px calc(90px + env(safe-area-inset-bottom, 24px)) 20px;
+  padding: 6px 18px calc(65px + env(safe-area-inset-bottom, 16px)) 18px;
 }
 
 .home-header {
@@ -132,14 +132,14 @@ body, html {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-top: 10px;
+  margin-top: 2px;
 }
 
 .brand-badge-container {
   position: relative;
-  width: 76px;
-  height: 76px;
-  margin-bottom: 12px;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -147,37 +147,37 @@ body, html {
 
 .brand-logo {
   position: relative;
-  width: 70px;
-  height: 70px;
+  width: 50px;
+  height: 50px;
   background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-  border-radius: 20px;
+  border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
   z-index: 2;
 }
 
 .logo-symbol {
   color: #ffffff;
-  font-size: 2.3rem;
+  font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .logo-accent {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 4px;
+  right: 6px;
   color: #fef08a;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 900;
 }
 
 .pulse-ring {
   position: absolute;
-  inset: -5px;
-  border-radius: 25px;
+  inset: -4px;
+  border-radius: 20px;
   border: 2px solid rgba(59, 130, 246, 0.4);
   animation: pulse-ring 2.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
   z-index: 1;
@@ -190,26 +190,26 @@ body, html {
 }
 
 .brand-title {
-  font-size: 2rem;
+  font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 0px;
 }
 
 .brand-tagline {
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 3px;
 }
 
 .version-chip {
   display: inline-block;
-  padding: 3px 12px;
+  padding: 2px 10px;
   background: #dbeafe;
   border-radius: 12px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: #1d4ed8;
 }
@@ -221,11 +221,11 @@ body, html {
   justify-content: space-between;
   width: 100%;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-radius: 18px;
-  padding: 16px 20px;
-  margin: 18px 0 10px 0;
+  border-radius: 14px;
+  padding: 8px 14px;
+  margin: 6px 0 5px 0;
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.22);
   cursor: pointer;
   transition: transform 0.12s;
 }
@@ -234,24 +234,24 @@ body, html {
 }
 
 .daily-hero-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 .daily-hero-info {
   display: flex;
   flex-direction: column;
   flex: 1;
-  margin-left: 14px;
+  margin-left: 10px;
 }
 
 .daily-hero-badge {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #bfdbfe;
 }
 
 .daily-hero-date {
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 800;
 }
 
@@ -260,31 +260,33 @@ body, html {
   color: #1d4ed8;
   border: none;
   font-weight: 800;
-  font-size: 0.88rem;
-  padding: 8px 16px;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   cursor: pointer;
 }
 
 .home-menu {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
   width: 100%;
-  margin: 10px 0 20px 0;
+  margin: 5px 0 6px 0;
 }
 
 .menu-btn {
   display: flex;
   align-items: center;
-  padding: 14px 18px;
-  border-radius: 16px;
+  padding: 8.5px 14px;
+  border-radius: 13px;
   border: none;
   cursor: pointer;
-  gap: 14px;
+  gap: 11px;
   text-align: left;
   transition: transform 0.12s, box-shadow 0.15s;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .menu-btn:active {
@@ -294,7 +296,7 @@ body, html {
 .menu-btn.btn-primary {
   background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
 }
 .menu-btn.btn-primary .btn-desc {
   color: #bfdbfe;
@@ -303,7 +305,7 @@ body, html {
 .menu-btn.btn-continue {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22);
 }
 .menu-btn.btn-continue .btn-desc {
   color: #d1fae5;
@@ -313,7 +315,7 @@ body, html {
   background: var(--bg-surface);
   color: var(--text-primary);
   border: 1.5px solid #e2e8f0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }
 
 .menu-btn.btn-battle {
@@ -330,7 +332,7 @@ body, html {
 }
 
 .btn-icon {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
 }
 
 .btn-content {
@@ -339,25 +341,25 @@ body, html {
 }
 
 .btn-title {
-  font-size: 1.02rem;
+  font-size: 0.94rem;
   font-weight: 700;
 }
 
 .btn-desc {
-  font-size: 0.78rem;
+  font-size: 0.71rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .home-footer {
   text-align: center;
-  margin-top: 14px;
-  margin-bottom: 24px;
-  padding-bottom: 8px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding-bottom: 0px;
 }
 
 .github-link {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 600;
@@ -1945,6 +1947,30 @@ input:checked + .slider::before {
   color: #ffffff;
 }
 
+.btn-battle-forfeit-chip {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btn-battle-forfeit-chip:active {
+  background: #ef4444;
+  color: #ffffff;
+  transform: scale(0.94);
+}
+
+.theme-dark .btn-battle-forfeit-chip {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: #f87171;
+  color: #fca5a5;
+}
+
 .battle-players-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -2552,7 +2578,7 @@ input:checked + .slider::before {
   max-width: 1200px;
   height: 100%;
   margin: 0 auto;
-  padding: 12px 20px calc(80px + env(safe-area-inset-bottom, 16px)) 20px;
+  padding: 8px 18px calc(65px + env(safe-area-inset-bottom, 16px)) 18px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -2561,22 +2587,22 @@ input:checked + .slider::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 4px 14px 4px;
+  padding: 4px 4px 8px 4px;
   border-bottom: 1px solid var(--grid-thin);
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .hub-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 280px;
+  width: 270px;
   flex-shrink: 0;
 }
 
 .hub-header-right {
   flex: 1;
-  padding-left: 20px;
+  padding-left: 18px;
 }
 
 .hub-col-title {
@@ -2588,7 +2614,7 @@ input:checked + .slider::before {
 
 .hub-main-split {
   display: flex;
-  gap: 24px;
+  gap: 18px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -2596,32 +2622,35 @@ input:checked + .slider::before {
 
 /* Left Sidebar Menu */
 .hub-sidebar {
-  width: 280px;
+  width: 270px;
   flex-shrink: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-right: 6px;
-  padding-bottom: 70px;
+  padding-right: 4px;
+  padding-bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
 .hub-card-group {
   background: var(--bg-surface);
-  border-radius: 16px;
+  border-radius: 13px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0; /* ★ 절대 카드 그룹이 찌그러지거나 잘리지 않도록 flex-shrink: 0 보장 ★ */
 }
 
 .hub-menu-item {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 13px 16px;
+  padding: 8px 13px;
+  min-height: 37px;
+  box-sizing: border-box;
   background: transparent;
   border: none;
   outline: none;
@@ -2640,18 +2669,18 @@ input:checked + .slider::before {
 }
 
 .hub-icon-box {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  margin-right: 12px;
+  font-size: 1.1rem;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
 .hub-item-label {
-  font-size: 0.98rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-primary);
   flex: 1;

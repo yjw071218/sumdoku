@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.10</div>
+          <div class="version-chip" id="app-version-chip">v1.0.11</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -222,8 +222,11 @@
         <!-- Battle Real-Time Opponent HUD (Shown during battle) -->
         <div id="battle-hud" class="battle-hud-box hidden">
           <div class="battle-hud-header">
-            <span class="battle-mode-chip" id="battle-hud-mode">⚡ 스피드 레이스</span>
-            <span id="battle-hud-status">실시간 대전 중</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="battle-mode-chip" id="battle-hud-mode">⚡ 스피드 레이스</span>
+              <span id="battle-hud-status">실시간 대전 중</span>
+            </div>
+            <button id="btn-battle-forfeit" class="btn-battle-forfeit-chip" title="배틀 기권하기">🏳️ 기권</button>
           </div>
           <div class="battle-players-row">
             <div class="battle-player-info left">
@@ -824,7 +827,7 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.10</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.11</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                   <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 인앱 업데이트</button>

@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.10";
+const APP_VERSION = "1.0.11";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -1030,10 +1030,7 @@ class SumdokuApp {
   handleBackKey() {
     if (this.currentView === 'game') {
       if (this.isBattle) {
-        if (confirm('진행 중인 배틀 대전을 기권하고 퇴장하시겠습니까?')) {
-          this.endBattleSession();
-          this.switchView('home');
-        }
+        this.promptBattleForfeit();
         return "handled";
       }
       this.switchView('home');
@@ -1125,6 +1122,7 @@ class SumdokuApp {
       battleP2Stat: document.getElementById('battle-p2-stat'),
       battleP1Bar: document.getElementById('battle-p1-bar'),
       battleP2Bar: document.getElementById('battle-p2-bar'),
+      btnBattleForfeit: document.getElementById('btn-battle-forfeit'),
 
       modalBattleLobby: document.getElementById('modal-battle-lobby'),
       btnBattleClose: document.getElementById('btn-battle-close'),
@@ -1192,9 +1190,20 @@ class SumdokuApp {
     document.querySelectorAll('.btn-back-home').forEach(btn => {
       btn.addEventListener('click', () => {
         this.sound.play('click');
+        if (this.currentView === 'game' && this.isBattle) {
+          this.promptBattleForfeit();
+          return;
+        }
         this.switchView('home');
       });
     });
+
+    if (this.dom.btnBattleForfeit) {
+      this.dom.btnBattleForfeit.addEventListener('click', () => {
+        this.sound.play('click');
+        this.promptBattleForfeit();
+      });
+    }
 
     // 홈 메뉴 버튼
     this.dom.btnHomeContinue.addEventListener('click', () => {
@@ -1872,6 +1881,7 @@ class SumdokuApp {
     clearInterval(this.battlePollInterval);
     const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
 
+    let consecutivePollErrors = 0;
     this.battlePollInterval = setInterval(async () => {
       if (!this.isBattle || this.isPaused) return;
 
@@ -1893,14 +1903,68 @@ class SumdokuApp {
         // 상대 상태 수신
         const pResp = await fetch(`${targetUrl}/api/progress`);
         if (pResp.ok) {
+          consecutivePollErrors = 0;
           const pData = await pResp.json();
           const oppData = (role === 1) ? pData.p2 : pData.p1;
-          if (oppData && oppData.filled !== undefined) {
-            this.updateOpponentProgress(oppData);
+          if (pData.status === 'ended') {
+            if (oppData && (oppData.resigned || oppData.forfeit)) {
+              this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
+              return;
+            }
           }
+          if (oppData) {
+            if (oppData.resigned || oppData.forfeit) {
+              this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
+              return;
+            }
+            if (oppData.filled !== undefined) {
+              this.updateOpponentProgress(oppData);
+            }
+          }
+        } else {
+          consecutivePollErrors++;
         }
-      } catch (e) {}
+      } catch (e) {
+        consecutivePollErrors++;
+        if (consecutivePollErrors >= 3 && this.isBattle) {
+          this.handleBattleEnd(true, '상대방과의 연결이 끊어졌거나 방을 나갔습니다! 당신의 승리! 🏆');
+        }
+      }
     }, 600);
+  }
+
+  promptBattleForfeit() {
+    if (!this.isBattle) return;
+    if (confirm('정말 이번 배틀 대전을 기권하시겠습니까?\n기권 시 상대방의 승리로 게임이 즉시 종료됩니다.')) {
+      this.forfeitBattle();
+    }
+  }
+
+  async forfeitBattle() {
+    if (!this.isBattle) return;
+    const role = this.battleRole;
+    const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+
+    try {
+      await fetch(`${targetUrl}/api/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player: role,
+          filled: this.countFilledCells(),
+          score: this.score,
+          mistakes: this.mistakes,
+          resigned: true,
+          forfeit: true,
+          isWin: false
+        })
+      });
+      await fetch(`${targetUrl}/api/end`, { method: 'POST' }).catch(() => {});
+    } catch (e) {}
+
+    setTimeout(() => {
+      this.handleBattleEnd(false, '게임을 기권했습니다. 상대방의 승리로 종료되었습니다.');
+    }, 100);
   }
 
   updateOpponentProgress(opp) {
@@ -1914,14 +1978,22 @@ class SumdokuApp {
     this.dom.battleP1Bar.style.width = `${myPercent}%`;
     this.dom.battleP2Bar.style.width = `${oppPercent}%`;
 
+    // 상대방 기권 판정
+    if (opp.resigned || opp.forfeit) {
+      this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
+      return;
+    }
+
+    // 상대방 실수 3회 초과 탈락 판정 (모든 배틀 모드 적용)
+    if (opp.mistakes >= 3) {
+      this.handleBattleEnd(true, '상대방이 실수 3회 초과로 탈락했습니다! 당신의 승리! 🏆');
+      return;
+    }
+
     // 배틀 승패 판정
     if (this.battleMode === 'race') {
       if (opp.isWin) {
         this.handleBattleEnd(false, '상대방이 먼저 수도쿠를 완성했습니다!');
-      }
-    } else if (this.battleMode === 'survival') {
-      if (opp.mistakes >= 3) {
-        this.handleBattleEnd(true, '상대방이 실수 3회 초과로 탈락했습니다! 당신의 승리!');
       }
     }
   }
@@ -2744,6 +2816,29 @@ class SumdokuApp {
   handleGameOver() {
     this.sound.play('error');
     this.stopTimer();
+
+    if (this.isBattle) {
+      const role = this.battleRole;
+      const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+      try {
+        fetch(`${targetUrl}/api/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player: role,
+            filled: this.countFilledCells(),
+            score: this.score,
+            mistakes: this.mistakes,
+            resigned: false,
+            forfeit: false,
+            isWin: false
+          })
+        }).catch(() => {});
+      } catch (e) {}
+      this.handleBattleEnd(false, '실수 3회 초과로 탈락했습니다! 패배!');
+      return;
+    }
+
     this.recordGameEnd(false);
     this.clearOngoingGame();
 
