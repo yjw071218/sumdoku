@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.15";
+const APP_VERSION = "1.0.16";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -685,6 +685,10 @@ class SumdokuApp {
       statMessage: true,
       digitFirst: false,
       mistakeLimit: true,
+      maxLives: '3', // '1', '3', '5', '10', 'unlimited'
+      livesExhaustedAction: 'game_over', // 'game_over', 'continue'
+      initialHints: '3', // '1', '3', '5', '10', 'unlimited'
+      hintExhaustedAction: 'allow_penalty', // 'allow_penalty', 'disallow'
       autoCheck: true,
       highlightDup: true,
       highlightCross: true,
@@ -738,13 +742,31 @@ class SumdokuApp {
     setChecked('modal-setting-same', this.settings.highlightSame);
     setChecked('modal-setting-notes', this.settings.autoNotes);
 
+    // 셀렉트 박스 동기화 (메모 크기, 목숨 수, 목숨 소진 액션, 힌트 수, 힌트 소진 액션)
+    const setSelectVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    setSelectVal('setting-notes-size', this.settings.notesSize || 'large');
+    setSelectVal('modal-setting-notes-size', this.settings.notesSize || 'large');
+
+    setSelectVal('setting-max-lives', this.settings.maxLives || '3');
+    setSelectVal('modal-setting-max-lives', this.settings.maxLives || '3');
+
+    setSelectVal('setting-lives-exhausted-action', this.settings.livesExhaustedAction || 'game_over');
+    setSelectVal('modal-setting-lives-exhausted-action', this.settings.livesExhaustedAction || 'game_over');
+
+    setSelectVal('setting-initial-hints', this.settings.initialHints || '3');
+    setSelectVal('modal-setting-initial-hints', this.settings.initialHints || '3');
+
+    setSelectVal('setting-hint-exhausted-action', this.settings.hintExhaustedAction || 'allow_penalty');
+    setSelectVal('modal-setting-hint-exhausted-action', this.settings.hintExhaustedAction || 'allow_penalty');
+
     // 메모 폰트 크기 클래스 적용
     document.body.classList.remove('notes-size-normal', 'notes-size-large', 'notes-size-xlarge');
     document.body.classList.add(`notes-size-${this.settings.notesSize || 'large'}`);
-    const sel1 = document.getElementById('setting-notes-size');
-    const sel2 = document.getElementById('modal-setting-notes-size');
-    if (sel1) sel1.value = this.settings.notesSize || 'large';
-    if (sel2) sel2.value = this.settings.notesSize || 'large';
+
+    this.maxMistakes = (this.settings.maxLives === 'unlimited') ? 999999 : parseInt(this.settings.maxLives || 3, 10);
 
     const timerBox = document.getElementById('timer-box');
     if (timerBox) timerBox.style.display = this.settings.showTimer ? 'flex' : 'none';
@@ -753,10 +775,11 @@ class SumdokuApp {
     if (scoreBox) scoreBox.style.display = this.settings.showScore ? 'flex' : 'none';
 
     if (this.dom && this.dom.mistakes) {
-      this.dom.mistakes.textContent = this.settings.mistakeLimit
-        ? `${this.mistakes} / ${this.maxMistakes}`
-        : `${this.mistakes}`;
+      this.dom.mistakes.textContent = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit)
+        ? `${this.mistakes} / ∞`
+        : `${this.mistakes} / ${this.maxMistakes}`;
     }
+    this.updateHintBadge();
   }
 
   // ----------------- 테마 순환 (Light / Dark / Sepia) -----------------
@@ -944,6 +967,41 @@ class SumdokuApp {
       this.stats.currentStreak = 0;
     }
 
+    if (!this.currentGameReplay && this.solution && this.solution.length === 9) {
+      const now = new Date();
+      const dateStr = `${now.getMonth() + 1}월 ${now.getDate()}일 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      this.currentGameReplay = {
+        id: Date.now(),
+        date: dateStr,
+        difficulty: this.difficulty || 'expert',
+        mode: this.gameMode || 'standard',
+        solution: this.solution,
+        cages: this.cages || [],
+        anchorCount: this.anchorCount || 2,
+        moves: [],
+        result: isWin ? 'win' : 'fail',
+        finalScore: this.score || 0,
+        finalTime: (this.dom && this.dom.timer) ? this.dom.timer.textContent : '00:00',
+        mistakes: this.mistakes || 0
+      };
+      if (this.board) {
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (this.board[r] && this.board[r][c] && this.board[r][c].val > 0) {
+              this.currentGameReplay.moves.push({
+                t: this.timerSeconds || 0,
+                isPencil: false,
+                r, c,
+                num: this.board[r][c].val,
+                prevVal: 0,
+                error: false
+              });
+            }
+          }
+        }
+      }
+    }
+
     if (this.currentGameReplay) {
       this.currentGameReplay.result = isWin ? 'win' : 'fail';
       this.currentGameReplay.finalScore = this.score;
@@ -1016,7 +1074,8 @@ class SumdokuApp {
         hintsRemaining: this.hintsRemaining !== undefined ? this.hintsRemaining : 3,
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
-        dailyDate: this.dailyDate
+        dailyDate: this.dailyDate,
+        currentGameReplay: this.currentGameReplay || null
       };
       localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(state));
     } catch (e) {}
@@ -1070,6 +1129,21 @@ class SumdokuApp {
       this.dailyDate = state.dailyDate || null;
       this.isBattle = false;
 
+      this.currentGameReplay = state.currentGameReplay || {
+        id: Date.now(),
+        date: `${new Date().getMonth() + 1}월 ${new Date().getDate()}일 ${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`,
+        difficulty: this.difficulty,
+        mode: this.gameMode,
+        solution: this.solution,
+        cages: this.cages,
+        anchorCount: this.anchorCount,
+        moves: [],
+        result: 'ongoing',
+        finalScore: this.score,
+        finalTime: '00:00',
+        mistakes: this.mistakes
+      };
+
       this.cellCageMap = {};
       this.cages.forEach((cage, cIdx) => {
         cage.cells.sort((a, b) => a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]);
@@ -1089,9 +1163,8 @@ class SumdokuApp {
 
       const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty.toUpperCase();
       this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
-      this.dom.mistakes.textContent = this.settings.mistakeLimit
-        ? `${this.mistakes} / ${this.maxMistakes}`
-        : `${this.mistakes}`;
+      const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+      this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
       this.dom.gameScore.textContent = this.score;
 
       this.updateHintBadge();
@@ -1352,11 +1425,14 @@ class SumdokuApp {
 
   // ----------------- 난이도 & 모드 모달 동기화 -----------------
   openDifficultyModal() {
-    const diffToSelect = this.selectedDifficulty || this.difficulty || 'expert';
+    const diffToSelect = localStorage.getItem('sumdoku_last_diff') || this.selectedDifficulty || this.difficulty || 'expert';
+    this.selectedDifficulty = diffToSelect;
+    this.difficulty = diffToSelect;
     document.querySelectorAll('.diff-card-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.diff === diffToSelect);
     });
-    const modeToSelect = this.gameMode || 'standard';
+    const modeToSelect = localStorage.getItem('sumdoku_last_mode') || this.gameMode || 'standard';
+    this.gameMode = modeToSelect;
     document.querySelectorAll('.mode-select-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.mode === modeToSelect);
     });
@@ -1542,6 +1618,7 @@ class SumdokuApp {
         const target = e.currentTarget;
         target.classList.add('active');
         this.gameMode = target.dataset.mode;
+        localStorage.setItem('sumdoku_last_mode', target.dataset.mode);
       });
     });
 
@@ -1555,6 +1632,7 @@ class SumdokuApp {
         this.difficulty = card.dataset.diff;
         this.selectedDifficulty = card.dataset.diff;
         localStorage.setItem('sumdoku_selected_diff', card.dataset.diff);
+        localStorage.setItem('sumdoku_last_diff', card.dataset.diff);
       });
     });
 
@@ -1570,10 +1648,12 @@ class SumdokuApp {
       this.difficulty = selectedDiff;
       this.selectedDifficulty = selectedDiff;
       localStorage.setItem('sumdoku_selected_diff', selectedDiff);
+      localStorage.setItem('sumdoku_last_diff', selectedDiff);
 
       const activeModeBtn = document.querySelector('.mode-select-btn.active');
       const selectedMode = activeModeBtn ? activeModeBtn.dataset.mode : (this.gameMode || 'standard');
       this.gameMode = selectedMode;
+      localStorage.setItem('sumdoku_last_mode', selectedMode);
 
       this.startNewGame(selectedDiff, null, selectedMode);
     });
@@ -1807,6 +1887,10 @@ class SumdokuApp {
       if (el2) el2.addEventListener('change', handler);
     };
     bindSelect('setting-notes-size', 'modal-setting-notes-size', 'notesSize');
+    bindSelect('setting-max-lives', 'modal-setting-max-lives', 'maxLives');
+    bindSelect('setting-lives-exhausted-action', 'modal-setting-lives-exhausted-action', 'livesExhaustedAction');
+    bindSelect('setting-initial-hints', 'modal-setting-initial-hints', 'initialHints');
+    bindSelect('setting-hint-exhausted-action', 'modal-setting-hint-exhausted-action', 'hintExhaustedAction');
 
     // 툴바 액션
     this.dom.btnPencil.addEventListener('click', () => this.togglePencilMode());
@@ -1971,6 +2055,7 @@ class SumdokuApp {
         const target = e.currentTarget;
         target.classList.add('active');
         this.battleMode = target.dataset.bmode;
+        try { localStorage.setItem('sumdoku_last_battle_mode', this.battleMode); } catch (e) {}
         this.setupHostRoom();
       });
     });
@@ -1983,6 +2068,7 @@ class SumdokuApp {
         const target = e.currentTarget;
         target.classList.add('active');
         this.battleDiff = target.dataset.bdiff;
+        try { localStorage.setItem('sumdoku_last_battle_diff', this.battleDiff); } catch (e) {}
         this.setupHostRoom();
       });
     });
@@ -2017,8 +2103,17 @@ class SumdokuApp {
     this.dom.tabBattleJoin.classList.remove('active');
     this.dom.battleHostView.classList.remove('hidden');
     this.dom.battleJoinView.classList.add('hidden');
+
+    const lastBattleMode = localStorage.getItem('sumdoku_last_battle_mode') || this.battleMode || 'race';
+    this.battleMode = lastBattleMode;
+    document.querySelectorAll('.battle-mode-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.bmode === this.battleMode);
+    });
+
+    const lastBattleDiff = localStorage.getItem('sumdoku_last_battle_diff') || this.battleDiff || 'expert';
+    this.battleDiff = lastBattleDiff;
     document.querySelectorAll('.battle-diff-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.bdiff === (this.battleDiff || 'expert'));
+      b.classList.toggle('active', b.dataset.bdiff === this.battleDiff);
     });
     this.setupHostRoom();
   }
@@ -2260,9 +2355,12 @@ class SumdokuApp {
       return;
     }
 
-    // 상대방 실수 3회 초과 탈락 판정 (모든 배틀 모드 적용)
-    if (opp.mistakes >= 3) {
-      this.handleBattleEnd(true, '상대방이 실수 3회 초과로 탈락했습니다! 당신의 승리! 🏆');
+    // 상대방 실수 허용치 초과 탈락 판정 (설정에 따라 게임 오버 여부 및 목숨 개수 적용)
+    const isBattleEliminationAllowed = this.settings.mistakeLimit &&
+                                       this.settings.maxLives !== 'unlimited' &&
+                                       this.settings.livesExhaustedAction === 'game_over';
+    if (isBattleEliminationAllowed && opp.mistakes >= this.maxMistakes) {
+      this.handleBattleEnd(true, `상대방이 허용 실수(${this.maxMistakes}회) 초과로 탈락했습니다! 당신의 승리! 🏆`);
       return;
     }
 
@@ -2278,6 +2376,7 @@ class SumdokuApp {
     if (!this.isBattle) return;
     this.stopTimer();
     clearInterval(this.battlePollInterval);
+    this.recordGameEnd(isVictory);
 
     const banner = document.getElementById('battle-result-banner');
     const icon = document.getElementById('battle-result-icon');
@@ -2437,12 +2536,12 @@ class SumdokuApp {
     this.score = 0;
     this.combo = 0;
     this.dom.gameScore.textContent = '0';
-    this.dom.mistakes.textContent = this.settings.mistakeLimit
-      ? `0 / ${this.maxMistakes}`
-      : `0`;
+    this.maxMistakes = (this.settings.maxLives === 'unlimited') ? 999999 : parseInt(this.settings.maxLives || 3, 10);
+    const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+    this.dom.mistakes.textContent = `0 / ${maxMistakesDisplay}`;
     this.undoStack = [];
     this.isWin = false;
-    this.hintsRemaining = 3;
+    this.hintsRemaining = (this.settings.initialHints === 'unlimited') ? 999999 : parseInt(this.settings.initialHints || 3, 10);
     this.updateHintBadge();
 
     // 타임어택 제한 시간 설정
@@ -2955,22 +3054,24 @@ class SumdokuApp {
           this.dom.gameScore.textContent = this.score;
 
           this.mistakes++;
-          this.dom.mistakes.textContent = this.settings.mistakeLimit
-            ? `${this.mistakes} / ${this.maxMistakes}`
-            : `${this.mistakes}`;
+          const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+          this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
 
           if (this.settings.autoCheck) {
             this.showToast(`잘못된 숫자입니다! (-50점)`);
           }
 
-          // 서바이벌 배틀 즉시 탈락 검사
-          if (this.isBattle && this.battleMode === 'survival' && this.mistakes >= 3) {
-            this.handleBattleEnd(false, '실수 3회 초과로 탈락했습니다!');
-            return;
-          }
+          // 목숨 소진 및 게임 오버 판정 (일반 모드 및 배틀 모드 둘 다 설정 적용)
+          const isGameOverAllowed = this.settings.mistakeLimit &&
+                                    this.settings.maxLives !== 'unlimited' &&
+                                    this.settings.livesExhaustedAction === 'game_over';
 
-          if (this.settings.mistakeLimit && this.mistakes >= this.maxMistakes) {
-            this.handleGameOver();
+          if (isGameOverAllowed && this.mistakes >= this.maxMistakes) {
+            if (this.isBattle) {
+              this.handleBattleEnd(false, `허용 목숨(${this.maxMistakes}회)을 모두 소진하여 탈락했습니다!`);
+            } else {
+              this.handleGameOver();
+            }
             return;
           }
         } else {
@@ -3083,18 +3184,33 @@ class SumdokuApp {
 
   updateHintBadge() {
     if (!this.dom.hintBadge) return;
-    if (this.hintsRemaining > 0) {
+    if (this.settings.initialHints === 'unlimited') {
+      this.dom.hintBadge.textContent = '∞';
+      this.dom.hintBadge.classList.remove('badge-extra', 'badge-empty');
+    } else if (this.hintsRemaining > 0) {
       this.dom.hintBadge.textContent = this.hintsRemaining;
-      this.dom.hintBadge.classList.remove('badge-extra');
+      this.dom.hintBadge.classList.remove('badge-extra', 'badge-empty');
     } else {
-      // 0개 소진 상태에서도 추가 힌트 가능하도록 '+' 표시
-      this.dom.hintBadge.textContent = '+';
-      this.dom.hintBadge.classList.add('badge-extra');
+      if (this.settings.hintExhaustedAction === 'disallow') {
+        this.dom.hintBadge.textContent = '0';
+        this.dom.hintBadge.classList.remove('badge-extra');
+        this.dom.hintBadge.classList.add('badge-empty');
+      } else {
+        // 0개 소진 상태에서도 추가 힌트 가능하도록 '+' 표시
+        this.dom.hintBadge.textContent = '+';
+        this.dom.hintBadge.classList.remove('badge-empty');
+        this.dom.hintBadge.classList.add('badge-extra');
+      }
     }
   }
 
   useHint() {
     if (this.currentView !== 'game' || this.isPaused) return;
+    if (this.hintsRemaining <= 0 && this.settings.initialHints !== 'unlimited' && this.settings.hintExhaustedAction === 'disallow') {
+      this.sound.play('error');
+      this.showToast('남은 힌트가 없습니다 (힌트 소진 시 추가 사용 금지 설정)');
+      return;
+    }
     const { r, c } = this.selected;
     if (this.board[r][c].val === 0) {
       this.sound.play('correct');
@@ -3114,7 +3230,11 @@ class SumdokuApp {
       this.board[r][c].error = false;
 
       let hintMsg = '';
-      if (this.hintsRemaining > 0) {
+      if (this.settings.initialHints === 'unlimited') {
+        this.score = Math.max(0, this.score - 30);
+        this.showScoreDelta(-30, r, c, '힌트');
+        hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (무제한 힌트, -30점)`;
+      } else if (this.hintsRemaining > 0) {
         this.hintsRemaining--;
         this.score = Math.max(0, this.score - 30);
         this.showScoreDelta(-30, r, c, '힌트');
@@ -3416,11 +3536,12 @@ class SumdokuApp {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          // 기존에 저장되었던 더미/목 리플레이(moves 길이가 정확히 24수이거나 빈 cellCageMap인 가짜 기록) 완전 필터링
+          // 가짜 목/샘플 데이터 필터링 (r.id === 'sample-1' 또는 24수 t=7 더미)
           const filtered = parsed.filter(r => {
-            if (!r || !r.moves || !r.solution || !r.cages) return false;
-            const isDummy = (!r.cellCageMap || Object.keys(r.cellCageMap).length === 0) || (r.moves.length === 24 && r.moves[0] && r.moves[0].t === 7);
-            return !isDummy;
+            if (!r || !Array.isArray(r.moves) || !Array.isArray(r.solution) || !Array.isArray(r.cages)) return false;
+            if (r.id === 'sample-1' || r.id === 'sample-2' || r.isSample || r.isMock) return false;
+            if (r.moves.length === 24 && r.moves[0] && r.moves[0].t === 7) return false;
+            return true;
           });
           if (filtered.length !== parsed.length) {
             localStorage.setItem('sumdoku_replays', JSON.stringify(filtered));
@@ -3435,14 +3556,34 @@ class SumdokuApp {
   saveReplay(replay) {
     if (!replay || !replay.moves || replay.moves.length === 0) return;
     try {
+      // 용량 최적화: cellCageMap은 replay.cages에서 뷰어가 즉시 동적 생성하므로 저장 시 제외
+      const cleanReplay = Object.assign({}, replay);
+      delete cleanReplay.cellCageMap;
+
       let replays = this.loadReplays();
-      replays = replays.filter(r => r.id !== replay.id);
-      replays.unshift(replay);
+      replays = replays.filter(r => r.id !== cleanReplay.id);
+      replays.unshift(cleanReplay);
       if (replays.length > 20) replays = replays.slice(0, 20);
-      localStorage.setItem('sumdoku_replays', JSON.stringify(replays));
+
+      // QuotaExceeded 방지 및 보장 루프
+      let saved = false;
+      while (replays.length > 0 && !saved) {
+        try {
+          localStorage.setItem('sumdoku_replays', JSON.stringify(replays));
+          saved = true;
+        } catch (err) {
+          if (replays.length > 1) {
+            replays.pop();
+          } else {
+            break;
+          }
+        }
+      }
       this.replays = replays;
       this.renderReplayList();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to save replay:', e);
+    }
   }
 
   renderReplayList() {

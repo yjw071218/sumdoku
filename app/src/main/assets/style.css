@@ -1962,13 +1962,67 @@ input:checked + .slider::before {
 }
 
 .theme-dark .tool-icon {
-  background: #1e293b !important;
+  background: #1e293b;
   border: 1.5px solid #334155;
-  color: #f8fafc !important;
+  color: #f8fafc;
 }
 
 .theme-dark .tool-btn:active .tool-icon {
-  background: #334155 !important;
+  background: #334155;
+}
+
+/* Tool Button Active State (Light & Dark Theme) */
+.tool-btn.active .tool-icon,
+.theme-dark .tool-btn.active .tool-icon {
+  background: #2563eb !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.75), 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+  transform: scale(1.05);
+}
+
+.tool-btn.active .tool-label,
+.theme-dark .tool-btn.active .tool-label {
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+}
+
+/* Pencil Badge ON/OFF Distinction */
+#pencil-badge {
+  transition: all 0.15s ease;
+}
+
+.tool-btn.active #pencil-badge,
+.theme-dark .tool-btn.active #pencil-badge {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  border: 1px solid #34d399 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.9) !important;
+}
+
+.tool-btn:not(.active) #pencil-badge,
+.theme-dark .tool-btn:not(.active) #pencil-badge {
+  background: #475569 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #64748b !important;
+}
+
+/* Specific Glowing Indicator for Pencil Mode in Dark Mode */
+.theme-dark .tool-btn.active#btn-pencil .tool-icon {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.85), 0 0 8px rgba(37, 99, 235, 0.6) !important;
+}
+
+.theme-dark .tool-btn.active#btn-pencil .tool-icon svg {
+  stroke: #ffffff !important;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+}
+
+.badge-empty {
+  background: #ef4444 !important;
+  color: #ffffff !important;
 }
 
 .theme-dark .game-score-badge {
