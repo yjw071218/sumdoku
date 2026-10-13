@@ -117,7 +117,46 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
     }
 
+    private BattleServer battleServer;
+
+    @Override
+    protected void onDestroy() {
+        if (battleServer != null) {
+            battleServer.stop();
+        }
+        super.onDestroy();
+    }
+
     private class AndroidBridgeInterface {
+        @JavascriptInterface
+        public String getLocalIpAddress() {
+            return BattleServer.getLocalIpAddress();
+        }
+
+        @JavascriptInterface
+        public String startBattleServer(String mode, String diff, int timeLimitSec, String puzzleJson) {
+            if (battleServer == null) {
+                battleServer = new BattleServer();
+            }
+            battleServer.configureRoom(mode, diff, timeLimitSec, puzzleJson);
+            boolean ok = battleServer.start(8888);
+            String ip = BattleServer.getLocalIpAddress();
+            String code = ip.contains(".") ? ip.substring(ip.lastIndexOf('.') + 1) : "88";
+            return String.format("{\"ok\":%b,\"ip\":\"%s\",\"port\":8888,\"code\":\"%s\"}", ok, ip, code);
+        }
+
+        @JavascriptInterface
+        public void stopBattleServer() {
+            if (battleServer != null) {
+                battleServer.stop();
+            }
+        }
+
+        @JavascriptInterface
+        public boolean isBattleServerRunning() {
+            return battleServer != null && battleServer.isRunning();
+        }
+
         @JavascriptInterface
         public String getVersion() {
             SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);

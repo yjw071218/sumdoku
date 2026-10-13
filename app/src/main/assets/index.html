@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.4</div>
+          <div class="version-chip" id="app-version-chip">v1.0.5</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -54,6 +54,14 @@
             <div class="btn-content">
               <span class="btn-title">새 게임 시작</span>
               <span class="btn-desc">초급 · 중급 · 고급 · 전문가 (4단계)</span>
+            </div>
+          </button>
+
+          <button id="btn-home-battle" class="menu-btn btn-secondary" style="border-left: 4px solid #ef4444;">
+            <div class="btn-icon">⚔️</div>
+            <div class="btn-content">
+              <span class="btn-title">Wi-Fi 실시간 배틀</span>
+              <span class="btn-desc">동일 Wi-Fi 기기 간 동일 맵 1:1 대전 (3가지 모드)</span>
             </div>
           </button>
 
@@ -211,17 +219,41 @@
           </div>
         </header>
 
+        <!-- Battle Real-Time Opponent HUD (Shown during battle) -->
+        <div id="battle-hud" class="battle-hud-box hidden">
+          <div class="battle-hud-header">
+            <span class="battle-mode-chip" id="battle-hud-mode">⚡ 스피드 레이스</span>
+            <span id="battle-hud-status">실시간 대전 중</span>
+          </div>
+          <div class="battle-players-row">
+            <div class="battle-player-info left">
+              <span class="battle-player-name" id="battle-p1-name">나 (P1)</span>
+              <span class="battle-player-stat" id="battle-p1-stat">0/81칸 · 0점</span>
+            </div>
+            <div class="battle-vs-badge">VS</div>
+            <div class="battle-player-info right">
+              <span class="battle-player-name" id="battle-p2-name">상대 (P2)</span>
+              <span class="battle-player-stat" id="battle-p2-stat">0/81칸 · 0점</span>
+            </div>
+          </div>
+          <div class="battle-dual-bar-track">
+            <div id="battle-p1-bar" class="battle-my-bar" style="width: 0%;"></div>
+            <div id="battle-p2-bar" class="battle-opp-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <!-- Sub Status Bar (Image 2, 8): Difficulty, Mistakes, Timer -->
         <div class="game-sub-bar">
           <div class="sub-bar-item diff-item">
             <span class="sub-label">난이도</span>
             <span id="game-diff-label" class="sub-val">전문가</span>
+            <span id="game-mode-tag" class="game-mode-tag mode-standard">일반</span>
           </div>
           <div class="sub-bar-item mistakes-item">
             <span class="sub-label">실수</span>
             <span id="mistakes-count" class="sub-val">0 / 3</span>
           </div>
-          <div class="sub-bar-item timer-item">
+          <div class="sub-bar-item timer-item" id="timer-box">
             <span class="sub-label">시간</span>
             <span id="timer-display" class="sub-val">00:00</span>
           </div>
@@ -573,11 +605,21 @@
          5. 모달들 (난이도 선택, 게임 내 설정, 규칙, 업데이트)
          ==================================================================== -->
 
-    <!-- Difficulty Select Modal (4단계) -->
+    <!-- Difficulty Select Modal (4단계 및 모드 선택) -->
     <div id="modal-difficulty" class="modal-backdrop hidden">
       <div class="modal-card">
-        <h3>난이도 선택</h3>
-        <p>어떤 난이도든 찍지 않고 100% 추론만으로 정답에 도달합니다.</p>
+        <h3>게임 설정 & 난이도</h3>
+        <p>어떤 난이도든 찍지 않고 100% 논리 추론만으로 정답에 도달합니다.</p>
+        
+        <!-- Game Mode Selection (일반 / 타임어택) -->
+        <div style="margin: 10px 0 14px 0;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">플레이 모드</div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-mode-standard" class="btn btn-secondary mode-select-btn active" data-mode="standard" style="padding: 10px; font-size: 0.88rem;">⏱️ 일반 (기록 모드)</button>
+            <button id="btn-mode-timeattack" class="btn btn-secondary mode-select-btn" data-mode="timeattack" style="padding: 10px; font-size: 0.88rem;">⏳ 타임어택 (시간 제한)</button>
+          </div>
+        </div>
+
         <div class="difficulty-options">
           <button class="diff-card-btn" data-diff="easy">
             <div class="diff-card-header">
@@ -606,9 +648,9 @@
           <button class="diff-card-btn active" data-diff="expert">
             <div class="diff-card-header">
               <span class="diff-tag expert">전문가 (Expert)</span>
-              <span class="diff-hint-count highlight-expert">★ 2~3개 확정</span>
+              <span class="diff-hint-count highlight-expert">★ 1~3개 확정</span>
             </div>
-            <span class="diff-card-desc">극소 앵커 단서 · 순수 연역 논리의 정수</span>
+            <span class="diff-card-desc">단 1개의 앵커만 주어지는 경우 포함 · 100% 순수 연역 논리</span>
           </button>
         </div>
         <div class="modal-footer">
@@ -736,6 +778,123 @@
 
         <div class="modal-footer update-footer">
           <button id="btn-update-dismiss" class="btn btn-secondary">나중에</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wi-Fi Battle Lobby Modal -->
+    <div id="modal-battle-lobby" class="modal-backdrop hidden">
+      <div class="modal-card modal-battle-card">
+        <div class="modal-settings-header">
+          <h3>⚔️ Wi-Fi 실시간 배틀</h3>
+          <button id="btn-battle-close" class="btn-text-action">닫기</button>
+        </div>
+
+        <!-- Lobby Tabs: 방 만들기 (Host) / 방 참가하기 (Join) -->
+        <div class="battle-lobby-tabs">
+          <button id="tab-battle-host" class="battle-tab-btn active">방 만들기 (Host)</button>
+          <button id="tab-battle-join" class="battle-tab-btn">방 참가하기 (Join)</button>
+        </div>
+
+        <!-- Host View Content -->
+        <div id="battle-host-view" class="battle-view-section">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">배틀 모드 선택</div>
+          <div class="battle-mode-options">
+            <div class="battle-mode-card active" data-bmode="race">
+              <div class="battle-mode-text">
+                <span class="battle-mode-title">⚡ 스피드 레이스</span>
+                <span class="battle-mode-desc">동일한 맵을 먼저 완성한 플레이어 승리</span>
+              </div>
+            </div>
+            <div class="battle-mode-card" data-bmode="score">
+              <div class="battle-mode-text">
+                <span class="battle-mode-title">⏱️ 타임어택 점수전 (5분)</span>
+                <span class="battle-mode-desc">제한 시간 내 콤보와 점수가 높은 플레이어 승리</span>
+              </div>
+            </div>
+            <div class="battle-mode-card" data-bmode="survival">
+              <div class="battle-mode-text">
+                <span class="battle-mode-title">🛡️ 서바이벌 (실수 3회 제한)</span>
+                <span class="battle-mode-desc">상대방보다 실수를 적게 하며 끝까지 생존</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="battle-ip-box">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">내 방 코드 (동일 Wi-Fi 접속용)</div>
+            <div id="battle-my-code" class="battle-code-display">대기 중...</div>
+            <div id="battle-my-ip" class="battle-ip-small">IP 확인 중...</div>
+          </div>
+
+          <div id="battle-host-waiting" class="waiting-pulse-box">
+            <div class="pulse-dot"></div>
+            <span id="battle-wait-text">상대방 접속을 기다리는 중...</span>
+          </div>
+
+          <div class="modal-footer" style="margin-top: 10px;">
+            <button id="btn-battle-start-match" class="btn btn-primary" disabled>배틀 시작</button>
+          </div>
+        </div>
+
+        <!-- Join View Content -->
+        <div id="battle-join-view" class="battle-view-section hidden">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">호스트 IP 또는 방 코드 입력</div>
+          <input type="text" id="battle-input-target" class="battle-input" placeholder="예: 192.168.0.15 또는 방 번호" />
+
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+            ※ 방을 만든 기기와 반드시 <strong>동일한 Wi-Fi (공유기)</strong>에 연결되어 있어야 합니다.
+          </p>
+
+          <div class="modal-footer">
+            <button id="btn-battle-connect" class="btn btn-primary">방 접속하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Battle Result Modal -->
+    <div id="modal-battle-result" class="modal-backdrop hidden">
+      <div class="modal-card modal-battle-card">
+        <div id="battle-result-banner" class="battle-result-banner win">
+          <div id="battle-result-icon" style="font-size: 3rem; margin-bottom: 4px;">🏆</div>
+          <div id="battle-result-title" class="result-big-title">승리!</div>
+          <div id="battle-result-sub" class="result-sub-text">상대방보다 먼저 수도쿠를 완성했습니다!</div>
+        </div>
+
+        <table class="battle-stats-table">
+          <thead>
+            <tr>
+              <th>기록 항목</th>
+              <th>나</th>
+              <th>상대방</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>완성 칸 수</td>
+              <td id="res-my-cells">0 / 81</td>
+              <td id="res-opp-cells">0 / 81</td>
+            </tr>
+            <tr>
+              <td>최종 점수</td>
+              <td id="res-my-score">0점</td>
+              <td id="res-opp-score">0점</td>
+            </tr>
+            <tr>
+              <td>실수 횟수</td>
+              <td id="res-my-mistakes">0회</td>
+              <td id="res-opp-mistakes">0회</td>
+            </tr>
+            <tr>
+              <td>소요 시간</td>
+              <td id="res-my-time">00:00</td>
+              <td id="res-opp-time">00:00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="modal-footer">
+          <button id="btn-battle-result-close" class="btn btn-primary">확인</button>
         </div>
       </div>
     </div>
