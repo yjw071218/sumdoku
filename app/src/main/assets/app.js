@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.26";
+const APP_VERSION = "1.0.28";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -421,6 +421,8 @@ class SumdokuApp {
     this.currentThemeIndex = (this.currentThemeIndex + 1) % this.themes.length;
     const nextTheme = this.themes[this.currentThemeIndex];
     this.applyTheme(nextTheme);
+    this.settings.darkTheme = nextTheme === 'theme-dark';
+    this.saveSettings();
     const themeKr = { 'theme-light': '라이트', 'theme-dark': '다크 (고대비 가독성)', 'theme-sepia': '세피아' }[nextTheme];
     this.showToast(`테마: ${themeKr} 적용`);
   }
@@ -2416,7 +2418,16 @@ class SumdokuApp {
       this.dom.tabBattleJoin.classList.remove('active');
       this.dom.battleHostView.classList.remove('hidden');
       this.dom.battleJoinView.classList.add('hidden');
-      this.setupHostRoom();
+      this.hostRoomCreated = true;
+      this.hostP2Ready = false;
+      this.showHostRoomStage(true);
+      this.updateHostLobbyUI();
+      clearInterval(this.hostPollTimer);
+      this.hostPollTimer=setInterval(async()=>{
+        try { const status=await this.battleRequest(`http://${this.battleHostIp}:8888/api/status`);
+          this.guestJoined=!!status.guestJoined;this.hostP2Ready=!!status.p2Ready;this.updateHostLobbyUI();
+        } catch (_) {}
+      },700);
     } else {
       this.dom.tabBattleJoin.classList.add('active');
       this.dom.tabBattleHost.classList.remove('active');

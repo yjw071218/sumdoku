@@ -632,8 +632,19 @@ class SumdokuGenerator {
   // [3단계] 인간 모사 순수 연역 솔버 (Deductive Advanced Solver)
   // 찍기 없이 사람이 생각하는 논리 규칙만으로 81칸이 풀리는지 검증
   // ============================================================================
-  solveDeductivelyAdvanced(solution, cages, returnDetailed = false) {
-    const cands = Array.from({ length: 9 }, () => new Int32Array(9));
+  solveDeductivelyAdvanced(solution, cages, returnDetailed = false, traceEnabled = false) {
+    const trace = [];
+    let reason = '케이지 크기와 목표 합으로 가능한 숫자 조합을 제한합니다.';
+    const digits = mask => Array.from({length:9},(_,i)=>i+1).filter(n=>mask & (1<<n));
+    const cands = Array.from({ length: 9 }, (_, r) => traceEnabled ? new Proxy(Array(9).fill(0), {
+      set(row, key, value) {
+        const c = Number(key), before = row[key];
+        if (Number.isInteger(c) && c >= 0 && c < 9 && before && before !== value) {
+          trace.push({r,c,before:digits(before),after:digits(value),reason});
+        }
+        row[key] = value; return true;
+      }
+    }) : new Int32Array(9));
     const ALL_CANDS = 0x3FE; // bits 1..9
 
     // 초기화: 케이지 크기 및 합계 사전 캐시 마스크 적용
@@ -645,6 +656,7 @@ class SumdokuGenerator {
 
     for (const cg of cages) {
       const sz = cg.cells.length;
+      if(traceEnabled) reason = `합 ${cg.sum}, ${sz}칸 케이지에서 중복 없는 숫자 조합을 계산합니다.`;
       if (sz === 1) {
         const [r, c] = cg.cells[0];
         cands[r][c] = 1 << cg.sum;
@@ -674,6 +686,7 @@ class SumdokuGenerator {
           const m = cands[r][c];
           if (popcount(m) === 1) {
             const valBit = m;
+            if(traceEnabled) reason = `${r+1}행 ${c+1}열이 ${31-Math.clz32(m)}로 확정되어 같은 행·열·박스에서 이 숫자를 제외합니다.`;
 
             // 행 소거
             for (let i = 0; i < 9; i++) {
@@ -722,6 +735,7 @@ class SumdokuGenerator {
 
         // 이미 풀린 숫자는 케이지 내 다른 미완성 셀에서 소거
         if (solvedMask > 0) {
+          if(traceEnabled) reason = `합 ${cg.sum} 케이지에서 이미 확정된 ${digits(solvedMask).join(", ")}은 다른 칸에 중복될 수 없습니다.`;
           for (const [ur, uc] of unsolved) {
             if (cands[ur][uc] & solvedMask) {
               cands[ur][uc] &= ~solvedMask;
@@ -733,6 +747,7 @@ class SumdokuGenerator {
         // 남은 셀들에 대한 케이지 조합 비트마스크 필터링
         const remLen = unsolved.length;
         const remTarget = cg.sum - solvedSum;
+        if(traceEnabled) reason = `케이지 합 ${cg.sum} - 확정된 숫자의 합 ${solvedSum} = ${remTarget}. 남은 ${remLen}칸의 중복 없는 조합과 각 칸 후보를 대조합니다.`;
         if (remLen >= 1 && remLen <= 5 && PRECOMPUTED_COMBOS[remLen] && PRECOMPUTED_COMBOS[remLen][remTarget]) {
           const comboList = PRECOMPUTED_COMBOS[remLen][remTarget];
           let allowedUnion = 0;
@@ -773,6 +788,7 @@ class SumdokuGenerator {
             if (cands[r][c] & bit) { count++; lastC = c; }
           }
           if (count === 1 && popcount(cands[r][lastC]) > 1) {
+            if(traceEnabled) reason = `${r+1}행에서 ${num} 후보가 있는 유일한 자리는 ${lastC+1}열입니다.`;
             cands[r][lastC] = bit;
             changed = true;
           }
@@ -787,6 +803,7 @@ class SumdokuGenerator {
             if (cands[r][c] & bit) { count++; lastR = r; }
           }
           if (count === 1 && popcount(cands[lastR][c]) > 1) {
+            if(traceEnabled) reason = `${c+1}열에서 ${num} 후보가 있는 유일한 자리는 ${lastR+1}행입니다.`;
             cands[lastR][c] = bit;
             changed = true;
           }
@@ -804,6 +821,7 @@ class SumdokuGenerator {
               }
             }
             if (count === 1 && popcount(cands[lastR][lastC]) > 1) {
+              if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스에서 ${num} 후보가 있는 유일한 자리는 ${lastR+1}행 ${lastC+1}열입니다.`;
               cands[lastR][lastC] = bit;
               changed = true;
             }
@@ -831,6 +849,7 @@ class SumdokuGenerator {
           // 박스 내에서 해당 숫자가 오직 한 행에만 존재할 때, 그 행의 박스 바깥에서 제거
           if (rowsWithNum.size === 1) {
             const row = [...rowsWithNum][0];
+            if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스의 ${num} 후보가 ${row+1}행에만 있어, 그 행의 박스 밖에서 ${num}을 제외합니다.`;
             for (let c = 0; c < 9; c++) {
               if (c < bc || c >= bc + 3) {
                 if (cands[row][c] & bit) {
@@ -844,6 +863,7 @@ class SumdokuGenerator {
           // 박스 내에서 해당 숫자가 오직 한 열에만 존재할 때, 그 열의 박스 바깥에서 제거
           if (colsWithNum.size === 1) {
             const col = [...colsWithNum][0];
+            if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스의 ${num} 후보가 ${col+1}열에만 있어, 그 열의 박스 밖에서 ${num}을 제외합니다.`;
             for (let r = 0; r < 9; r++) {
               if (r < br || r >= br + 3) {
                 if (cands[r][col] & bit) {
@@ -863,6 +883,7 @@ class SumdokuGenerator {
             for (let c2 = c1 + 1; c2 < 9; c2++) {
               if (cands[r][c1] === cands[r][c2]) {
                 const pairMask = cands[r][c1];
+                if(traceEnabled) reason = `${r+1}행의 ${c1+1}열과 ${c2+1}열이 후보 {${digits(pairMask).join(",")}}를 독점하므로 다른 칸에서 제외합니다.`;
                 for (let c3 = 0; c3 < 9; c3++) {
                   if (c3 !== c1 && c3 !== c2 && (cands[r][c3] & pairMask)) {
                     cands[r][c3] &= ~pairMask;
@@ -881,6 +902,7 @@ class SumdokuGenerator {
             for (let r2 = r1 + 1; r2 < 9; r2++) {
               if (cands[r1][c] === cands[r2][c]) {
                 const pairMask = cands[r1][c];
+                if(traceEnabled) reason = `${c+1}열의 ${r1+1}행과 ${r2+1}행이 후보 {${digits(pairMask).join(",")}}를 독점하므로 다른 칸에서 제외합니다.`;
                 for (let r3 = 0; r3 < 9; r3++) {
                   if (r3 !== r1 && r3 !== r2 && (cands[r3][c] & pairMask)) {
                     cands[r3][c] &= ~pairMask;
@@ -904,7 +926,7 @@ class SumdokuGenerator {
         }
       }
     }
-    return returnDetailed ? { solvedCount, solvedCells } : solvedCount;
+    return returnDetailed ? { solvedCount, solvedCells, trace, candidates: cands.map(row=>Array.from(row)) } : solvedCount;
   }
 
   // 100% 비재귀 반복문 백트래킹 (기본 완성 수도쿠 판 생성)

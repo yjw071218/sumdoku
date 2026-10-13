@@ -35,6 +35,18 @@ const path=require('node:path');
  assert.equal(await page.locator('#setting-dark-theme').count(),0);
  assert.equal(await page.locator('#btn-assistant-multi-toggle').count(),0);
  assert.equal(await page.locator('#btn-home-theme').count(),1);
+ await page.evaluate(()=>app.applyTheme('theme-light'));
+ for(const expected of ['theme-dark','theme-sepia','theme-light']) {
+   await page.evaluate(()=>document.getElementById('btn-home-theme').click());
+   assert.equal(await page.evaluate(()=>app.themes[app.currentThemeIndex]),expected);
+ }
+ const solverCheck=await page.evaluate(async()=>{
+   const puzzle=await app.generator.generateAsync('easy');
+   const plain=app.generator.solveDeductivelyAdvanced(null,puzzle.cages,true);
+   const traced=app.generator.solveDeductivelyAdvanced(null,puzzle.cages,true,true);
+   return {count:traced.solvedCount,same:JSON.stringify(plain.candidates)===JSON.stringify(traced.candidates),correct:traced.trace.filter(t=>t.after.length===1).every(t=>t.after[0]===puzzle.solution[t.r][t.c])};
+ });
+ assert.equal(solverCheck.count,81);assert(solverCheck.same);assert(solverCheck.correct);
  const proof=await page.evaluate(()=>{
    app.selectCell(8,8);
    const saved=app.solution;app.solution=null;
@@ -42,7 +54,7 @@ const path=require('node:path');
    return hint;
  });
  assert.equal(proof.r,0);assert.equal(proof.c,0);assert.equal(proof.answer,1);
- assert(proof.explanation.includes('케이지 합 1'));
+ assert(proof.explanation.includes('합 1'));
  await page.evaluate(()=>{app.useHint();});
  await page.locator('#hint-confirm [data-confirm]').click();
  const charged=await page.evaluate(()=>({count:app.hintsRemaining,score:app.score}));
@@ -59,6 +71,24 @@ const path=require('node:path');
    assert(fits,`notes contained at ${width}px`);
  }
  await page.setViewportSize({width:390,height:844});
+ const lobby=await page.evaluate(async()=>{
+   let calls=0;
+   window.AndroidBridge={startBattleServer:()=>{calls++;return JSON.stringify({ok:true,ip:'192.168.1.2'});},stopBattleServer:()=>{}};
+   app.setupHostRoom();
+   const before={calls,hidden:document.getElementById('host-room-stage').classList.contains('hidden')};
+   document.getElementById('btn-create-room').click();
+   clearInterval(app.hostPollTimer);
+   const created={calls,visible:!document.getElementById('host-room-stage').classList.contains('hidden'),disabled:app.dom.btnBattleStartMatch.disabled};
+   app.guestJoined=true;app.hostP2Ready=true;app.updateHostLobbyUI();
+   const ready={disabled:app.dom.btnBattleStartMatch.disabled,text:app.dom.btnBattleStartMatch.textContent};
+   app.hostP2Ready=false;app.updateHostLobbyUI();
+   const canceled=app.dom.btnBattleStartMatch.disabled;
+   delete window.AndroidBridge;
+   return {before,created,ready,canceled};
+ });
+ assert.equal(lobby.before.calls,0);assert(lobby.before.hidden);
+ assert.equal(lobby.created.calls,1);assert(lobby.created.visible);assert(lobby.created.disabled);
+ assert.equal(lobby.ready.disabled,false);assert(lobby.ready.text.includes('2/2'));assert(lobby.canceled);
  await start();
  const geometry=await page.evaluate(()=>{
    const before=document.getElementById('board-frame').getBoundingClientRect();

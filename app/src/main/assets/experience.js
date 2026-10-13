@@ -62,15 +62,7 @@ SumdokuApp.prototype.bindEvents = function() {
   // Replace the original start handler (which ignored network errors).
   const old = this.dom.btnBattleStartMatch;
   const start = old.cloneNode(true); old.replaceWith(start); this.dom.btnBattleStartMatch = start;
-  start.onclick = async () => {
-    if (!this.battlePuzzleData || start.disabled) return;
-    start.disabled = true;
-    try {
-      await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {method:'POST'});
-      this.dom.modalBattleLobby.classList.add('hidden');
-      this.startBattleMatch(1, this.battlePuzzleData, this.battleMode);
-    } catch (error) { start.disabled = false; this.showToast(error.message); }
-  };
+  start.onclick = () => this.startBattleAsHost();
   this.installCleanIcons();
 };
 
@@ -139,6 +131,9 @@ SumdokuApp.prototype.openDifficultyModal = function() {baseOpenDifficulty.call(t
 
 SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.hideGeneratingOverlay();
+  this.hostRoomCreated = false;
+  this.battleStarting = false;
+  this.hideGeneratingOverlay();
   this.roomGeneration = (this.roomGeneration || 0) + 1;
   if (this.roomWorker) this.roomWorker.terminate();
   this.roomWorker = null;
@@ -162,7 +157,7 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   if (window.AndroidBridge?.stopBattleServer) window.AndroidBridge.stopBattleServer();
 };
 
-SumdokuApp.prototype.setupHostRoom = function() {
+SumdokuApp.prototype.createHostRoom = function() {
   this.cancelRoomPreparation();
   this.syncQuickSettings();
   if (!window.AndroidBridge?.startBattleServer) {
@@ -185,9 +180,11 @@ SumdokuApp.prototype.setupHostRoom = function() {
     const code = RoomCode.encode(response.ip);
     if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
     if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
-    this.hostP1Ready = false;
+    this.hostP1Ready = true;
     this.hostP2Ready = false;
     this.guestJoined = false;
+    this.hostRoomCreated = true;
+    this.showHostRoomStage(true);
     this.updateHostLobbyUI();
 
     const token = this.roomGeneration;
@@ -214,7 +211,7 @@ SumdokuApp.prototype.setupHostRoom = function() {
 
 SumdokuApp.prototype.updateHostLobbyUI = function() {
   if (this.dom.hostP1Status) {
-    this.dom.hostP1Status.textContent = this.hostP1Ready ? '준비 완료' : '대기 중';
+    this.dom.hostP1Status.textContent = '방장';
     this.dom.hostP1Status.className = `ready-pill ${this.hostP1Ready ? 'ready' : 'not-ready'}`;
   }
   if (this.dom.hostP2Status) {
@@ -230,15 +227,16 @@ SumdokuApp.prototype.updateHostLobbyUI = function() {
     this.dom.btnBattleHostReady.textContent = this.hostP1Ready ? '준비 취소' : '방장 준비 완료';
     this.dom.btnBattleHostReady.className = `btn ${this.hostP1Ready ? 'btn-primary' : 'btn-secondary'} btn-ready`;
   }
-  const bothReady = this.guestJoined && this.hostP1Ready && this.hostP2Ready;
+  const bothReady = this.guestJoined && this.hostP2Ready;
   if (this.dom.btnBattleStartMatch) {
-    this.dom.btnBattleStartMatch.disabled = !bothReady;
+    this.dom.btnBattleStartMatch.disabled = !bothReady || !!this.battleStarting;
+    this.dom.btnBattleStartMatch.textContent = this.battleStarting ? '퍼즐 생성 중…' : `배틀 시작 (${1 + (this.guestJoined && this.hostP2Ready ? 1 : 0)}/2)`;
   }
   if (this.dom.battleWaitText) {
     if (!this.guestJoined) {
       this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중… (12자리 코드 공유)';
     } else if (!bothReady) {
-      this.dom.battleWaitText.textContent = '상대방 접속 완료 · 양쪽 모두 준비를 완료해 주세요.';
+      this.dom.battleWaitText.textContent = '상대방 접속 완료 · 참가자가 준비하면 시작할 수 있습니다.';
     } else {
       this.dom.battleWaitText.textContent = '모든 플레이어 준비 완료! 배틀을 시작하세요! ⚔️';
     }
@@ -263,10 +261,11 @@ SumdokuApp.prototype.toggleHostReady = async function() {
 };
 
 SumdokuApp.prototype.startBattleAsHost = function() {
-  if (!this.guestJoined || !this.hostP1Ready || !this.hostP2Ready) {
-    this.showToast('양쪽 모두 준비 상태여야 시작할 수 있습니다.');
+  if (this.battleStarting || !this.hostRoomCreated || !this.guestJoined || !this.hostP2Ready) {
+    this.showToast('참가자가 준비를 완료해야 시작할 수 있습니다.');
     return;
   }
+  this.battleStarting = true;
   const token = this.roomGeneration;
   this.showGeneratingOverlay(this.battleDiff || 'expert', '배틀 퍼즐 생성 중');
   if (this.dom.btnBattleStartMatch) this.dom.btnBattleStartMatch.disabled = true;
@@ -282,12 +281,17 @@ SumdokuApp.prototype.startBattleAsHost = function() {
     await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ puzzle: JSON.stringify(puzzle), mode: this.battleMode || 'race' })
+      body: JSON.stringify(puzzle)
     });
+    if(token !== this.roomGeneration) return;
+    this.battleStarting = false;
+    clearInterval(this.hostPollTimer);
     this.hideGeneratingOverlay();
     this.dom.modalBattleLobby.classList.add('hidden');
     this.startBattleMatch(1, puzzle, this.battleMode || 'race');
   }).catch((err) => {
+    if(token !== this.roomGeneration) return;
+    this.battleStarting = false;
     this.hideGeneratingOverlay();
     this.showToast(err?.message || '배틀 시작 중 오류가 발생했습니다.');
     this.updateHostLobbyUI();
@@ -359,7 +363,7 @@ SumdokuApp.prototype.connectToHost = async function() {
 
 SumdokuApp.prototype.updateGuestLobbyUI = function() {
   if (this.dom.guestP1Status) {
-    this.dom.guestP1Status.textContent = this.guestP1Ready ? '준비 완료' : '대기 중';
+    this.dom.guestP1Status.textContent = '방장';
     this.dom.guestP1Status.className = `ready-pill ${this.guestP1Ready ? 'ready' : 'not-ready'}`;
   }
   if (this.dom.guestP2Status) {
@@ -373,8 +377,7 @@ SumdokuApp.prototype.updateGuestLobbyUI = function() {
   if (this.dom.guestWaitText) {
     if (!this.guestP2Ready) {
       this.dom.guestWaitText.textContent = "아래 '준비 완료' 버튼을 눌러주세요.";
-    } else if (!this.guestP1Ready) {
-      this.dom.guestWaitText.textContent = '방장의 준비를 기다리는 중…';
+
     } else {
       this.dom.guestWaitText.textContent = '양쪽 모두 준비 완료! 방장의 시작을 기다리는 중… ⚔️';
     }
@@ -473,4 +476,26 @@ SumdokuApp.prototype.installCleanIcons = function() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="${path}" stroke-linecap="round"/></svg>`;
   }
+};
+
+SumdokuApp.prototype.showHostRoomStage = function(created) {
+  const view=this.dom.battleHostView;
+  if(!document.getElementById('host-room-stage')) {
+    const room=document.createElement('div');room.id='host-room-stage';
+    const config=document.createElement('div');config.id='host-config-stage';
+    let after=false;
+    for(const el of [...view.children]) {
+      if(el.classList.contains('battle-ip-box'))after=true;
+      (after&&!el.classList.contains('quick-settings')?room:config).append(el);
+    }
+    const create=document.createElement('button');create.id='btn-create-room';create.className='btn btn-primary';create.textContent='방 생성';create.onclick=()=>this.createHostRoom();config.append(create);
+    view.append(config,room);
+    this.dom.btnBattleHostReady.hidden=true;
+    const footer=document.createElement('div');footer.className='modal-footer';footer.append(this.dom.btnBattleGuestReady);this.dom.battleGuestRoomPanel.append(footer);
+  }
+  document.getElementById('host-config-stage').classList.toggle('hidden',created);
+  document.getElementById('host-room-stage').classList.toggle('hidden',!created);
+};
+SumdokuApp.prototype.setupHostRoom = function() {
+  this.cancelRoomPreparation();this.syncQuickSettings();this.showHostRoomStage(false);
 };

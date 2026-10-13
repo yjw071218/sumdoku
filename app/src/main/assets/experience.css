@@ -108,3 +108,4 @@ body .cell-notes .note-num { min-width:0;min-height:0;line-height:1!important;fo
 body.notes-size-large .cell-notes .note-num { font-size:clamp(6px,2.2vw,11px)!important; }
 body.notes-size-xlarge .cell-notes .note-num { font-size:clamp(6px,2.4vw,12px)!important; }
 .hint-logic-text { max-height: min(35vh,260px);overflow-y:auto;line-height:1.65; }
+.hint-logic-text { white-space:pre-line; }

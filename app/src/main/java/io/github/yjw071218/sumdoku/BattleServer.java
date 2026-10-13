@@ -192,11 +192,14 @@ public class BattleServer {
                 puzzleJson = "{}";
                 responseJson = "{\"ok\":true,\"status\":\"waiting\"}";
             } else if (path.startsWith("/api/start")) {
-                if ("POST".equals(method) && !body.trim().isEmpty() && body.contains("{")) {
+                if (!"POST".equals(method) || !"waiting".equals(roomStatus) || !guestJoined || !p2Ready || !body.contains("\"solution\"") || !body.contains("\"cages\"")) {
+                    statusCode = 409;
+                    responseJson = "{\"ok\":false,\"error\":\"not_ready\"}";
+                } else {
                     puzzleJson = body;
+                    roomStatus = "playing";
+                    responseJson = "{\"ok\":true,\"status\":\"playing\"}";
                 }
-                roomStatus = "playing";
-                responseJson = "{\"ok\":true,\"status\":\"playing\"}";
             } else if (path.startsWith("/api/room")) {
                 responseJson = String.format(
                     "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"puzzle\":%s}",
