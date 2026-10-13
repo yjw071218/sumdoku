@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.7</div>
+          <div class="version-chip" id="app-version-chip">v1.0.8</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -957,6 +957,67 @@
         </div>
       </div>
     </div>
+
+    <!-- Game Result Modal (성공 클리어 / 실패 게임오버 프리미엄 결과창) -->
+    <div id="modal-game-result" class="modal-backdrop hidden">
+      <div class="modal-card modal-game-result-card">
+        <!-- Result Banner -->
+        <div id="result-banner" class="result-banner success">
+          <div id="result-icon" class="result-icon-bounce">🏆</div>
+          <div id="result-title" class="result-title">클리어 성공!</div>
+          <div id="result-sub" class="result-sub">완벽한 100% 연역 추론으로 퍼즐을 완성했습니다!</div>
+        </div>
+
+        <!-- Metric Cards Grid -->
+        <div class="result-metrics-grid">
+          <div class="result-metric-card" id="card-metric-score">
+            <div class="result-metric-icon">🎯</div>
+            <div class="result-metric-info">
+              <span class="rm-label">최종 점수</span>
+              <span class="rm-val" id="res-score">0점</span>
+            </div>
+            <span class="rm-badge hidden" id="res-score-badge">★ 최고 기록</span>
+          </div>
+
+          <div class="result-metric-card" id="card-metric-time">
+            <div class="result-metric-icon">⏱️</div>
+            <div class="result-metric-info">
+              <span class="rm-label">소요 시간</span>
+              <span class="rm-val" id="res-time">00:00</span>
+            </div>
+            <span class="rm-badge hidden" id="res-time-badge">★ 최단 기록</span>
+          </div>
+
+          <div class="result-metric-card">
+            <div class="result-metric-icon">⚠️</div>
+            <div class="result-metric-info">
+              <span class="rm-label">실수 횟수</span>
+              <span class="rm-val" id="res-mistakes">0 / 3</span>
+            </div>
+          </div>
+
+          <div class="result-metric-card">
+            <div class="result-metric-icon">🧩</div>
+            <div class="result-metric-info">
+              <span class="rm-label">난이도</span>
+              <span class="rm-val" id="res-diff">EXPERT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="result-actions">
+          <button id="btn-result-restart" class="btn btn-primary btn-result-main">새 게임 시작</button>
+          <div class="result-sub-actions">
+            <button id="btn-result-stats" class="btn btn-secondary">전적 보기</button>
+            <button id="btn-result-home" class="btn btn-outline">홈으로</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Celebration Confetti Canvas -->
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>

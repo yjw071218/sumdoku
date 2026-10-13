@@ -1,6 +1,8 @@
 /**
- * Sumdoku (썸도쿠) v1.0.7 - 100% 연역 추론 보장 합계 수도쿠
+ * Sumdoku (썸도쿠) v1.0.8 - 100% 연역 추론 보장 합계 수도쿠
  * 
+ * - 클리어 성공 및 실패(게임오버/타임아웃) 화면 프리미엄 네이티브 모달 UI 전면 개편
+ * - 승리 축하 꽃가루(Confetti) 파티클 애니메이션 및 신기록 뱃지 탑재
  * - 메모(후보수) 폰트 크기 대폭 확대 (모바일 14~16.5px, 태블릿 18~21.5px, Ultra Bold 900)
  * - 설정 내 메모 폰트 크기 조절 옵션 탑재 (보통 / 크게 / 아주 크게)
  * - 실시간 직접 타이핑 메모 기능 (모바일/태블릿 가상 키보드 및 블루투스/PC 키보드 연동)
@@ -14,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.7";
+const APP_VERSION = "1.0.8";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -88,6 +90,88 @@ class SoundController {
         });
       }
     } catch (e) {}
+  }
+}
+
+// ============================================================================
+// 1.5. 승리 축하 꽃가루 파티클 애니메이션 (ConfettiEffect)
+// ============================================================================
+class ConfettiEffect {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
+    this.particles = [];
+    this.animId = null;
+  }
+
+  start(durationMs = 3500) {
+    if (!this.canvas || !this.ctx) return;
+    this.stop();
+    this.canvas.style.display = 'block';
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    this.particles = [];
+
+    const colors = ['#3b82f6', '#60a5fa', '#f59e0b', '#fbbf24', '#10b981', '#ec4899', '#8b5cf6', '#ef4444'];
+    for (let i = 0; i < 95; i++) {
+      this.particles.push({
+        x: window.innerWidth * (0.2 + Math.random() * 0.6),
+        y: window.innerHeight * 0.45,
+        vx: (Math.random() - 0.5) * 16,
+        vy: -Math.random() * 16 - 7,
+        size: Math.random() * 8 + 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 12,
+        gravity: 0.38 + Math.random() * 0.1,
+        drag: 0.98,
+        opacity: 1
+      });
+    }
+
+    const startTime = Date.now();
+    const render = () => {
+      const elapsed = Date.now() - startTime;
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      let alive = false;
+      this.particles.forEach(p => {
+        p.vx *= p.drag;
+        p.vy += p.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotationSpeed;
+        if (elapsed > durationMs - 1000) {
+          p.opacity = Math.max(0, (durationMs - elapsed) / 1000);
+        }
+
+        if (p.opacity > 0 && p.y < window.innerHeight + 50) {
+          alive = true;
+          this.ctx.save();
+          this.ctx.globalAlpha = p.opacity;
+          this.ctx.translate(p.x, p.y);
+          this.ctx.rotate((p.rotation * Math.PI) / 180);
+          this.ctx.fillStyle = p.color;
+          this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          this.ctx.restore();
+        }
+      });
+
+      if (alive && elapsed < durationMs) {
+        this.animId = requestAnimationFrame(render);
+      } else {
+        this.stop();
+      }
+    };
+    render();
+  }
+
+  stop() {
+    if (this.animId) cancelAnimationFrame(this.animId);
+    if (this.canvas) {
+      this.canvas.style.display = 'none';
+      if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
   }
 }
 
@@ -478,6 +562,7 @@ class SumdokuApp {
     this.dailyCleared = this.loadDailyCleared();
 
     this.initDOM();
+    this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
     this.applySettings();
     this.applyTheme(localStorage.getItem('sumdoku_theme') || 'theme-light');
     this.bindEvents();
@@ -703,6 +788,8 @@ class SumdokuApp {
 
   recordGameEnd(isWin) {
     this.stats.totalGames++;
+    let isNewBestScore = false;
+    let isNewBestTime = false;
     if (isWin) {
       this.stats.totalWins++;
       this.stats.currentStreak++;
@@ -715,9 +802,15 @@ class SumdokuApp {
         diffStats.wins++;
         diffStats.totalTime += this.timerSeconds;
         if (!diffStats.bestTime || this.timerSeconds < diffStats.bestTime) {
+          if (diffStats.bestTime !== null && diffStats.bestTime !== undefined && diffStats.bestTime > 0) {
+            isNewBestTime = true;
+          }
           diffStats.bestTime = this.timerSeconds;
         }
         if (!diffStats.bestScore || this.score > diffStats.bestScore) {
+          if (diffStats.bestScore && diffStats.bestScore > 0) {
+            isNewBestScore = true;
+          }
           diffStats.bestScore = this.score;
         }
       }
@@ -734,6 +827,7 @@ class SumdokuApp {
     }
     this.saveStats();
     this.renderStatsView();
+    return { isNewBestScore, isNewBestTime };
   }
 
   renderStatsView() {
@@ -1014,6 +1108,23 @@ class SumdokuApp {
       modalBattleResult: document.getElementById('modal-battle-result'),
       btnBattleResultClose: document.getElementById('btn-battle-result-close'),
 
+      // Game Result Modal
+      modalGameResult: document.getElementById('modal-game-result'),
+      resultBanner: document.getElementById('result-banner'),
+      resultIcon: document.getElementById('result-icon'),
+      resultTitle: document.getElementById('result-title'),
+      resultSub: document.getElementById('result-sub'),
+      resScore: document.getElementById('res-score'),
+      resScoreBadge: document.getElementById('res-score-badge'),
+      resTime: document.getElementById('res-time'),
+      resTimeBadge: document.getElementById('res-time-badge'),
+      resMistakes: document.getElementById('res-mistakes'),
+      resDiff: document.getElementById('res-diff'),
+      btnResultRestart: document.getElementById('btn-result-restart'),
+      btnResultStats: document.getElementById('btn-result-stats'),
+      btnResultHome: document.getElementById('btn-result-home'),
+      confettiCanvas: document.getElementById('confetti-canvas'),
+
       toast: document.getElementById('toast'),
       keyBtns: document.querySelectorAll('.key-btn')
     };
@@ -1111,6 +1222,32 @@ class SumdokuApp {
       this.sound.play('click');
       this.dom.modalUpdate.classList.add('hidden');
     });
+
+    // 게임 결과 모달 액션 버튼
+    if (this.dom.btnResultRestart) {
+      this.dom.btnResultRestart.addEventListener('click', () => {
+        this.sound.play('click');
+        this.confetti.stop();
+        this.dom.modalGameResult.classList.add('hidden');
+        this.startNewGame(this.difficulty, null, this.gameMode);
+      });
+    }
+    if (this.dom.btnResultStats) {
+      this.dom.btnResultStats.addEventListener('click', () => {
+        this.sound.play('click');
+        this.confetti.stop();
+        this.dom.modalGameResult.classList.add('hidden');
+        this.switchView('stats');
+      });
+    }
+    if (this.dom.btnResultHome) {
+      this.dom.btnResultHome.addEventListener('click', () => {
+        this.sound.play('click');
+        this.confetti.stop();
+        this.dom.modalGameResult.classList.add('hidden');
+        this.switchView('home');
+      });
+    }
 
     // 난이도 모달 내 모드 선택 (일반 / 타임어택)
     document.querySelectorAll('.mode-select-btn').forEach(btn => {
@@ -2364,13 +2501,29 @@ class SumdokuApp {
       return true;
     }
 
-    this.recordGameEnd(true);
+    const endStats = this.recordGameEnd(true);
     this.clearOngoingGame();
 
     setTimeout(() => {
-      const title = this.isDaily ? `🎉 일일 도전 (${this.dailyDate}) 완벽 클리어!` : `🎉 축하합니다! 썸도쿠를 클리어하셨습니다!`;
-      alert(`${title}\n\n최종 점수: ${this.score}점\n소요 시간: ${this.dom.timer.textContent}`);
-      this.switchView('stats');
+      const title = this.isDaily
+        ? `일일 도전 (${this.dailyDate}) 완벽 클리어!`
+        : `축하합니다! 퍼즐 클리어!`;
+      const sub = this.isDaily
+        ? '오늘의 데일리 퍼즐을 성공적으로 정복하셨습니다!'
+        : '모든 케이지 합계와 스도쿠 제약을 완벽한 논리로 해결했습니다!';
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+
+      this.showGameResultModal({
+        status: 'win',
+        title: title,
+        sub: sub,
+        score: this.score,
+        time: this.dom.timer.textContent,
+        mistakes: `${this.mistakes} / 3`,
+        difficulty: diffKr,
+        isNewBestScore: endStats ? endStats.isNewBestScore : false,
+        isNewBestTime: endStats ? endStats.isNewBestTime : false
+      });
     }, 350);
     return true;
   }
@@ -2382,11 +2535,18 @@ class SumdokuApp {
     this.clearOngoingGame();
 
     setTimeout(() => {
-      if (confirm('실수 횟수가 3회를 초과하여 게임이 종료되었습니다.\n새 게임을 시작하시겠습니까?')) {
-        this.startNewGame(this.difficulty, null, this.gameMode);
-      } else {
-        this.switchView('home');
-      }
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      this.showGameResultModal({
+        status: 'fail',
+        title: '게임 오버 (3회 실수)',
+        sub: '허용된 실수 횟수(3회)를 모두 초과했습니다. 다시 도전해 보세요!',
+        score: this.score,
+        time: this.dom.timer.textContent,
+        mistakes: '3 / 3 (초과)',
+        difficulty: diffKr,
+        isNewBestScore: false,
+        isNewBestTime: false
+      });
     }, 250);
   }
 
@@ -2414,9 +2574,64 @@ class SumdokuApp {
     this.recordGameEnd(false);
     this.clearOngoingGame();
     setTimeout(() => {
-      alert(`⏳ 타임아웃! 제한 시간이 모두 소진되었습니다.\n최종 점수: ${this.score}점`);
-      this.switchView('home');
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      this.showGameResultModal({
+        status: 'fail',
+        title: '시간 초과!',
+        sub: '타임어택 제한 시간이 모두 소진되었습니다. 다음엔 더 빠르게 풀어보세요!',
+        score: this.score,
+        time: '00:00',
+        mistakes: `${this.mistakes} / 3`,
+        difficulty: diffKr,
+        isNewBestScore: false,
+        isNewBestTime: false
+      });
     }, 250);
+  }
+
+  showGameResultModal(data) {
+    if (!this.dom.modalGameResult) return;
+
+    const isSuccess = data.status === 'win';
+    if (this.dom.resultBanner) {
+      this.dom.resultBanner.className = `result-banner ${isSuccess ? 'success' : 'fail'}`;
+    }
+    if (this.dom.resultIcon) {
+      this.dom.resultIcon.textContent = isSuccess ? '🏆' : (data.title.includes('시간') ? '⏳' : '💔');
+    }
+    if (this.dom.resultTitle) {
+      this.dom.resultTitle.textContent = data.title;
+    }
+    if (this.dom.resultSub) {
+      this.dom.resultSub.textContent = data.sub;
+    }
+    if (this.dom.resScore) {
+      this.dom.resScore.textContent = `${data.score.toLocaleString()}점`;
+    }
+    if (this.dom.resScoreBadge) {
+      this.dom.resScoreBadge.classList.toggle('hidden', !data.isNewBestScore);
+    }
+    if (this.dom.resTime) {
+      this.dom.resTime.textContent = data.time;
+    }
+    if (this.dom.resTimeBadge) {
+      this.dom.resTimeBadge.classList.toggle('hidden', !data.isNewBestTime);
+    }
+    if (this.dom.resMistakes) {
+      this.dom.resMistakes.textContent = data.mistakes;
+    }
+    if (this.dom.resDiff) {
+      this.dom.resDiff.textContent = data.difficulty;
+    }
+    if (this.dom.btnResultRestart) {
+      this.dom.btnResultRestart.textContent = isSuccess ? '새 게임 시작' : '다시 도전하기';
+    }
+
+    this.dom.modalGameResult.classList.remove('hidden');
+
+    if (isSuccess && this.confetti) {
+      this.confetti.start(3500);
+    }
   }
 
   startTimer() {
