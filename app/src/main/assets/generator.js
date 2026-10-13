@@ -54,20 +54,20 @@ class SumdokuGenerator {
     const rng = customRng || this.rng;
 
     const anchorMap = {
-      easy: 7,
-      medium: 5,
-      hard: 4,
-      expert: [2, 2, 3, 3][Math.floor(rng() * 4)]
+      easy: 8,
+      medium: 6,
+      hard: [4, 5, 5][Math.floor(rng() * 3)],
+      expert: [0, 1, 1, 2][Math.floor(rng() * 4)]
     };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 3;
+    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 1;
 
     let attempts = 0;
     const maxAttempts = 2000;
     let currentAnchors = targetAnchors;
 
     while (attempts++ < maxAttempts) {
-      if (diff === 'expert' && attempts % 100 === 0) {
-        currentAnchors = [1, 2, 2, 3][Math.floor(rng() * 4)];
+      if (diff === 'expert' && attempts % 60 === 0) {
+        currentAnchors = [0, 1, 1, 2][Math.floor(rng() * 4)];
       }
 
       // [1단계: 정답판 생성]
@@ -100,7 +100,7 @@ class SumdokuGenerator {
 
       // [3단계: 인간 모사 연역 솔버 검증]
       const solved = this.solveDeductivelyAdvanced(solution, cages);
-      const minRequired = diff === 'expert' ? 10 : (diff === 'hard' ? 40 : 81);
+      const minRequired = diff === 'expert' ? 0 : (diff === 'hard' ? 40 : 81);
       if (solved >= minRequired) {
         return {
           solution,
@@ -118,12 +118,12 @@ class SumdokuGenerator {
     const rng = customRng || this.rng;
 
     const anchorMap = {
-      easy: 7,
-      medium: 5,
-      hard: 4,
-      expert: [2, 2, 3, 3][Math.floor(rng() * 4)]
+      easy: 8,
+      medium: 6,
+      hard: [4, 5, 5][Math.floor(rng() * 3)],
+      expert: [0, 1, 1, 2][Math.floor(rng() * 4)]
     };
-    let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 3;
+    let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 1;
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const diffKr = diffNames[diff] || diff;
 
@@ -148,8 +148,8 @@ class SumdokuGenerator {
     while (attempts < maxAttempts) {
       attempts++;
 
-      if (diff === 'expert' && attempts % 100 === 0) {
-        currentAnchors = [1, 2, 2, 3][Math.floor(rng() * 4)];
+      if (diff === 'expert' && attempts % 60 === 0) {
+        currentAnchors = [0, 1, 1, 2][Math.floor(rng() * 4)];
       }
 
       // [1단계: 정답판 생성]
@@ -259,7 +259,7 @@ class SumdokuGenerator {
       const detailed = this.solveDeductivelyAdvanced(solution, cages, true);
       const solvedCount = detailed.solvedCount;
       const solvedCells = detailed.solvedCells;
-      const minRequired = diff === 'expert' ? 10 : (diff === 'hard' ? 40 : 81);
+      const minRequired = diff === 'expert' ? 0 : (diff === 'hard' ? 40 : 81);
 
       if (solvedCount >= minRequired) {
         if (onProgress) {
