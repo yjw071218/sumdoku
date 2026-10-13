@@ -1255,8 +1255,13 @@
           </div>
 
           <div class="battle-ip-box">
-            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">숫자 접속 코드</div>
-            <div id="battle-my-code" class="battle-code-display">대기 중...</div>
+            <div class="battle-ip-box-header">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">숫자 접속 코드</span>
+              <button id="btn-copy-battle-code" class="btn-copy-code" type="button" title="접속 코드 복사">
+                <span class="copy-icon">📋</span> 코드 복사
+              </button>
+            </div>
+            <div id="battle-my-code" class="battle-code-display" title="터치하여 코드 복사">대기 중...</div>
             <div id="battle-my-ip" class="battle-ip-small">IP 확인 중...</div>
           </div>
 

@@ -1046,6 +1046,7 @@ class SumdokuApp {
       battleHostView: document.getElementById('battle-host-view'),
       battleJoinView: document.getElementById('battle-join-view'),
       battleMyCode: document.getElementById('battle-my-code'),
+      btnCopyBattleCode: document.getElementById('btn-copy-battle-code'),
       battleMyIp: document.getElementById('battle-my-ip'),
       battleWaitText: document.getElementById('battle-wait-text'),
       btnBattleStartMatch: document.getElementById('btn-battle-start-match'),
@@ -1933,6 +1934,52 @@ class SumdokuApp {
       this.dom.modalBattleLobby.classList.add('hidden');
       this.startBattleMatch(1, this.battlePuzzleData, this.battleMode);
     });
+
+    // 숫자 접속 코드 복사 기능 (복사 버튼 및 코드 텍스트 터치)
+    const handleCopyCode = () => {
+      const codeText = this.dom.battleMyCode ? this.dom.battleMyCode.textContent.trim() : '';
+      const rawCode = codeText.replace(/\s+/g, '');
+      if (!rawCode || rawCode === '대기중...' || rawCode === '방준비전' || rawCode.includes('대기') || rawCode.includes('준비')) {
+        this.showToast('먼저 방 준비를 완료해 주세요.');
+        return;
+      }
+      this.sound.play('click');
+      let copied = false;
+      if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
+        window.AndroidBridge.copyToClipboard(rawCode);
+        copied = true;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(rawCode).catch(() => {});
+        copied = true;
+      }
+      if (!copied) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = rawCode;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          copied = true;
+        } catch (e) {}
+      }
+      this.showToast(`📋 접속 코드 복사 완료! (${codeText})`);
+    };
+
+    if (this.dom.btnCopyBattleCode) {
+      this.dom.btnCopyBattleCode.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleCopyCode();
+      });
+    }
+    if (this.dom.battleMyCode) {
+      this.dom.battleMyCode.addEventListener('click', () => {
+        handleCopyCode();
+      });
+    }
 
     // 게스트 방 접속
     this.dom.btnBattleConnect.addEventListener('click', () => {

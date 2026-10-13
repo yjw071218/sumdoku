@@ -396,6 +396,19 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
             return null;
         }
+
+        @JavascriptInterface
+        public void copyToClipboard(final String text) {
+            mainHandler.post(() -> {
+                try {
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        android.content.ClipData clip = android.content.ClipData.newPlainText("Sumdoku Room Code", text);
+                        clipboard.setPrimaryClip(clip);
+                    }
+                } catch (Exception ignored) {}
+            });
+        }
     }
 
     private void launchApkInstaller(File apkFile) {
