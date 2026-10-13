@@ -8,7 +8,7 @@ await page.addInitScript(()=>{window.nativeCalls=[];window.AndroidBridge={getLoc
 await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.app);
 const timing=await page.evaluate(()=>{app.applyTheme('theme-dark');const t=performance.now();app.openBattleLobby();return performance.now()-t});
 assert(timing<150,'lobby blocks main thread');assert.equal(await page.evaluate(()=>nativeCalls.length),0);
-await page.locator('#battle-host-view [data-quick-setting="maxLives"]').selectOption('5');await page.locator('#battle-host-view [data-quick-setting="initialHints"]').selectOption('0');
+await page.locator('#battle-host-view [data-quick-setting="maxLives"]').fill('5');await page.locator('#battle-host-view [data-quick-setting="initialHints"]').fill('0');
 assert.equal(await page.evaluate(()=>app.settings.maxLives),'5');
 const roundtrip=await page.evaluate(()=>['0.0.0.0','172.16.18.247','192.168.5.23','255.255.255.255'].every(ip=>RoomCode.decode(RoomCode.encode(ip))===ip));assert(roundtrip);
 const rejected=await page.evaluate(()=>{try{RoomCode.decode('999999999999');return false}catch{return true}});assert(rejected);

@@ -1466,8 +1466,8 @@ class SumdokuApp {
       };
       const el1 = document.getElementById(id1);
       const el2 = document.getElementById(id2);
-      if (el1) el1.addEventListener('change', handler);
-      if (el2) el2.addEventListener('change', handler);
+      if (el1) { el1.addEventListener('change', handler); el1.addEventListener('input', handler); }
+      if (el2) { el2.addEventListener('change', handler); el2.addEventListener('input', handler); }
     };
     bindSelect('setting-notes-size', 'modal-setting-notes-size', 'notesSize');
     bindSelect('setting-max-lives', 'modal-setting-max-lives', 'maxLives');

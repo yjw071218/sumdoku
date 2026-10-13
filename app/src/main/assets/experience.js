@@ -20,10 +20,20 @@ const RoomCode = {
 
 const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction'];
 function normalizedRules(settings) {
+  let maxLives = String(settings.maxLives ?? '3');
+  if (maxLives !== 'unlimited') {
+    const num = parseInt(maxLives, 10);
+    maxLives = isNaN(num) || num < 1 ? '3' : String(Math.min(999, num));
+  }
+  let initialHints = String(settings.initialHints ?? '3');
+  if (initialHints !== 'unlimited') {
+    const num = parseInt(initialHints, 10);
+    initialHints = isNaN(num) || num < 0 ? '3' : String(Math.min(999, num));
+  }
   return {
     mistakeLimit: settings.mistakeLimit !== false,
-    maxLives: ['1','3','5','10','unlimited'].includes(String(settings.maxLives)) ? String(settings.maxLives) : '3',
-    initialHints: ['0','1','3','5','10','unlimited'].includes(String(settings.initialHints)) ? String(settings.initialHints) : '3',
+    maxLives,
+    initialHints,
     livesExhaustedAction: settings.livesExhaustedAction === 'continue' ? 'continue' : 'game_over',
     hintExhaustedAction: settings.hintExhaustedAction === 'disallow' ? 'disallow' : 'allow_penalty'
   };
@@ -73,27 +83,48 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
   const summary = document.createElement('summary'); summary.textContent = battle ? '대전 규칙 · 두 플레이어 공통' : '시작 전 설정'; panel.append(summary);
   const grid = document.createElement('div'); grid.className = 'quick-settings-grid'; panel.append(grid);
   const fields = [
-    ['maxLives','목숨',[['1','1개'],['3','3개'],['5','5개'],['10','10개'],['unlimited','무제한']]],
-    ['initialHints','힌트',[['0','없음'],['1','1개'],['3','3개'],['5','5개'],['10','10개'],['unlimited','무제한']]],
-    ['livesExhaustedAction','목숨 소진',[['game_over','게임 종료'],['continue','감점 후 계속']]],
-    ['hintExhaustedAction','힌트 소진',[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 50점 감점']]],
-    ['autoNotes','후보 메모 자동 정리',[[true,'켜짐'],[false,'꺼짐']]],
-    ['autoCheck','오답 알림',[[true,'켜짐'],[false,'꺼짐']]],
-    ['sound','효과음',[[true,'켜짐'],[false,'꺼짐']]],
-    ['highlightCross','행·열 강조',[[true,'켜짐'],[false,'꺼짐']]]
+    {key:'maxLives', title:'목숨 (직접 입력)', type:'number', min:1, max:999, def:'3'},
+    {key:'initialHints', title:'힌트 (직접 입력)', type:'number', min:0, max:999, def:'3'},
+    {key:'livesExhaustedAction', title:'목숨 소진', type:'select', options:[['game_over','게임 종료'],['continue','감점 후 계속']]},
+    {key:'hintExhaustedAction', title:'힌트 소진', type:'select', options:[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 50점 감점']]},
+    {key:'autoNotes', title:'후보 메모 자동 정리', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
+    {key:'autoCheck', title:'오답 알림', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
+    {key:'sound', title:'효과음', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
+    {key:'highlightCross', title:'행·열 강조', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]}
   ];
-  fields.forEach(([key, title, options]) => {
-    const label = document.createElement('label'); label.textContent = title;
-    const select = document.createElement('select'); select.dataset.quickSetting = key;
-    options.forEach(([value, name]) => select.add(new Option(name, String(value))));
-    select.value = String(this.settings[key]);
-    select.onchange = () => {
-      this.settings[key] = select.value === 'true' ? true : select.value === 'false' ? false : select.value;
-      if (key === 'maxLives') this.settings.mistakeLimit = select.value !== 'unlimited';
-      this.saveSettings(); this.applySettings(); this.syncQuickSettings();
-      if (battle && RULE_FIELDS.includes(key)) this.setupHostRoom();
-    };
-    label.append(select); grid.append(label);
+  fields.forEach(f => {
+    const label = document.createElement('label'); label.textContent = f.title;
+    if (f.type === 'number') {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.dataset.quickSetting = f.key;
+      input.min = f.min;
+      input.max = f.max;
+      input.value = String(this.settings[f.key] ?? f.def);
+      const onValChange = () => {
+        const val = parseInt(input.value, 10);
+        const safe = isNaN(val) ? f.min : Math.max(f.min, Math.min(f.max, val));
+        this.settings[f.key] = String(safe);
+        if (f.key === 'maxLives') this.settings.mistakeLimit = true;
+        this.saveSettings(); this.applySettings(); this.syncQuickSettings();
+        if (battle && RULE_FIELDS.includes(f.key)) this.setupHostRoom();
+      };
+      input.oninput = onValChange;
+      input.onchange = onValChange;
+      label.append(input);
+    } else {
+      const select = document.createElement('select'); select.dataset.quickSetting = f.key;
+      f.options.forEach(([value, name]) => select.add(new Option(name, String(value))));
+      select.value = String(this.settings[f.key]);
+      select.onchange = () => {
+        this.settings[f.key] = select.value === 'true' ? true : select.value === 'false' ? false : select.value;
+        if (f.key === 'maxLives') this.settings.mistakeLimit = select.value !== 'unlimited';
+        this.saveSettings(); this.applySettings(); this.syncQuickSettings();
+        if (battle && RULE_FIELDS.includes(f.key)) this.setupHostRoom();
+      };
+      label.append(select);
+    }
+    grid.append(label);
   });
   const note = document.createElement('p'); note.className = 'quick-settings-note';
   note.textContent = battle ? '방을 준비한 뒤 코드를 공유하세요. 규칙 변경 시 방을 다시 준비합니다. 기본 힌트는 최대 30점 감점됩니다.' : '규칙은 새 게임부터 적용됩니다. 기본 힌트는 최대 30점 감점됩니다.';
@@ -158,47 +189,89 @@ SumdokuApp.prototype.prepareBattleRoom = function() {
   }
   button.disabled = true; button.textContent = '퍼즐 준비 중…';
   this.dom.battleWaitText.textContent = '화면을 자유롭게 조작할 수 있습니다. 닫으면 준비가 취소됩니다.';
+  
   const fail = message => {
     if (token !== this.roomGeneration) return;
-    if (this.roomWorker) this.roomWorker.terminate(); this.roomWorker = null;
+    if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
     button.disabled = false; button.textContent = '다시 준비하기'; this.dom.battleWaitText.textContent = message;
   };
+
+  const publishRoom = puzzleData => {
+    if (token !== this.roomGeneration) return;
+    if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
+    try {
+      const puzzle = {...puzzleData, difficulty:this.battleDiff || 'expert', rules:normalizedRules(this.settings)};
+      const response = JSON.parse(window.AndroidBridge.startBattleServer(this.battleMode, this.battleDiff || 'expert',
+        this.battleMode === 'score' ? 300 : 0, JSON.stringify(puzzle)));
+      if (!response.ok) throw new Error('방을 열지 못했습니다. Wi-Fi 연결을 확인하세요.');
+      this.battleRole = 1; this.battleHostIp = response.ip; this.battlePuzzleData = puzzle;
+      const code = RoomCode.encode(response.ip);
+      this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
+      this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
+      this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중…';
+      button.disabled = true;
+      button.textContent = '방 준비 완료';
+      let busy = false;
+      this.hostPollTimer = setInterval(async () => {
+        if (busy || token !== this.roomGeneration) return;
+        busy = true;
+        try {
+          const status = await this.battleRequest(`http://${response.ip}:8888/api/status`);
+          if (token !== this.roomGeneration) return;
+          this.dom.btnBattleStartMatch.disabled = !status.guestJoined;
+          if (status.guestJoined) this.dom.battleWaitText.textContent = '상대방 접속 완료 · 배틀을 시작하세요.';
+        } catch (_) { if (token === this.roomGeneration) this.dom.battleWaitText.textContent = '연결 확인 중…'; }
+        finally { busy = false; }
+      }, 1000);
+    } catch (error) { fail(error.message); }
+  };
+
+  const startMainThreadAsyncGeneration = () => {
+    if (token !== this.roomGeneration) return;
+    button.textContent = '퍼즐 준비 중…';
+    this.generator.generateAsync(this.battleDiff || 'expert', null, progress => {
+      if (token !== this.roomGeneration) return;
+      if (progress && progress.attempt) button.textContent = `퍼즐 준비 중 · ${progress.attempt}회`;
+    }).then(puzzle => {
+      if (token !== this.roomGeneration) return;
+      if (puzzle) publishRoom(puzzle);
+      else fail('퍼즐 생성에 실패했습니다. 다시 시도해 주세요.');
+    }).catch(err => {
+      fail(err?.message || '퍼즐 생성 중 오류가 발생했습니다.');
+    });
+  };
+
+  // Android WebView의 file:/// 스키마에서는 Web Worker 외부 스크립트 로딩이 기본 차단되므로 안전하게 비동기 생성기로 직행
+  const isFileProtocol = window.location.protocol === 'file:';
+  if (isFileProtocol || typeof Worker === 'undefined') {
+    startMainThreadAsyncGeneration();
+    return;
+  }
+
   try {
     this.roomWorker = new Worker('puzzle-worker.js');
-    this.roomWorker.onerror = () => fail('퍼즐 작업을 시작하지 못했습니다. 다시 시도해 주세요.');
+    this.roomWorker.onerror = () => {
+      console.warn('Worker onerror 발생, 메인 비동기 생성기로 자동 전환합니다.');
+      if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
+      startMainThreadAsyncGeneration();
+    };
     this.roomWorker.onmessage = async ({data}) => {
       if (token !== this.roomGeneration) return;
-      if (data.error) { fail(data.error); return; }
+      if (data.error) {
+        console.warn('Worker 에러 발생, 메인 비동기 생성기로 자동 전환합니다:', data.error);
+        if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
+        startMainThreadAsyncGeneration();
+        return;
+      }
       if (data.progress) { button.textContent = `퍼즐 검증 중 · ${data.progress.attempt}회`; return; }
       if (!data.puzzle) return;
-      this.roomWorker.terminate(); this.roomWorker = null;
-      try {
-        const puzzle = {...data.puzzle, difficulty:this.battleDiff, rules:normalizedRules(this.settings)};
-        const response = JSON.parse(window.AndroidBridge.startBattleServer(this.battleMode, this.battleDiff,
-          this.battleMode === 'score' ? 300 : 0, JSON.stringify(puzzle)));
-        if (!response.ok) throw new Error('방을 열지 못했습니다. Wi-Fi 연결을 확인하세요.');
-        this.battleRole = 1; this.battleHostIp = response.ip; this.battlePuzzleData = puzzle;
-        const code = RoomCode.encode(response.ip);
-        this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
-        this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
-        this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중…';
-        button.textContent = '방 준비 완료';
-        let busy = false;
-        this.hostPollTimer = setInterval(async () => {
-          if (busy || token !== this.roomGeneration) return;
-          busy = true;
-          try {
-            const status = await this.battleRequest(`http://${response.ip}:8888/api/status`);
-            if (token !== this.roomGeneration) return;
-            this.dom.btnBattleStartMatch.disabled = !status.guestJoined;
-            if (status.guestJoined) this.dom.battleWaitText.textContent = '상대방 접속 완료 · 배틀을 시작하세요.';
-          } catch (_) { if (token === this.roomGeneration) this.dom.battleWaitText.textContent = '연결 확인 중…'; }
-          finally { busy = false; }
-        }, 1000);
-      } catch (error) { fail(error.message); }
+      publishRoom(data.puzzle);
     };
     this.roomWorker.postMessage({difficulty:this.battleDiff || 'expert'});
-  } catch (error) { fail(error.message); }
+  } catch (error) {
+    console.warn('Worker 인스턴스 생성 실패, 메인 비동기 생성기로 자동 전환합니다:', error);
+    startMainThreadAsyncGeneration();
+  }
 };
 
 SumdokuApp.prototype.connectToHost = async function() {

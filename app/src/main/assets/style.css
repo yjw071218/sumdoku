@@ -3057,6 +3057,8 @@ input:checked + .slider::before {
 .settings-info {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
   padding-right: 16px;
 }
 

@@ -27,7 +27,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.17</div>
+          <div class="version-chip" id="app-version-chip">v1.0.18</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -674,15 +674,9 @@
                 <div class="settings-item">
                   <div class="settings-info">
                     <span class="s-title">허용 목숨 (실수 횟수)</span>
-                    <span class="s-desc">게임에서 허용할 목숨 개수를 설정합니다 (일반/배틀 공통)</span>
+                    <span class="s-desc">게임에서 허용할 목숨 개수를 직접 입력합니다 (일반/배틀 공통, 1~999회)</span>
                   </div>
-                  <select id="setting-max-lives" class="settings-select">
-                    <option value="1">1개 (하드코어)</option>
-                    <option value="3" selected>3개 (기본)</option>
-                    <option value="5">5개 (여유)</option>
-                    <option value="10">10개</option>
-                    <option value="unlimited">무제한 (목숨 제한 없음)</option>
-                  </select>
+                  <input type="number" id="setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
@@ -699,16 +693,9 @@
                 <div class="settings-item">
                   <div class="settings-info">
                     <span class="s-title">기본 제공 힌트 개수</span>
-                    <span class="s-desc">게임 시작 시 주어지는 힌트 개수입니다 (일반/배틀 공통)</span>
+                    <span class="s-desc">게임 시작 시 주어지는 힌트 개수를 직접 입력합니다 (일반/배틀 공통, 0~999개)</span>
                   </div>
-                  <select id="setting-initial-hints" class="settings-select">
-                    <option value="0">없음</option>
-                    <option value="1">1개</option>
-                    <option value="3" selected>3개 (기본)</option>
-                    <option value="5">5개</option>
-                    <option value="10">10개</option>
-                    <option value="unlimited">무제한 (자유 힌트)</option>
-                  </select>
+                  <input type="number" id="setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
@@ -1078,13 +1065,7 @@
             <div class="settings-info">
               <span class="s-title">허용 목숨 (실수 횟수)</span>
             </div>
-            <select id="modal-setting-max-lives" class="settings-select">
-              <option value="1">1개 (하드코어)</option>
-              <option value="3" selected>3개 (기본)</option>
-              <option value="5">5개 (여유)</option>
-              <option value="10">10개</option>
-              <option value="unlimited">무제한 (목숨 제한 없음)</option>
-            </select>
+            <input type="number" id="modal-setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
@@ -1099,14 +1080,7 @@
             <div class="settings-info">
               <span class="s-title">기본 제공 힌트 개수</span>
             </div>
-            <select id="modal-setting-initial-hints" class="settings-select">
-              <option value="0">없음</option>
-                    <option value="1">1개</option>
-              <option value="3" selected>3개 (기본)</option>
-              <option value="5">5개</option>
-              <option value="10">10개</option>
-              <option value="unlimited">무제한 (자유 힌트)</option>
-            </select>
+            <input type="number" id="modal-setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
