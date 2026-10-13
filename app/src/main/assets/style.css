@@ -1,7 +1,7 @@
 /* ==========================================================================
    Sumdoku (썸도쿠) Premium Stylesheet
    - Distinctive neon-indigo & slate aesthetics
-   - Responsive Phone (Vertical) & Tablet (Studio Split)
+   - Responsive Phone (Vertical), Tablet Portrait & Tablet Landscape (Studio Split)
    - Dynamic Floating Badges, Tactile Keypad & 4 Difficulty Tiers
    ========================================================================== */
 
@@ -88,7 +88,7 @@ body, html {
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 32px 20px 24px 20px;
+  padding: 28px 20px 20px 20px;
 }
 
 .home-header {
@@ -96,14 +96,14 @@ body, html {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .brand-badge-container {
   position: relative;
   width: 82px;
   height: 82px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,7 +185,7 @@ body, html {
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  margin: 24px 0;
+  margin: 20px 0;
 }
 
 .menu-btn {
@@ -276,14 +276,14 @@ body, html {
 }
 
 /* ==========================================================================
-   2. 게임 화면 (Game View) Styles
+   2. 게임 화면 (Game View) Base Styles (모바일 기준)
    ========================================================================== */
 .game-layout {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  max-width: 1024px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 6px 12px 10px 12px;
   justify-content: space-between;
@@ -295,6 +295,7 @@ body, html {
   justify-content: space-between;
   height: 44px;
   padding: 0 4px;
+  width: 100%;
 }
 
 .glass-icon-btn {
@@ -339,6 +340,7 @@ body, html {
   justify-content: space-between;
   padding: 4px 6px 6px 6px;
   gap: 8px;
+  width: 100%;
 }
 
 .status-chip {
@@ -370,31 +372,38 @@ body, html {
   color: #4f46e5;
 }
 
-/* Layout Split for Phone vs Tablet */
+/* Main Content Area */
 .game-main-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
   flex: 1;
   justify-content: space-around;
+  min-height: 0;
+  width: 100%;
 }
 
+/* Board Column & Frame */
 .board-column {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .board-frame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  max-width: 440px;
+  width: min(100%, 420px, 48vh);
+  height: min(100%, 420px, 48vh);
+  aspect-ratio: 1 / 1;
   background: var(--bg-surface);
   border: var(--grid-thick);
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .sudoku-grid {
@@ -450,7 +459,7 @@ body, html {
   left: 2px;
   font-size: 9.5px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
   padding: 1.5px 4.5px;
   border-radius: 5px;
   background: rgba(241, 245, 249, 0.95);
@@ -536,6 +545,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .tablet-only {
@@ -658,28 +668,128 @@ body, html {
 }
 
 /* ==========================================================================
-   TABLET RESPONSIVE LAYOUT (화면 너비 680px 이상 또는 태블릿 가로 모드)
+   TABLET PORTRAIT LAYOUT (태블릿 세로 모드, 너비 600px 이상)
    ========================================================================== */
-@media (min-width: 680px) {
+@media (min-width: 600px) and (orientation: portrait) {
   .game-layout {
-    padding: 14px 24px;
+    max-width: 640px;
+    padding: 14px 20px 16px 20px;
   }
 
+  .game-status-dashboard {
+    max-width: 540px;
+    margin: 0 auto 8px auto;
+  }
+
+  .board-frame {
+    width: min(500px, 86vw, 46vh);
+    height: min(500px, 86vw, 46vh);
+    border-radius: 14px;
+  }
+
+  .controls-column {
+    max-width: 520px;
+    margin: 0 auto;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .tablet-only {
+    display: block;
+  }
+
+  .keypad {
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+  }
+
+  .key-btn {
+    height: 54px;
+    font-size: 1.45rem;
+  }
+}
+
+/* ==========================================================================
+   TABLET LANDSCAPE & DESKTOP STUDIO LAYOUT (태블릿 가로 모드 및 대화면)
+   ★ 화면 너비 768px 이상이면서 가로 모드이거나, 너비 920px 이상인 경우 ★
+   ========================================================================== */
+@media (min-width: 768px) and (orientation: landscape), (min-width: 920px) {
+  .game-layout {
+    max-width: 1100px;
+    padding: 10px 24px 14px 24px;
+    height: 100%;
+    margin: 0 auto;
+  }
+
+  .game-header {
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* 상단 상태 칩이 너무 넓게 늘어지지 않도록 적정 너비 중앙 정렬 */
+  .game-status-dashboard {
+    max-width: 640px;
+    margin: 0 auto 8px auto;
+    width: 100%;
+  }
+
+  /* 보드(좌측)와 컨트롤(우측) 나란히 배치 */
   .game-main-content {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 32px;
-  }
-
-  .board-frame {
-    max-width: 520px;
-  }
-
-  .controls-column {
+    gap: 40px;
     flex: 1;
-    max-width: 380px;
-    gap: 16px;
+    min-height: 0;
+    width: 100%;
+  }
+
+  /* 좌측: 수도쿠 보드 컬럼 */
+  .board-column {
+    flex: 1 1 540px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    width: auto;
+  }
+
+  /* ★ 핵심 버그 수정: 보드가 36px로 쪼그라들지 않도록 명시적 크기 및 flex-shrink: 0 부여 ★ */
+  .board-frame {
+    width: min(520px, 70vh, 46vw) !important;
+    height: min(520px, 70vh, 46vw) !important;
+    max-width: 520px !important;
+    max-height: 520px !important;
+    aspect-ratio: 1 / 1 !important;
+    flex-shrink: 0 !important;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+  }
+
+  .cell {
+    font-size: 1.6rem;
+  }
+
+  .cell-cage-sum {
+    font-size: 10.5px;
+    padding: 2px 5px;
+  }
+
+  .cell.single-cage .cell-cage-sum {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  /* 우측: 추론 도우미 카드 & 툴바 & 3x3 키패드 */
+  .controls-column {
+    flex: 0 0 380px;
+    width: 380px;
+    max-width: 400px;
+    gap: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .tablet-only {
@@ -690,7 +800,7 @@ body, html {
   .logic-assistant-card {
     background: #ffffff;
     border-radius: 16px;
-    padding: 16px 18px;
+    padding: 14px 18px;
     border: 1.5px solid #e2e8f0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   }
@@ -763,7 +873,7 @@ body, html {
   }
 
   .key-btn {
-    height: 60px;
+    height: 58px;
     font-size: 1.55rem;
   }
 }
