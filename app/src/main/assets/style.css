@@ -779,6 +779,46 @@ body, html {
   border-bottom-right-radius: 4px;
 }
 
+/* 270도 오목(Concave) 꺾임 코너를 완벽하게 이어주는 연결 점선 */
+.cage-concave-corner {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+}
+.cage-concave-corner.concave-br {
+  right: 0;
+  bottom: 0;
+  width: 3.5px;
+  height: 3.5px;
+  border-left: 1.5px dashed var(--cage-dashed-color);
+  border-top: 1.5px dashed var(--cage-dashed-color);
+}
+.cage-concave-corner.concave-bl {
+  left: 0;
+  bottom: 0;
+  width: 3.5px;
+  height: 3.5px;
+  border-right: 1.5px dashed var(--cage-dashed-color);
+  border-top: 1.5px dashed var(--cage-dashed-color);
+}
+.cage-concave-corner.concave-tr {
+  right: 0;
+  top: 0;
+  width: 3.5px;
+  height: 3.5px;
+  border-left: 1.5px dashed var(--cage-dashed-color);
+  border-bottom: 1.5px dashed var(--cage-dashed-color);
+}
+.cage-concave-corner.concave-tl {
+  left: 0;
+  top: 0;
+  width: 3.5px;
+  height: 3.5px;
+  border-right: 1.5px dashed var(--cage-dashed-color);
+  border-bottom: 1.5px dashed var(--cage-dashed-color);
+}
+
 /* 1칸짜리 케이지 (시작 앵커) : 4방향 모두 3px 안쪽으로 들어간 완전한 사각 점선 */
 .cell.single-cage .cage-inset-border {
   top: 3px;
@@ -3480,12 +3520,14 @@ input:checked + .slider:before {
   font-weight: 700;
   padding: 4px 10px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .btn-speed.active {
-  background: #3b82f6;
-  color: #ffffff;
-  border-color: #3b82f6;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4) !important;
 }
 
 /* Responsive Replay & Mobile Hub Redesign on Narrow Screens */
@@ -3682,6 +3724,13 @@ input:checked + .slider:before {
   background: #1e293b;
   border-color: #475569;
   color: #f8fafc;
+}
+
+.theme-dark .btn-speed.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.45) !important;
 }
 
 @media (max-width: 680px) {

@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.17";
+const APP_VERSION = "1.0.19";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -783,11 +783,34 @@ class SumdokuApp {
     } else if (viewName === 'game') {
       if (!this.isPaused) this.startTimer();
     } else if (viewName === 'stats') {
-      this.exitMobileHubDetail();
-      this.renderStatsView();
+      this.openHubPanel('panel-stats', '통계');
     } else if (viewName === 'daily') {
       this.renderDailyCalendar();
     }
+  }
+
+  openHubPanel(panelId, title) {
+    document.querySelectorAll('.hub-menu-item').forEach(i => {
+      i.classList.toggle('active', i.dataset.hubPanel === panelId);
+    });
+    const targetItem = document.querySelector(`.hub-menu-item[data-hub-panel="${panelId}"]`);
+    const targetTitle = title || targetItem?.dataset?.hubTitle || '설정';
+    const titleEl = document.getElementById('hub-active-title');
+    if (titleEl) titleEl.textContent = targetTitle;
+
+    document.querySelectorAll('.hub-panel').forEach(p => p.classList.remove('active'));
+    const targetPanel = document.getElementById(panelId);
+    if (targetPanel) targetPanel.classList.add('active');
+
+    if (panelId === 'panel-stats') {
+      this.renderStatsView();
+    } else if (panelId === 'panel-replays') {
+      this.renderReplayList();
+    } else if (panelId === 'panel-awards') {
+      this.renderAwardsList();
+    }
+
+    this.enterMobileHubDetail(targetTitle);
   }
 
   handleBackKey() {
@@ -1352,25 +1375,7 @@ class SumdokuApp {
     document.querySelectorAll('.hub-menu-item').forEach(item => {
       item.addEventListener('click', () => {
         this.sound.play('click');
-        document.querySelectorAll('.hub-menu-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        const targetPanelId = item.dataset.hubPanel;
-        const targetTitle = item.dataset.hubTitle || '설정';
-        const titleEl = document.getElementById('hub-active-title');
-        if (titleEl) titleEl.textContent = targetTitle;
-
-        document.querySelectorAll('.hub-panel').forEach(p => p.classList.remove('active'));
-        const targetPanel = document.getElementById(targetPanelId);
-        if (targetPanel) targetPanel.classList.add('active');
-
-        if (targetPanelId === 'panel-replays') {
-          this.renderReplayList();
-        } else if (targetPanelId === 'panel-awards') {
-          this.renderAwardsList();
-        }
-
-        // 모바일 화면에서는 안드로이드 설정처럼 상세 화면으로 전환
-        this.enterMobileHubDetail(targetTitle);
+        this.openHubPanel(item.dataset.hubPanel, item.dataset.hubTitle);
       });
     });
 
@@ -2150,6 +2155,25 @@ class SumdokuApp {
         if (isLeftDiff) insetEl.classList.add('cage-left');
         if (isRightDiff) insetEl.classList.add('cage-right');
         cellEl.appendChild(insetEl);
+
+        // 270도 오목(Concave) 꺾임 코너 점선 연결
+        const addConcave = (dir) => {
+          const corner = document.createElement('span');
+          corner.className = `cage-concave-corner ${dir}`;
+          cellEl.appendChild(corner);
+        };
+        if (!isBottomDiff && !isRightDiff && (r < 8 && c < 8 && this.cellCageMap[`${r + 1},${c + 1}`] !== myCageIdx)) {
+          addConcave('concave-br');
+        }
+        if (!isBottomDiff && !isLeftDiff && (r < 8 && c > 0 && this.cellCageMap[`${r + 1},${c - 1}`] !== myCageIdx)) {
+          addConcave('concave-bl');
+        }
+        if (!isTopDiff && !isRightDiff && (r > 0 && c < 8 && this.cellCageMap[`${r - 1},${c + 1}`] !== myCageIdx)) {
+          addConcave('concave-tr');
+        }
+        if (!isTopDiff && !isLeftDiff && (r > 0 && c > 0 && this.cellCageMap[`${r - 1},${c - 1}`] !== myCageIdx)) {
+          addConcave('concave-tl');
+        }
 
         if (cage.cells.length === 1) {
           cellEl.classList.add('single-cage');
@@ -3134,6 +3158,9 @@ class SumdokuApp {
     this.activeReplay = replay;
     this.replayStep = 0;
     this.replaySpeed = 1;
+    document.querySelectorAll('.btn-speed').forEach(b => {
+      b.classList.toggle('active', b.dataset.speed === '1');
+    });
     this.pauseReplayPlay();
 
     const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
@@ -3212,6 +3239,25 @@ class SumdokuApp {
           if (isLft) inset.classList.add('cage-left');
           if (isRgt) inset.classList.add('cage-right');
           cell.appendChild(inset);
+
+          // 270도 오목(Concave) 꺾임 코너 점선 연결
+          const addConcave = (dir) => {
+            const corner = document.createElement('span');
+            corner.className = `cage-concave-corner ${dir}`;
+            cell.appendChild(corner);
+          };
+          if (!isBot && !isRgt && (r < 8 && c < 8 && cellCageMap[`${r + 1},${c + 1}`] !== cIdx)) {
+            addConcave('concave-br');
+          }
+          if (!isBot && !isLft && (r < 8 && c > 0 && cellCageMap[`${r + 1},${c - 1}`] !== cIdx)) {
+            addConcave('concave-bl');
+          }
+          if (!isTop && !isRgt && (r > 0 && c < 8 && cellCageMap[`${r - 1},${c + 1}`] !== cIdx)) {
+            addConcave('concave-tr');
+          }
+          if (!isTop && !isLft && (r > 0 && c > 0 && cellCageMap[`${r - 1},${c - 1}`] !== cIdx)) {
+            addConcave('concave-tl');
+          }
 
           if (cage.labelCell && cage.labelCell[0] === r && cage.labelCell[1] === c) {
             const sumEl = document.createElement('span');
@@ -3347,7 +3393,9 @@ class SumdokuApp {
     if (this.replayStep >= this.activeReplay.moves.length) {
       this.replayStep = 0;
     }
-    if (this.dom.btnReplayPlay) this.dom.btnReplayPlay.textContent = '⏸';
+    if (this.dom.btnReplayPlay) {
+      this.dom.btnReplayPlay.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.5"/><rect x="14" y="4" width="4" height="16" rx="1.5"/></svg>';
+    }
 
     clearInterval(this.replayPlayInterval);
     const delay = Math.max(150, Math.floor(1000 / this.replaySpeed));
@@ -3363,7 +3411,9 @@ class SumdokuApp {
   pauseReplayPlay() {
     clearInterval(this.replayPlayInterval);
     this.replayPlayInterval = null;
-    if (this.dom.btnReplayPlay) this.dom.btnReplayPlay.textContent = '▶';
+    if (this.dom.btnReplayPlay) {
+      this.dom.btnReplayPlay.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="7,4 20,12 7,20"/></svg>';
+    }
   }
 
   updateAppVersionDisplay() {

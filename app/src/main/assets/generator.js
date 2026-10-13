@@ -16,17 +16,24 @@ class SumdokuGenerator {
     const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
 
     let attempts = 0;
-    while (attempts++ < 1000) {
+    const maxAttempts = 5000;
+    let currentAnchors = targetAnchors;
+
+    while (attempts++ < maxAttempts) {
+      if (diff === 'expert' && attempts % 120 === 0) {
+        currentAnchors = [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+      }
+
       const solution = this.createSolutionIterative(rng);
-      const cages = this.createSmartCages(solution, targetAnchors, rng);
+      const cages = this.createSmartCages(solution, currentAnchors, rng);
       const singles = cages.filter(c => c.cells.length === 1);
 
       // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
-      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
+      if (singles.length === currentAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
         return {
           solution,
           cages,
-          anchorCount: targetAnchors
+          anchorCount: currentAnchors
         };
       }
     }
@@ -44,12 +51,12 @@ class SumdokuGenerator {
       hard: 4,
       expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
     };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+    let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const diffKr = diffNames[diff] || diff;
 
     let attempts = 0;
-    const maxAttempts = 1000;
+    const maxAttempts = 5000;
 
     if (onProgress) {
       onProgress({
@@ -65,12 +72,16 @@ class SumdokuGenerator {
     while (attempts < maxAttempts) {
       attempts++;
 
+      if (diff === 'expert' && attempts % 120 === 0) {
+        currentAnchors = [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
+      }
+
       const solution = this.createSolutionIterative(rng);
-      const cages = this.createSmartCages(solution, targetAnchors, rng);
+      const cages = this.createSmartCages(solution, currentAnchors, rng);
       const singles = cages.filter(c => c.cells.length === 1);
 
       // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
-      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
+      if (singles.length === currentAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
         if (onProgress) {
           onProgress({
             diffKr,
@@ -84,14 +95,14 @@ class SumdokuGenerator {
         return {
           solution,
           cages,
-          anchorCount: targetAnchors
+          anchorCount: currentAnchors
         };
       }
 
       // 4회 시도마다 비동기 틱 양보 및 프로그레스 갱신
       if (attempts % 4 === 0) {
         if (onProgress) {
-          const pct = Math.min(95, 20 + Math.floor((attempts / 45) * 75));
+          const pct = Math.min(95, 20 + Math.floor((attempts / 80) * 75));
           onProgress({
             diffKr,
             step: 2,
