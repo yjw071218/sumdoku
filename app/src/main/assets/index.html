@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.6</div>
+          <div class="version-chip" id="app-version-chip">v1.0.7</div>
         </header>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
@@ -340,6 +340,25 @@
                 <span class="tool-label">메모</span>
               </button>
 
+              <button id="btn-type-memo" class="tool-btn" title="직접 타이핑 메모">
+                <div class="tool-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <line x1="6" y1="8" x2="6.01" y2="8"></line>
+                    <line x1="10" y1="8" x2="10.01" y2="8"></line>
+                    <line x1="14" y1="8" x2="14.01" y2="8"></line>
+                    <line x1="18" y1="8" x2="18.01" y2="8"></line>
+                    <line x1="6" y1="12" x2="6.01" y2="12"></line>
+                    <line x1="10" y1="12" x2="10.01" y2="12"></line>
+                    <line x1="14" y1="12" x2="14.01" y2="12"></line>
+                    <line x1="18" y1="12" x2="18.01" y2="12"></line>
+                    <line x1="8" y1="16" x2="16" y2="16"></line>
+                  </svg>
+                  <span id="type-memo-badge" class="badge">⌨️</span>
+                </div>
+                <span class="tool-label">타이핑</span>
+              </button>
+
               <button id="btn-hint" class="tool-btn" title="힌트">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -352,6 +371,24 @@
                 <span class="tool-label">힌트</span>
               </button>
             </nav>
+
+            <!-- Direct Typing Bar (실시간 타이핑 메모 바) -->
+            <div id="direct-typing-bar" class="direct-typing-bar hidden">
+              <div class="typing-bar-header">
+                <span class="typing-bar-title">⌨️ 직접 타이핑 메모 (<span id="typing-cell-coord">선택된 칸</span>)</span>
+                <button id="btn-close-typing" class="btn-close-mini" title="닫기">✕</button>
+              </div>
+              <div class="typing-input-row">
+                <input type="tel" id="input-direct-notes" class="typing-input"
+                       placeholder="숫자 타이핑 (예: 139)..."
+                       maxlength="9" inputmode="numeric" pattern="[1-9]*" autocomplete="off">
+                <button id="btn-typing-clear" class="btn-typing-action" title="메모 지우기">지우기</button>
+                <button id="btn-typing-apply" class="btn-typing-action btn-apply" title="다음 칸 이동">다음 칸</button>
+              </div>
+              <div class="typing-quick-hints">
+                <span>💡 키보드로 숫자 1~9를 입력하면 실시간 메모가 반영됩니다 (Enter: 다음 칸)</span>
+              </div>
+            </div>
 
             <!-- Keypad (Image 2, 8 스타일: 번호 및 잔여 개수 카드) -->
             <div class="keypad-container">
@@ -576,6 +613,18 @@
               </label>
             </div>
 
+            <div class="settings-item">
+              <div class="settings-info">
+                <span class="s-title">메모(연필) 폰트 크기</span>
+                <span class="s-desc">칸에 표시되는 후보수 메모 숫자의 크기를 조절합니다</span>
+              </div>
+              <select id="setting-notes-size" class="settings-select">
+                <option value="normal">보통</option>
+                <option value="large" selected>크게 (기본)</option>
+                <option value="xlarge">아주 크게</option>
+              </select>
+            </div>
+
           </div>
 
           <div class="stats-actions">
@@ -712,6 +761,16 @@
               <input type="checkbox" id="modal-setting-notes" checked>
               <span class="slider"></span>
             </label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info">
+              <span class="s-title">메모 폰트 크기</span>
+            </div>
+            <select id="modal-setting-notes-size" class="settings-select">
+              <option value="normal">보통</option>
+              <option value="large" selected>크게 (기본)</option>
+              <option value="xlarge">아주 크게</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">

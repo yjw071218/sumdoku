@@ -1,9 +1,11 @@
 /**
- * Sumdoku (썸도쿠) v1.0.6 - 100% 연역 추론 보장 합계 수도쿠
+ * Sumdoku (썸도쿠) v1.0.7 - 100% 연역 추론 보장 합계 수도쿠
  * 
+ * - 메모(후보수) 폰트 크기 대폭 확대 (모바일 14~16.5px, 태블릿 18~21.5px, Ultra Bold 900)
+ * - 설정 내 메모 폰트 크기 조절 옵션 탑재 (보통 / 크게 / 아주 크게)
+ * - 실시간 직접 타이핑 메모 기능 (모바일/태블릿 가상 키보드 및 블루투스/PC 키보드 연동)
  * - 홈 화면, 게임 화면(폰/태블릿 반응형 스튜디오), 일일 도전 캘린더, 설정 및 전적 시스템
  * - 전문가 난이도: 단 1개의 시작 앵커만 주어지는 경우도 100% 순수 연역 추론으로 풀림 보장
- * - 메모(연필) 크기 가독성 대폭 향상 (모바일 11px, 태블릿 13.5px, bold 800)
  * - 좌측 상단 케이지 합계 숫자와 메모 1번 간의 겹침 현상 원천 해결
  * - 다크모드 고대비 가독성 대폭 향상 (숫자, 메모, 케이지 합계 골드/시안 텍스트, 하이라이트)
  * - 일반 기록 모드 & 타임어택 시간 제한 모드 (카운트다운 타이머 & 보너스 점수)
@@ -12,7 +14,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.6";
+const APP_VERSION = "1.0.7";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -497,7 +499,8 @@ class SumdokuApp {
       highlightDup: true,
       autoNotes: true,
       hideCompleted: true,
-      showTimer: true
+      showTimer: true,
+      notesSize: 'large'
     };
     try {
       const saved = localStorage.getItem('sumdoku_settings');
@@ -534,6 +537,14 @@ class SumdokuApp {
     setChecked('modal-setting-notes', this.settings.autoNotes);
     setChecked('setting-hide-completed', this.settings.hideCompleted);
     setChecked('setting-show-timer', this.settings.showTimer);
+
+    // 메모 폰트 크기 클래스 적용
+    document.body.classList.remove('notes-size-normal', 'notes-size-large', 'notes-size-xlarge');
+    document.body.classList.add(`notes-size-${this.settings.notesSize || 'large'}`);
+    const sel1 = document.getElementById('setting-notes-size');
+    const sel2 = document.getElementById('modal-setting-notes-size');
+    if (sel1) sel1.value = this.settings.notesSize || 'large';
+    if (sel2) sel2.value = this.settings.notesSize || 'large';
 
     const timerBox = document.getElementById('timer-box');
     if (timerBox) timerBox.style.display = this.settings.showTimer ? 'flex' : 'none';
@@ -918,6 +929,13 @@ class SumdokuApp {
       gameModeTag: document.getElementById('game-mode-tag'),
       pencilBadge: document.getElementById('pencil-badge'),
       btnPencil: document.getElementById('btn-pencil'),
+      btnTypeMemo: document.getElementById('btn-type-memo'),
+      directTypingBar: document.getElementById('direct-typing-bar'),
+      inputDirectNotes: document.getElementById('input-direct-notes'),
+      typingCellCoord: document.getElementById('typing-cell-coord'),
+      btnCloseTyping: document.getElementById('btn-close-typing'),
+      btnTypingClear: document.getElementById('btn-typing-clear'),
+      btnTypingApply: document.getElementById('btn-typing-apply'),
       btnUndo: document.getElementById('btn-undo'),
       btnErase: document.getElementById('btn-erase'),
       btnHint: document.getElementById('btn-hint'),
@@ -1202,11 +1220,72 @@ class SumdokuApp {
     bindSingle('setting-hide-completed', 'hideCompleted');
     bindSingle('setting-show-timer', 'showTimer');
 
+    // 메모 폰트 크기 선택 바인딩
+    const bindSelect = (id1, id2, key) => {
+      const handler = (e) => {
+        this.sound.play('click');
+        const val = e.target.value;
+        this.settings[key] = val;
+        const otherEl = document.getElementById(e.target.id === id1 ? id2 : id1);
+        if (otherEl) otherEl.value = val;
+        this.saveSettings();
+        this.applySettings();
+      };
+      const el1 = document.getElementById(id1);
+      const el2 = document.getElementById(id2);
+      if (el1) el1.addEventListener('change', handler);
+      if (el2) el2.addEventListener('change', handler);
+    };
+    bindSelect('setting-notes-size', 'modal-setting-notes-size', 'notesSize');
+
     // 툴바 액션
     this.dom.btnPencil.addEventListener('click', () => this.togglePencilMode());
+    if (this.dom.btnTypeMemo) {
+      this.dom.btnTypeMemo.addEventListener('click', () => this.toggleDirectTyping());
+    }
     this.dom.btnUndo.addEventListener('click', () => this.undo());
     this.dom.btnErase.addEventListener('click', () => this.erase());
     this.dom.btnHint.addEventListener('click', () => this.useHint());
+
+    // 직접 타이핑 메모 바 이벤트
+    if (this.dom.btnCloseTyping) {
+      this.dom.btnCloseTyping.addEventListener('click', () => this.closeDirectTyping());
+    }
+    if (this.dom.btnTypingClear) {
+      this.dom.btnTypingClear.addEventListener('click', () => {
+        if (this.selected.r < 0 || this.selected.c < 0) return;
+        const cellData = this.board[this.selected.r][this.selected.c];
+        if (cellData.val > 0) return;
+        this.pushUndoState();
+        cellData.notes.clear();
+        this.updateBoardDisplay();
+        this.sound.play('erase');
+        if (this.dom.inputDirectNotes) this.dom.inputDirectNotes.value = '';
+      });
+    }
+    if (this.dom.btnTypingApply) {
+      this.dom.btnTypingApply.addEventListener('click', () => {
+        this.sound.play('click');
+        this.moveToNextEmptyCell();
+      });
+    }
+    if (this.dom.inputDirectNotes) {
+      this.dom.inputDirectNotes.addEventListener('input', (e) => {
+        if (this.selected.r < 0 || this.selected.c < 0) return;
+        const cellData = this.board[this.selected.r][this.selected.c];
+        if (cellData.val > 0) return;
+
+        const val = e.target.value;
+        const digits = Array.from(new Set(val.replace(/[^1-9]/g, '').split('').map(Number))).sort((a, b) => a - b);
+
+        this.pushUndoState();
+        cellData.notes = new Set(digits);
+        this.updateBoardDisplay();
+        this.sound.play('click');
+
+        e.target.value = digits.join('');
+      });
+    }
 
     // 키패드 터치
     this.dom.keyBtns.forEach(btn => {
@@ -1218,6 +1297,34 @@ class SumdokuApp {
     // 키보드 대응
     window.addEventListener('keydown', (e) => {
       if (this.currentView !== 'game' || this.isPaused) return;
+
+      // 직접 타이핑 인풋 포커스 상태 처리
+      if (this.dom.inputDirectNotes && document.activeElement === this.dom.inputDirectNotes) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.sound.play('click');
+          this.moveToNextEmptyCell();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          this.closeDirectTyping();
+        }
+        return;
+      }
+
+      // T / t: 직접 타이핑 바 열기/닫기
+      if (e.key === 't' || e.key === 'T') {
+        this.toggleDirectTyping();
+        return;
+      }
+
+      // Shift + 1..9: 선택된 칸에 즉시 메모 토글 (메모 모드 토글 불필요)
+      if (e.shiftKey && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const num = parseInt(e.key, 10);
+        this.toggleNoteInSelected(num);
+        return;
+      }
+
       if (e.key >= '1' && e.key <= '9') {
         this.handleNumberInput(parseInt(e.key, 10));
       } else if (e.key === 'Backspace' || e.key === 'Delete') {
@@ -1814,6 +1921,11 @@ class SumdokuApp {
 
         cellEl.addEventListener('click', () => {
           this.sound.play('click');
+          const now = Date.now();
+          if (this.lastCellClick && this.lastCellClick.r === r && this.lastCellClick.c === c && (now - this.lastCellClick.time < 350)) {
+            this.openDirectTyping();
+          }
+          this.lastCellClick = { r, c, time: now };
           this.selectCell(r, c);
         });
         this.dom.board.appendChild(cellEl);
@@ -1857,6 +1969,91 @@ class SumdokuApp {
     this.selected = { r, c };
     this.updateHighlights();
     this.updateTabletCageHelper(r, c);
+    this.updateDirectTypingInput();
+  }
+
+  openDirectTyping() {
+    if (this.currentView !== 'game' || this.isPaused) return;
+    this.isDirectTypingOpen = true;
+    if (this.dom.directTypingBar) this.dom.directTypingBar.classList.remove('hidden');
+    if (this.dom.btnTypeMemo) this.dom.btnTypeMemo.classList.add('active');
+    this.updateDirectTypingInput();
+    setTimeout(() => {
+      if (this.dom.inputDirectNotes && !this.dom.inputDirectNotes.disabled) {
+        this.dom.inputDirectNotes.focus();
+        this.dom.inputDirectNotes.select();
+      }
+    }, 60);
+  }
+
+  closeDirectTyping() {
+    this.isDirectTypingOpen = false;
+    if (this.dom.directTypingBar) this.dom.directTypingBar.classList.add('hidden');
+    if (this.dom.btnTypeMemo) this.dom.btnTypeMemo.classList.remove('active');
+    if (this.dom.inputDirectNotes) this.dom.inputDirectNotes.blur();
+  }
+
+  toggleDirectTyping() {
+    this.sound.play('click');
+    if (this.isDirectTypingOpen) {
+      this.closeDirectTyping();
+    } else {
+      this.openDirectTyping();
+    }
+  }
+
+  updateDirectTypingInput() {
+    if (!this.dom.directTypingBar || this.dom.directTypingBar.classList.contains('hidden')) return;
+    if (this.selected.r < 0 || this.selected.c < 0) return;
+    const { r, c } = this.selected;
+    if (this.dom.typingCellCoord) {
+      this.dom.typingCellCoord.textContent = `${r + 1}행 ${c + 1}열`;
+    }
+    const cellData = this.board[r][c];
+    if (!this.dom.inputDirectNotes) return;
+    if (cellData.val > 0) {
+      this.dom.inputDirectNotes.value = '';
+      this.dom.inputDirectNotes.placeholder = `확정된 칸 (값: ${cellData.val})`;
+      this.dom.inputDirectNotes.disabled = true;
+    } else {
+      this.dom.inputDirectNotes.disabled = false;
+      this.dom.inputDirectNotes.placeholder = '메모할 숫자 입력 (예: 139)...';
+      const sorted = Array.from(cellData.notes).sort((a, b) => a - b).join('');
+      this.dom.inputDirectNotes.value = sorted;
+    }
+  }
+
+  moveToNextEmptyCell() {
+    if (this.selected.r < 0) return;
+    let currIdx = this.selected.r * 9 + this.selected.c;
+    for (let offset = 1; offset < 81; offset++) {
+      const idx = (currIdx + offset) % 81;
+      const nr = Math.floor(idx / 9);
+      const nc = idx % 9;
+      if (this.board[nr][nc].val === 0) {
+        this.selectCell(nr, nc);
+        if (this.dom.inputDirectNotes && !this.dom.inputDirectNotes.disabled) {
+          this.dom.inputDirectNotes.focus();
+          this.dom.inputDirectNotes.select();
+        }
+        return;
+      }
+    }
+  }
+
+  toggleNoteInSelected(num) {
+    if (this.selected.r < 0 || this.selected.c < 0) return;
+    const cellData = this.board[this.selected.r][this.selected.c];
+    if (cellData.val > 0) return;
+    this.pushUndoState();
+    if (cellData.notes.has(num)) {
+      cellData.notes.delete(num);
+    } else {
+      cellData.notes.add(num);
+    }
+    this.updateBoardDisplay();
+    this.updateDirectTypingInput();
+    this.sound.play('click');
   }
 
   updateHighlights() {
