@@ -39,6 +39,8 @@ public class BattleServer {
     private final ConcurrentHashMap<String, String> p1State = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> p2State = new ConcurrentHashMap<>();
     private volatile boolean guestJoined = false;
+    private volatile boolean p1Ready = false;
+    private volatile boolean p2Ready = false;
 
     public BattleServer() {
         resetRoom();
@@ -95,9 +97,11 @@ public class BattleServer {
         this.battleMode = mode;
         this.difficulty = diff;
         this.timeLimit = timeLimitSec;
-        this.puzzleJson = puzzleData;
+        this.puzzleJson = (puzzleData != null && !puzzleData.isEmpty()) ? puzzleData : "{}";
         this.roomStatus = "waiting";
         this.guestJoined = false;
+        this.p1Ready = false;
+        this.p2Ready = false;
         this.p1State.clear();
         this.p2State.clear();
     }
@@ -109,6 +113,8 @@ public class BattleServer {
     private void resetRoom() {
         this.roomStatus = "waiting";
         this.guestJoined = false;
+        this.p1Ready = false;
+        this.p2Ready = false;
         this.p1State.clear();
         this.p2State.clear();
         this.puzzleJson = "{}";
@@ -139,7 +145,7 @@ public class BattleServer {
                 }
             }
 
-            if (contentLength < 0 || contentLength > 262144) { sendResponse(out, 413, "{}"); return; }
+            if (contentLength < 0 || contentLength > 524288) { sendResponse(out, 413, "{}"); return; }
             byte[] payload = new byte[contentLength];
             int received = 0;
             while (received < contentLength) {
@@ -161,19 +167,40 @@ public class BattleServer {
 
             if (path.startsWith("/api/status")) {
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"guestJoined\":%b,\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d}",
-                    roomStatus, guestJoined, battleMode, difficulty, timeLimit
+                    "{\"ok\":true,\"status\":\"%s\",\"guestJoined\":%b,\"p1Ready\":%b,\"p2Ready\":%b,\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d}",
+                    roomStatus, guestJoined, p1Ready, p2Ready, battleMode, difficulty, timeLimit
                 );
             } else if (path.startsWith("/api/join")) {
                 guestJoined = true;
+                p2Ready = false;
                 responseJson = "{\"ok\":true,\"message\":\"Joined room successfully\",\"player\":2}";
+            } else if (path.startsWith("/api/ready")) {
+                if ("POST".equals(method)) {
+                    if (body.contains("\"player\":1") || body.contains("\"player\":\"1\"")) {
+                        p1Ready = body.contains("\"ready\":true");
+                    } else if (body.contains("\"player\":2") || body.contains("\"player\":\"2\"")) {
+                        p2Ready = body.contains("\"ready\":true");
+                    }
+                }
+                responseJson = String.format("{\"ok\":true,\"p1Ready\":%b,\"p2Ready\":%b}", p1Ready, p2Ready);
+            } else if (path.startsWith("/api/rematch")) {
+                roomStatus = "waiting";
+                p1Ready = false;
+                p2Ready = false;
+                p1State.clear();
+                p2State.clear();
+                puzzleJson = "{}";
+                responseJson = "{\"ok\":true,\"status\":\"waiting\"}";
             } else if (path.startsWith("/api/start")) {
+                if ("POST".equals(method) && !body.trim().isEmpty() && body.contains("{")) {
+                    puzzleJson = body;
+                }
                 roomStatus = "playing";
                 responseJson = "{\"ok\":true,\"status\":\"playing\"}";
             } else if (path.startsWith("/api/room")) {
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"puzzle\":%s}",
-                    roomStatus, battleMode, difficulty, timeLimit, puzzleJson
+                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"puzzle\":%s}",
+                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, puzzleJson
                 );
             } else if (path.startsWith("/api/progress")) {
                 if ("POST".equals(method)) {

@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.23";
+const APP_VERSION = "1.0.24";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -553,6 +553,30 @@ class SumdokuApp {
     } catch (e) {}
   }
 
+  resetAllStatsAndReplays() {
+    this.stats = {
+      totalGames: 0,
+      totalWins: 0,
+      currentStreak: 0,
+      maxStreak: 0,
+      byDiff: {
+        easy: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
+        medium: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
+        hard: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
+        expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
+      }
+    };
+    this.saveStats();
+    this.replays = [];
+    try {
+      localStorage.removeItem('sumdoku_replays');
+    } catch (_) {}
+    this.syncPersistentBackup();
+    this.renderStatsView();
+    this.renderReplayList();
+    this.showToast('모든 전적과 리플레이가 초기화되었습니다.');
+  }
+
   recordGameEnd(isWin) {
     this.stats.totalGames++;
     let isNewBestScore = false;
@@ -950,6 +974,15 @@ class SumdokuApp {
       btnErase: document.getElementById('btn-erase'),
       btnHint: document.getElementById('btn-hint'),
       hintBadge: document.getElementById('hint-badge'),
+      floatingHintCard: document.getElementById('floating-hint-card'),
+      hintCardBadge: document.getElementById('hint-card-badge'),
+      hintTargetPos: document.getElementById('hint-target-pos'),
+      hintCageInfo: document.getElementById('hint-cage-info'),
+      hintLogicText: document.getElementById('hint-logic-text'),
+      hintAnswerVal: document.getElementById('hint-answer-val'),
+      btnHintCardClose: document.getElementById('btn-hint-card-close'),
+      btnHintCardDismiss: document.getElementById('btn-hint-card-dismiss'),
+      btnHintCardApply: document.getElementById('btn-hint-card-apply'),
       btnGamePause: document.getElementById('btn-game-pause'),
       btnGameTheme: document.getElementById('btn-game-theme'),
       btnGameSettings: document.getElementById('btn-game-settings'),
@@ -971,6 +1004,9 @@ class SumdokuApp {
       // Daily
       btnDailyStart: document.getElementById('btn-daily-start'),
       btnStatsReset: document.getElementById('btn-stats-reset'),
+      modalStatsResetConfirm: document.getElementById('modal-stats-reset-confirm'),
+      btnCancelStatsReset: document.getElementById('btn-cancel-stats-reset'),
+      btnConfirmStatsReset: document.getElementById('btn-confirm-stats-reset'),
 
       // Modals
       modalDiff: document.getElementById('modal-difficulty'),
@@ -1050,11 +1086,21 @@ class SumdokuApp {
       battleMyIp: document.getElementById('battle-my-ip'),
       battleWaitText: document.getElementById('battle-wait-text'),
       btnBattleStartMatch: document.getElementById('btn-battle-start-match'),
+      btnBattleHostReady: document.getElementById('btn-battle-host-ready'),
+      btnBattleGuestReady: document.getElementById('btn-battle-guest-ready'),
+      hostP1Status: document.getElementById('host-p1-status'),
+      hostP2Status: document.getElementById('host-p2-status'),
+      guestP1Status: document.getElementById('guest-p1-status'),
+      guestP2Status: document.getElementById('guest-p2-status'),
+      battleJoinInputSection: document.getElementById('battle-join-input-section'),
+      battleGuestRoomPanel: document.getElementById('battle-guest-room-panel'),
+      guestWaitText: document.getElementById('guest-wait-text'),
       battleInputTarget: document.getElementById('battle-input-target'),
       btnBattleConnect: document.getElementById('btn-battle-connect'),
 
       modalBattleResult: document.getElementById('modal-battle-result'),
       btnBattleResultClose: document.getElementById('btn-battle-result-close'),
+      btnBattleRematch: document.getElementById('btn-battle-rematch'),
 
       // Game Result Modal
       modalGameResult: document.getElementById('modal-game-result'),
@@ -1421,24 +1467,36 @@ class SumdokuApp {
       });
     }
 
-    // 전적 초기화
-    this.dom.btnStatsReset.addEventListener('click', () => {
-      this.sound.play('click');
-      if (confirm('모든 전적과 클리어 기록을 초기화하시겠습니까?')) {
-        this.stats = {
-          totalGames: 0, totalWins: 0, currentStreak: 0, maxStreak: 0,
-          byDiff: {
-            easy: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
-            medium: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
-            hard: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
-            expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
-          }
-        };
-        this.saveStats();
-        this.renderStatsView();
-        this.showToast('전적이 초기화되었습니다.');
-      }
-    });
+    // 전적 초기화 (커스텀 모달)
+    if (this.dom.btnStatsReset) {
+      this.dom.btnStatsReset.addEventListener('click', () => {
+        this.sound.play('click');
+        if (this.dom.modalStatsResetConfirm) {
+          this.dom.modalStatsResetConfirm.classList.remove('hidden');
+        } else if (confirm('모든 전적과 리플레이 기록을 초기화하시겠습니까?')) {
+          this.resetAllStatsAndReplays();
+        }
+      });
+    }
+
+    if (this.dom.btnCancelStatsReset) {
+      this.dom.btnCancelStatsReset.addEventListener('click', () => {
+        this.sound.play('click');
+        if (this.dom.modalStatsResetConfirm) {
+          this.dom.modalStatsResetConfirm.classList.add('hidden');
+        }
+      });
+    }
+
+    if (this.dom.btnConfirmStatsReset) {
+      this.dom.btnConfirmStatsReset.addEventListener('click', () => {
+        this.sound.play('click');
+        if (this.dom.modalStatsResetConfirm) {
+          this.dom.modalStatsResetConfirm.classList.add('hidden');
+        }
+        this.resetAllStatsAndReplays();
+      });
+    }
 
     // 모달 닫기
     this.dom.btnDiffCancel.addEventListener('click', () => {
@@ -1925,15 +1983,6 @@ class SumdokuApp {
       });
     });
 
-    // 호스트 게임 시작
-    this.dom.btnBattleStartMatch.addEventListener('click', async () => {
-      this.sound.play('click');
-      try {
-        await fetch(`http://${this.battleHostIp}:8888/api/start`, { method: 'POST' });
-      } catch (e) {}
-      this.dom.modalBattleLobby.classList.add('hidden');
-      this.startBattleMatch(1, this.battlePuzzleData, this.battleMode);
-    });
 
     // 숫자 접속 코드 복사 기능 (복사 버튼 및 코드 텍스트 터치)
     const handleCopyCode = () => {
@@ -1987,12 +2036,63 @@ class SumdokuApp {
       this.connectToHost();
     });
 
-    // 배틀 결과 모달 닫기
-    this.dom.btnBattleResultClose.addEventListener('click', () => {
-      this.sound.play('click');
-      this.dom.modalBattleResult.classList.add('hidden');
-      this.switchView('home');
-    });
+    // 배틀 결과 모달 닫기 (종료)
+    if (this.dom.btnBattleResultClose) {
+      this.dom.btnBattleResultClose.addEventListener('click', () => {
+        this.sound.play('click');
+        this.dom.modalBattleResult.classList.add('hidden');
+        this.endBattleSession(true);
+        this.switchView('home');
+      });
+    }
+
+    // 배틀 재도전
+    if (this.dom.btnBattleRematch) {
+      this.dom.btnBattleRematch.addEventListener('click', () => {
+        this.sound.play('click');
+        this.requestBattleRematch();
+      });
+    }
+
+    // 배틀 준비 및 시작 버튼
+    if (this.dom.btnBattleHostReady) {
+      this.dom.btnBattleHostReady.addEventListener('click', () => {
+        this.sound.play('click');
+        this.toggleHostReady();
+      });
+    }
+    if (this.dom.btnBattleGuestReady) {
+      this.dom.btnBattleGuestReady.addEventListener('click', () => {
+        this.sound.play('click');
+        this.toggleGuestReady();
+      });
+    }
+    if (this.dom.btnBattleStartMatch) {
+      this.dom.btnBattleStartMatch.addEventListener('click', () => {
+        this.sound.play('click');
+        this.startBattleAsHost();
+      });
+    }
+
+    // 논리 연역 힌트 카드 액션
+    if (this.dom.btnHintCardClose) {
+      this.dom.btnHintCardClose.addEventListener('click', () => {
+        this.sound.play('click');
+        this.dismissDeductiveHint();
+      });
+    }
+    if (this.dom.btnHintCardDismiss) {
+      this.dom.btnHintCardDismiss.addEventListener('click', () => {
+        this.sound.play('click');
+        this.dismissDeductiveHint();
+      });
+    }
+    if (this.dom.btnHintCardApply) {
+      this.dom.btnHintCardApply.addEventListener('click', () => {
+        this.sound.play('click');
+        this.applyDeductiveHint();
+      });
+    }
   }
 
   openBattleLobby() {
@@ -2242,15 +2342,75 @@ class SumdokuApp {
     document.getElementById('res-opp-time').textContent = this.dom.timer.textContent;
 
     this.dom.modalBattleResult.classList.remove('hidden');
-    this.endBattleSession();
+    this.endBattleSession(false);
+
+    // 상대방의 재도전 신청 감지 폴링
+    clearInterval(this.rematchCheckTimer);
+    const targetUrl = (this.battleRole === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+    if (targetUrl) {
+      this.rematchCheckTimer = setInterval(async () => {
+        if (!this.dom.modalBattleResult || this.dom.modalBattleResult.classList.contains('hidden')) {
+          clearInterval(this.rematchCheckTimer);
+          return;
+        }
+        try {
+          const resp = await this.battleRequest(`${targetUrl}/api/status`);
+          if (resp && resp.status === 'waiting') {
+            clearInterval(this.rematchCheckTimer);
+            this.showToast('상대방이 재도전을 신청했습니다!');
+            this.dom.modalBattleResult.classList.add('hidden');
+            this.returnToBattleLobby();
+          }
+        } catch (_) {}
+      }, 1000);
+    }
   }
 
-  endBattleSession() {
+  endBattleSession(forceStop = false) {
     this.isBattle = false;
     clearInterval(this.battlePollInterval);
     this.dom.battleHud.classList.add('hidden');
-    if (this.battleRole === 1 && window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
+    if (forceStop && this.battleRole === 1 && window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
       window.AndroidBridge.stopBattleServer();
+    }
+  }
+
+  async requestBattleRematch() {
+    clearInterval(this.rematchCheckTimer);
+    this.dom.modalBattleResult.classList.add('hidden');
+    const targetUrl = (this.battleRole === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+    try {
+      if (targetUrl) {
+        await this.battleRequest(`${targetUrl}/api/rematch`, { method: 'POST' });
+      }
+    } catch (e) {
+      console.warn('Rematch request error:', e);
+    }
+    this.returnToBattleLobby();
+  }
+
+  returnToBattleLobby() {
+    this.isBattle = false;
+    this.dom.battleHud.classList.add('hidden');
+    this.dom.modalBattleLobby.classList.remove('hidden');
+
+    if (this.battleRole === 1) {
+      this.dom.tabBattleHost.classList.add('active');
+      this.dom.tabBattleJoin.classList.remove('active');
+      this.dom.battleHostView.classList.remove('hidden');
+      this.dom.battleJoinView.classList.add('hidden');
+      this.setupHostRoom();
+    } else {
+      this.dom.tabBattleJoin.classList.add('active');
+      this.dom.tabBattleHost.classList.remove('active');
+      this.dom.battleJoinView.classList.remove('hidden');
+      this.dom.battleHostView.classList.add('hidden');
+      if (this.dom.battleJoinInputSection) this.dom.battleJoinInputSection.classList.add('hidden');
+      if (this.dom.battleGuestRoomPanel) this.dom.battleGuestRoomPanel.classList.remove('hidden');
+      this.guestP1Ready = false;
+      this.guestP2Ready = false;
+      if (typeof this.updateGuestLobbyUI === 'function') this.updateGuestLobbyUI();
+      if (typeof this.startGuestPolling === 'function') this.startGuestPolling();
     }
   }
 
@@ -2933,6 +3093,12 @@ class SumdokuApp {
     const { r, c } = this.selected;
     const cellData = this.board[r][c];
 
+    // 이미 맞춘 숫자는 변경하지 못하도록 보호
+    if (!this.isPencilMode && cellData.val > 0 && cellData.val === this.solution[r][c]) {
+      this.showToast('이미 맞춘 숫자는 변경할 수 없습니다.');
+      return;
+    }
+
     this.saveSnapshot();
 
     if (this.currentGameReplay) {
@@ -3063,6 +3229,12 @@ class SumdokuApp {
     const { r, c } = this.selected;
     const cellData = this.board[r][c];
 
+    // 이미 맞춘 숫자는 지우개로 지워지지 않도록 보호
+    if (cellData.val > 0 && cellData.val === this.solution[r][c]) {
+      this.showToast('이미 맞춘 숫자는 지울 수 없습니다.');
+      return;
+    }
+
     if (cellData.val > 0 || cellData.notes.size > 0 || (cellData.customMemo && cellData.customMemo.length > 0)) {
       this.sound.play('click');
       this.saveSnapshot();
@@ -3137,6 +3309,138 @@ class SumdokuApp {
     }
   }
 
+  findDeductiveHint(r, c) {
+    const answer = this.solution[r][c];
+    const myCageIdx = this.cellCageMap[`${r},${c}`];
+    const cage = this.cages[myCageIdx];
+    const posName = `R${r + 1} C${c + 1}`;
+    const cageInfo = cage ? `케이지 합 ${cage.sum} (${cage.cells.length}칸)` : '스도쿠 기본 영역';
+
+    // 1. 시작 앵커 케이지 (크기 1)
+    if (cage && cage.cells.length === 1) {
+      return {
+        r, c, answer,
+        badgeText: '★ 확정 앵커 단서',
+        cageInfo,
+        posName,
+        explanation: `1칸짜리 시작 앵커 케이지입니다. 목표 합계가 ${cage.sum}이므로 이 칸은 다른 계산 없이 즉시 ${answer}로 확정됩니다.`
+      };
+    }
+
+    // 2. 케이지의 다른 모든 칸이 이미 채워진 경우 (케이지 잔여합 도출)
+    if (cage && cage.cells.length > 1) {
+      let otherSum = 0;
+      let filledOthers = 0;
+      cage.cells.forEach(([cr, cc]) => {
+        if (cr === r && cc === c) return;
+        if (this.board[cr][cc].val > 0) {
+          otherSum += this.board[cr][cc].val;
+          filledOthers++;
+        }
+      });
+      if (filledOthers === cage.cells.length - 1) {
+        return {
+          r, c, answer,
+          badgeText: '∑ 케이지 잔여합 도출',
+          cageInfo,
+          posName,
+          explanation: `이 케이지(합계 ${cage.sum})에서 다른 ${filledOthers}개 칸의 합(${otherSum})이 이미 완성되었습니다. 목표 합계를 채우기 위해 남은 이 칸은 반드시 ${cage.sum} - ${otherSum} = ${answer}이어야 합니다.`
+        };
+      }
+    }
+
+    // 3. 피어 소거 및 Naked Single
+    const blockedNums = new Set();
+    for (let col = 0; col < 9; col++) {
+      if (col !== c && this.board[r][col].val > 0) blockedNums.add(this.board[r][col].val);
+    }
+    for (let row = 0; row < 9; row++) {
+      if (row !== r && this.board[row][c].val > 0) blockedNums.add(this.board[row][c].val);
+    }
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const tr = br + i, tc = bc + j;
+        if ((tr !== r || tc !== c) && this.board[tr][tc].val > 0) blockedNums.add(this.board[tr][tc].val);
+      }
+    }
+    if (cage) {
+      cage.cells.forEach(([cr, cc]) => {
+        if ((cr !== r || cc !== c) && this.board[cr][cc].val > 0) blockedNums.add(this.board[cr][cc].val);
+      });
+    }
+
+    if (blockedNums.size === 8 && !blockedNums.has(answer)) {
+      return {
+        r, c, answer,
+        badgeText: '🎯 단일 잔여 후보 (Naked Single)',
+        cageInfo,
+        posName,
+        explanation: `이 칸이 속한 ${r + 1}행, ${c + 1}열, 3×3 박스에 1부터 9까지 중 다른 8개 숫자가 이미 모두 배치되어 있습니다. 따라서 이 칸에 올 수 있는 유일한 후보는 ${answer}뿐입니다.`
+      };
+    }
+
+    // 4. 유일 조합 케이지
+    if (cage && cage.cells.length === 2) {
+      const uniquePairs = { 3: [1, 2], 4: [1, 3], 16: [7, 9], 17: [8, 9] };
+      if (uniquePairs[cage.sum]) {
+        const pair = uniquePairs[cage.sum];
+        const otherNum = pair[0] === answer ? pair[1] : pair[0];
+        if (blockedNums.has(otherNum)) {
+          return {
+            r, c, answer,
+            badgeText: '⚖️ 유일 조합 소거법',
+            cageInfo,
+            posName,
+            explanation: `합계가 ${cage.sum}인 2칸 케이지는 오직 {${pair[0]}, ${pair[1]}} 조합만 가능합니다. 그런데 이 칸의 행·열·박스에 ${otherNum}이 이미 존재하므로, 이 칸은 ${answer}로 확정됩니다.`
+          };
+        }
+      }
+    }
+
+    // 5. Hidden Single
+    let canFitRow = 0;
+    for (let col = 0; col < 9; col++) {
+      if (col === c) { canFitRow++; continue; }
+      if (this.board[r][col].val === 0) {
+        let blocked = false;
+        for (let row = 0; row < 9; row++) {
+          if (this.board[row][col].val === answer) { blocked = true; break; }
+        }
+        if (!blocked) canFitRow++;
+      }
+    }
+    if (canFitRow === 1) {
+      return {
+        r, c, answer,
+        badgeText: '🔍 숨은 단일 후보 (Hidden Single)',
+        cageInfo,
+        posName,
+        explanation: `${r + 1}행에서 숫자 ${answer}이 들어갈 수 있는 다른 모든 칸이 행/열 제약으로 배제되었습니다. 따라서 ${r + 1}행에서 ${answer}은 반드시 이 칸에 와야 합니다.`
+      };
+    }
+
+    // 6. 케이지 복합 연역
+    if (cage && cage.cells.length >= 2) {
+      return {
+        r, c, answer,
+        badgeText: '📐 케이지 연역 추론',
+        cageInfo,
+        posName,
+        explanation: `케이지의 목표 합계(${cage.sum})와 행·열·3×3 박스의 45의 법칙(Rule of 45) 및 숫자 중복 금지 제약을 연립하면, 모순 없이 성립하는 유일한 숫자는 ${answer}입니다.`
+      };
+    }
+
+    // 7. 기본 논리 연역 안내
+    return {
+      r, c, answer,
+      badgeText: '💡 논리 연역 힌트',
+      cageInfo,
+      posName,
+      explanation: `행·열·박스의 상호 제약과 케이지 목표 합계에 따라 논리적으로 유일하게 ${answer}이 확정됩니다.`
+    };
+  }
+
   useHint() {
     if (this.currentView !== 'game' || this.isPaused) return;
     if (this.hintsRemaining <= 0 && this.rules.initialHints !== 'unlimited' && this.rules.hintExhaustedAction === 'disallow') {
@@ -3144,67 +3448,107 @@ class SumdokuApp {
       this.showToast('남은 힌트가 없습니다 (힌트 소진 시 추가 사용 금지 설정)');
       return;
     }
-    const { r, c } = this.selected;
-    if (this.board[r][c].val === 0) {
-      this.sound.play('correct');
-      this.saveSnapshot();
-      this.hintsUsed = (this.hintsUsed || 0) + 1;
-      this.resetCombo('힌트 사용으로 콤보 리셋');
-      const answer = this.solution[r][c];
-      if (this.currentGameReplay) {
-        this.currentGameReplay.moves.push({
-          t: this.timerSeconds,
-          type: 'hint',
-          r, c,
-          num: answer,
-          prevVal: 0
-        });
-      }
-      this.board[r][c].val = answer;
-      this.board[r][c].notes.clear();
-      this.board[r][c].error = false;
 
-      let hintMsg = '';
-      if (this.rules.initialHints === 'unlimited') {
-        this.score = Math.max(0, this.score - 30);
-        this.showScoreDelta(-30, r, c, '힌트');
-        hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (무제한 힌트, -30점)`;
-      } else if (this.hintsRemaining > 0) {
-        this.hintsRemaining--;
-        this.score = Math.max(0, this.score - 30);
-        this.showScoreDelta(-30, r, c, '힌트');
-        hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
-      } else {
-        // 0개 상태에서도 추가 힌트 제공 ("0점에서 더 주는 것도 가능하게")
-        this.score = Math.max(0, this.score - 50);
-        this.showScoreDelta(-50, r, c, '추가 힌트');
-        hintMsg = `[추가 힌트] 케이지 제약으로 ${answer} 확정! (보너스 힌트 제공, -50점)`;
-      }
-      this.updateHintBadge();
-      this.dom.gameScore.textContent = this.score;
-
-      if (this.settings.autoNotes) {
-        this.autoClearNotes(r, c, answer);
-      }
-      this.updateBoardDisplay();
-      this.updateKeypadBadges();
-      this.updateTabletCageHelper(r, c);
-      this.showToast(hintMsg);
-      this.checkWinCondition();
-      this.saveOngoingGame();
-      return;
-    }
-
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        if (this.board[row][col].val === 0) {
-          this.selectCell(row, col);
-          this.useHint();
-          return;
+    let { r, c } = this.selected;
+    if (this.board[r][c].val !== 0) {
+      let found = false;
+      for (let row = 0; row < 9 && !found; row++) {
+        for (let col = 0; col < 9 && !found; col++) {
+          if (this.board[row][col].val === 0) {
+            r = row; c = col;
+            this.selectCell(r, c);
+            found = true;
+          }
         }
       }
+      if (!found) {
+        this.showToast('모든 칸이 이미 채워졌습니다!');
+        return;
+      }
     }
-    this.showToast('모든 칸이 이미 채워졌습니다!');
+
+    const hint = this.findDeductiveHint(r, c);
+    this.pendingHint = hint;
+
+    document.querySelectorAll('.cell.hint-target-highlight').forEach(el => el.classList.remove('hint-target-highlight'));
+    const targetCellEl = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (targetCellEl) targetCellEl.classList.add('hint-target-highlight');
+
+    if (this.dom.hintCardBadge) this.dom.hintCardBadge.textContent = hint.badgeText;
+    if (this.dom.hintTargetPos) this.dom.hintTargetPos.textContent = hint.posName;
+    if (this.dom.hintCageInfo) this.dom.hintCageInfo.textContent = hint.cageInfo;
+    if (this.dom.hintLogicText) this.dom.hintLogicText.textContent = hint.explanation;
+    if (this.dom.hintAnswerVal) this.dom.hintAnswerVal.textContent = hint.answer;
+
+    if (this.dom.floatingHintCard) {
+      this.dom.floatingHintCard.classList.remove('hidden');
+    }
+    this.sound.play('click');
+  }
+
+  dismissDeductiveHint() {
+    document.querySelectorAll('.cell.hint-target-highlight').forEach(el => el.classList.remove('hint-target-highlight'));
+    if (this.dom.floatingHintCard) {
+      this.dom.floatingHintCard.classList.add('hidden');
+    }
+    this.pendingHint = null;
+  }
+
+  applyDeductiveHint() {
+    if (!this.pendingHint) {
+      this.dismissDeductiveHint();
+      return;
+    }
+    const { r, c, answer } = this.pendingHint;
+    this.dismissDeductiveHint();
+    this.applyHint(r, c, answer);
+  }
+
+  applyHint(r, c, answer) {
+    this.sound.play('correct');
+    this.saveSnapshot();
+    this.hintsUsed = (this.hintsUsed || 0) + 1;
+    this.resetCombo('힌트 사용으로 콤보 리셋');
+    if (this.currentGameReplay) {
+      this.currentGameReplay.moves.push({
+        t: this.timerSeconds,
+        type: 'hint',
+        r, c,
+        num: answer,
+        prevVal: 0
+      });
+    }
+    this.board[r][c].val = answer;
+    this.board[r][c].notes.clear();
+    this.board[r][c].error = false;
+
+    let hintMsg = '';
+    if (this.rules.initialHints === 'unlimited') {
+      this.score = Math.max(0, this.score - 30);
+      this.showScoreDelta(-30, r, c, '힌트');
+      hintMsg = `[힌트] ${answer} 확정! (무제한 힌트, -30점)`;
+    } else if (this.hintsRemaining > 0) {
+      this.hintsRemaining--;
+      this.score = Math.max(0, this.score - 30);
+      this.showScoreDelta(-30, r, c, '힌트');
+      hintMsg = `[힌트] ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
+    } else {
+      this.score = Math.max(0, this.score - 50);
+      this.showScoreDelta(-50, r, c, '추가 힌트');
+      hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -50점)`;
+    }
+    this.updateHintBadge();
+    this.dom.gameScore.textContent = this.score;
+
+    if (this.settings.autoNotes) {
+      this.autoClearNotes(r, c, answer);
+    }
+    this.updateBoardDisplay();
+    this.updateKeypadBadges();
+    this.updateTabletCageHelper(r, c);
+    this.showToast(hintMsg);
+    this.checkWinCondition();
+    this.saveOngoingGame();
   }
 
   updateKeypadBadges() {

@@ -27,7 +27,7 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.23</div>
+          <div class="version-chip" id="app-version-chip">v1.0.24</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -397,7 +397,10 @@
               <div class="assistant-header">
                 <span class="assistant-tag">추론 도우미</span>
                 <span id="assistant-cage-name">케이지 실시간 분석</span>
-                <button id="btn-assistant-multi-toggle" class="btn-assistant-multi" title="여러 영역 합산 모드">➕ 영역 합산</button>
+                <button id="btn-assistant-multi-toggle" class="btn-assistant-multi" title="여러 영역 합산 모드">
+                  <span class="cm-icon">➕</span>
+                  <span class="cm-label">영역 합산</span>
+                </button>
               </div>
               <div class="assistant-metrics" id="assistant-metrics-single">
                 <div class="metric-box">
@@ -491,6 +494,36 @@
                 <span class="tool-label">힌트</span>
               </button>
             </nav>
+
+            <!-- Explainable Smart Hint Floating Card -->
+            <div id="floating-hint-card" class="floating-hint-card hidden">
+              <div class="hint-card-header">
+                <div class="hint-card-title-group">
+                  <span class="hint-card-icon">💡</span>
+                  <span class="hint-card-title">연역 추론 힌트</span>
+                  <span id="hint-card-badge" class="hint-card-badge">케이지 잔여합</span>
+                </div>
+                <button id="btn-hint-card-close" class="hint-card-close-btn" type="button" title="닫기">✕</button>
+              </div>
+              <div class="hint-card-body">
+                <div class="hint-target-row">
+                  <span class="hint-target-label">추론 대상:</span>
+                  <span id="hint-target-pos" class="hint-target-pos">3행 5열</span>
+                  <span id="hint-cage-info" class="hint-cage-info">(합계 12 케이지)</span>
+                </div>
+                <div id="hint-logic-text" class="hint-logic-text">
+                  케이지의 다른 모든 칸이 채워져, 남은 합계 계산에 의해 이 칸의 숫자는 7로 확정됩니다.
+                </div>
+                <div class="hint-answer-row">
+                  <span class="hint-answer-label">도출된 정답:</span>
+                  <span id="hint-answer-val" class="hint-answer-val">7</span>
+                </div>
+              </div>
+              <div class="hint-card-footer">
+                <button id="btn-hint-card-dismiss" class="btn btn-secondary hint-btn-sub" type="button">스스로 풀기</button>
+                <button id="btn-hint-card-apply" class="btn btn-primary hint-btn-apply" type="button">정답 채우기</button>
+              </div>
+            </div>
 
             <!-- Scratchpad Drawer (자유 메모장 드로어) -->
             <div id="scratchpad-drawer" class="scratchpad-drawer hidden">
@@ -593,7 +626,9 @@
             <!-- Group 1: 어워드 -->
             <div class="hub-card-group">
               <button class="hub-menu-item" data-hub-panel="panel-awards" data-hub-title="어워드">
-                <span class="hub-icon-box icon-trophy">🏆</span>
+                <span class="hub-icon-box icon-trophy">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+                </span>
                 <span class="hub-item-label">어워드</span>
                 <span class="hub-chevron">›</span>
               </button>
@@ -602,12 +637,16 @@
             <!-- Group 2: 통계 & 리플레이 -->
             <div class="hub-card-group">
               <button class="hub-menu-item" data-hub-panel="panel-stats" data-hub-title="통계">
-                <span class="hub-icon-box icon-stats">📊</span>
+                <span class="hub-icon-box icon-stats">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </span>
                 <span class="hub-item-label">통계</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-replays" data-hub-title="최근 리플레이 (20판)">
-                <span class="hub-icon-box icon-replays">🎬</span>
+                <span class="hub-icon-box icon-replays">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </span>
                 <div class="hub-item-content">
                   <span class="hub-item-label">최근 리플레이</span>
                   <span class="hub-item-badge">20판</span>
@@ -619,12 +658,16 @@
             <!-- Group 3: 설정 (Active) & 플레이 방법 -->
             <div class="hub-card-group">
               <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="게임 설정">
-                <span class="hub-icon-box icon-settings">⚙️</span>
+                <span class="hub-icon-box icon-settings">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </span>
                 <span class="hub-item-label">게임 설정</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-howtoplay" data-hub-title="플레이 방법">
-                <span class="hub-icon-box icon-guide">🎓</span>
+                <span class="hub-icon-box icon-guide">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </span>
                 <span class="hub-item-label">플레이 방법</span>
                 <span class="hub-chevron">›</span>
               </button>
@@ -633,22 +676,30 @@
             <!-- Group 4: 도움말, 게임 정보, 개인정보 -->
             <div class="hub-card-group">
               <button class="hub-menu-item" data-hub-panel="panel-help" data-hub-title="도움말">
-                <span class="hub-icon-box icon-help">❓</span>
+                <span class="hub-icon-box icon-help">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
                 <span class="hub-item-label">도움말</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-gameinfo" data-hub-title="게임 정보">
-                <span class="hub-icon-box icon-info">ℹ️</span>
+                <span class="hub-icon-box icon-info">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </span>
                 <span class="hub-item-label">게임 정보</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-privacy" data-hub-title="개인 정보 보호 권리">
-                <span class="hub-icon-box icon-privacy">📋</span>
+                <span class="hub-icon-box icon-privacy">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </span>
                 <span class="hub-item-label">개인 정보 보호 권리</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-privacy-opt" data-hub-title="개인정보 판매 거부">
-                <span class="hub-icon-box icon-optout">👤</span>
+                <span class="hub-icon-box icon-optout">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
                 <span class="hub-item-label">내 개인정보 판매 및 공유하지 않기</span>
                 <span class="hub-chevron">›</span>
               </button>
@@ -657,12 +708,16 @@
             <!-- Group 5: 수학 퍼즐, 광고 제거 -->
             <div class="hub-card-group">
               <button class="hub-menu-item" data-hub-panel="panel-math" data-hub-title="수학 퍼즐">
-                <span class="hub-icon-box icon-math">🔢</span>
+                <span class="hub-icon-box icon-math">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+                </span>
                 <span class="hub-item-label">수학 퍼즐</span>
                 <span class="hub-chevron">›</span>
               </button>
               <button class="hub-menu-item" data-hub-panel="panel-noads" data-hub-title="광고 제거">
-                <span class="hub-icon-box icon-noads">🚫</span>
+                <span class="hub-icon-box icon-noads">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </span>
                 <span class="hub-item-label">광고 제거</span>
                 <span class="hub-chevron">›</span>
               </button>
@@ -1355,6 +1410,28 @@
             <div id="battle-my-ip" class="battle-ip-small">IP 확인 중...</div>
           </div>
 
+          <div class="battle-players-status" id="host-players-status">
+            <div class="battle-player-slot slot-p1">
+              <div class="slot-info">
+                <span class="slot-role">방장 (Host)</span>
+                <span class="slot-name">나 (P1)</span>
+              </div>
+              <div class="slot-action-wrap">
+                <span id="host-p1-status" class="slot-ready-status waiting">준비 중</span>
+                <button id="btn-battle-host-ready" class="btn-battle-ready" type="button">준비하기</button>
+              </div>
+            </div>
+            <div class="battle-player-slot slot-p2">
+              <div class="slot-info">
+                <span class="slot-role">참가자 (Guest)</span>
+                <span class="slot-name">상대방 (P2)</span>
+              </div>
+              <div class="slot-action-wrap">
+                <span id="host-p2-status" class="slot-ready-status waiting">미접속</span>
+              </div>
+            </div>
+          </div>
+
           <div id="battle-host-waiting" class="waiting-pulse-box">
             <div class="pulse-dot"></div>
             <span id="battle-wait-text">상대방 접속을 기다리는 중...</span>
@@ -1367,15 +1444,46 @@
 
         <!-- Join View Content -->
         <div id="battle-join-view" class="battle-view-section hidden">
-          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">호스트 IP 또는 방 코드 입력</div>
-          <input type="text" id="battle-input-target" class="battle-input" placeholder="숫자 코드 또는 192.168.0.15" />
+          <div id="battle-join-input-section">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">호스트 IP 또는 방 코드 입력</div>
+            <input type="text" id="battle-input-target" class="battle-input" placeholder="숫자 코드 또는 192.168.0.15" />
 
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
-            숫자 코드는 호스트 주소를 포함합니다. 서로 통신 가능한 Wi-Fi/LAN에서 사용하세요. 별도 인터넷 중계 연결은 지원하지 않습니다.
-          </p>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+              숫자 코드는 호스트 주소를 포함합니다. 서로 통신 가능한 Wi-Fi/LAN에서 사용하세요. 별도 인터넷 중계 연결은 지원하지 않습니다.
+            </p>
 
-          <div class="modal-footer">
-            <button id="btn-battle-connect" class="btn btn-primary">방 접속하기</button>
+            <div class="modal-footer">
+              <button id="btn-battle-connect" class="btn btn-primary">방 접속하기</button>
+            </div>
+          </div>
+
+          <div id="battle-guest-room-panel" class="battle-guest-room-panel hidden">
+            <div class="battle-players-status">
+              <div class="battle-player-slot slot-p1">
+                <div class="slot-info">
+                  <span class="slot-role">방장 (Host)</span>
+                  <span class="slot-name">상대방 (P1)</span>
+                </div>
+                <div class="slot-action-wrap">
+                  <span id="guest-p1-status" class="slot-ready-status waiting">준비 중</span>
+                </div>
+              </div>
+              <div class="battle-player-slot slot-p2">
+                <div class="slot-info">
+                  <span class="slot-role">참가자 (Guest)</span>
+                  <span class="slot-name">나 (P2)</span>
+                </div>
+                <div class="slot-action-wrap">
+                  <span id="guest-p2-status" class="slot-ready-status waiting">준비 중</span>
+                  <button id="btn-battle-guest-ready" class="btn-battle-ready" type="button">준비하기</button>
+                </div>
+              </div>
+            </div>
+            <div id="guest-rules-summary" class="guest-rules-card"></div>
+            <div class="guest-waiting-notice">
+              <div class="pulse-dot"></div>
+              <span id="guest-wait-text">양쪽 모두 준비를 완료하면 방장이 게임을 시작합니다.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1390,6 +1498,19 @@
         <div class="forfeit-btn-group">
           <button id="btn-cancel-forfeit" class="btn btn-secondary">계속 플레이</button>
           <button id="btn-confirm-forfeit" class="btn btn-danger-forfeit">기권하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats & Replays Reset Confirm Modal -->
+    <div id="modal-stats-reset-confirm" class="modal-backdrop hidden">
+      <div class="modal-card modal-forfeit-card">
+        <div class="forfeit-icon-wrap">🗑️</div>
+        <h3 class="forfeit-title">전적 및 리플레이 초기화</h3>
+        <p class="forfeit-desc">모든 게임 전적, 클리어 통계, 저장된 리플레이를 모두 초기화하시겠습니까?<br><strong class="forfeit-warning">초기화된 데이터는 복구할 수 없습니다.</strong></p>
+        <div class="forfeit-btn-group">
+          <button id="btn-cancel-stats-reset" class="btn btn-secondary">취소</button>
+          <button id="btn-confirm-stats-reset" class="btn btn-danger-forfeit">초기화하기</button>
         </div>
       </div>
     </div>
@@ -1435,8 +1556,9 @@
           </tbody>
         </table>
 
-        <div class="modal-footer">
-          <button id="btn-battle-result-close" class="btn btn-primary">확인</button>
+        <div class="modal-footer battle-result-actions">
+          <button id="btn-battle-result-close" class="btn btn-secondary">종료</button>
+          <button id="btn-battle-rematch" class="btn btn-primary">재도전 ⚔️</button>
         </div>
       </div>
     </div>

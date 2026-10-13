@@ -498,6 +498,10 @@ body, html {
 .cal-month-title {
   font-size: 1.05rem;
   font-weight: 800;
+  color: var(--text-main);
+}
+.theme-dark .cal-month-title {
+  color: #f8fafc !important;
 }
 
 .cal-star-count {
@@ -4417,21 +4421,26 @@ input:checked + .slider:before {
 
 /* Tablet Assistant Multi-Cage Panel */
 .btn-assistant-multi {
-  padding: 3px 9px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3.5px 9px;
+  border-radius: 9999px;
   border: 1px solid #bfdbfe;
   background: #eff6ff;
   color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.14s;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .btn-assistant-multi.active {
   background: #2563eb !important;
   color: #ffffff !important;
   border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
 
 .multi-cage-panel {
@@ -5041,6 +5050,327 @@ input:checked + .slider:before {
 }
 .theme-dark .gen-preview-subtext {
   color: #94a3b8;
+}
+
+/* ==========================================================================
+   v1.0.24 New Styles: Explainable Smart Hint & Battle Ready Lobby System
+   ========================================================================== */
+
+/* 1. Explainable Smart Hint Floating Card */
+.floating-hint-card {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92%, 400px);
+  background: var(--bg-card, #ffffff);
+  border: 1.5px solid #3b82f6;
+  border-radius: 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  z-index: 120;
+  padding: 14px 16px;
+  animation: hintCardSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.theme-dark .floating-hint-card {
+  background: #1e293b;
+  border-color: #60a5fa;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+}
+
+@keyframes hintCardSlideUp {
+  from { opacity: 0; transform: translate(-50%, 16px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.hint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.hint-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint-card-icon {
+  font-size: 1.1rem;
+}
+
+.hint-card-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.hint-card-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.theme-dark .hint-card-badge {
+  background: rgba(96, 165, 250, 0.2);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.hint-card-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.hint-card-body {
+  margin-bottom: 12px;
+}
+
+.hint-target-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+.hint-target-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.hint-target-pos {
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.theme-dark .hint-target-pos {
+  color: #60a5fa;
+}
+
+.hint-cage-info {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.hint-logic-text {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 3px solid #3b82f6;
+  margin-bottom: 8px;
+}
+
+.theme-dark .hint-logic-text {
+  background: rgba(255, 255, 255, 0.05);
+  border-left-color: #60a5fa;
+  color: #f1f5f9;
+}
+
+.hint-answer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.hint-answer-label {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.hint-answer-val {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #10b981;
+}
+
+.hint-card-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.hint-btn-sub {
+  padding: 7px 12px !important;
+  font-size: 0.8rem !important;
+}
+
+.hint-btn-apply {
+  padding: 7px 14px !important;
+  font-size: 0.8rem !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+}
+
+/* Cell Hint Target Pulsing Highlight */
+.cell.hint-target-highlight {
+  outline: 3px solid #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.22) !important;
+  animation: cellHintPulse 1.2s infinite alternate !important;
+  z-index: 10 !important;
+}
+
+@keyframes cellHintPulse {
+  0% { transform: scale(0.98); outline-color: #3b82f6; }
+  100% { transform: scale(1.04); outline-color: #60a5fa; }
+}
+
+/* 2. Battle Ready Players Status Slots & Lobby System */
+.battle-players-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 12px 0;
+}
+
+.battle-player-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.theme-dark .battle-player-slot {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.slot-role {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.slot-name {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.slot-action-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slot-ready-status {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.slot-ready-status.waiting {
+  background: rgba(148, 163, 184, 0.15);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.theme-dark .slot-ready-status.waiting {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.slot-ready-status.ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.theme-dark .slot-ready-status.ready {
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.btn-battle-ready {
+  padding: 5px 11px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  border-radius: 8px;
+  border: 1.5px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-battle-ready:active {
+  transform: scale(0.96);
+}
+
+.btn-battle-ready.is-ready {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.btn-battle-ready.is-ready:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.guest-rules-card {
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin: 10px 0;
+  text-align: left;
+}
+
+.theme-dark .guest-rules-card {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.guest-waiting-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.battle-result-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.battle-result-actions button {
+  flex: 1;
 }
 
 

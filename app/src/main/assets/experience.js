@@ -45,10 +45,6 @@ SumdokuApp.prototype.bindEvents = function() {
   baseBindEvents.call(this);
   this.installQuickSettings(document.querySelector('#modal-difficulty .modal-card'), false);
   this.installQuickSettings(this.dom.battleHostView, true);
-  const create = document.createElement('button');
-  create.id = 'btn-create-room'; create.className = 'btn btn-secondary'; create.textContent = '방 준비하기';
-  create.onclick = () => this.prepareBattleRoom();
-  this.dom.battleHostView.querySelector('.battle-ip-box').before(create);
   this.dom.btnBattleClose.addEventListener('click', () => this.cancelRoomPreparation());
   this.dom.tabBattleJoin.addEventListener('click', () => this.cancelRoomPreparation());
   this.dom.modalBattleLobby.addEventListener('keydown', e => {
@@ -146,159 +142,297 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.roomGeneration = (this.roomGeneration || 0) + 1;
   if (this.roomWorker) this.roomWorker.terminate();
   this.roomWorker = null;
-  clearInterval(this.hostPollTimer); clearInterval(this.guestWaitTimer);
+  clearInterval(this.hostPollTimer);
+  clearInterval(this.guestWaitTimer);
   this.battlePuzzleData = null;
-  this.dom.btnBattleStartMatch.disabled = true;
-  this.dom.btnBattleConnect.disabled = false;
-  this.dom.btnBattleConnect.textContent = '방 접속하기';
+  this.hostP1Ready = false;
+  this.hostP2Ready = false;
+  this.guestJoined = false;
+  this.guestP1Ready = false;
+  this.guestP2Ready = false;
+  if (this.dom.btnBattleStartMatch) this.dom.btnBattleStartMatch.disabled = true;
+  if (this.dom.btnBattleConnect) {
+    this.dom.btnBattleConnect.disabled = false;
+    this.dom.btnBattleConnect.textContent = '방 접속하기';
+  }
+  if (this.dom.battleJoinInputSection) this.dom.battleJoinInputSection.classList.remove('hidden');
+  if (this.dom.battleGuestRoomPanel) this.dom.battleGuestRoomPanel.classList.add('hidden');
   const guestRules = document.getElementById('guest-rules-summary');
   if (guestRules) guestRules.textContent = '';
   if (window.AndroidBridge?.stopBattleServer) window.AndroidBridge.stopBattleServer();
 };
-// Opening a lobby is now cheap: no puzzle generation, network calls, or polling.
+
 SumdokuApp.prototype.setupHostRoom = function() {
-  this.cancelRoomPreparation(); this.syncQuickSettings();
-  this.dom.battleMyCode.textContent = '방 준비 전';
-  this.dom.battleMyIp.textContent = '준비가 끝나면 숫자 코드가 표시됩니다.';
-  this.dom.battleWaitText.textContent = '모드와 규칙을 선택하고 방을 준비하세요.';
-  const create = document.getElementById('btn-create-room');
-  if (create) { create.disabled = false; create.textContent = '방 준비하기'; }
-};
-SumdokuApp.prototype.battleRequest = async function(url, options = {}) {
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 5000);
+  this.cancelRoomPreparation();
+  this.syncQuickSettings();
+  if (!window.AndroidBridge?.startBattleServer) {
+    if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = '앱 전용';
+    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = 'Android 앱에서 방을 생성할 수 있습니다.';
+    return;
+  }
   try {
-    const response = await fetch(url, {...options, signal:controller.signal});
+    const dummyPuzzle = { difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
+    const response = JSON.parse(window.AndroidBridge.startBattleServer(
+      this.battleMode || 'race',
+      this.battleDiff || 'expert',
+      this.battleMode === 'score' ? 300 : 0,
+      JSON.stringify(dummyPuzzle)
+    ));
+    if (!response.ok) throw new Error('방을 열지 못했습니다. Wi-Fi 연결을 확인하세요.');
+    this.battleRole = 1;
+    this.battleHostIp = response.ip;
+    this.battlePuzzleData = null;
+    const code = RoomCode.encode(response.ip);
+    if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
+    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
+    this.hostP1Ready = false;
+    this.hostP2Ready = false;
+    this.guestJoined = false;
+    this.updateHostLobbyUI();
+
+    const token = this.roomGeneration;
+    clearInterval(this.hostPollTimer);
+    let busy = false;
+    this.hostPollTimer = setInterval(async () => {
+      if (busy || token !== this.roomGeneration) return;
+      busy = true;
+      try {
+        const status = await this.battleRequest(`http://${response.ip}:8888/api/status`);
+        if (token !== this.roomGeneration) return;
+        this.guestJoined = !!status.guestJoined;
+        this.hostP1Ready = !!status.p1Ready;
+        this.hostP2Ready = !!status.p2Ready;
+        this.updateHostLobbyUI();
+      } catch (_) {}
+      finally { busy = false; }
+    }, 700);
+  } catch (error) {
+    if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = '오류';
+    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = error.message || '방 개설 실패';
+  }
+};
+
+SumdokuApp.prototype.updateHostLobbyUI = function() {
+  if (this.dom.hostP1Status) {
+    this.dom.hostP1Status.textContent = this.hostP1Ready ? '준비 완료' : '대기 중';
+    this.dom.hostP1Status.className = `ready-pill ${this.hostP1Ready ? 'ready' : 'not-ready'}`;
+  }
+  if (this.dom.hostP2Status) {
+    if (!this.guestJoined) {
+      this.dom.hostP2Status.textContent = '미접속';
+      this.dom.hostP2Status.className = 'ready-pill not-ready';
+    } else {
+      this.dom.hostP2Status.textContent = this.hostP2Ready ? '준비 완료' : '준비 중...';
+      this.dom.hostP2Status.className = `ready-pill ${this.hostP2Ready ? 'ready' : 'not-ready'}`;
+    }
+  }
+  if (this.dom.btnBattleHostReady) {
+    this.dom.btnBattleHostReady.textContent = this.hostP1Ready ? '준비 취소' : '방장 준비 완료';
+    this.dom.btnBattleHostReady.className = `btn ${this.hostP1Ready ? 'btn-primary' : 'btn-secondary'} btn-ready`;
+  }
+  const bothReady = this.guestJoined && this.hostP1Ready && this.hostP2Ready;
+  if (this.dom.btnBattleStartMatch) {
+    this.dom.btnBattleStartMatch.disabled = !bothReady;
+  }
+  if (this.dom.battleWaitText) {
+    if (!this.guestJoined) {
+      this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중… (12자리 코드 공유)';
+    } else if (!bothReady) {
+      this.dom.battleWaitText.textContent = '상대방 접속 완료 · 양쪽 모두 준비를 완료해 주세요.';
+    } else {
+      this.dom.battleWaitText.textContent = '모든 플레이어 준비 완료! 배틀을 시작하세요! ⚔️';
+    }
+  }
+};
+
+SumdokuApp.prototype.toggleHostReady = async function() {
+  if (!this.battleHostIp) return;
+  const nextReady = !this.hostP1Ready;
+  try {
+    const res = await this.battleRequest(`http://${this.battleHostIp}:8888/api/ready`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player: 1, ready: nextReady })
+    });
+    this.hostP1Ready = !!res.p1Ready;
+    this.hostP2Ready = !!res.p2Ready;
+    this.updateHostLobbyUI();
+  } catch (e) {
+    this.showToast('준비 상태 변경에 실패했습니다.');
+  }
+};
+
+SumdokuApp.prototype.startBattleAsHost = function() {
+  if (!this.guestJoined || !this.hostP1Ready || !this.hostP2Ready) {
+    this.showToast('양쪽 모두 준비 상태여야 시작할 수 있습니다.');
+    return;
+  }
+  const token = this.roomGeneration;
+  this.showGeneratingOverlay(this.battleDiff || 'expert', '배틀 퍼즐 생성 중');
+  if (this.dom.btnBattleStartMatch) this.dom.btnBattleStartMatch.disabled = true;
+
+  this.generator.generateAsync(this.battleDiff || 'expert', null, (progress) => {
+    if (token !== this.roomGeneration) return;
+    this.updateGeneratingProgress(progress);
+  }).then(async (puzzleData) => {
+    if (token !== this.roomGeneration) return;
+    if (!puzzleData) throw new Error('퍼즐 생성에 실패했습니다.');
+    const puzzle = { ...puzzleData, difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
+    this.battlePuzzleData = puzzle;
+    await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ puzzle: JSON.stringify(puzzle), mode: this.battleMode || 'race' })
+    });
+    this.hideGeneratingOverlay();
+    this.dom.modalBattleLobby.classList.add('hidden');
+    this.startBattleMatch(1, puzzle, this.battleMode || 'race');
+  }).catch((err) => {
+    this.hideGeneratingOverlay();
+    this.showToast(err?.message || '배틀 시작 중 오류가 발생했습니다.');
+    this.updateHostLobbyUI();
+  });
+};
+
+SumdokuApp.prototype.prepareBattleRoom = function() {
+  this.setupHostRoom();
+};
+
+SumdokuApp.prototype.battleRequest = async function(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
     if (!response.ok) throw new Error('배틀 서버에 연결할 수 없습니다.');
     return await response.json();
   } finally { clearTimeout(timeout); }
 };
+
 SumdokuApp.prototype.battleFetch = async function(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(url, {...options, signal:controller.signal});
-    // Read the body inside the deadline, rather than allowing a stalled body to block the next poll.
+    const response = await fetch(url, { ...options, signal: controller.signal });
     const body = await response.text();
-    return {ok:response.ok, json:async () => JSON.parse(body)};
+    return { ok: response.ok, json: async () => JSON.parse(body) };
   } finally { clearTimeout(timeout); }
-};
-SumdokuApp.prototype.prepareBattleRoom = function() {
-  this.cancelRoomPreparation();
-  const token = this.roomGeneration, button = document.getElementById('btn-create-room');
-  if (!window.AndroidBridge?.startBattleServer) {
-    this.showToast('방 만들기는 Android 앱에서 지원합니다.'); return;
-  }
-  button.disabled = true; button.textContent = '퍼즐 준비 중…';
-  this.dom.battleWaitText.textContent = '화면을 자유롭게 조작할 수 있습니다. 닫으면 준비가 취소됩니다.';
-  
-  // 실시간 1, 2, 2.5, 3단계 생성 UI 오버레이 즉시 오픈
-  this.showGeneratingOverlay(this.battleDiff || 'expert', '배틀 퍼즐 생성 중 (방 준비)');
-
-  const fail = message => {
-    this.hideGeneratingOverlay();
-    if (token !== this.roomGeneration) return;
-    if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
-    button.disabled = false; button.textContent = '다시 준비하기'; this.dom.battleWaitText.textContent = message;
-  };
-
-  const publishRoom = puzzleData => {
-    this.hideGeneratingOverlay();
-    if (token !== this.roomGeneration) return;
-    if (this.roomWorker) { try { this.roomWorker.terminate(); } catch (_) {} this.roomWorker = null; }
-    try {
-      const puzzle = {...puzzleData, difficulty:this.battleDiff || 'expert', rules:normalizedRules(this.settings)};
-      const response = JSON.parse(window.AndroidBridge.startBattleServer(this.battleMode, this.battleDiff || 'expert',
-        this.battleMode === 'score' ? 300 : 0, JSON.stringify(puzzle)));
-      if (!response.ok) throw new Error('방을 열지 못했습니다. Wi-Fi 연결을 확인하세요.');
-      this.battleRole = 1; this.battleHostIp = response.ip; this.battlePuzzleData = puzzle;
-      const code = RoomCode.encode(response.ip);
-      this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
-      this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
-      this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중…';
-      button.disabled = true;
-      button.textContent = '방 준비 완료';
-      let busy = false;
-      this.hostPollTimer = setInterval(async () => {
-        if (busy || token !== this.roomGeneration) return;
-        busy = true;
-        try {
-          const status = await this.battleRequest(`http://${response.ip}:8888/api/status`);
-          if (token !== this.roomGeneration) return;
-          this.dom.btnBattleStartMatch.disabled = !status.guestJoined;
-          if (status.guestJoined) this.dom.battleWaitText.textContent = '상대방 접속 완료 · 배틀을 시작하세요.';
-        } catch (_) { if (token === this.roomGeneration) this.dom.battleWaitText.textContent = '연결 확인 중…'; }
-        finally { busy = false; }
-      }, 1000);
-    } catch (error) { fail(error.message); }
-  };
-
-  const startMainThreadAsyncGeneration = () => {
-    if (token !== this.roomGeneration) return;
-    button.textContent = '퍼즐 준비 중…';
-    this.generator.generateAsync(this.battleDiff || 'expert', null, progress => {
-      if (token !== this.roomGeneration) return;
-      this.updateGeneratingProgress(progress);
-      if (progress && progress.attempt) button.textContent = `퍼즐 준비 중 · ${progress.attempt}회`;
-    }).then(puzzle => {
-      this.hideGeneratingOverlay();
-      if (token !== this.roomGeneration) return;
-      if (puzzle) publishRoom(puzzle);
-      else fail('퍼즐 생성에 실패했습니다. 다시 시도해 주세요.');
-    }).catch(err => {
-      this.hideGeneratingOverlay();
-      fail(err?.message || '퍼즐 생성 중 오류가 발생했습니다.');
-    });
-  };
-
-  // 1, 2, 2.5, 3단계 생성 UI를 실시간으로 직접 스트리밍하기 위해 비동기 생성기로 직행
-  startMainThreadAsyncGeneration();
 };
 
 SumdokuApp.prototype.connectToHost = async function() {
   if (this.joinBusy) return;
   let target = this.dom.battleInputTarget.value.trim();
   try {
-    if (/^[\d\s-]+$/.test(target) && target.replace(/[\s-]/g,'').length === 12) target = RoomCode.decode(target);
+    if (/^[\d\s-]+$/.test(target) && target.replace(/[\s-]/g, '').length === 12) target = RoomCode.decode(target);
     else if (/^\d{1,3}$/.test(target)) {
       const ip = window.AndroidBridge?.getLocalIpAddress?.();
       if (!ip || +target > 254 || +target < 1) throw new Error('새 버전의 12자리 코드를 입력해 주세요.');
-      target = ip.split('.').slice(0,3).concat(String(+target)).join('.');
+      target = ip.split('.').slice(0, 3).concat(String(+target)).join('.');
     }
     const [ip, port = '8888'] = target.split(':');
     RoomCode.encode(ip);
     if (!/^\d{1,5}$/.test(port) || +port < 1 || +port > 65535 || target.split(':').length > 2) throw new Error('주소를 확인해 주세요.');
-    this.joinBusy = true; this.dom.btnBattleConnect.disabled = true;
+    this.joinBusy = true;
+    this.dom.btnBattleConnect.disabled = true;
     this.dom.btnBattleConnect.textContent = '연결 중…';
     const token = this.roomGeneration;
     const url = `http://${ip}:${port}`;
-    const result = await this.battleRequest(`${url}/api/join`, {method:'POST'});
+    const result = await this.battleRequest(`${url}/api/join`, { method: 'POST' });
     if (token !== this.roomGeneration) return;
     if (!result.ok) throw new Error('방 참가에 실패했습니다.');
-    this.battleRole = 2; this.battleHostUrl = url;
-    this.dom.btnBattleConnect.textContent = '접속 완료 · 시작 대기';
-    let busy = false;
-    clearInterval(this.guestWaitTimer);
-    this.guestWaitTimer = setInterval(async () => {
-      if (busy || token !== this.roomGeneration) return; busy = true;
-      try {
-        const room = await this.battleRequest(`${url}/api/room`);
-        if (token !== this.roomGeneration) return;
-        const rules = normalizedRules(room.puzzle?.rules || {});
-        const lives = !rules.mistakeLimit || rules.maxLives === 'unlimited' ? '무제한' : rules.maxLives + '개';
-        const hints = rules.initialHints === 'unlimited' ? '무제한' : rules.initialHints + '개';
-        document.getElementById('guest-rules-summary').textContent =
-          `방장 규칙 · 목숨 ${lives} · 힌트 ${hints} · 목숨 소진: ${rules.livesExhaustedAction === 'continue' ? '계속' : '종료'} · 힌트 소진: ${rules.hintExhaustedAction === 'disallow' ? '사용 금지' : '추가 감점'}`;
-        if (room.status === 'playing') {
-          clearInterval(this.guestWaitTimer); this.dom.modalBattleLobby.classList.add('hidden');
-          this.startBattleMatch(2, room.puzzle, room.mode);
-        }
-      } catch (_) { this.dom.btnBattleConnect.textContent = '연결 확인 중…'; }
-      finally { busy = false; }
-    }, 700);
+    this.battleRole = 2;
+    this.battleHostUrl = url;
+    this.guestP1Ready = false;
+    this.guestP2Ready = false;
+
+    if (this.dom.battleJoinInputSection) this.dom.battleJoinInputSection.classList.add('hidden');
+    if (this.dom.battleGuestRoomPanel) this.dom.battleGuestRoomPanel.classList.remove('hidden');
+    this.updateGuestLobbyUI();
+    this.startGuestPolling();
   } catch (error) {
     this.showToast(error.name === 'AbortError' ? '연결 시간이 초과되었습니다. Wi-Fi와 코드를 확인하세요.' : error.message);
-    this.dom.btnBattleConnect.textContent = '방 접속하기'; this.dom.btnBattleConnect.disabled = false;
-  } finally { this.joinBusy = false; }
+    this.dom.btnBattleConnect.textContent = '방 접속하기';
+    this.dom.btnBattleConnect.disabled = false;
+  } finally {
+    this.joinBusy = false;
+  }
+};
+
+SumdokuApp.prototype.updateGuestLobbyUI = function() {
+  if (this.dom.guestP1Status) {
+    this.dom.guestP1Status.textContent = this.guestP1Ready ? '준비 완료' : '대기 중';
+    this.dom.guestP1Status.className = `ready-pill ${this.guestP1Ready ? 'ready' : 'not-ready'}`;
+  }
+  if (this.dom.guestP2Status) {
+    this.dom.guestP2Status.textContent = this.guestP2Ready ? '준비 완료' : '대기 중';
+    this.dom.guestP2Status.className = `ready-pill ${this.guestP2Ready ? 'ready' : 'not-ready'}`;
+  }
+  if (this.dom.btnBattleGuestReady) {
+    this.dom.btnBattleGuestReady.textContent = this.guestP2Ready ? '준비 취소' : '준비 완료';
+    this.dom.btnBattleGuestReady.className = `btn ${this.guestP2Ready ? 'btn-primary' : 'btn-secondary'} btn-ready`;
+  }
+  if (this.dom.guestWaitText) {
+    if (!this.guestP2Ready) {
+      this.dom.guestWaitText.textContent = "아래 '준비 완료' 버튼을 눌러주세요.";
+    } else if (!this.guestP1Ready) {
+      this.dom.guestWaitText.textContent = '방장의 준비를 기다리는 중…';
+    } else {
+      this.dom.guestWaitText.textContent = '양쪽 모두 준비 완료! 방장의 시작을 기다리는 중… ⚔️';
+    }
+  }
+};
+
+SumdokuApp.prototype.toggleGuestReady = async function() {
+  if (!this.battleHostUrl) return;
+  const nextReady = !this.guestP2Ready;
+  try {
+    const res = await this.battleRequest(`${this.battleHostUrl}/api/ready`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player: 2, ready: nextReady })
+    });
+    this.guestP1Ready = !!res.p1Ready;
+    this.guestP2Ready = !!res.p2Ready;
+    this.updateGuestLobbyUI();
+  } catch (e) {
+    this.showToast('준비 상태 변경에 실패했습니다.');
+  }
+};
+
+SumdokuApp.prototype.startGuestPolling = function() {
+  const token = this.roomGeneration;
+  const url = this.battleHostUrl;
+  if (!url) return;
+  clearInterval(this.guestWaitTimer);
+  let busy = false;
+  this.guestWaitTimer = setInterval(async () => {
+    if (busy || token !== this.roomGeneration) return;
+    busy = true;
+    try {
+      const room = await this.battleRequest(`${url}/api/room`);
+      if (token !== this.roomGeneration) return;
+      this.guestP1Ready = !!room.p1Ready;
+      this.guestP2Ready = !!room.p2Ready;
+      this.updateGuestLobbyUI();
+
+      if (room.puzzle?.rules) {
+        const rules = normalizedRules(room.puzzle.rules);
+        const lives = !rules.mistakeLimit || rules.maxLives === 'unlimited' ? '무제한' : rules.maxLives + '개';
+        const hints = rules.initialHints === 'unlimited' ? '무제한' : rules.initialHints + '개';
+        const summaryEl = document.getElementById('guest-rules-summary');
+        if (summaryEl) {
+          summaryEl.textContent =
+            `방장 규칙 · 목숨 ${lives} · 힌트 ${hints} · 목숨 소진: ${rules.livesExhaustedAction === 'continue' ? '계속' : '종료'} · 힌트 소진: ${rules.hintExhaustedAction === 'disallow' ? '사용 금지' : '추가 감점'}`;
+        }
+      }
+
+      if (room.status === 'playing' && room.puzzle && room.puzzle.solution) {
+        clearInterval(this.guestWaitTimer);
+        this.dom.modalBattleLobby.classList.add('hidden');
+        this.startBattleMatch(2, room.puzzle, room.mode);
+      }
+    } catch (_) {}
+    finally { busy = false; }
+  }, 700);
 };
 
 const baseStartGame = SumdokuApp.prototype.startNewGame;
