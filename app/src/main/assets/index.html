@@ -27,8 +27,18 @@
           </div>
           <h1 class="brand-title">Sumdoku</h1>
           <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.19</div>
+          <div class="version-chip" id="app-version-chip">v1.0.20</div>
         </header>
+
+        <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
+        <div id="home-update-banner" class="home-update-banner hidden">
+          <div class="update-banner-icon">🚀</div>
+          <div class="update-banner-info">
+            <span class="update-banner-title" id="home-update-banner-title">새 버전 발견!</span>
+            <span class="update-banner-sub">탭하여 바로 최신 버전으로 업데이트하세요</span>
+          </div>
+          <button id="btn-banner-update" class="update-banner-btn">업데이트</button>
+        </div>
 
         <!-- Daily Challenge Hero Card (Image 9 스타일) -->
         <div class="daily-hero-card" id="btn-daily-play">
@@ -195,10 +205,16 @@
             </svg>
           </button>
 
-          <!-- Real-Time Score (Image 2, 8) -->
+          <!-- Real-Time Score (Image 2, 8) & Dynamic Combo Gauge -->
           <div class="game-score-badge" id="game-score-box">
             <span class="score-label">점수</span>
             <span class="score-val" id="game-score">0</span>
+            <div id="combo-badge" class="combo-badge hidden">
+              <span id="combo-text" class="combo-text">⚡ 2 COMBO</span>
+              <div class="combo-timer-track">
+                <div id="combo-timer-fill" class="combo-timer-fill"></div>
+              </div>
+            </div>
           </div>
 
           <div class="game-header-actions">
@@ -1270,6 +1286,19 @@
       </div>
     </div>
 
+    <!-- Battle Forfeit Confirm Modal -->
+    <div id="modal-battle-forfeit" class="modal-backdrop hidden">
+      <div class="modal-card modal-forfeit-card">
+        <div class="forfeit-icon-wrap">🏳️</div>
+        <h3 class="forfeit-title">배틀 대전 기권</h3>
+        <p class="forfeit-desc">정말 이번 배틀 대전을 기권하시겠습니까?<br><strong class="forfeit-warning">기권 시 즉시 패배 처리되며 상대방이 승리합니다.</strong></p>
+        <div class="forfeit-btn-group">
+          <button id="btn-cancel-forfeit" class="btn btn-secondary">계속 플레이</button>
+          <button id="btn-confirm-forfeit" class="btn btn-danger-forfeit">기권하기</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Battle Result Modal -->
     <div id="modal-battle-result" class="modal-backdrop hidden">
       <div class="modal-card modal-battle-card">
@@ -1404,6 +1433,31 @@
           <!-- Replay Controls & Timeline -->
           <div class="replay-controls-panel">
             
+            <!-- Battle Opponent Simultaneous Comparison HUD (Only in battle replays) -->
+            <div id="replay-battle-opp-panel" class="replay-battle-opp-panel hidden">
+              <div class="replay-opp-header">
+                <span class="replay-opp-title" id="replay-opp-title">⚔️ 1:1 대전 상대 실시간 진행 동기화</span>
+                <span class="replay-opp-status" id="replay-opp-status">진행 중</span>
+              </div>
+              <div class="replay-opp-body">
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">상대 채운 칸</span>
+                  <span class="opp-stat-val" id="replay-opp-cells">0 / 81</span>
+                </div>
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">상대 점수</span>
+                  <span class="opp-stat-val" id="replay-opp-score">0점</span>
+                </div>
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">실수 횟수</span>
+                  <span class="opp-stat-val" id="replay-opp-mistakes">0회</span>
+                </div>
+              </div>
+              <div class="replay-opp-bar-track">
+                <div id="replay-opp-bar-fill" class="replay-opp-bar-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
             <!-- Move Description -->
             <div class="replay-desc-box" id="replay-desc-box">
               재생 버튼을 누르거나 슬라이더를 움직여 수순을 확인하세요.
@@ -1440,12 +1494,24 @@
     <!-- Map Generation Progress Overlay -->
     <div id="generating-overlay" class="generating-overlay hidden">
       <div class="generating-modal-card">
-        <div class="gen-spinner-box">
-          <div class="gen-spinner-ring"></div>
-          <div class="gen-spinner-icon">🧩</div>
+        <div class="gen-header-row">
+          <div class="gen-spinner-box">
+            <div class="gen-spinner-ring"></div>
+            <div class="gen-spinner-icon">🧩</div>
+          </div>
+          <div class="gen-header-text">
+            <h3 class="gen-title" id="gen-title">100% 연역 추론 맵 생성 중</h3>
+            <p class="gen-subtitle" id="gen-subtitle">찍지 않고 풀 수 있는 퍼즐을 생성하고 검증합니다</p>
+          </div>
         </div>
-        <h3 class="gen-title" id="gen-title">100% 연역 추론 맵 생성 중</h3>
-        <p class="gen-subtitle" id="gen-subtitle">찍지 않고 풀 수 있는 퍼즐을 생성하고 검증합니다</p>
+
+        <!-- Real-time Smart Cage Visualizer -->
+        <div class="gen-preview-container">
+          <div class="gen-preview-badge" id="gen-preview-badge">✨ 스마트 케이지 실시간 분할 및 연역 추론 시각화</div>
+          <div class="gen-preview-board-wrap">
+            <div id="gen-preview-board" class="gen-preview-board"></div>
+          </div>
+        </div>
         
         <div class="gen-progress-track">
           <div class="gen-progress-fill" id="gen-progress-bar"></div>

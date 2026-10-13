@@ -79,16 +79,20 @@ class SumdokuGenerator {
       const solution = this.createSolutionIterative(rng);
       const cages = this.createSmartCages(solution, currentAnchors, rng);
       const singles = cages.filter(c => c.cells.length === 1);
+      const solvedCount = this.solveDeductivelyAdvanced(solution, cages);
 
       // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
-      if (singles.length === currentAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
+      if (singles.length === currentAnchors && solvedCount === 81) {
         if (onProgress) {
           onProgress({
             diffKr,
             step: 3,
-            message: `100% 순수 연역 논리 검증 완료! (시도: ${attempts}회)`,
+            message: `100% 순수 연역 논리 검증 완료! (81/81칸 확정 · ${attempts}회 시도)`,
             percent: 100,
-            attempt: attempts
+            attempt: attempts,
+            cages,
+            solvedCount: 81,
+            solution
           });
           await new Promise(r => setTimeout(r, 60));
         }
@@ -99,16 +103,18 @@ class SumdokuGenerator {
         };
       }
 
-      // 4회 시도마다 비동기 틱 양보 및 프로그레스 갱신
+      // 4회 시도마다 비동기 틱 양보 및 프로그레스 갱신 (실시간 케이지 프리뷰 데이터 전달)
       if (attempts % 4 === 0) {
         if (onProgress) {
           const pct = Math.min(95, 20 + Math.floor((attempts / 80) * 75));
           onProgress({
             diffKr,
             step: 2,
-            message: `스마트 케이지 연역 추론 검증 중... (${attempts}회 시도)`,
+            message: `스마트 케이지 연역 추론 중... (${attempts}회 시도 · ${solvedCount}/81칸 해결)`,
             percent: pct,
-            attempt: attempts
+            attempt: attempts,
+            cages,
+            solvedCount
           });
         }
         await new Promise(r => setTimeout(r, 0));

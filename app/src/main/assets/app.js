@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.19";
+const APP_VERSION = "1.0.20";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -239,6 +239,11 @@ class SumdokuApp {
     this.scratchpadText = localStorage.getItem('sumdoku_scratchpad') || '';
     this.isMultiCageMode = false;
     this.selectedCages = new Set();
+    this.combo = 0;
+    this.comboInterval = null;
+    this.comboTimeLeftMs = 0;
+    this.COMBO_DURATION_MS = 8000;
+    this.hintsUsed = 0;
 
     this.initDOM();
     this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
@@ -931,13 +936,15 @@ class SumdokuApp {
       btnDiffCancel: document.getElementById('btn-diff-cancel'),
       btnDiffStart: document.getElementById('btn-diff-start'),
 
-      // Map Generation Progress Overlay
+      // Map Generation Progress Overlay & Live Visualizer
       generatingOverlay: document.getElementById('generating-overlay'),
       genProgressBar: document.getElementById('gen-progress-bar'),
       genStatusText: document.getElementById('gen-status-text'),
       genPercent: document.getElementById('gen-percent'),
       genTitle: document.getElementById('gen-title'),
       genSubtitle: document.getElementById('gen-subtitle'),
+      genPreviewBoard: document.getElementById('gen-preview-board'),
+      genPreviewBadge: document.getElementById('gen-preview-badge'),
 
       modalSettings: document.getElementById('modal-settings'),
       btnSettingsClose: document.getElementById('btn-settings-close'),
@@ -962,6 +969,14 @@ class SumdokuApp {
       updateProgressPercent: document.getElementById('update-progress-percent'),
       updateProgressFill: document.getElementById('update-progress-fill'),
       updateActionsNormal: document.getElementById('update-actions-normal'),
+      homeUpdateBanner: document.getElementById('home-update-banner'),
+      btnBannerUpdate: document.getElementById('btn-banner-update'),
+      homeUpdateBannerTitle: document.getElementById('home-update-banner-title'),
+
+      // Dynamic Combo Gauge
+      comboBadge: document.getElementById('combo-badge'),
+      comboText: document.getElementById('combo-text'),
+      comboTimerFill: document.getElementById('combo-timer-fill'),
 
       // Battle Elements
       battleHud: document.getElementById('battle-hud'),
@@ -974,6 +989,9 @@ class SumdokuApp {
       battleP1Bar: document.getElementById('battle-p1-bar'),
       battleP2Bar: document.getElementById('battle-p2-bar'),
       btnBattleForfeit: document.getElementById('btn-battle-forfeit'),
+      modalBattleForfeit: document.getElementById('modal-battle-forfeit'),
+      btnCancelForfeit: document.getElementById('btn-cancel-forfeit'),
+      btnConfirmForfeit: document.getElementById('btn-confirm-forfeit'),
 
       modalBattleLobby: document.getElementById('modal-battle-lobby'),
       btnBattleClose: document.getElementById('btn-battle-close'),
@@ -1023,6 +1041,13 @@ class SumdokuApp {
       btnReplayNext: document.getElementById('btn-replay-next'),
       btnReplayLast: document.getElementById('btn-replay-last'),
       replayListContainer: document.getElementById('replay-list-container'),
+      replayBattleOppPanel: document.getElementById('replay-battle-opp-panel'),
+      replayOppTitle: document.getElementById('replay-opp-title'),
+      replayOppStatus: document.getElementById('replay-opp-status'),
+      replayOppCells: document.getElementById('replay-opp-cells'),
+      replayOppScore: document.getElementById('replay-opp-score'),
+      replayOppMistakes: document.getElementById('replay-opp-mistakes'),
+      replayOppBarFill: document.getElementById('replay-opp-bar-fill'),
 
       toast: document.getElementById('toast'),
       keyBtns: document.querySelectorAll('.key-btn')
@@ -1045,7 +1070,53 @@ class SumdokuApp {
     this.dom.modalDiff.classList.remove('hidden');
   }
 
-  // ----------------- 맵 생성 진행 오버레이 -----------------
+  // ----------------- 배틀 기권 커스텀 모달 -----------------
+  openForfeitModal() {
+    if (!this.isBattle) return;
+    if (this.dom.modalBattleForfeit) {
+      this.dom.modalBattleForfeit.classList.remove('hidden');
+    }
+  }
+
+  closeForfeitModal() {
+    if (this.dom.modalBattleForfeit) {
+      this.dom.modalBattleForfeit.classList.add('hidden');
+    }
+  }
+
+  // ----------------- 다이내믹 콤보 타이머 시스템 -----------------
+  startComboTimer() {
+    clearInterval(this.comboInterval);
+
+    this.comboTimeLeftMs = this.COMBO_DURATION_MS;
+    if (this.dom.comboBadge) this.dom.comboBadge.classList.remove('hidden');
+    if (this.dom.comboText) this.dom.comboText.textContent = `⚡ ${this.combo} COMBO`;
+    if (this.dom.comboTimerFill) this.dom.comboTimerFill.style.width = '100%';
+
+    const stepMs = 100;
+    this.comboInterval = setInterval(() => {
+      this.comboTimeLeftMs -= stepMs;
+      const pct = Math.max(0, (this.comboTimeLeftMs / this.COMBO_DURATION_MS) * 100);
+      if (this.dom.comboTimerFill) this.dom.comboTimerFill.style.width = `${pct}%`;
+
+      if (this.comboTimeLeftMs <= 0) {
+        clearInterval(this.comboInterval);
+        this.resetCombo('콤보 시간 만료');
+      }
+    }, stepMs);
+  }
+
+  resetCombo(reason = '') {
+    clearInterval(this.comboInterval);
+    const wasCombo = this.combo > 1;
+    this.combo = 0;
+    if (this.dom.comboBadge) this.dom.comboBadge.classList.add('hidden');
+    if (wasCombo && reason) {
+      this.showToast(`⚡ ${reason}`);
+    }
+  }
+
+  // ----------------- 맵 생성 진행 오버레이 및 실시간 스마트 케이지 시각화 -----------------
   showGeneratingOverlay(diff = 'expert') {
     if (!this.dom.generatingOverlay) return;
     const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
@@ -1065,6 +1136,23 @@ class SumdokuApp {
     if (this.dom.genPercent) {
       this.dom.genPercent.textContent = '12%';
     }
+
+    // 81칸 미니 프리뷰 보드 초기화
+    if (this.dom.genPreviewBoard) {
+      this.dom.genPreviewBoard.innerHTML = '';
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'gen-preview-cell';
+          cell.id = `gen-cell-${r}-${c}`;
+          this.dom.genPreviewBoard.appendChild(cell);
+        }
+      }
+    }
+    if (this.dom.genPreviewBadge) {
+      this.dom.genPreviewBadge.textContent = '✨ 스마트 케이지 실시간 분할 및 연역 추론 시각화';
+    }
+
     this.dom.generatingOverlay.classList.remove('hidden');
   }
 
@@ -1078,6 +1166,35 @@ class SumdokuApp {
     }
     if (this.dom.genPercent) {
       this.dom.genPercent.textContent = `${p.percent || 15}%`;
+    }
+
+    // 스마트 케이지 실시간 프리뷰 렌더링
+    if (p.cages && this.dom.genPreviewBoard) {
+      const palette = [
+        '#bfdbfe', '#bbf7d0', '#fef08a', '#fed7aa', '#fbcfe8',
+        '#ddd6fe', '#c7d2fe', '#99f6e4', '#fed7d7', '#e9d5ff'
+      ];
+      p.cages.forEach((cage, idx) => {
+        const color = palette[idx % palette.length];
+        const isSingleAnchor = cage.cells.length === 1;
+        cage.cells.forEach(([r, c]) => {
+          const el = document.getElementById(`gen-cell-${r}-${c}`);
+          if (el) {
+            el.style.backgroundColor = isSingleAnchor ? '#fbbf24' : color;
+            if (isSingleAnchor) {
+              el.classList.add('anchor');
+              el.textContent = cage.sum || '★';
+            } else {
+              el.classList.remove('anchor');
+              el.textContent = '';
+            }
+          }
+        });
+      });
+      if (this.dom.genPreviewBadge) {
+        const solvedTxt = p.solvedCount !== undefined ? ` · 81칸 중 ${p.solvedCount}칸 연역 완료` : '';
+        this.dom.genPreviewBadge.textContent = `✨ 케이지 ${p.cages.length}개 실시간 형성${solvedTxt}`;
+      }
     }
   }
 
@@ -1109,7 +1226,34 @@ class SumdokuApp {
     if (this.dom.btnBattleForfeit) {
       this.dom.btnBattleForfeit.addEventListener('click', () => {
         this.sound.play('click');
-        this.promptBattleForfeit();
+        this.openForfeitModal();
+      });
+    }
+    if (this.dom.btnCancelForfeit) {
+      this.dom.btnCancelForfeit.addEventListener('click', () => {
+        this.sound.play('click');
+        this.closeForfeitModal();
+      });
+    }
+    if (this.dom.btnConfirmForfeit) {
+      this.dom.btnConfirmForfeit.addEventListener('click', () => {
+        this.sound.play('click');
+        this.closeForfeitModal();
+        this.forfeitBattle();
+      });
+    }
+
+    if (this.dom.btnBannerUpdate) {
+      this.dom.btnBannerUpdate.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.sound.play('click');
+        if (this.dom.modalUpdate) this.dom.modalUpdate.classList.remove('hidden');
+      });
+    }
+    if (this.dom.homeUpdateBanner) {
+      this.dom.homeUpdateBanner.addEventListener('click', () => {
+        this.sound.play('click');
+        if (this.dom.modalUpdate) this.dom.modalUpdate.classList.remove('hidden');
       });
     }
 
@@ -1731,6 +1875,12 @@ class SumdokuApp {
     // 배틀 퍼즐은 둘 다 100% 동일한 맵으로 시작
     const matchDiff = (puzzleData && puzzleData.difficulty) || this.battleDiff || 'expert';
     this.startNewGame(matchDiff, null, 'battle', puzzleData);
+    if (this.currentGameReplay) {
+      this.currentGameReplay.mode = 'battle';
+      this.currentGameReplay.battleMode = bMode;
+      this.currentGameReplay.oppTimeline = [];
+      this.currentGameReplay.opponentName = (role === 1 ? '상대 (Guest)' : '상대 (Host)');
+    }
     this.showToast(`⚔️ 1:1 배틀 시작! (${modeKr})`);
 
     // 실시간 대전 데이터 동기화 루프 (500ms 간격)
@@ -1766,12 +1916,14 @@ class SumdokuApp {
           const oppData = (role === 1) ? pData.p2 : pData.p1;
           if (pData.status === 'ended') {
             if (oppData && (oppData.resigned || oppData.forfeit)) {
+              this.closeForfeitModal();
               this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
               return;
             }
           }
           if (oppData) {
             if (oppData.resigned || oppData.forfeit) {
+              this.closeForfeitModal();
               this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
               return;
             }
@@ -1785,6 +1937,7 @@ class SumdokuApp {
       } catch (e) {
         consecutivePollErrors++;
         if (consecutivePollErrors >= 3 && this.isBattle) {
+          this.closeForfeitModal();
           this.handleBattleEnd(true, '상대방과의 연결이 끊어졌거나 방을 나갔습니다! 당신의 승리! 🏆');
         }
       }
@@ -1794,13 +1947,19 @@ class SumdokuApp {
 
   promptBattleForfeit() {
     if (!this.isBattle) return;
-    if (confirm('정말 이번 배틀 대전을 기권하시겠습니까?\n기권 시 상대방의 승리로 게임이 즉시 종료됩니다.')) {
-      this.forfeitBattle();
-    }
+    this.openForfeitModal();
   }
 
   async forfeitBattle() {
     if (!this.isBattle) return;
+    this.closeForfeitModal();
+
+    // 상대방이 이미 기권했거나 게임이 끝난 상태라면 패배 처리 방지!
+    if (this.oppState && (this.oppState.resigned || this.oppState.forfeit)) {
+      this.handleBattleEnd(true, '상대방이 먼저 게임을 기권했습니다! 당신의 승리! 🏆');
+      return;
+    }
+
     const role = this.battleRole;
     const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
 
@@ -1837,8 +1996,21 @@ class SumdokuApp {
     this.dom.battleP1Bar.style.width = `${myPercent}%`;
     this.dom.battleP2Bar.style.width = `${oppPercent}%`;
 
+    // 상대방 타임라인 기록 (리플레이 실시간 상대 진행 동기화용)
+    if (this.currentGameReplay && this.currentGameReplay.oppTimeline) {
+      this.currentGameReplay.oppTimeline.push({
+        step: (this.currentGameReplay.moves ? this.currentGameReplay.moves.length : 0),
+        sec: this.timerSeconds,
+        filled: opp.filled || 0,
+        score: opp.score || 0,
+        mistakes: opp.mistakes || 0,
+        status: (opp.resigned || opp.forfeit) ? '기권' : (opp.isWin ? '완성' : '진행 중')
+      });
+    }
+
     // 상대방 기권 판정
     if (opp.resigned || opp.forfeit) {
+      this.closeForfeitModal();
       this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
       return;
     }
@@ -1848,6 +2020,7 @@ class SumdokuApp {
                                        this.rules.maxLives !== 'unlimited' &&
                                        this.rules.livesExhaustedAction === 'game_over';
     if (isBattleEliminationAllowed && opp.mistakes >= this.maxMistakes) {
+      this.closeForfeitModal();
       this.handleBattleEnd(true, `상대방이 허용 실수(${this.maxMistakes}회) 초과로 탈락했습니다! 당신의 승리! 🏆`);
       return;
     }
@@ -1855,6 +2028,7 @@ class SumdokuApp {
     // 배틀 승패 판정
     if (this.battleMode === 'race') {
       if (opp.isWin) {
+        this.closeForfeitModal();
         this.handleBattleEnd(false, '상대방이 먼저 수도쿠를 완성했습니다!');
       }
     }
@@ -1862,8 +2036,15 @@ class SumdokuApp {
 
   handleBattleEnd(isVictory, reason) {
     if (!this.isBattle) return;
+    this.closeForfeitModal();
     this.stopTimer();
     clearInterval(this.battlePollInterval);
+    if (this.currentGameReplay) {
+      this.currentGameReplay.oppFinalScore = this.oppState.score || 0;
+      this.currentGameReplay.oppFinalFilled = this.oppState.filled || 0;
+      this.currentGameReplay.oppFinalMistakes = this.oppState.mistakes || 0;
+      this.currentGameReplay.oppFinalStatus = isVictory ? '상대 패배/기권' : '상대 승리';
+    }
     this.recordGameEnd(isVictory);
 
     const banner = document.getElementById('battle-result-banner');
@@ -1944,14 +2125,35 @@ class SumdokuApp {
       : APP_VERSION;
 
     try {
-      const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-        headers: { 'Accept': 'application/vnd.github.v3+json' }
-      });
-      if (!resp.ok) throw new Error('API 응답 실패');
-      const release = await resp.json();
+      let release = null;
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (resp.ok) release = await resp.json();
+      } catch (e) {}
+
+      if (!release) {
+        const resp2 = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=1`, {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (resp2.ok) {
+          const arr = await resp2.json();
+          if (arr && arr.length > 0) release = arr[0];
+        }
+      }
+
+      if (!release) throw new Error('API 응답 실패');
       const latestTag = (release.tag_name || '').replace(/^v/, '');
 
       if (this.isNewerVersion(latestTag, currentVersion)) {
+        if (this.dom.homeUpdateBanner) {
+          this.dom.homeUpdateBanner.classList.remove('hidden');
+          if (this.dom.homeUpdateBannerTitle) {
+            this.dom.homeUpdateBannerTitle.textContent = `새 버전 (v${latestTag}) 출시!`;
+          }
+        }
+
         document.getElementById('update-modal-title').textContent = `새 버전 발견! (v${latestTag})`;
         document.getElementById('update-modal-version').textContent = `현재 버전: v${currentVersion} ➔ 최신 버전: v${latestTag}`;
         this.dom.updateNotes.innerHTML = `<pre>${release.body || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.'}</pre>`;
@@ -2023,6 +2225,8 @@ class SumdokuApp {
     this.mistakes = 0;
     this.score = 0;
     this.combo = 0;
+    this.hintsUsed = 0;
+    this.resetCombo();
     this.dom.gameScore.textContent = '0';
     this.maxMistakes = (this.rules.maxLives === 'unlimited') ? 999999 : parseInt(this.rules.maxLives || 3, 10);
     const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
@@ -2421,6 +2625,9 @@ class SumdokuApp {
     const cellData = this.board[this.selected.r][this.selected.c];
     if (cellData.val > 0) return;
     this.saveSnapshot();
+    if (this.combo > 0) {
+      this.resetCombo('메모 작성으로 콤보 리셋');
+    }
     if (cellData.notes.has(num)) {
       cellData.notes.delete(num);
     } else {
@@ -2536,6 +2743,9 @@ class SumdokuApp {
     if (this.isPencilMode) {
       this.sound.play('click');
       if (cellData.val === 0) {
+        if (this.combo > 0) {
+          this.resetCombo('메모 작성으로 콤보 리셋');
+        }
         if (cellData.notes.has(num)) {
           cellData.notes.delete(num);
         } else {
@@ -2555,7 +2765,7 @@ class SumdokuApp {
         if (!isCorrect) {
           this.sound.play('error');
           cellData.error = true;
-          this.combo = 0;
+          this.resetCombo('오답 입력으로 콤보 리셋');
           this.score = Math.max(0, this.score - 50);
           this.showScoreDelta(-50, r, c);
           this.dom.gameScore.textContent = this.score;
@@ -2585,17 +2795,27 @@ class SumdokuApp {
           this.sound.play('correct');
           cellData.error = false;
           this.combo++;
-          const comboMultiplier = Math.min(this.combo, 5);
-          const basePoints = 100 * comboMultiplier;
-          this.score += basePoints;
-          this.showScoreDelta(basePoints, r, c, comboMultiplier > 1 ? `(콤보 x${comboMultiplier})` : '');
+          this.startComboTimer();
 
-          // 케이지 완성 보너스 (+cage.sum * 15)
+          // 다단계 콤보 배율 체계 (빠르게 연달아 맞출수록 점수 대폭 상승)
+          let comboMultiplier = 1.0;
+          if (this.combo === 1) comboMultiplier = 1.0;
+          else if (this.combo === 2) comboMultiplier = 1.2;
+          else if (this.combo <= 4) comboMultiplier = 1.6;
+          else if (this.combo <= 6) comboMultiplier = 2.4;
+          else if (this.combo <= 8) comboMultiplier = 3.6;
+          else comboMultiplier = 5.0; // 9콤보 이상 최대 5.0배
+
+          const basePoints = Math.round(100 * comboMultiplier);
+          this.score += basePoints;
+          this.showScoreDelta(basePoints, r, c, this.combo > 1 ? `(콤보 x${comboMultiplier})` : '');
+
+          // 케이지 완성 보너스 (+cage.sum * 15 + 콤보 시너지)
           const myCageIdx = this.cellCageMap[`${r},${c}`];
           const cage = this.cages[myCageIdx];
           const isCageComplete = cage && cage.cells.every(([cr, cc]) => this.board[cr][cc].val === this.solution[cr][cc]);
           if (isCageComplete) {
-            const cageBonus = cage.sum * 15;
+            const cageBonus = Math.round(cage.sum * 15 * (1 + (this.combo > 3 ? 0.25 : 0)));
             this.score += cageBonus;
             setTimeout(() => this.showScoreDelta(cageBonus, r, c, '케이지 완성!'), 200);
             this.showToast(`케이지 완성 보너스! (+${cageBonus}점)`);
@@ -2722,6 +2942,8 @@ class SumdokuApp {
     if (this.board[r][c].val === 0) {
       this.sound.play('correct');
       this.saveSnapshot();
+      this.hintsUsed = (this.hintsUsed || 0) + 1;
+      this.resetCombo('힌트 사용으로 콤보 리셋');
       const answer = this.solution[r][c];
       if (this.currentGameReplay) {
         this.currentGameReplay.moves.push({
@@ -2809,14 +3031,29 @@ class SumdokuApp {
     this.sound.play('win');
     this.stopTimer();
 
-    // 타임어택 보너스 또는 스피드 보너스 계산
+    // 타임어택 보너스 또는 정밀 스피드런 보너스 계산
     if (this.gameMode === 'timeattack') {
       const timeBonus = this.timeRemaining * 10;
       this.score += timeBonus;
     } else {
-      if (this.timerSeconds < 300) this.score += 1000;
-      else if (this.timerSeconds < 600) this.score += 500;
+      // 15분(900초) 기준 초 단위 스피드런 보너스 + 5분 이내 보너스
+      const speedBonus = Math.max(0, Math.floor((900 - this.timerSeconds) * 4));
+      this.score += speedBonus;
+      if (this.timerSeconds < 300) this.score += 500;
     }
+
+    // 실수 0회 퍼펙트 보너스
+    if (this.mistakes === 0) {
+      this.score += 1500;
+      this.showToast('🏆 실수 0회! 퍼펙트 클리어 (+1,500점)');
+    }
+
+    // 노힌트 보너스
+    if (this.hintsUsed === 0) {
+      this.score += 1000;
+      this.showToast('🧠 노힌트 연역 마스터 (+1,000점)');
+    }
+
     this.dom.gameScore.textContent = this.score;
 
     if (this.isBattle) {
@@ -3114,20 +3351,41 @@ class SumdokuApp {
 
     list.forEach(rep => {
       const card = document.createElement('div');
-      card.className = 'replay-card';
-      
       const isWin = rep.result === 'win';
+      const isBattle = rep.mode === 'battle';
       const dLabel = diffKr[rep.difficulty] || rep.difficulty;
 
+      let modeBadge = '';
+      if (isBattle) {
+        const bModeKr = { race: '스피드 레이스', score: '점수전', survival: '서바이벌' }[rep.battleMode] || '배틀';
+        modeBadge = `<span class="replay-mode-badge battle">⚔️ 1:1 배틀 (${bModeKr})</span>`;
+      } else if (rep.mode === 'timeattack') {
+        modeBadge = `<span class="replay-mode-badge single">⚡ 타임어택</span>`;
+      } else {
+        modeBadge = `<span class="replay-mode-badge single">🧩 싱글</span>`;
+      }
+
+      let oppSummary = '';
+      if (isBattle && rep.oppFinalScore !== undefined) {
+        oppSummary = `<div style="font-size: 0.76rem; color: var(--text-secondary); margin: 3px 0 6px 0;">
+          ⚔️ vs 상대: ${rep.oppFinalFilled || 0}/81칸 (${Number(rep.oppFinalScore).toLocaleString()}점, 실수 ${rep.oppFinalMistakes || 0}회)
+        </div>`;
+      }
+
+      card.className = `replay-card ${isBattle ? 'battle-card' : ''}`;
       card.innerHTML = `
         <div class="replay-card-top">
-          <span class="replay-diff-badge ${rep.difficulty}">${dLabel}</span>
-          <span class="replay-result-tag ${isWin ? 'win' : 'fail'}">${isWin ? '🏆 클리어' : '💔 실패'}</span>
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+            ${modeBadge}
+            <span class="replay-diff-badge ${rep.difficulty}">${dLabel}</span>
+          </div>
+          <span class="replay-result-tag ${isWin ? 'win' : 'fail'}">${isWin ? '🏆 승리/클리어' : '💔 패배/실패'}</span>
         </div>
         <div class="replay-card-meta">
           <span>📅 ${rep.date}</span>
           <span>수순: <strong>${rep.moves ? rep.moves.length : 0}수</strong></span>
         </div>
+        ${oppSummary}
         <div class="replay-card-footer">
           <span style="font-weight: 800; color: #2563eb;">${Number(rep.finalScore || 0).toLocaleString()}점 · ⏱️ ${rep.finalTime || '00:00'}</span>
           <button class="replay-play-btn">리플레이 보기 ▶</button>
@@ -3165,9 +3423,11 @@ class SumdokuApp {
 
     const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
     const dLabel = diffKr[replay.difficulty] || replay.difficulty || '일반';
+    const isBattle = replay.mode === 'battle';
 
     if (this.dom.replayMetaTitle) {
-      this.dom.replayMetaTitle.textContent = `[${dLabel}] ${replay.result === 'win' ? '완벽 클리어' : '도전'} 리플레이`;
+      const modePrefix = isBattle ? '⚔️ [배틀] ' : '';
+      this.dom.replayMetaTitle.textContent = `${modePrefix}[${dLabel}] ${replay.result === 'win' ? '완벽 클리어' : '도전'} 리플레이`;
     }
     if (this.dom.replayMetaSub) {
       const scoreTxt = Number(replay.finalScore || 0).toLocaleString();
@@ -3175,6 +3435,17 @@ class SumdokuApp {
       const dateTxt = replay.date || '';
       const mistakesCount = replay.mistakes || 0;
       this.dom.replayMetaSub.textContent = `${dateTxt} · 최종 ${scoreTxt}점 · 소요 ${timeTxt} · 실수 ${mistakesCount}회`;
+    }
+
+    if (this.dom.replayBattleOppPanel) {
+      if (isBattle) {
+        this.dom.replayBattleOppPanel.classList.remove('hidden');
+        if (this.dom.replayOppTitle) {
+          this.dom.replayOppTitle.textContent = `⚔️ ${replay.opponentName || '1:1 대전 상대'} 실시간 진행 동기화`;
+        }
+      } else {
+        this.dom.replayBattleOppPanel.classList.add('hidden');
+      }
     }
 
     const movesCount = (replay.moves && replay.moves.length) || 0;
@@ -3375,6 +3646,38 @@ class SumdokuApp {
         } else {
           const resTxt = lastMove.error ? '❌ 오답 (실수)' : '✓ 정답 확정';
           this.dom.replayDescBox.textContent = `[${min}:${sec}] (${lastMove.r + 1}행, ${lastMove.c + 1}열) 칸에 숫자 ${lastMove.num} 입력 (${resTxt})`;
+        }
+      }
+    }
+
+    // 배틀 모드 리플레이 상대방 실시간 동시 진행 동기화
+    if (replay.mode === 'battle' && this.dom.replayBattleOppPanel) {
+      const oppTimeline = replay.oppTimeline || [];
+      if (oppTimeline.length > 0) {
+        let curSnap = oppTimeline[0];
+        for (const snap of oppTimeline) {
+          if (snap.step <= targetStep) {
+            curSnap = snap;
+          } else {
+            break;
+          }
+        }
+        if (this.dom.replayOppCells) this.dom.replayOppCells.textContent = `${curSnap.filled} / 81`;
+        if (this.dom.replayOppScore) this.dom.replayOppScore.textContent = `${Number(curSnap.score || 0).toLocaleString()}점`;
+        if (this.dom.replayOppMistakes) this.dom.replayOppMistakes.textContent = `${curSnap.mistakes || 0}회`;
+        if (this.dom.replayOppStatus) this.dom.replayOppStatus.textContent = curSnap.status || '진행 중';
+        if (this.dom.replayOppBarFill) {
+          const oppPct = Math.min(100, Math.round((curSnap.filled / 81) * 100));
+          this.dom.replayOppBarFill.style.width = `${oppPct}%`;
+        }
+      } else if (replay.oppFinalScore !== undefined) {
+        if (this.dom.replayOppCells) this.dom.replayOppCells.textContent = `${replay.oppFinalFilled || 0} / 81`;
+        if (this.dom.replayOppScore) this.dom.replayOppScore.textContent = `${Number(replay.oppFinalScore).toLocaleString()}점`;
+        if (this.dom.replayOppMistakes) this.dom.replayOppMistakes.textContent = `${replay.oppFinalMistakes || 0}회`;
+        if (this.dom.replayOppStatus) this.dom.replayOppStatus.textContent = replay.oppFinalStatus || '종료';
+        if (this.dom.replayOppBarFill) {
+          const oppPct = Math.min(100, Math.round(((replay.oppFinalFilled || 0) / 81) * 100));
+          this.dom.replayOppBarFill.style.width = `${oppPct}%`;
         }
       }
     }

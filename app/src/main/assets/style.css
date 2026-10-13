@@ -4411,5 +4411,366 @@ input:checked + .slider:before {
   }
 }
 
+/* ==========================================================================
+   v1.0.20 New Feature Styles: Forfeit UI, Combo Gauge, Replay Battle Sync,
+   Home Update Banner, and Live Smart Cage Generator Visualizer
+   ========================================================================== */
+
+/* 1. Battle Forfeit Button & Confirm Modal */
+.btn-battle-forfeit-chip {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  font-weight: 700;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.btn-battle-forfeit-chip:hover, .btn-battle-forfeit-chip:active {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+.theme-dark .btn-battle-forfeit-chip {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.modal-forfeit-card {
+  max-width: 350px;
+  width: 90%;
+  text-align: center;
+  padding: 26px 20px 22px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.forfeit-icon-wrap {
+  font-size: 2.6rem;
+  margin-bottom: 8px;
+  animation: floatBounce 1.5s ease-in-out infinite alternate;
+}
+.forfeit-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.forfeit-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+.forfeit-warning {
+  color: #ef4444;
+  font-weight: 800;
+  display: block;
+  margin-top: 4px;
+}
+.forfeit-btn-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.btn-danger-forfeit {
+  flex: 1;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px;
+  font-weight: 800;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-danger-forfeit:active {
+  transform: scale(0.96);
+  background: #dc2626 !important;
+}
+
+/* 2. Combo Gauge & Pulse Animation */
+.combo-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+.combo-text {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #f59e0b;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(245, 158, 11, 0.4);
+  animation: pulseCombo 0.6s infinite alternate;
+}
+.combo-timer-track {
+  width: 52px;
+  height: 3.5px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.theme-dark .combo-timer-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+.combo-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  border-radius: 999px;
+  transition: width 0.1s linear;
+}
+@keyframes pulseCombo {
+  0% { transform: scale(0.96); opacity: 0.85; }
+  100% { transform: scale(1.08); opacity: 1; }
+}
+
+/* 3. Home Auto Update Banner */
+.home-update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(147, 51, 234, 0.12));
+  border: 1.5px solid rgba(59, 130, 246, 0.45);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin: 0 16px 14px 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: bannerSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.home-update-banner:active {
+  transform: scale(0.98);
+}
+.update-banner-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+.update-banner-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.update-banner-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #2563eb;
+}
+.theme-dark .update-banner-title {
+  color: #60a5fa;
+}
+.update-banner-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+.update-banner-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+@keyframes bannerSlideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 4. Replay Battle Opponent Simultaneous Comparison HUD */
+.replay-card.battle-card {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.03), transparent);
+}
+.replay-mode-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-right: 4px;
+}
+.replay-mode-badge.battle {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.replay-mode-badge.single {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+.replay-battle-opp-panel {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid rgba(239, 68, 68, 0.28);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.2s ease;
+}
+.theme-dark .replay-battle-opp-panel {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+.replay-opp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.replay-opp-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ef4444;
+}
+.theme-dark .replay-opp-title {
+  color: #f87171;
+}
+.replay-opp-status {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.replay-opp-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.opp-stat-label {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+.opp-stat-val {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.replay-opp-bar-track {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.theme-dark .replay-opp-bar-track {
+  background: rgba(255, 255, 255, 0.15);
+}
+.replay-opp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f87171, #ef4444);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+/* 5. Live Smart Cage Generator Visualizer */
+.gen-header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.gen-header-text .gen-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.gen-header-text .gen-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.gen-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 14px;
+  width: 100%;
+}
+.gen-preview-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.theme-dark .gen-preview-badge {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+}
+.gen-preview-board-wrap {
+  width: 200px;
+  height: 200px;
+  background: var(--bg-board, #ffffff);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.12), 0 4px 14px rgba(0, 0, 0, 0.1);
+  border: 1.5px solid #cbd5e1;
+}
+.theme-dark .gen-preview-board-wrap {
+  background: #0f172a;
+  border-color: #334155;
+}
+.gen-preview-board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  gap: 1.5px;
+  width: 100%;
+  height: 100%;
+}
+.gen-preview-cell {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+}
+.theme-dark .gen-preview-cell {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+}
+.gen-preview-cell.anchor {
+  background: #fbbf24 !important;
+  color: #78350f !important;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.85);
+  font-size: 9px;
+  font-weight: 900;
+  transform: scale(1.05);
+  z-index: 2;
+}
+.gen-preview-cell.solved {
+  outline: 1.5px solid #10b981;
+  font-weight: 900;
+}
+
 
 
