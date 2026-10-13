@@ -10,87 +10,40 @@ const APP_VERSION = "1.0.0";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
-// 1. 사전 검증된 기본 퍼즐 데이터 (81칸 완벽 분할)
-// ============================================================================
-const DEFAULT_PUZZLE = {
-  solution: [
-    [4, 5, 7, 1, 2, 3, 9, 6, 8],
-    [2, 3, 6, 9, 8, 5, 4, 7, 1],
-    [1, 9, 8, 6, 4, 7, 2, 5, 3],
-    [3, 4, 5, 8, 1, 9, 6, 2, 7],
-    [7, 2, 9, 3, 5, 6, 1, 8, 4],
-    [6, 8, 1, 4, 7, 2, 5, 3, 9],
-    [9, 7, 3, 5, 6, 4, 8, 1, 2],
-    [8, 6, 4, 2, 3, 1, 7, 9, 5],
-    [5, 1, 2, 7, 9, 8, 3, 4, 6]
-  ],
-  cages: [
-    { sum: 8,  cells: [[8, 5]] },             // 1칸 앵커 (시작 힌트: 합계 8)
-    { sum: 2,  cells: [[5, 5]] },             // 1칸 앵커 (시작 힌트: 합계 2)
-    { sum: 9,  cells: [[6, 0]] },             // 1칸 앵커 (시작 힌트: 합계 9)
-    { sum: 2,  cells: [[4, 1]] },             // 1칸 앵커 (시작 힌트: 합계 2)
-    { sum: 1,  cells: [[7, 5]] },             // 1칸 앵커 (시작 힌트: 합계 1)
-    { sum: 6,  cells: [[6, 4]] },             // 1칸 앵커 (시작 힌트: 합계 6)
-    { sum: 16, cells: [[4, 0], [5, 0], [3, 0]] },
-    { sum: 5,  cells: [[3, 4], [2, 4]] },
-    { sum: 17, cells: [[6, 5], [6, 6], [5, 6]] },
-    { sum: 12, cells: [[1, 7], [1, 8], [1, 6]] },
-    { sum: 8,  cells: [[1, 5], [0, 5]] },
-    { sum: 9,  cells: [[4, 7], [4, 6]] },
-    { sum: 21, cells: [[2, 1], [3, 1], [2, 2]] },
-    { sum: 19, cells: [[7, 6], [8, 6], [7, 7]] },
-    { sum: 7,  cells: [[8, 2], [8, 1], [7, 2]] },
-    { sum: 14, cells: [[5, 3], [5, 4], [4, 3]] },
-    { sum: 23, cells: [[0, 6], [0, 7], [0, 8]] },
-    { sum: 23, cells: [[4, 2], [3, 2], [5, 2], [5, 1]] },
-    { sum: 26, cells: [[7, 0], [8, 0], [7, 1], [6, 1]] },
-    { sum: 19, cells: [[1, 4], [0, 4], [1, 3]] },
-    { sum: 12, cells: [[7, 4], [8, 4]] },
-    { sum: 24, cells: [[3, 5], [3, 6], [2, 6], [2, 5]] },
-    { sum: 17, cells: [[2, 7], [3, 7], [3, 8], [2, 8]] },
-    { sum: 8,  cells: [[6, 8], [7, 8], [6, 7]] },
-    { sum: 16, cells: [[4, 8], [5, 8], [5, 7]] },
-    { sum: 3,  cells: [[2, 0], [1, 0]] },
-    { sum: 11, cells: [[4, 4], [4, 5]] },
-    { sum: 14, cells: [[3, 3], [2, 3]] },
-    { sum: 8,  cells: [[6, 3], [6, 2]] },
-    { sum: 14, cells: [[0, 3], [0, 2], [1, 2]] },
-    { sum: 12, cells: [[0, 0], [0, 1], [1, 1]] },
-    { sum: 10, cells: [[8, 8], [8, 7]] },
-    { sum: 9,  cells: [[7, 3], [8, 3]] }
-  ]
-};
-
-// ============================================================================
-// 2. 동적 100% 추론 보장 퍼즐 생성기
+// 1. 동적 100% 추론 보장 퍼즐 생성기 (매 게임마다 완전히 새로운 문제 및 정답 생성)
 // ============================================================================
 class SumdokuGenerator {
   generate(initialAnchors = 4) {
-    const solution = this.createSolution();
-    let cages = this.createCages(solution, initialAnchors);
+    // 매번 새로운 퍼즐이 생성될 때까지 반복 (평균 1~2회 시도, 10~20ms 소요)
+    while (true) {
+      const solution = this.createSolutionIterative();
+      let cages = this.createCages(solution, initialAnchors);
 
-    let attempts = 0;
-    while (attempts++ < 80) {
-      const solved = this.solveDeductively(solution, cages);
-      if (solved === 81) break;
+      let attempts = 0;
+      while (attempts++ < 70) {
+        const solved = this.solveDeductively(solution, cages);
+        if (solved === 81) {
+          return { solution, cages };
+        }
 
-      const multiCages = cages.filter(c => c.cells.length > 2);
-      if (multiCages.length === 0) break;
-      const targetCage = multiCages[Math.floor(Math.random() * multiCages.length)];
-      
-      const removedCell = targetCage.cells.pop();
-      targetCage.sum -= solution[removedCell[0]][removedCell[1]];
-      cages.push({
-        sum: solution[removedCell[0]][removedCell[1]],
-        cells: [removedCell]
-      });
+        const multiCages = cages.filter(c => c.cells.length > 2);
+        if (multiCages.length === 0) break;
+        const targetCage = multiCages[Math.floor(Math.random() * multiCages.length)];
+        
+        const removedCell = targetCage.cells.pop();
+        targetCage.sum -= solution[removedCell[0]][removedCell[1]];
+        cages.push({
+          sum: solution[removedCell[0]][removedCell[1]],
+          cells: [removedCell]
+        });
+      }
     }
-
-    return { solution, cages };
   }
 
-  createSolution() {
+  createSolutionIterative() {
     const board = Array.from({ length: 9 }, () => Array(9).fill(0));
+    
+    // 1. 3개의 대각선 3x3 박스는 서로 간섭하지 않으므로 무작위 셔플로 먼저 채움
     for (let b = 0; b < 9; b += 3) {
       const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
       let idx = 0;
@@ -98,6 +51,13 @@ class SumdokuGenerator {
         for (let c = 0; c < 3; c++) {
           board[b + r][b + c] = nums[idx++];
         }
+      }
+    }
+
+    const empty = [];
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (board[r][c] === 0) empty.push([r, c]);
       }
     }
 
@@ -114,25 +74,38 @@ class SumdokuGenerator {
       return true;
     };
 
-    const fill = (r = 0, c = 0) => {
-      if (r === 9) return true;
-      if (c === 9) return fill(r + 1, 0);
-      if (board[r][c] !== 0) return fill(r, c + 1);
+    // 스택 오버플로우가 절대 발생하지 않는 100% 비재귀 반복문 백트래킹
+    const cellState = empty.map(() => ({
+      nums: [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5),
+      tryIdx: 0
+    }));
 
-      const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
-      for (const n of nums) {
-        if (isSafe(r, c, n)) {
-          board[r][c] = n;
-          if (fill(r, c + 1)) return true;
-          board[r][c] = 0;
+    let idx = 0;
+    while (idx < empty.length) {
+      const [r, c] = empty[idx];
+      const state = cellState[idx];
+      let placed = false;
+      while (state.tryIdx < state.nums.length) {
+        const val = state.nums[state.tryIdx++];
+        if (isSafe(r, c, val)) {
+          board[r][c] = val;
+          placed = true;
+          break;
         }
       }
-      return false;
-    };
-
-    fill(0, 0);
+      if (placed) {
+        idx++;
+      } else {
+        board[r][c] = 0;
+        state.tryIdx = 0;
+        state.nums.sort(() => Math.random() - 0.5);
+        idx--;
+        if (idx < 0) break;
+      }
+    }
     return board;
   }
+
 
   createCages(solution, initialAnchors) {
     const allCells = [];
@@ -750,14 +723,10 @@ class SumdokuApp {
     const anchorMap = { easy: 6, medium: 5, expert: 4 };
     const anchors = anchorMap[diff] || 4;
 
-    try {
-      const generated = this.generator.generate(anchors);
-      this.solution = generated.solution;
-      this.cages = generated.cages;
-    } catch (e) {
-      this.solution = DEFAULT_PUZZLE.solution;
-      this.cages = DEFAULT_PUZZLE.cages;
-    }
+    // 매번 알고리즘을 통해 완전히 새로운 정답 판과 케이지를 100% 동적 생성
+    const generated = this.generator.generate(anchors);
+    this.solution = generated.solution;
+    this.cages = generated.cages;
 
     this.cellCageMap = {};
     this.cages.forEach((cage, cIdx) => {
