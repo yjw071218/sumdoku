@@ -1,37 +1,69 @@
 /* ==========================================================================
-   Sumdoku (썸도쿠) Premium Stylesheet
-   - Distinctive neon-indigo & slate aesthetics
-   - Responsive Phone (Vertical), Tablet Portrait & Tablet Landscape (Studio Split)
-   - Dynamic Floating Badges, Tactile Keypad & 4 Difficulty Tiers
+   Sumdoku (썸도쿠) v1.0.3 Master Stylesheet
+   - Inset Dotted Cages (칸보다 살짝 작게 안쪽으로 들어간 점선 테두리)
+   - Safe Area Top Inset Padding (핸드폰/태블릿 상단 잘림 원천 방지)
+   - Daily Challenge Calendar, Settings Toggles, Score Badge, Theme System
+   - Adaptive Phone (Vertical) & Tablet Studio (Landscape / Portrait)
    ========================================================================== */
 
 :root {
   --bg-primary: #f8fafc;
   --bg-surface: #ffffff;
-  --bg-surface-glass: rgba(255, 255, 255, 0.88);
+  --bg-surface-glass: rgba(255, 255, 255, 0.92);
   
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
 
-  --accent-primary: #4f46e5;
-  --accent-secondary: #06b6d4;
-  --accent-hover: #4338ca;
-  --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-  --accent-glow: rgba(79, 70, 229, 0.25);
+  --accent-blue: #2563eb;
+  --accent-indigo: #4f46e5;
+  --accent-cyan: #06b6d4;
+  --accent-hover: #1d4ed8;
 
   /* Highlighting Colors */
-  --highlight-selected: #fef08a;
-  --highlight-crosshair: #eef2ff;
-  --highlight-cage: #f5f3ff;
-  --highlight-same-num: #bae6fd;
+  --highlight-selected: #bfdbfe; /* Clean blue selection */
+  --highlight-crosshair: #f0f7ff; /* Soft row/col crosshair */
+  --highlight-cage: #e0f2fe;     /* Selected cage highlight */
+  --highlight-same-num: #bae6fd; /* Same number highlight */
   --error-bg: #fee2e2;
-  --error-text: #dc2626;
+  --error-text: #ef4444;
 
   /* Grid & Borders */
   --grid-thick: 2px solid #1e293b;
   --grid-thin: 0.5px solid #cbd5e1;
-  --cage-dashed: 1.5px dashed #6366f1;
+  --cage-dashed-color: #475569;
+}
+
+/* Dark Theme */
+.app-root.theme-dark {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-glass: rgba(30, 41, 59, 0.94);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --grid-thick: 2px solid #f8fafc;
+  --grid-thin: 0.5px solid #334155;
+  --cage-dashed-color: #94a3b8;
+  --highlight-crosshair: #1e293b;
+  --highlight-selected: #3b82f6;
+  --highlight-cage: #1e3a8a;
+}
+
+/* Sepia Warm Theme */
+.app-root.theme-sepia {
+  --bg-primary: #faf5eb;
+  --bg-surface: #fdfbf7;
+  --bg-surface-glass: rgba(253, 251, 247, 0.94);
+  --text-primary: #422006;
+  --text-secondary: #78350f;
+  --text-muted: #a16207;
+  --grid-thick: 2px solid #451a03;
+  --grid-thin: 0.5px solid #fed7aa;
+  --cage-dashed-color: #9a3412;
+  --highlight-crosshair: #fef3c7;
+  --highlight-selected: #fde68a;
+  --highlight-cage: #fef9c3;
 }
 
 * {
@@ -56,9 +88,10 @@ body, html {
   height: 100%;
   position: relative;
   overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
-/* ----------------- Screen Views ----------------- */
+/* ----------------- Screen Views & Safe Area ----------------- */
 .view {
   position: absolute;
   inset: 0;
@@ -66,9 +99,12 @@ body, html {
   flex-direction: column;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.22s ease-in-out;
+  transition: opacity 0.2s ease-in-out;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* ★ 상단 노치 / 상태바 잘림 원천 방지 안전 패딩 ★ */
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
 .view.active {
@@ -78,17 +114,17 @@ body, html {
 }
 
 /* ==========================================================================
-   1. 홈 화면 (Home View) Styles
+   1. 메인 뷰 (Home View & Daily Card)
    ========================================================================== */
 .home-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 28px 20px 20px 20px;
+  padding: 16px 20px 80px 20px;
 }
 
 .home-header {
@@ -96,14 +132,14 @@ body, html {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .brand-badge-container {
   position: relative;
-  width: 82px;
-  height: 82px;
-  margin-bottom: 14px;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,28 +147,28 @@ body, html {
 
 .brand-logo {
   position: relative;
-  width: 76px;
-  height: 76px;
-  background: var(--accent-gradient);
-  border-radius: 22px;
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12px 28px var(--accent-glow);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
   z-index: 2;
 }
 
 .logo-symbol {
   color: #ffffff;
-  font-size: 2.5rem;
+  font-size: 2.3rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .logo-accent {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: 6px;
+  right: 8px;
   color: #fef08a;
   font-size: 11px;
   font-weight: 900;
@@ -140,9 +176,9 @@ body, html {
 
 .pulse-ring {
   position: absolute;
-  inset: -6px;
-  border-radius: 28px;
-  border: 2px solid rgba(99, 102, 241, 0.4);
+  inset: -5px;
+  border-radius: 25px;
+  border: 2px solid rgba(59, 130, 246, 0.4);
   animation: pulse-ring 2.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
   z-index: 1;
 }
@@ -154,50 +190,101 @@ body, html {
 }
 
 .brand-title {
-  font-size: 2.15rem;
+  font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 4px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
 }
 
 .brand-tagline {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
   font-weight: 500;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .version-chip {
   display: inline-block;
   padding: 3px 12px;
-  background: #e0e7ff;
+  background: #dbeafe;
   border-radius: 12px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #4338ca;
+  color: #1d4ed8;
+}
+
+/* Daily Challenge Hero Card (Image 9) */
+.daily-hero-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin: 18px 0 10px 0;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.daily-hero-card:active {
+  transform: scale(0.98);
+}
+
+.daily-hero-icon {
+  font-size: 2rem;
+}
+
+.daily-hero-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-left: 14px;
+}
+
+.daily-hero-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #bfdbfe;
+}
+
+.daily-hero-date {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.daily-hero-btn {
+  background: #ffffff;
+  color: #1d4ed8;
+  border: none;
+  font-weight: 800;
+  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
 }
 
 .home-menu {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  margin: 20px 0;
+  margin: 10px 0 20px 0;
 }
 
 .menu-btn {
   display: flex;
   align-items: center;
-  padding: 15px 18px;
+  padding: 14px 18px;
   border-radius: 16px;
   border: none;
   cursor: pointer;
   gap: 14px;
   text-align: left;
-  transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+  transition: transform 0.12s, box-shadow 0.15s;
 }
 
 .menu-btn:active {
@@ -205,18 +292,18 @@ body, html {
 }
 
 .menu-btn.btn-primary {
-  background: var(--accent-gradient);
+  background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 8px 20px var(--accent-glow);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
 }
 .menu-btn.btn-primary .btn-desc {
-  color: #e0e7ff;
+  color: #bfdbfe;
 }
 
 .menu-btn.btn-continue {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
 }
 .menu-btn.btn-continue .btn-desc {
   color: #d1fae5;
@@ -226,7 +313,7 @@ body, html {
   background: var(--bg-surface);
   color: var(--text-primary);
   border: 1.5px solid #e2e8f0;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .menu-btn.btn-update {
@@ -236,10 +323,7 @@ body, html {
 }
 
 .btn-icon {
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 1.4rem;
 }
 
 .btn-content {
@@ -248,19 +332,19 @@ body, html {
 }
 
 .btn-title {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 700;
 }
 
 .btn-desc {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   margin-top: 2px;
 }
 
 .home-footer {
   text-align: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .github-link {
@@ -268,15 +352,210 @@ body, html {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 600;
+}
+
+/* Bottom Navigation Bar (Image 3, 4, 9) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--bg-surface-glass);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 40;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: 1;
+  padding: 6px 0;
   transition: color 0.15s;
 }
-.github-link:hover {
-  color: var(--accent-primary);
-  text-decoration: underline;
+
+.nav-tab.active {
+  color: var(--accent-blue);
+}
+
+.tab-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tab-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 3px;
 }
 
 /* ==========================================================================
-   2. 게임 화면 (Game View) Base Styles (모바일 기준)
+   2. 일일 도전 뷰 (Daily Challenge View - Image 4)
+   ========================================================================== */
+.daily-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 10px 18px 80px 18px;
+}
+
+.daily-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.daily-header h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.daily-trophy-banner {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  color: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+  margin-bottom: 16px;
+}
+
+.trophy-icon {
+  font-size: 3rem;
+  margin-bottom: 6px;
+}
+
+.trophy-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.trophy-subtitle {
+  font-size: 0.88rem;
+  color: #dbeafe;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.calendar-card {
+  background: var(--bg-surface);
+  border-radius: 18px;
+  border: 1.5px solid #e2e8f0;
+  width: 100%;
+  padding: 16px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 6px;
+}
+
+.cal-month-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.cal-star-count {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-day-btn {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.cal-day-btn.empty {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.cal-day-btn.today {
+  background: var(--accent-blue);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35);
+}
+
+.cal-day-btn.selected {
+  outline: 2px solid #2563eb;
+  background: #eff6ff;
+}
+
+.cal-day-btn.cleared {
+  color: #10b981;
+  font-weight: 800;
+}
+.cal-day-btn.cleared::after {
+  content: '★';
+  font-size: 8px;
+  color: #f59e0b;
+  margin-top: -3px;
+}
+
+.daily-action-box {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.daily-play-main-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05rem;
+  border-radius: 14px;
+}
+
+/* ==========================================================================
+   3. 게임 화면 (Game View - Images 2, 8 Reference)
    ========================================================================== */
 .game-layout {
   display: flex;
@@ -285,17 +564,20 @@ body, html {
   height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 6px 12px 10px 12px;
+  /* ★ 상단 안전 여백을 넉넉히 주어 상단 헤더가 절대 잘리지 않도록 보장 ★ */
+  padding: 8px 12px 10px 12px;
   justify-content: space-between;
 }
 
+/* Top Header (Image 2, 8) */
 .game-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
+  height: 46px;
   padding: 0 4px;
   width: 100%;
+  margin-bottom: 2px;
 }
 
 .glass-icon-btn {
@@ -303,8 +585,8 @@ body, html {
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   color: var(--text-secondary);
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,15 +599,27 @@ body, html {
   background: #f1f5f9;
 }
 
-.game-header-pill {
-  font-weight: 800;
-  font-size: 0.85rem;
-  letter-spacing: 0.8px;
-  color: #4338ca;
-  background: #e0e7ff;
+/* Real-Time Score Badge (Image 2, 8) */
+.game-score-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   padding: 4px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.score-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.score-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e40af;
 }
 
 .game-header-actions {
@@ -333,43 +627,35 @@ body, html {
   gap: 6px;
 }
 
-/* Status Dashboard: 3 Modern Chips */
-.game-status-dashboard {
+/* Sub-Bar (Image 2, 8): Difficulty, Mistakes, Timer */
+.game-sub-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 6px 6px 6px;
-  gap: 8px;
-  width: 100%;
+  padding: 4px 8px 6px 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
-.status-chip {
-  flex: 1;
+.sub-bar-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--bg-surface);
-  border: 1px solid #e2e8f0;
-  padding: 6px 10px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  gap: 5px;
 }
 
-.chip-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+.sub-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
-.chip-value {
-  font-size: 0.88rem;
+.sub-val {
   font-weight: 800;
   color: var(--text-primary);
 }
 
-.anchors-chip .chip-value {
-  color: #4f46e5;
+.diff-item .sub-val {
+  color: #2563eb;
 }
 
 /* Main Content Area */
@@ -421,16 +707,16 @@ body, html {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.48rem;
+  font-size: 1.55rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #1e3a8a;
   background-color: transparent;
   transition: background-color 0.1s ease;
   box-sizing: border-box;
   border: var(--grid-thin);
 }
 
-/* 3x3 Box Sub-Grid Borders */
+/* 3x3 Box Sub-Grid Borders (Thick solid black line as in Image 2) */
 .border-box-right {
   border-right: var(--grid-thick) !important;
 }
@@ -438,49 +724,77 @@ body, html {
   border-bottom: var(--grid-thick) !important;
 }
 
-/* Cage Dashed Borders (Neon-Indigo Distinctive Theme) */
-.cage-border-top {
-  border-top: var(--cage-dashed) !important;
-}
-.cage-border-bottom {
-  border-bottom: var(--cage-dashed) !important;
-}
-.cage-border-left {
-  border-left: var(--cage-dashed) !important;
-}
-.cage-border-right {
-  border-right: var(--cage-dashed) !important;
-}
-
-/* Floating Pill Cage Sum Badges */
-.cell-cage-sum {
+/* ==========================================================================
+   ★ 핵심 요구사항: 두 번째 이미지(Image 2) 스타일의 칸보다 살짝 작은 점선 케이지 ★
+   - 셀 테두리 안쪽으로 3px 인셋되어 독립적으로 둘러싸는 점선
+   ========================================================================== */
+.cage-inset-border {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  font-size: 9.5px;
-  font-weight: 800;
-  line-height: 1.1;
-  padding: 1.5px 4.5px;
-  border-radius: 5px;
-  background: rgba(241, 245, 249, 0.95);
-  color: #475569;
-  border: 0.5px solid rgba(203, 213, 225, 0.8);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  inset: 0;
   pointer-events: none;
   z-index: 2;
+  box-sizing: border-box;
 }
 
-/* Glowing Anchor Chip (1칸 시작 확정 단서) */
-.cell.single-cage {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+/* 테두리가 필요한 방향은 3px 안쪽으로 들여쓰고 dashed 선 부여 */
+.cage-inset-border.cage-top {
+  top: 3px;
+  border-top: 1.5px dashed var(--cage-dashed-color);
 }
-.cell.single-cage .cell-cage-sum {
-  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-  color: #ffffff;
-  font-weight: 900;
+.cage-inset-border.cage-bottom {
+  bottom: 3px;
+  border-bottom: 1.5px dashed var(--cage-dashed-color);
+}
+.cage-inset-border.cage-left {
+  left: 3px;
+  border-left: 1.5px dashed var(--cage-dashed-color);
+}
+.cage-inset-border.cage-right {
+  right: 3px;
+  border-right: 1.5px dashed var(--cage-dashed-color);
+}
+
+/* 외곽 모서리는 살짝 둥글게(4px) 곡선 처리하여 미려한 케이지 형태 연출 */
+.cage-inset-border.cage-top.cage-left {
+  border-top-left-radius: 4px;
+}
+.cage-inset-border.cage-top.cage-right {
+  border-top-right-radius: 4px;
+}
+.cage-inset-border.cage-bottom.cage-left {
+  border-bottom-left-radius: 4px;
+}
+.cage-inset-border.cage-bottom.cage-right {
+  border-bottom-right-radius: 4px;
+}
+
+/* 1칸짜리 케이지 (시작 앵커) : 4방향 모두 3px 안쪽으로 들어간 완전한 사각 점선 */
+.cell.single-cage .cage-inset-border {
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  right: 3px;
+  border: 1.5px dashed #2563eb;
+  border-radius: 4px;
+  background: rgba(37, 99, 235, 0.04);
+}
+
+/* 케이지 좌상단 합계 숫자 (Image 2 스타일: 점선 안쪽 상단에 작고 깔끔하게 표시) */
+.cell-cage-sum {
+  position: absolute;
+  top: 4px;
+  left: 5px;
   font-size: 10px;
-  border: none;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+  font-weight: 700;
+  color: #334155;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cell.single-cage .cell-cage-sum {
+  color: #2563eb;
+  font-weight: 800;
 }
 
 .cell-value {
@@ -490,7 +804,7 @@ body, html {
 }
 
 .cell.user-input .cell-value {
-  color: #1e1b4b;
+  color: #1d4ed8;
   font-weight: 700;
 }
 
@@ -502,7 +816,7 @@ body, html {
   font-weight: 800;
 }
 
-/* Highlighting States */
+/* Highlighting States (Image 2, 8 기준 부드러운 스카이블루) */
 .cell.highlight-crosshair {
   background-color: var(--highlight-crosshair);
 }
@@ -514,7 +828,7 @@ body, html {
 }
 .cell.selected {
   background-color: var(--highlight-selected) !important;
-  outline: 2.5px solid #f59e0b;
+  outline: 2.5px solid #3b82f6;
   outline-offset: -2px;
   z-index: 5;
 }
@@ -522,7 +836,7 @@ body, html {
 /* Pencil Notes */
 .cell-notes {
   position: absolute;
-  inset: 2px;
+  inset: 4px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -552,7 +866,7 @@ body, html {
   display: none;
 }
 
-/* Toolbar */
+/* Action Toolbar (Image 2, 8) */
 .action-toolbar {
   display: flex;
   justify-content: space-around;
@@ -569,7 +883,7 @@ body, html {
   outline: none;
   cursor: pointer;
   color: var(--text-secondary);
-  gap: 3px;
+  gap: 4px;
   position: relative;
   min-width: 58px;
 }
@@ -583,22 +897,22 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s, transform 0.1s;
+  transition: all 0.12s;
 }
 
 .tool-btn:active .tool-icon {
   background: #e2e8f0;
-  transform: scale(0.94);
+  transform: scale(0.92);
 }
 
 .tool-btn.active .tool-icon {
-  background: var(--accent-primary);
+  background: var(--accent-blue);
   color: #ffffff;
 }
 
 .tool-label {
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .badge {
@@ -606,7 +920,7 @@ body, html {
   top: -2px;
   right: -4px;
   font-size: 8px;
-  font-weight: 700;
+  font-weight: 800;
   padding: 1px 4px;
   border-radius: 6px;
   background: #94a3b8;
@@ -617,10 +931,15 @@ body, html {
   position: absolute;
   top: -2px;
   right: -4px;
-  font-size: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
 }
 
-/* Keypad */
+/* Keypad (Image 2, 8: 1-9 볼록한 카드형 키패드) */
 .keypad-container {
   width: 100%;
 }
@@ -637,86 +956,47 @@ body, html {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 52px;
+  height: 56px;
   border: 1px solid #e2e8f0;
   outline: none;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--accent-primary);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: transform 0.08s, background 0.1s;
 }
 
 .key-btn:active {
   transform: scale(0.92);
-  background: #eef2ff;
+  background: #eff6ff;
 }
 
-.key-btn.completed {
-  opacity: 0.22;
-  pointer-events: none;
+.key-main {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #2563eb;
+  line-height: 1;
 }
 
 .key-sub {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-muted);
-  margin-top: -2px;
+  margin-top: 3px;
+}
+
+.key-btn.completed {
+  opacity: 0.25;
+  pointer-events: none;
 }
 
 /* ==========================================================================
-   TABLET PORTRAIT LAYOUT (태블릿 세로 모드, 너비 600px 이상)
-   ========================================================================== */
-@media (min-width: 600px) and (orientation: portrait) {
-  .game-layout {
-    max-width: 640px;
-    padding: 14px 20px 16px 20px;
-  }
-
-  .game-status-dashboard {
-    max-width: 540px;
-    margin: 0 auto 8px auto;
-  }
-
-  .board-frame {
-    width: min(500px, 86vw, 46vh);
-    height: min(500px, 86vw, 46vh);
-    border-radius: 14px;
-  }
-
-  .controls-column {
-    max-width: 520px;
-    margin: 0 auto;
-    width: 100%;
-    gap: 12px;
-  }
-
-  .tablet-only {
-    display: block;
-  }
-
-  .keypad {
-    grid-template-columns: repeat(9, 1fr);
-    gap: 8px;
-  }
-
-  .key-btn {
-    height: 54px;
-    font-size: 1.45rem;
-  }
-}
-
-/* ==========================================================================
-   TABLET LANDSCAPE & DESKTOP STUDIO LAYOUT (태블릿 가로 모드 및 대화면)
-   ★ 화면 너비 768px 이상이면서 가로 모드이거나, 너비 920px 이상인 경우 ★
+   TABLET RESPONSIVE LAYOUT (화면 너비 768px 이상 또는 태블릿 가로 모드)
    ========================================================================== */
 @media (min-width: 768px) and (orientation: landscape), (min-width: 920px) {
   .game-layout {
     max-width: 1100px;
-    padding: 10px 24px 14px 24px;
+    padding: 14px 28px 16px 28px;
     height: 100%;
     margin: 0 auto;
   }
@@ -727,14 +1007,12 @@ body, html {
     width: 100%;
   }
 
-  /* 상단 상태 칩이 너무 넓게 늘어지지 않도록 적정 너비 중앙 정렬 */
-  .game-status-dashboard {
-    max-width: 640px;
-    margin: 0 auto 8px auto;
+  .game-sub-bar {
+    max-width: 600px;
+    margin: 0 auto 6px auto;
     width: 100%;
   }
 
-  /* 보드(좌측)와 컨트롤(우측) 나란히 배치 */
   .game-main-content {
     flex-direction: row;
     align-items: center;
@@ -745,7 +1023,6 @@ body, html {
     width: 100%;
   }
 
-  /* 좌측: 수도쿠 보드 컬럼 */
   .board-column {
     flex: 1 1 540px;
     display: flex;
@@ -755,7 +1032,6 @@ body, html {
     width: auto;
   }
 
-  /* ★ 핵심 버그 수정: 보드가 36px로 쪼그라들지 않도록 명시적 크기 및 flex-shrink: 0 부여 ★ */
   .board-frame {
     width: min(520px, 70vh, 46vw) !important;
     height: min(520px, 70vh, 46vw) !important;
@@ -768,20 +1044,15 @@ body, html {
   }
 
   .cell {
-    font-size: 1.6rem;
+    font-size: 1.65rem;
   }
 
   .cell-cage-sum {
-    font-size: 10.5px;
-    padding: 2px 5px;
-  }
-
-  .cell.single-cage .cell-cage-sum {
     font-size: 11px;
-    padding: 2px 6px;
+    top: 5px;
+    left: 6px;
   }
 
-  /* 우측: 추론 도우미 카드 & 툴바 & 3x3 키패드 */
   .controls-column {
     flex: 0 0 380px;
     width: 380px;
@@ -796,7 +1067,6 @@ body, html {
     display: block;
   }
 
-  /* Logic Assistant Card */
   .logic-assistant-card {
     background: #ffffff;
     border-radius: 16px;
@@ -815,8 +1085,8 @@ body, html {
   .assistant-tag {
     font-size: 0.76rem;
     font-weight: 800;
-    color: #4338ca;
-    background: #e0e7ff;
+    color: #1d4ed8;
+    background: #dbeafe;
     padding: 3px 8px;
     border-radius: 6px;
   }
@@ -824,7 +1094,6 @@ body, html {
   #assistant-cage-name {
     font-size: 0.88rem;
     font-weight: 700;
-    color: var(--text-primary);
   }
 
   .assistant-metrics {
@@ -858,28 +1127,68 @@ body, html {
 
   .assistant-tip-box {
     font-size: 0.82rem;
-    color: #4338ca;
-    background: #f5f3ff;
+    color: #1d4ed8;
+    background: #eff6ff;
     border-radius: 8px;
     padding: 8px 10px;
     line-height: 1.4;
     font-weight: 600;
   }
 
-  /* Tablet Keypad: 3x3 Grid */
   .keypad {
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
   .key-btn {
-    height: 58px;
-    font-size: 1.55rem;
+    height: 60px;
+  }
+
+  .key-main {
+    font-size: 1.6rem;
+  }
+}
+
+/* Tablet Portrait */
+@media (min-width: 600px) and (orientation: portrait) {
+  .game-layout {
+    max-width: 620px;
+    padding: 16px 20px 20px 20px;
+  }
+
+  .game-sub-bar {
+    max-width: 520px;
+    margin: 0 auto 6px auto;
+  }
+
+  .board-frame {
+    width: min(500px, 86vw, 46vh);
+    height: min(500px, 86vw, 46vh);
+  }
+
+  .controls-column {
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .tablet-only {
+    display: block;
+  }
+
+  .keypad {
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+  }
+
+  .key-btn {
+    height: 56px;
   }
 }
 
 /* ==========================================================================
-   3. 전적 및 통계 (Stats View: 4단계 지원)
+   4. 설정 리스트 & 모달 (Images 3, 5, 6, 7 스타일)
    ========================================================================== */
 .stats-container {
   display: flex;
@@ -887,31 +1196,31 @@ body, html {
   min-height: 100%;
   max-width: 520px;
   margin: 0 auto;
-  padding: 20px 20px 24px 20px;
+  padding: 16px 20px 80px 20px;
 }
 
 .stats-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .stats-header h2 {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 800;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 22px;
 }
 
 .stat-card {
-  background: #ffffff;
-  padding: 16px;
+  background: var(--bg-surface);
+  padding: 14px 16px;
   border-radius: 16px;
   border: 1.5px solid #e2e8f0;
   display: flex;
@@ -920,40 +1229,39 @@ body, html {
 }
 
 .stat-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   font-weight: 600;
   margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .section-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .diff-records {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 22px;
 }
 
 .diff-record-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #ffffff;
-  padding: 14px 16px;
+  background: var(--bg-surface);
+  padding: 12px 16px;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .diff-info {
@@ -963,9 +1271,9 @@ body, html {
 }
 
 .diff-tag {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 8px;
 }
 .diff-tag.easy { background: #dcfce7; color: #15803d; }
@@ -974,15 +1282,100 @@ body, html {
 .diff-tag.expert { background: #ede9fe; color: #6d28d9; }
 
 .diff-wins {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   font-weight: 600;
 }
 
 .best-time {
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 800;
+}
+
+/* Settings List Card with iOS-Style Toggles (Image 3, 5, 6) */
+.settings-list-card {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 20px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding-right: 14px;
+}
+
+.s-title {
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--text-primary);
+}
+
+.s-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* iOS Style Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 28px;
+}
+
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+  background-color: #2563eb;
+}
+
+input:checked + .slider::before {
+  transform: translateX(20px);
 }
 
 .stats-actions {
@@ -991,7 +1384,7 @@ body, html {
 }
 
 /* ==========================================================================
-   4. Modals & Overlays
+   5. Modals & Overlays
    ========================================================================== */
 .overlay, .modal-backdrop {
   position: absolute;
@@ -1010,17 +1403,52 @@ body, html {
 }
 
 .glass-card, .modal-card {
-  background: #ffffff;
+  background: var(--bg-surface);
   border-radius: 20px;
-  padding: 24px;
+  padding: 22px;
   width: 100%;
   max-width: 380px;
   text-align: center;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
 }
 
+.modal-settings-card {
+  max-width: 420px;
+  padding: 18px 20px;
+  text-align: left;
+}
+
+.modal-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-settings-header h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.btn-text-action {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.modal-settings-body {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: var(--bg-surface);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
 .glass-card h3, .modal-card h3 {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 800;
   margin-bottom: 6px;
 }
@@ -1063,7 +1491,6 @@ body, html {
   line-height: 1.5;
 }
 
-/* 4 Difficulty Cards Modal */
 .difficulty-options {
   display: flex;
   flex-direction: column;
@@ -1088,9 +1515,9 @@ body, html {
 }
 
 .diff-card-btn.active {
-  border-color: #6366f1;
-  background: #f5f3ff;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .diff-card-header {
@@ -1137,12 +1564,12 @@ body, html {
 }
 
 .btn-primary { 
-  background: var(--accent-gradient); 
+  background: #2563eb; 
   color: #ffffff; 
-  box-shadow: 0 4px 12px var(--accent-glow);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 .btn-primary:active { 
-  background: var(--accent-hover); 
+  background: #1d4ed8; 
 }
 
 .btn-secondary { 
