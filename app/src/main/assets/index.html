@@ -10,18 +10,21 @@
   <div id="app" class="app-root">
 
     <!-- ====================================================================
-         1. 홈 화면 (Home View)
+         1. 홈 화면 (Home View) - 프리미엄 독창적 UI
          ==================================================================== -->
     <section id="view-home" class="view active">
       <div class="home-container">
         <header class="home-header">
-          <div class="brand-logo">
-            <span class="logo-text">S</span>
-            <span class="logo-tag">17</span>
+          <div class="brand-badge-container">
+            <div class="brand-logo">
+              <span class="logo-symbol">Σ</span>
+              <span class="logo-accent">17</span>
+            </div>
+            <div class="pulse-ring"></div>
           </div>
           <h1 class="brand-title">Sumdoku</h1>
-          <p class="brand-subtitle">썸도쿠: 찍지 않고 100% 추론하는 논리 퍼즐</p>
-          <div class="version-chip" id="app-version-chip">v1.0.0</div>
+          <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
+          <div class="version-chip" id="app-version-chip">v1.0.1</div>
         </header>
 
         <main class="home-menu">
@@ -37,7 +40,7 @@
             <div class="btn-icon">⚡</div>
             <div class="btn-content">
               <span class="btn-title">새 게임 시작</span>
-              <span class="btn-desc">초급 · 중급 · 전문가</span>
+              <span class="btn-desc">초급 · 중급 · 고급 · 전문가 (4단계)</span>
             </div>
           </button>
 
@@ -45,7 +48,7 @@
             <div class="btn-icon">📊</div>
             <div class="btn-content">
               <span class="btn-title">전적 및 통계</span>
-              <span class="btn-desc">최단 기록, 승률, 연승 기록</span>
+              <span class="btn-desc">난이도별 최단 기록, 승률, 연승 분석</span>
             </div>
           </button>
 
@@ -53,7 +56,7 @@
             <div class="btn-icon">📖</div>
             <div class="btn-content">
               <span class="btn-title">게임 방법 & 규칙</span>
-              <span class="btn-desc">케이지 합계 및 1칸 힌트 원리</span>
+              <span class="btn-desc">케이지 합계 및 2-3개 앵커 추론 기법</span>
             </div>
           </button>
 
@@ -61,7 +64,7 @@
             <div class="btn-icon">🔄</div>
             <div class="btn-content">
               <span class="btn-title">업데이트 확인</span>
-              <span class="btn-desc" id="update-status-desc">GitHub 최신 릴리스 체크</span>
+              <span class="btn-desc" id="update-status-desc">GitHub Releases 실시간 체크</span>
             </div>
           </button>
         </main>
@@ -75,92 +78,109 @@
     </section>
 
     <!-- ====================================================================
-         2. 게임 화면 (Game View: 폰/태블릿 반응형 분할 지원)
+         2. 게임 화면 (Game View: 폰/태블릿 스튜디오 레이아웃)
          ==================================================================== -->
     <section id="view-game" class="view">
       <div class="game-layout">
 
         <!-- Top Navigation Bar -->
         <header class="game-header">
-          <button id="btn-nav-home" class="icon-btn" title="홈으로">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <button id="btn-nav-home" class="glass-icon-btn" title="홈으로">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </button>
 
-          <div class="game-header-title">
+          <div class="game-header-pill">
             <span id="game-diff-label">EXPERT</span>
           </div>
 
           <div class="game-header-actions">
-            <button id="btn-game-stats" class="icon-btn" title="전적 보기">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <button id="btn-game-stats" class="glass-icon-btn" title="전적 보기">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <line x1="18" y1="20" x2="18" y2="10"></line>
                 <line x1="12" y1="20" x2="12" y2="4"></line>
                 <line x1="6" y1="20" x2="6" y2="14"></line>
               </svg>
             </button>
-            <button id="btn-game-pause" class="icon-btn" title="일시정지">
-              <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-                <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            <button id="btn-game-pause" class="glass-icon-btn" title="일시정지">
+              <svg id="icon-pause" width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1.5"></rect>
+                <rect x="14" y="4" width="4" height="16" rx="1.5"></rect>
               </svg>
-              <svg id="icon-play" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <svg id="icon-play" class="hidden" width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
             </button>
-            <button id="btn-game-restart" class="icon-btn" title="새 게임">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button id="btn-game-restart" class="glass-icon-btn" title="새 게임">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
               </svg>
             </button>
           </div>
         </header>
 
-        <!-- Status Bar (Phone & Tablet) -->
-        <div class="game-status-bar">
-          <div class="status-item mistakes-box">
-            <span class="status-label">실수:</span>
-            <span id="mistakes-count" class="status-value">0/3</span>
+        <!-- Status Dashboard -->
+        <div class="game-status-dashboard">
+          <div class="status-chip mistakes-chip">
+            <span class="chip-label">실수</span>
+            <span id="mistakes-count" class="chip-value">0 / 3</span>
           </div>
-          <div class="status-item timer-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="status-chip anchors-chip">
+            <span class="chip-label">시작 힌트</span>
+            <span id="anchors-count" class="chip-value">2개 확정</span>
+          </div>
+          <div class="status-chip timer-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            <span id="timer-display" class="status-value">00:00</span>
+            <span id="timer-display" class="chip-value">00:00</span>
           </div>
         </div>
 
-        <!-- Main Content (Adaptive: Phone = Column, Tablet = 2-Column Split) -->
+        <!-- Main Content (Adaptive: Phone Column vs Tablet Studio Split) -->
         <div class="game-main-content">
-          <!-- Left: 9x9 Board -->
+          <!-- 9x9 Board View -->
           <div class="board-column">
-            <div class="board-wrapper">
+            <div class="board-frame">
               <div id="sudoku-board" class="sudoku-grid">
-                <!-- 81 cells rendered by JS -->
+                <!-- 81 cells dynamically created -->
               </div>
               <div id="pause-overlay" class="overlay hidden">
-                <div class="overlay-card">
-                  <h2>일시정지됨</h2>
-                  <p>퍼즐 진행이 멈췄습니다.</p>
+                <div class="glass-card">
+                  <h3>일시정지</h3>
+                  <p>타이머가 멈추었습니다.</p>
                   <button id="btn-resume" class="btn btn-primary">계속하기</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Right (Tablet) / Bottom (Phone): Controls & Keypad -->
+          <!-- Controls & Keypad (Tablet Sidebar / Mobile Bottom) -->
           <div class="controls-column">
-            <!-- Tablet Cage Helper Card -->
-            <div class="cage-helper-card tablet-only" id="tablet-cage-card">
-              <div class="helper-title">선택된 케이지 정보</div>
-              <div class="helper-details">
-                <span id="cage-info-cells">셀: -</span>
-                <span id="cage-info-sum">목표 합계: -</span>
+            <!-- Tablet Assistant Card -->
+            <div class="logic-assistant-card tablet-only" id="tablet-assistant-card">
+              <div class="assistant-header">
+                <span class="assistant-tag">추론 도우미</span>
+                <span id="assistant-cage-name">케이지 분석</span>
               </div>
-              <div class="helper-tip" id="cage-info-tip">칸을 선택하면 정보가 표시됩니다.</div>
+              <div class="assistant-metrics">
+                <div class="metric-box">
+                  <span class="m-label">칸 수</span>
+                  <span class="m-val" id="assistant-cells">-</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">목표 합</span>
+                  <span class="m-val" id="assistant-target">-</span>
+                </div>
+                <div class="metric-box">
+                  <span class="m-label">남은 합</span>
+                  <span class="m-val" id="assistant-rem">-</span>
+                </div>
+              </div>
+              <div class="assistant-tip-box" id="assistant-tip">칸을 터치하면 실시간 케이지 분석이 제공됩니다.</div>
             </div>
 
             <!-- Action Toolbar (Undo, Erase, Notes, Hint) -->
@@ -208,18 +228,45 @@
               </button>
             </nav>
 
-            <!-- Keypad 1 - 9 -->
+            <!-- Modern Tactile Keypad (1 - 9) -->
             <div class="keypad-container">
               <div class="keypad">
-                <button class="key-btn" data-num="1">1<span class="key-sub" id="rem-1">9</span></button>
-                <button class="key-btn" data-num="2">2<span class="key-sub" id="rem-2">9</span></button>
-                <button class="key-btn" data-num="3">3<span class="key-sub" id="rem-3">9</span></button>
-                <button class="key-btn" data-num="4">4<span class="key-sub" id="rem-4">9</span></button>
-                <button class="key-btn" data-num="5">5<span class="key-sub" id="rem-5">9</span></button>
-                <button class="key-btn" data-num="6">6<span class="key-sub" id="rem-6">9</span></button>
-                <button class="key-btn" data-num="7">7<span class="key-sub" id="rem-7">9</span></button>
-                <button class="key-btn" data-num="8">8<span class="key-sub" id="rem-8">9</span></button>
-                <button class="key-btn" data-num="9">9<span class="key-sub" id="rem-9">9</span></button>
+                <button class="key-btn" data-num="1">
+                  <span class="key-main">1</span>
+                  <span class="key-sub" id="rem-1">9</span>
+                </button>
+                <button class="key-btn" data-num="2">
+                  <span class="key-main">2</span>
+                  <span class="key-sub" id="rem-2">9</span>
+                </button>
+                <button class="key-btn" data-num="3">
+                  <span class="key-main">3</span>
+                  <span class="key-sub" id="rem-3">9</span>
+                </button>
+                <button class="key-btn" data-num="4">
+                  <span class="key-main">4</span>
+                  <span class="key-sub" id="rem-4">9</span>
+                </button>
+                <button class="key-btn" data-num="5">
+                  <span class="key-main">5</span>
+                  <span class="key-sub" id="rem-5">9</span>
+                </button>
+                <button class="key-btn" data-num="6">
+                  <span class="key-main">6</span>
+                  <span class="key-sub" id="rem-6">9</span>
+                </button>
+                <button class="key-btn" data-num="7">
+                  <span class="key-main">7</span>
+                  <span class="key-sub" id="rem-7">9</span>
+                </button>
+                <button class="key-btn" data-num="8">
+                  <span class="key-main">8</span>
+                  <span class="key-sub" id="rem-8">9</span>
+                </button>
+                <button class="key-btn" data-num="9">
+                  <span class="key-main">9</span>
+                  <span class="key-sub" id="rem-9">9</span>
+                </button>
               </div>
             </div>
           </div>
@@ -229,13 +276,13 @@
     </section>
 
     <!-- ====================================================================
-         3. 전적 및 통계 화면 (Stats View)
+         3. 전적 및 통계 화면 (Stats View: 4개 난이도 지원)
          ==================================================================== -->
     <section id="view-stats" class="view">
       <div class="stats-container">
         <header class="stats-header">
-          <button id="btn-stats-back" class="icon-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <button id="btn-stats-back" class="glass-icon-btn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
@@ -248,7 +295,7 @@
           <!-- Overview Cards -->
           <div class="stats-grid">
             <div class="stat-card">
-              <span class="stat-label">총 게임 수</span>
+              <span class="stat-label">총 게임</span>
               <span class="stat-value" id="stat-total-games">0</span>
             </div>
             <div class="stat-card">
@@ -265,8 +312,8 @@
             </div>
           </div>
 
-          <!-- Difficulty Breakdown -->
-          <h3 class="section-title">난이도별 최단 기록</h3>
+          <!-- 4 Difficulty Breakdown -->
+          <h3 class="section-title">난이도별 최단 기록 (4단계)</h3>
           <div class="diff-records">
             <div class="diff-record-item">
               <div class="diff-info">
@@ -286,6 +333,14 @@
 
             <div class="diff-record-item">
               <div class="diff-info">
+                <span class="diff-tag hard">고급</span>
+                <span class="diff-wins" id="stat-hard-wins">0승</span>
+              </div>
+              <div class="best-time" id="stat-hard-best">기록 없음</div>
+            </div>
+
+            <div class="diff-record-item">
+              <div class="diff-info">
                 <span class="diff-tag expert">전문가</span>
                 <span class="diff-wins" id="stat-expert-wins">0승</span>
               </div>
@@ -301,21 +356,49 @@
     </section>
 
     <!-- ====================================================================
-         4. 모달들 (새 게임 난이도, 게임 방법, 업데이트 안내)
+         4. 모달들 (4단계 난이도 선택, 규칙, 업데이트)
          ==================================================================== -->
-    <!-- New Game Modal -->
+    <!-- New Game Modal (4 Difficulties) -->
     <div id="modal-difficulty" class="modal-backdrop hidden">
       <div class="modal-card">
         <h3>난이도 선택</h3>
-        <p>100% 논리 추론으로 찍지 않고 해결 가능하도록 설계됩니다.</p>
+        <p>어떤 난이도든 찍지 않고 100% 추론만으로 정답에 도달합니다.</p>
         <div class="difficulty-options">
-          <button class="diff-btn" data-diff="easy">초급 (Easy) - 6개 시작 힌트</button>
-          <button class="diff-btn" data-diff="medium">중급 (Medium) - 5개 시작 힌트</button>
-          <button class="diff-btn active" data-diff="expert">전문가 (Expert) - 4개 시작 힌트</button>
+          <button class="diff-card-btn" data-diff="easy">
+            <div class="diff-card-header">
+              <span class="diff-tag easy">초급 (Easy)</span>
+              <span class="diff-hint-count">7~8개 앵커</span>
+            </div>
+            <span class="diff-card-desc">직관적인 단서와 빠른 소거법 중심</span>
+          </button>
+
+          <button class="diff-card-btn" data-diff="medium">
+            <div class="diff-card-header">
+              <span class="diff-tag medium">중급 (Medium)</span>
+              <span class="diff-hint-count">5~6개 앵커</span>
+            </div>
+            <span class="diff-card-desc">케이지 합 조합과 균형 잡힌 추론</span>
+          </button>
+
+          <button class="diff-card-btn" data-diff="hard">
+            <div class="diff-card-header">
+              <span class="diff-tag hard">고급 (Hard)</span>
+              <span class="diff-hint-count">4개 앵커</span>
+            </div>
+            <span class="diff-card-desc">후보군 소거와 숨은 단일 후보 활용</span>
+          </button>
+
+          <button class="diff-card-btn active" data-diff="expert">
+            <div class="diff-card-header">
+              <span class="diff-tag expert">전문가 (Expert)</span>
+              <span class="diff-hint-count highlight-expert">★ 2~3개 확정</span>
+            </div>
+            <span class="diff-card-desc">극소 앵커 단서 · 순수 연역 논리의 정수</span>
+          </button>
         </div>
         <div class="modal-footer">
           <button id="btn-diff-cancel" class="btn btn-secondary">취소</button>
-          <button id="btn-diff-start" class="btn btn-primary">시작하기</button>
+          <button id="btn-diff-start" class="btn btn-primary">게임 시작</button>
         </div>
       </div>
     </div>
@@ -323,12 +406,12 @@
     <!-- Rules Modal -->
     <div id="modal-rules" class="modal-backdrop hidden">
       <div class="modal-card modal-rules-card">
-        <h3>썸도쿠(Sumdoku) 규칙</h3>
+        <h3>Sumdoku (썸도쿠) 플레이 가이드</h3>
         <div class="rules-body">
-          <p><strong>1. 기본 수도쿠 제약</strong>: 모든 행, 열, 3×3 박스에 1부터 9까지의 숫자가 중복 없이 들어갑니다.</p>
-          <p><strong>2. 케이지(점선 영역) 규칙</strong>: 각 점선 테두리로 묶인 칸들의 숫자 합은 좌측 상단에 적힌 숫자와 같아야 하며, 케이지 안에서는 같은 숫자가 중복될 수 없습니다.</p>
-          <p><strong>3. 1칸 시작 힌트</strong>: 판이 비어있지만 1칸짜리 케이지(예: 좌상단에 7)는 그 칸의 숫자가 확정 7이므로, 여기서부터 논리적 추론을 시작할 수 있습니다!</p>
-          <p><strong>4. 찍기 금지</strong>: 모든 문제는 오직 소거법과 연역적 추론만으로 100% 정답에 도달하도록 보장됩니다.</p>
+          <p><strong>1. 기본 수도쿠 규칙</strong>: 모든 행, 열, 3×3 박스에 1부터 9까지의 숫자가 중복 없이 1개씩 들어갑니다.</p>
+          <p><strong>2. 케이지(점선 영역) 규칙</strong>: 각 점선 구역 내부 숫자의 총합은 좌상단에 적힌 목표 합계와 같아야 하며, 같은 케이지 내부에서는 숫자가 중복될 수 없습니다.</p>
+          <p><strong>3. 시작 앵커 힌트</strong>: 판은 처음에 완전히 비어있습니다. 단, 1칸짜리 케이지(예: 좌상단 7)는 그 칸의 숫자가 확정 7이므로, 이 칸들을 출발점으로 삼아 연역적 추론을 전개합니다.</p>
+          <p><strong>4. 전문가 모드의 2~3개 앵커</strong>: 전문가 난이도는 단 2~3개의 1칸 확정 단서만 주어지지만, 결코 임의로 찍을 필요 없이 100% 논리만으로 완벽히 풀리도록 설계되었습니다.</p>
         </div>
         <div class="modal-footer">
           <button id="btn-rules-close" class="btn btn-primary">확인</button>

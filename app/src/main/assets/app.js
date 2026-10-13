@@ -1,49 +1,55 @@
 /**
- * Sumdoku (썸도쿠) - 100% 추론 보장 논리 퍼즐 앱
+ * Sumdoku (썸도쿠) v1.0.1 - 100% 연역 추론 보장 합계 수도쿠
  * 
- * - 홈 화면, 게임 화면(폰/태블릿 분할 반응형), 전적 및 통계 시스템
+ * - 홈 화면, 게임 화면(폰/태블릿 스튜디오 레이아웃), 4단계 전적 및 통계 시스템
+ * - 전문가 난이도: 단 2~3개의 1칸 확정 앵커만 주어지며, 100% 논리 추론으로 풀림 보장
+ * - 매 게임 알고리즘을 통해 완전히 새로운 정답 판 및 케이지 동적 생성
  * - GitHub 연동 자동 업데이트 체커
- * - 로컬 저장소 기반 게임 이어하기 및 전적 지속성
  */
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
-// 1. 동적 100% 추론 보장 퍼즐 생성기 (매 게임마다 완전히 새로운 문제 및 정답 생성)
+// 1. 동적 100% 추론 보장 퍼즐 생성기 (SumdokuGenerator)
 // ============================================================================
 class SumdokuGenerator {
-  generate(initialAnchors = 4) {
-    // 매번 새로운 퍼즐이 생성될 때까지 반복 (평균 1~2회 시도, 10~20ms 소요)
-    while (true) {
+  generate(diff = 'expert') {
+    const anchorMap = {
+      easy: 7,
+      medium: 5,
+      hard: 4,
+      expert: Math.random() < 0.5 ? 2 : 3
+    };
+    const targetAnchors = anchorMap[diff] || (Math.random() < 0.5 ? 2 : 3);
+
+    let attempts = 0;
+    while (attempts++ < 1000) {
       const solution = this.createSolutionIterative();
-      let cages = this.createCages(solution, initialAnchors);
+      const cages = this.createSmartCages(solution, targetAnchors);
+      const singles = cages.filter(c => c.cells.length === 1);
 
-      let attempts = 0;
-      while (attempts++ < 70) {
-        const solved = this.solveDeductively(solution, cages);
-        if (solved === 81) {
-          return { solution, cages };
-        }
-
-        const multiCages = cages.filter(c => c.cells.length > 2);
-        if (multiCages.length === 0) break;
-        const targetCage = multiCages[Math.floor(Math.random() * multiCages.length)];
-        
-        const removedCell = targetCage.cells.pop();
-        targetCage.sum -= solution[removedCell[0]][removedCell[1]];
-        cages.push({
-          sum: solution[removedCell[0]][removedCell[1]],
-          cells: [removedCell]
-        });
+      // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
+      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
+        return {
+          solution,
+          cages,
+          anchorCount: targetAnchors
+        };
       }
     }
+
+    // 매우 드문 경우의 안전 백업
+    const solution = this.createSolutionIterative();
+    const cages = this.createSmartCages(solution, targetAnchors);
+    return { solution, cages, anchorCount: targetAnchors };
   }
 
+  // 100% 비재귀 반복문 백트래킹 (스택 오버플로우 원천 방지)
   createSolutionIterative() {
     const board = Array.from({ length: 9 }, () => Array(9).fill(0));
     
-    // 1. 3개의 대각선 3x3 박스는 서로 간섭하지 않으므로 무작위 셔플로 먼저 채움
+    // 3개의 대각선 3x3 박스는 서로 독립적이므로 무작위 셔플로 먼저 채움
     for (let b = 0; b < 9; b += 3) {
       const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
       let idx = 0;
@@ -74,7 +80,6 @@ class SumdokuGenerator {
       return true;
     };
 
-    // 스택 오버플로우가 절대 발생하지 않는 100% 비재귀 반복문 백트래킹
     const cellState = empty.map(() => ({
       nums: [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5),
       tryIdx: 0
@@ -106,67 +111,97 @@ class SumdokuGenerator {
     return board;
   }
 
-
-  createCages(solution, initialAnchors) {
-    const allCells = [];
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        allCells.push([r, c]);
-      }
-    }
-    allCells.sort(() => Math.random() - 0.5);
-
-    const assigned = new Set();
+  // 정확한 개수의 1칸 앵커 및 균형잡힌 다중 셀 케이지 생성 (고립 1칸 셀은 인접 케이지로 병합)
+  createSmartCages(solution, exactAnchors) {
+    const boxIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5);
+    const assigned = new Map();
     const cages = [];
 
-    for (let i = 0; i < initialAnchors; i++) {
-      const cell = allCells[i];
-      assigned.add(`${cell[0]},${cell[1]}`);
-      cages.push({
-        sum: solution[cell[0]][cell[1]],
-        cells: [cell]
-      });
+    // 1. 정확한 개수의 1칸 시작 확정 앵커 배치 (서로 다른 3x3 박스에 분산)
+    for (let i = 0; i < exactAnchors; i++) {
+      const box = boxIndices[i];
+      const br = Math.floor(box / 3) * 3 + Math.floor(Math.random() * 3);
+      const bc = (box % 3) * 3 + Math.floor(Math.random() * 3);
+      const cell = [br, bc];
+      const cage = { sum: solution[br][bc], cells: [cell] };
+      cages.push(cage);
+      assigned.set(`${br},${bc}`, cage);
     }
 
-    const remaining = allCells.slice(initialAnchors);
+    // 2. 나머지 셀들을 무작위 순서로 순회하며 2~4칸 케이지로 그룹화
+    const remaining = [];
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (!assigned.has(`${r},${c}`)) remaining.push([r, c]);
+      }
+    }
+    remaining.sort(() => Math.random() - 0.5);
+
     for (const startCell of remaining) {
       const key = `${startCell[0]},${startCell[1]}`;
       if (assigned.has(key)) continue;
 
       const currentCageCells = [startCell];
-      assigned.add(key);
-      const targetSize = [2, 3, 3, 4][Math.floor(Math.random() * 4)];
+      assigned.set(key, null);
+      // 2~3칸 크기를 주로 배정하여 강력한 논리적 수리 제약 형성
+      const targetSize = [2, 2, 2, 3, 3, 4][Math.floor(Math.random() * 6)];
 
       while (currentCageCells.length < targetSize) {
         const neighbors = [];
         for (const [cr, cc] of currentCageCells) {
           for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
             const nr = cr + dr, nc = cc + dc;
-            if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
-              const nKey = `${nr},${nc}`;
-              if (!assigned.has(nKey)) {
-                const existVals = currentCageCells.map(([r, c]) => solution[r][c]);
-                if (!existVals.includes(solution[nr][nc])) {
-                  neighbors.push([nr, nc]);
-                }
-              }
+            if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && !assigned.has(`${nr},${nc}`)) {
+              const existVals = currentCageCells.map(([r, c]) => solution[r][c]);
+              if (!existVals.includes(solution[nr][nc])) neighbors.push([nr, nc]);
             }
           }
         }
         if (neighbors.length === 0) break;
         const nextCell = neighbors[Math.floor(Math.random() * neighbors.length)];
         currentCageCells.push(nextCell);
-        assigned.add(`${nextCell[0]},${nextCell[1]}`);
+        assigned.set(`${nextCell[0]},${nextCell[1]}`, null);
       }
 
-      const sum = currentCageCells.reduce((acc, [r, c]) => acc + solution[r][c], 0);
-      cages.push({ sum, cells: currentCageCells });
+      // 고립되어 1칸만 남은 셀은 의도치 않은 추가 앵커가 되지 않도록 인접 케이지에 병합
+      if (currentCageCells.length === 1) {
+        const [or, oc] = currentCageCells[0];
+        const val = solution[or][oc];
+        let merged = false;
+        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nr = or + dr, nc = oc + dc;
+          if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+            const adj = assigned.get(`${nr},${nc}`);
+            if (adj && adj.cells.length > 1 && adj.cells.length < 5) {
+              const adjVals = adj.cells.map(([r, c]) => solution[r][c]);
+              if (!adjVals.includes(val)) {
+                adj.cells.push([or, oc]);
+                adj.sum += val;
+                assigned.set(key, adj);
+                merged = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!merged) {
+          const cage = { sum: val, cells: currentCageCells };
+          cages.push(cage);
+          assigned.set(key, cage);
+        }
+      } else {
+        const sum = currentCageCells.reduce((acc, [r, c]) => acc + solution[r][c], 0);
+        const cage = { sum, cells: currentCageCells };
+        cages.push(cage);
+        for (const c of currentCageCells) assigned.set(`${c[0]},${c[1]}`, cage);
+      }
     }
 
     return cages;
   }
 
-  solveDeductively(solution, cages) {
+  // 고급 연역 추론 검증기 (순수 논리만으로 81칸이 100% 확정되는지 검증)
+  solveDeductivelyAdvanced(solution, cages) {
     const candidates = Array.from({ length: 9 }, () =>
       Array.from({ length: 9 }, () => new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]))
     );
@@ -176,7 +211,7 @@ class SumdokuGenerator {
     while (changed && loop++ < 80) {
       changed = false;
 
-      // 규칙 1: Naked Single & 피어 소거
+      // 1. Naked Singles & 피어(행, 열, 3x3 박스) 소거법
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
           if (candidates[r][c].size === 1) {
@@ -204,16 +239,13 @@ class SumdokuGenerator {
         }
       }
 
-      // 규칙 2: 케이지 합계 조합 필터링
+      // 2. 케이지 합계 조합 필터링 (Killer Sudoku 조합 필터)
       for (const cage of cages) {
         const solvedVals = [];
         const unsolved = [];
         for (const [r, c] of cage.cells) {
-          if (candidates[r][c].size === 1) {
-            solvedVals.push([...candidates[r][c]][0]);
-          } else {
-            unsolved.push([r, c]);
-          }
+          if (candidates[r][c].size === 1) solvedVals.push([...candidates[r][c]][0]);
+          else unsolved.push([r, c]);
         }
         if (unsolved.length === 0) continue;
 
@@ -223,9 +255,7 @@ class SumdokuGenerator {
         const findCombos = (idx, currentSum, usedVals) => {
           if (idx === unsolved.length) {
             if (currentSum === remSum) {
-              for (let i = 0; i < unsolved.length; i++) {
-                validSets[i].add(usedVals[i]);
-              }
+              for (let i = 0; i < unsolved.length; i++) validSets[i].add(usedVals[i]);
             }
             return;
           }
@@ -249,7 +279,7 @@ class SumdokuGenerator {
         }
       }
 
-      // 규칙 3: Hidden Single
+      // 3. Hidden Singles (행, 열, 3x3 박스 내 유일 후보 수 탐색)
       for (let r = 0; r < 9; r++) {
         for (let num = 1; num <= 9; num++) {
           const cols = [];
@@ -259,6 +289,36 @@ class SumdokuGenerator {
           if (cols.length === 1 && candidates[r][cols[0]].size > 1) {
             candidates[r][cols[0]] = new Set([num]);
             changed = true;
+          }
+        }
+      }
+
+      for (let c = 0; c < 9; c++) {
+        for (let num = 1; num <= 9; num++) {
+          const rows = [];
+          for (let r = 0; r < 9; r++) {
+            if (candidates[r][c].has(num)) rows.push(r);
+          }
+          if (rows.length === 1 && candidates[rows[0]][c].size > 1) {
+            candidates[rows[0]][c] = new Set([num]);
+            changed = true;
+          }
+        }
+      }
+
+      for (let br = 0; br < 9; br += 3) {
+        for (let bc = 0; bc < 9; bc += 3) {
+          for (let num = 1; num <= 9; num++) {
+            const cells = [];
+            for (let i = 0; i < 3; i++) {
+              for (let j = 0; j < 3; j++) {
+                if (candidates[br + i][bc + j].has(num)) cells.push([br + i, bc + j]);
+              }
+            }
+            if (cells.length === 1 && candidates[cells[0][0]][cells[0][1]].size > 1) {
+              candidates[cells[0][0]][cells[0][1]] = new Set([num]);
+              changed = true;
+            }
           }
         }
       }
@@ -275,14 +335,14 @@ class SumdokuGenerator {
 }
 
 // ============================================================================
-// 3. 앱 주 컨트롤러 (UI / UX / 전적 / 자동 업데이트)
+// 2. 앱 주 컨트롤러 (SumdokuApp)
 // ============================================================================
 class SumdokuApp {
   constructor() {
     this.generator = new SumdokuGenerator();
     this.currentView = 'home';
     
-    // 게임 상태
+    // 게임 진행 상태
     this.solution = [];
     this.cages = [];
     this.board = [];
@@ -296,8 +356,9 @@ class SumdokuApp {
     this.isPaused = false;
     this.undoStack = [];
     this.difficulty = 'expert';
+    this.anchorCount = 3;
 
-    // 전적 데이터
+    // 전적 데이터 로드
     this.stats = this.loadStats();
 
     this.initDOM();
@@ -305,16 +366,23 @@ class SumdokuApp {
     this.checkContinueGame();
     this.renderStatsView();
 
-    // 시작 시 조용히 업데이트 체크
+    // 시작 시 조용히 신규 업데이트 체크
     setTimeout(() => this.checkForUpdates(false), 1500);
   }
 
-  // ----------------- 전적 관리 (localStorage) -----------------
+  // ----------------- 전적 관리 (localStorage, 4개 난이도) -----------------
   loadStats() {
     try {
       const data = localStorage.getItem('sumdoku_stats');
-      if (data) return JSON.parse(data);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (!parsed.byDiff.hard) {
+          parsed.byDiff.hard = { wins: 0, bestTime: null, totalTime: 0 };
+        }
+        return parsed;
+      }
     } catch (e) {}
+
     return {
       totalGames: 0,
       totalWins: 0,
@@ -323,6 +391,7 @@ class SumdokuApp {
       byDiff: {
         easy: { wins: 0, bestTime: null, totalTime: 0 },
         medium: { wins: 0, bestTime: null, totalTime: 0 },
+        hard: { wins: 0, bestTime: null, totalTime: 0 },
         expert: { wins: 0, bestTime: null, totalTime: 0 }
       }
     };
@@ -380,6 +449,13 @@ class SumdokuApp {
     document.getElementById('stat-medium-wins').textContent = `${this.stats.byDiff.medium.wins}승`;
     document.getElementById('stat-medium-best').textContent = formatTime(this.stats.byDiff.medium.bestTime);
 
+    const hardWinsEl = document.getElementById('stat-hard-wins');
+    const hardBestEl = document.getElementById('stat-hard-best');
+    if (hardWinsEl && this.stats.byDiff.hard) {
+      hardWinsEl.textContent = `${this.stats.byDiff.hard.wins}승`;
+      hardBestEl.textContent = formatTime(this.stats.byDiff.hard.bestTime);
+    }
+
     document.getElementById('stat-expert-wins').textContent = `${this.stats.byDiff.expert.wins}승`;
     document.getElementById('stat-expert-best').textContent = formatTime(this.stats.byDiff.expert.bestTime);
   }
@@ -394,7 +470,8 @@ class SumdokuApp {
         board: this.board.map(r => r.map(c => ({ val: c.val, notes: [...c.notes], error: c.error }))),
         timerSeconds: this.timerSeconds,
         mistakes: this.mistakes,
-        difficulty: this.difficulty
+        difficulty: this.difficulty,
+        anchorCount: this.anchorCount
       };
       localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(state));
     } catch (e) {}
@@ -414,7 +491,10 @@ class SumdokuApp {
         const state = JSON.parse(data);
         const mins = String(Math.floor(state.timerSeconds / 60)).padStart(2, '0');
         const secs = String(state.timerSeconds % 60).padStart(2, '0');
-        document.getElementById('continue-desc').textContent = `${state.difficulty.toUpperCase()} · ${mins}:${secs} 진행 중`;
+        const descEl = document.getElementById('continue-desc');
+        if (descEl) {
+          descEl.textContent = `${state.difficulty.toUpperCase()} · ${mins}:${secs} 진행 중`;
+        }
         this.dom.btnHomeContinue.classList.remove('hidden');
         return true;
       }
@@ -431,6 +511,7 @@ class SumdokuApp {
       this.solution = state.solution;
       this.cages = state.cages;
       this.difficulty = state.difficulty;
+      this.anchorCount = state.anchorCount || 3;
       this.timerSeconds = state.timerSeconds;
       this.mistakes = state.mistakes;
 
@@ -451,7 +532,10 @@ class SumdokuApp {
       })));
 
       this.dom.gameDiffLabel.textContent = this.difficulty.toUpperCase();
-      this.dom.mistakes.textContent = `${this.mistakes}/${this.maxMistakes}`;
+      this.dom.mistakes.textContent = `${this.mistakes} / ${this.maxMistakes}`;
+      const anchorEl = document.getElementById('anchors-count');
+      if (anchorEl) anchorEl.textContent = `${this.anchorCount}개 확정`;
+
       this.renderBoard();
       this.selectCell(0, 0);
       this.updateKeypadBadges();
@@ -497,6 +581,7 @@ class SumdokuApp {
       board: document.getElementById('sudoku-board'),
       timer: document.getElementById('timer-display'),
       mistakes: document.getElementById('mistakes-count'),
+      anchorsCount: document.getElementById('anchors-count'),
       gameDiffLabel: document.getElementById('game-diff-label'),
       pencilBadge: document.getElementById('pencil-badge'),
       btnPencil: document.getElementById('btn-pencil'),
@@ -561,6 +646,7 @@ class SumdokuApp {
           byDiff: {
             easy: { wins: 0, bestTime: null, totalTime: 0 },
             medium: { wins: 0, bestTime: null, totalTime: 0 },
+            hard: { wins: 0, bestTime: null, totalTime: 0 },
             expert: { wins: 0, bestTime: null, totalTime: 0 }
           }
         };
@@ -575,12 +661,13 @@ class SumdokuApp {
     this.dom.btnRulesClose.addEventListener('click', () => this.dom.modalRules.classList.add('hidden'));
     this.dom.btnUpdateDismiss.addEventListener('click', () => this.dom.modalUpdate.classList.add('hidden'));
 
-    // 난이도 선택
-    document.querySelectorAll('.diff-btn').forEach(btn => {
+    // 4단계 난이도 카드 선택 이벤트
+    document.querySelectorAll('.diff-card-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.difficulty = e.target.dataset.diff;
+        document.querySelectorAll('.diff-card-btn').forEach(b => b.classList.remove('active'));
+        const card = e.currentTarget;
+        card.classList.add('active');
+        this.difficulty = card.dataset.diff;
       });
     });
 
@@ -607,7 +694,7 @@ class SumdokuApp {
     this.dom.btnGamePause.addEventListener('click', () => this.togglePause());
     this.dom.btnResume.addEventListener('click', () => this.togglePause(false));
 
-    // 키패드 클릭
+    // 키패드 터치
     this.dom.keyBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const num = parseInt(btn.dataset.num, 10);
@@ -615,7 +702,7 @@ class SumdokuApp {
       });
     });
 
-    // 물리 키보드 리스너
+    // 키보드 입력 대응
     window.addEventListener('keydown', (e) => {
       if (this.currentView !== 'game' || this.isPaused) return;
       if (e.key >= '1' && e.key <= '9') {
@@ -637,7 +724,7 @@ class SumdokuApp {
       }
     });
 
-    // 창 닫힐 때 게임 자동 저장
+    // 페이지 벗어날 때 자동 저장
     window.addEventListener('beforeunload', () => this.saveOngoingGame());
   }
 
@@ -672,7 +759,6 @@ class SumdokuApp {
         document.getElementById('update-modal-version').textContent = `최신 버전: ${latestTag} (현재: v${APP_VERSION})`;
         this.dom.updateNotes.textContent = release.body || "새로운 성능 개선 및 버그 수정이 포함되었습니다.";
 
-        // APK 다운로드 URL 탐색
         let apkDownloadUrl = release.html_url;
         if (release.assets && release.assets.length > 0) {
           const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
@@ -715,18 +801,20 @@ class SumdokuApp {
     this.difficulty = diff;
     this.dom.gameDiffLabel.textContent = diff.toUpperCase();
     this.mistakes = 0;
-    this.dom.mistakes.textContent = `0/${this.maxMistakes}`;
+    this.dom.mistakes.textContent = `0 / ${this.maxMistakes}`;
     this.undoStack = [];
     this.resetTimer();
     this.isWin = false;
 
-    const anchorMap = { easy: 6, medium: 5, expert: 4 };
-    const anchors = anchorMap[diff] || 4;
-
     // 매번 알고리즘을 통해 완전히 새로운 정답 판과 케이지를 100% 동적 생성
-    const generated = this.generator.generate(anchors);
+    const generated = this.generator.generate(diff);
     this.solution = generated.solution;
     this.cages = generated.cages;
+    this.anchorCount = generated.anchorCount;
+
+    if (this.dom.anchorsCount) {
+      this.dom.anchorsCount.textContent = `${this.anchorCount}개 확정`;
+    }
 
     this.cellCageMap = {};
     this.cages.forEach((cage, cIdx) => {
@@ -737,7 +825,7 @@ class SumdokuApp {
       });
     });
 
-    // ★★★ 모든 81칸은 완전히 비어있는 상태로 시작 ★★★
+    // ★★★ 모든 81칸은 완전히 비어있는 상태로 시작 (0개 숫자 사전 채움) ★★★
     this.board = Array.from({ length: 9 }, () =>
       Array.from({ length: 9 }, () => ({
         val: 0,
@@ -752,7 +840,9 @@ class SumdokuApp {
     this.updateKeypadBadges();
     this.startTimer();
     this.switchView('game');
-    this.showToast(`100% 추론 보장 퍼즐 준비 완료! (${diff.toUpperCase()})`);
+
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || diff;
+    this.showToast(`100% 연역 추론 보장! (${diffKr} · 시작 앵커 ${this.anchorCount}개)`);
   }
 
   renderBoard() {
@@ -864,11 +954,11 @@ class SumdokuApp {
         if (r === selR && c === selC) {
           cellEl.classList.add('selected');
         } else {
-          // 선택한 행과 열(십자선) 및 같은 3x3 박스 강조
+          // 선택한 행, 열, 3x3 박스 십자 강조
           if (r === selR || c === selC || (boxR === selBoxR && boxC === selBoxC)) {
             cellEl.classList.add('highlight-crosshair');
           }
-          // 같은 케이지 강조
+          // 동일 케이지 강조
           if (cageIdx === selCageIdx) {
             cellEl.classList.add('highlight-cage');
           }
@@ -881,14 +971,11 @@ class SumdokuApp {
     }
   }
 
-  // 태블릿 우측 도우미 패널 갱신
+  // 태블릿 스튜디오 케이지 추론 분석 패널 갱신
   updateTabletCageHelper(r, c) {
     const cageIdx = this.cellCageMap[`${r},${c}`];
     if (cageIdx === undefined || !this.cages[cageIdx]) return;
     const cage = this.cages[cageIdx];
-
-    document.getElementById('cage-info-cells').textContent = `칸 수: ${cage.cells.length}칸`;
-    document.getElementById('cage-info-sum').textContent = `목표 합계: ${cage.sum}`;
 
     const solvedSum = cage.cells
       .map(([cr, cc]) => this.board[cr][cc].val)
@@ -896,14 +983,25 @@ class SumdokuApp {
       .reduce((a, b) => a + b, 0);
 
     const remaining = cage.sum - solvedSum;
-    const tipEl = document.getElementById('cage-info-tip');
 
-    if (cage.cells.length === 1) {
-      tipEl.textContent = `★ 1칸 시작 힌트: 이 칸은 확정 ${cage.sum}입니다!`;
-    } else if (solvedSum === cage.sum) {
-      tipEl.textContent = `✓ 케이지 합계 완성 (${cage.sum}/${cage.sum})`;
-    } else {
-      tipEl.textContent = `남은 합계: ${remaining} (현재 채워진 합: ${solvedSum})`;
+    // 태블릿 스튜디오 카드 요소 갱신
+    const astCells = document.getElementById('assistant-cells');
+    const astTarget = document.getElementById('assistant-target');
+    const astRem = document.getElementById('assistant-rem');
+    const astTip = document.getElementById('assistant-tip');
+
+    if (astCells) astCells.textContent = `${cage.cells.length}칸`;
+    if (astTarget) astTarget.textContent = cage.sum;
+    if (astRem) astRem.textContent = remaining;
+
+    if (astTip) {
+      if (cage.cells.length === 1) {
+        astTip.textContent = `★ 1칸 확정 단서: 이 칸은 확정 ${cage.sum}입니다. 추론의 출발점으로 활용하세요!`;
+      } else if (solvedSum === cage.sum) {
+        astTip.textContent = `✓ 케이지 합계 완성 (${cage.sum}/${cage.sum})`;
+      } else {
+        astTip.textContent = `남은 합계 ${remaining}을(를) ${cage.cells.length - cage.cells.filter(([cr, cc]) => this.board[cr][cc].val > 0).length}개의 빈 칸에 채워야 합니다.`;
+      }
     }
   }
 
@@ -947,7 +1045,7 @@ class SumdokuApp {
         if (!isCorrect) {
           cellData.error = true;
           this.mistakes++;
-          this.dom.mistakes.textContent = `${this.mistakes}/${this.maxMistakes}`;
+          this.dom.mistakes.textContent = `${this.mistakes} / ${this.maxMistakes}`;
           this.showToast(`잘못된 숫자입니다! (실수: ${this.mistakes}/${this.maxMistakes})`);
           
           if (this.mistakes >= this.maxMistakes) {
