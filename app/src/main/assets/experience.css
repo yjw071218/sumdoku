@@ -1,0 +1,77 @@
+/* Shared surfaces and readable states, including selected controls. */
+:root { --ui-panel:#ffffff; --ui-soft:#f1f5f9; --ui-ink:#17243b; --ui-muted:#52627a; --ui-line:#cbd5e1; --ui-selected:#dbeafe; --ui-accent:#1d4ed8; }
+.theme-dark { --ui-panel:#172338; --ui-soft:#22324a; --ui-ink:#f1f5f9; --ui-muted:#b8c7dc; --ui-line:#475b75; --ui-selected:#254574; --ui-accent:#93c5fd; --text-muted:#b8c7dc; --text-secondary:#b8c7dc; }
+.app-root.theme-dark { --text-muted:#b8c7dc; --text-secondary:#b8c7dc; }
+.theme-sepia { --ui-panel:#fff9ea; --ui-soft:#efe7d5; --ui-ink:#493b28; --ui-muted:#6a5940; --ui-line:#c7b99b; }
+.modal-card, .theme-dark .modal-card { background:var(--ui-panel)!important; color:var(--ui-ink); }
+.modal-card { max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain; }
+.modal-card p, .battle-mode-desc, .battle-ip-small, .waiting-pulse-box, .quick-settings-note { color:var(--ui-muted)!important; }
+.battle-mode-card, .theme-dark .battle-mode-card { background:var(--ui-soft)!important; border:1px solid var(--ui-line)!important; border-radius:12px; padding:12px 14px; }
+.battle-mode-title, .theme-dark .battle-mode-title { color:var(--ui-ink)!important; }
+.battle-mode-card.active, .theme-dark .battle-mode-card.active { background:var(--ui-selected)!important; border-color:var(--ui-accent)!important; box-shadow:inset 3px 0 var(--ui-accent)!important; }
+.battle-mode-card.active .battle-mode-title { color:var(--ui-ink)!important; }
+.battle-tab-btn, .battle-diff-btn, .theme-dark .battle-tab-btn, .theme-dark .battle-diff-btn { color:var(--ui-muted); background:var(--ui-soft); border-color:var(--ui-line); min-height:44px; }
+.battle-tab-btn.active, .battle-diff-btn.active, .mode-select-btn.active, .theme-dark .battle-tab-btn.active, .theme-dark .battle-diff-btn.active { background:var(--ui-selected)!important; color:var(--ui-ink)!important; border-color:var(--ui-accent)!important; box-shadow:none!important; }
+.battle-code-display { font-size:clamp(22px,5vw,32px); font-variant-numeric:tabular-nums; letter-spacing:1px; color:var(--ui-accent)!important; user-select:text; }
+.battle-ip-box { background:var(--ui-soft); border:1px solid var(--ui-line); border-radius:14px; padding:16px; margin:14px 0; }
+.quick-settings { margin:16px 0; padding:12px; border:1px solid var(--ui-line); border-radius:14px; text-align:left; }
+.quick-settings summary { font-size:14px; font-weight:700; cursor:pointer; padding:6px 0; color:var(--ui-ink); }
+.quick-settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+.quick-settings-grid label { display:flex; flex-direction:column; gap:7px; min-width:0; font-size:12px; color:var(--ui-muted); }
+.quick-settings select, .settings-select, .theme-dark .settings-select { width:100%; min-height:44px; max-width:100%; border:1px solid var(--ui-line); border-radius:9px; padding:8px; background:var(--ui-soft); color:var(--ui-ink); font-size:13px; }
+.quick-settings-note { font-size:12px!important; line-height:1.6; margin:12px 0 0!important; }
+.battle-input, .theme-dark .battle-input { background:var(--ui-soft); color:var(--ui-ink); border:1px solid var(--ui-line); font-size:16px; }
+button:disabled { opacity:.5; cursor:default; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline:3px solid #60a5fa; outline-offset:3px; }
+.tool-btn .tool-icon { border-radius:14px; box-shadow:none; }
+.tool-btn.active .tool-icon, .theme-dark .tool-btn.active#btn-pencil .tool-icon { box-shadow:inset 0 0 0 2px #93c5fd!important; transform:none; }
+.theme-dark .tool-btn.active .tool-label { color:#bfdbfe!important; }
+.tool-icon svg { filter:none!important; }
+.theme-dark .m-label, .theme-dark .s-desc, .theme-dark .diff-card-desc { color:var(--ui-muted)!important; }
+.theme-dark .btn-text-action { color:#93c5fd!important; }
+.modal-footer { gap:10px; }
+.modal-footer .btn { min-height:46px; }
+#btn-create-room { width:100%; min-height:46px; }
+.scratchpad-textarea { user-select:text; font-size:16px; }
+.mc-text { white-space:normal; overflow-wrap:anywhere; }
+.replay-controls-panel { min-width:0; }
+.replay-desc-box { overflow-wrap:anywhere; }
+.logic-assistant-card { background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:14px; padding:14px; }
+.assistant-header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; margin-bottom:12px; }
+.assistant-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.metric-box { background:var(--ui-soft); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:5px; }
+.m-label { font-size:12px; color:var(--ui-muted); }
+.m-val { font-size:20px; font-weight:700; }
+.assistant-tip-box { margin-top:10px; padding:10px; border-radius:8px; font-size:13px; line-height:1.6; }
+.game-sub-bar { flex-wrap:wrap; gap:8px 12px; }
+.theme-dark .diff-item .sub-val { color:#93c5fd; }
+.toast { max-width:calc(100vw - 32px); white-space:normal; }
+.game-main-content { overflow-y:auto; justify-content:flex-start; padding-bottom:12px; }
+.board-column, .controls-column { flex-shrink:0; }
+.menu-btn { border-radius:16px; }
+.menu-btn .btn-icon { display:flex; align-items:center; justify-content:center; }
+@media (max-width:680px) {
+  .modal-backdrop { padding:12px!important; align-items:center; }
+  .modal-card, .modal-card.modal-battle-card, .modal-card.modal-replay-card { width:100%!important; max-width:100%!important; max-height:calc(100dvh - 24px)!important; padding:18px!important; border-radius:18px!important; }
+  .modal-card h3 { font-size:18px; }
+  .battle-mode-options { gap:8px; }
+  .battle-mode-desc { font-size:12px; line-height:1.5; }
+  .battle-diff-pills { gap:6px; }
+  .battle-diff-btn { padding:8px 4px; }
+  .waiting-pulse-box { margin:12px 0; padding:8px; font-size:13px; }
+  .game-main-content { overflow-y:auto; min-height:0; }
+  .action-toolbar { flex-wrap:wrap; gap:6px; }
+  .tool-btn { min-width:44px; min-height:54px; }
+  .game-sub-bar { flex-wrap:wrap; gap:8px; }
+  .replay-main { flex-direction:column; flex:none; }
+  .replay-board-wrap { width:min(100%,380px)!important; height:auto!important; aspect-ratio:1; }
+  #replay-board { width:100%; height:100%; }
+  .replay-header { align-items:flex-start; gap:8px; }
+  .replay-title-wrap { min-width:0; }
+  .scratchpad-header { flex-wrap:wrap; gap:8px; }
+  .app-root { padding-bottom:env(safe-area-inset-bottom); }
+  .board-frame { width:min(100%,420px)!important; height:auto!important; aspect-ratio:1; }
+  .board-frame .sudoku-grid { position:absolute; inset:0; }
+}
+@media (max-width:360px) { .quick-settings-grid { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) { .pulse-dot, .floating-score-delta { animation:none!important; } }

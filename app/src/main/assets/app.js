@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.16";
+const APP_VERSION = "1.0.17";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -177,426 +177,6 @@ class ConfettiEffect {
 
 // ============================================================================
 // 2. 동적 100% 추론 보장 퍼즐 생성기 (SumdokuGenerator)
-// ============================================================================
-class SumdokuGenerator {
-  constructor(rng = Math.random) {
-    this.rng = rng;
-  }
-
-  generate(diff = 'expert', customRng = null) {
-    const rng = customRng || this.rng;
-
-    // ★ 전문가 난이도: 0개(순수 케이지 합계만으로 풀림)부터 1, 2, 3개 앵커까지 지원
-    const anchorMap = {
-      easy: 7,
-      medium: 5,
-      hard: 4,
-      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
-    };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
-
-    let attempts = 0;
-    while (attempts++ < 1000) {
-      const solution = this.createSolutionIterative(rng);
-      const cages = this.createSmartCages(solution, targetAnchors, rng);
-      const singles = cages.filter(c => c.cells.length === 1);
-
-      // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
-      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
-        return {
-          solution,
-          cages,
-          anchorCount: targetAnchors
-        };
-      }
-    }
-
-    // 안전 백업
-    const solution = this.createSolutionIterative(rng);
-    const cages = this.createSmartCages(solution, targetAnchors, rng);
-    return { solution, cages, anchorCount: targetAnchors };
-  }
-
-  // 비동기 맵 생성 및 진행 상황 피드백 콜백 지원
-  async generateAsync(diff = 'expert', customRng = null, onProgress = null) {
-    const rng = customRng || this.rng;
-
-    const anchorMap = {
-      easy: 7,
-      medium: 5,
-      hard: 4,
-      expert: [0, 1, 1, 2, 3][Math.floor(rng() * 5)]
-    };
-    const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : [0, 1, 1, 2, 3][Math.floor(rng() * 5)];
-    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
-    const diffKr = diffNames[diff] || diff;
-
-    let attempts = 0;
-    const maxAttempts = 1000;
-
-    if (onProgress) {
-      onProgress({
-        diffKr,
-        step: 1,
-        message: '9x9 기본 완성 스도쿠 판 생성 중...',
-        percent: 15,
-        attempt: 0
-      });
-      await new Promise(r => setTimeout(r, 16));
-    }
-
-    while (attempts < maxAttempts) {
-      attempts++;
-
-      const solution = this.createSolutionIterative(rng);
-      const cages = this.createSmartCages(solution, targetAnchors, rng);
-      const singles = cages.filter(c => c.cells.length === 1);
-
-      // 확정 단서 수 일치 및 순수 연역 논리 100% 풀림(81칸 완료) 검증
-      if (singles.length === targetAnchors && this.solveDeductivelyAdvanced(solution, cages) === 81) {
-        if (onProgress) {
-          onProgress({
-            diffKr,
-            step: 3,
-            message: `100% 순수 연역 논리 검증 완료! (시도: ${attempts}회)`,
-            percent: 100,
-            attempt: attempts
-          });
-          await new Promise(r => setTimeout(r, 60));
-        }
-        return {
-          solution,
-          cages,
-          anchorCount: targetAnchors
-        };
-      }
-
-      // 4회 시도마다 비동기 틱 양보 및 프로그레스 갱신
-      if (attempts % 4 === 0) {
-        if (onProgress) {
-          const pct = Math.min(95, 20 + Math.floor((attempts / 45) * 75));
-          onProgress({
-            diffKr,
-            step: 2,
-            message: `스마트 케이지 연역 추론 검증 중... (${attempts}회 시도)`,
-            percent: pct,
-            attempt: attempts
-          });
-        }
-        await new Promise(r => setTimeout(r, 0));
-      }
-    }
-
-    // 안전 백업
-    const solution = this.createSolutionIterative(rng);
-    const cages = this.createSmartCages(solution, targetAnchors, rng);
-    if (onProgress) {
-      onProgress({
-        diffKr,
-        step: 3,
-        message: '퍼즐 준비 완료!',
-        percent: 100,
-        attempt: attempts
-      });
-      await new Promise(r => setTimeout(r, 50));
-    }
-    return { solution, cages, anchorCount: targetAnchors };
-  }
-
-  // 100% 비재귀 반복문 백트래킹
-  createSolutionIterative(rng = Math.random) {
-    const board = Array.from({ length: 9 }, () => Array(9).fill(0));
-    
-    for (let b = 0; b < 9; b += 3) {
-      const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => rng() - 0.5);
-      let idx = 0;
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          board[b + r][b + c] = nums[idx++];
-        }
-      }
-    }
-
-    const empty = [];
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (board[r][c] === 0) empty.push([r, c]);
-      }
-    }
-
-    const isSafe = (r, c, val) => {
-      for (let i = 0; i < 9; i++) {
-        if (board[r][i] === val || board[i][c] === val) return false;
-      }
-      const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-      for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-          if (board[br + i][bc + j] === val) return false;
-        }
-      }
-      return true;
-    };
-
-    const cellState = empty.map(() => ({
-      nums: [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => rng() - 0.5),
-      tryIdx: 0
-    }));
-
-    let idx = 0;
-    while (idx < empty.length) {
-      const [r, c] = empty[idx];
-      const state = cellState[idx];
-      let placed = false;
-      while (state.tryIdx < state.nums.length) {
-        const val = state.nums[state.tryIdx++];
-        if (isSafe(r, c, val)) {
-          board[r][c] = val;
-          placed = true;
-          break;
-        }
-      }
-      if (placed) {
-        idx++;
-      } else {
-        board[r][c] = 0;
-        state.tryIdx = 0;
-        state.nums.sort(() => rng() - 0.5);
-        idx--;
-        if (idx < 0) break;
-      }
-    }
-    return board;
-  }
-
-  createSmartCages(solution, exactAnchors, rng = Math.random) {
-    const boxIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => rng() - 0.5);
-    const assigned = new Map();
-    const cages = [];
-
-    // 1. 정확한 개수의 1칸 시작 확정 앵커 배치
-    for (let i = 0; i < exactAnchors; i++) {
-      const box = boxIndices[i % boxIndices.length];
-      const br = Math.floor(box / 3) * 3 + Math.floor(rng() * 3);
-      const bc = (box % 3) * 3 + Math.floor(rng() * 3);
-      const cell = [br, bc];
-      const cage = { sum: solution[br][bc], cells: [cell] };
-      cages.push(cage);
-      assigned.set(`${br},${bc}`, cage);
-    }
-
-    // 2. 나머지 셀들을 무작위 순서로 순회하며 2~4칸 케이지로 그룹화
-    const remaining = [];
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (!assigned.has(`${r},${c}`)) remaining.push([r, c]);
-      }
-    }
-    remaining.sort(() => rng() - 0.5);
-
-    for (const startCell of remaining) {
-      const key = `${startCell[0]},${startCell[1]}`;
-      if (assigned.has(key)) continue;
-
-      const currentCageCells = [startCell];
-      assigned.set(key, null);
-      const targetSize = [2, 2, 2, 3, 3, 4][Math.floor(rng() * 6)];
-
-      while (currentCageCells.length < targetSize) {
-        const neighbors = [];
-        for (const [cr, cc] of currentCageCells) {
-          for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-            const nr = cr + dr, nc = cc + dc;
-            if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && !assigned.has(`${nr},${nc}`)) {
-              const existVals = currentCageCells.map(([r, c]) => solution[r][c]);
-              if (!existVals.includes(solution[nr][nc])) neighbors.push([nr, nc]);
-            }
-          }
-        }
-        if (neighbors.length === 0) break;
-        const nextCell = neighbors[Math.floor(rng() * neighbors.length)];
-        currentCageCells.push(nextCell);
-        assigned.set(`${nextCell[0]},${nextCell[1]}`, null);
-      }
-
-      // 고립되어 1칸만 남은 셀은 인접 케이지로 병합하여 불필요한 추가 앵커 방지
-      if (currentCageCells.length === 1) {
-        const [or, oc] = currentCageCells[0];
-        const val = solution[or][oc];
-        let merged = false;
-        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-          const nr = or + dr, nc = oc + dc;
-          if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
-            const adj = assigned.get(`${nr},${nc}`);
-            if (adj && adj.cells.length > 1 && adj.cells.length < 5) {
-              const adjVals = adj.cells.map(([r, c]) => solution[r][c]);
-              if (!adjVals.includes(val)) {
-                adj.cells.push([or, oc]);
-                adj.sum += val;
-                assigned.set(key, adj);
-                merged = true;
-                break;
-              }
-            }
-          }
-        }
-        if (!merged) {
-          const cage = { sum: val, cells: currentCageCells };
-          cages.push(cage);
-          assigned.set(key, cage);
-        }
-      } else {
-        const sum = currentCageCells.reduce((acc, [r, c]) => acc + solution[r][c], 0);
-        const cage = { sum, cells: currentCageCells };
-        cages.push(cage);
-        for (const c of currentCageCells) assigned.set(`${c[0]},${c[1]}`, cage);
-      }
-    }
-
-    return cages;
-  }
-
-  solveDeductivelyAdvanced(solution, cages) {
-    const candidates = Array.from({ length: 9 }, () =>
-      Array.from({ length: 9 }, () => new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]))
-    );
-
-    let changed = true;
-    let loop = 0;
-    while (changed && loop++ < 80) {
-      changed = false;
-
-      // 1. Naked Singles & 피어 소거법
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          if (candidates[r][c].size === 1) {
-            const val = [...candidates[r][c]][0];
-            for (let i = 0; i < 9; i++) {
-              if (i !== c && candidates[r][i].has(val)) {
-                candidates[r][i].delete(val);
-                changed = true;
-              }
-              if (i !== r && candidates[i][c].has(val)) {
-                candidates[i][c].delete(val);
-                changed = true;
-              }
-            }
-            const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-            for (let i = 0; i < 3; i++) {
-              for (let j = 0; j < 3; j++) {
-                if ((br + i !== r || bc + j !== c) && candidates[br + i][bc + j].has(val)) {
-                  candidates[br + i][bc + j].delete(val);
-                  changed = true;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // 2. 케이지 합계 조합 필터링
-      for (const cage of cages) {
-        const solvedVals = [];
-        const unsolved = [];
-        for (const [r, c] of cage.cells) {
-          if (candidates[r][c].size === 1) solvedVals.push([...candidates[r][c]][0]);
-          else unsolved.push([r, c]);
-        }
-        if (unsolved.length === 0) continue;
-
-        const currentSolvedSum = solvedVals.reduce((a, b) => a + b, 0);
-        const remTargetSum = cage.sum - currentSolvedSum;
-        const usedSet = new Set(solvedVals);
-
-        const validSets = [];
-        const findCombos = (idx, currentSum, chosen) => {
-          if (idx === unsolved.length) {
-            if (currentSum === remTargetSum) validSets.push([...chosen]);
-            return;
-          }
-          const [ur, uc] = unsolved[idx];
-          for (const cand of candidates[ur][uc]) {
-            if (!chosen.includes(cand) && !usedSet.has(cand)) {
-              if (currentSum + cand <= remTargetSum) {
-                chosen.push(cand);
-                findCombos(idx + 1, currentSum + cand, chosen);
-                chosen.pop();
-              }
-            }
-          }
-        };
-        findCombos(0, 0, []);
-
-        if (validSets.length > 0) {
-          for (let i = 0; i < unsolved.length; i++) {
-            const [ur, uc] = unsolved[i];
-            const allowedForCell = new Set(validSets.map(arr => arr[i]));
-            for (const cand of candidates[ur][uc]) {
-              if (!allowedForCell.has(cand)) {
-                candidates[ur][uc].delete(cand);
-                changed = true;
-              }
-            }
-          }
-        }
-      }
-
-      // 3. Hidden Singles 검증
-      for (let r = 0; r < 9; r++) {
-        for (let num = 1; num <= 9; num++) {
-          const cols = [];
-          for (let c = 0; c < 9; c++) {
-            if (candidates[r][c].has(num)) cols.push(c);
-          }
-          if (cols.length === 1 && candidates[r][cols[0]].size > 1) {
-            candidates[r][cols[0]] = new Set([num]);
-            changed = true;
-          }
-        }
-      }
-
-      for (let c = 0; c < 9; c++) {
-        for (let num = 1; num <= 9; num++) {
-          const rows = [];
-          for (let r = 0; r < 9; r++) {
-            if (candidates[r][c].has(num)) rows.push(r);
-          }
-          if (rows.length === 1 && candidates[rows[0]][c].size > 1) {
-            candidates[rows[0]][c] = new Set([num]);
-            changed = true;
-          }
-        }
-      }
-
-      for (let br = 0; br < 9; br += 3) {
-        for (let bc = 0; bc < 9; bc += 3) {
-          for (let num = 1; num <= 9; num++) {
-            const cells = [];
-            for (let i = 0; i < 3; i++) {
-              for (let j = 0; j < 3; j++) {
-                if (candidates[br + i][bc + j].has(num)) cells.push([br + i, bc + j]);
-              }
-            }
-            if (cells.length === 1 && candidates[cells[0][0]][cells[0][1]].size > 1) {
-              candidates[cells[0][0]][cells[0][1]] = new Set([num]);
-              changed = true;
-            }
-          }
-        }
-      }
-    }
-
-    let solvedCount = 0;
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (candidates[r][c].size === 1) solvedCount++;
-      }
-    }
-    return solvedCount;
-  }
-}
-
-// ============================================================================
-// 3. 앱 주 컨트롤러 (SumdokuApp)
 // ============================================================================
 class SumdokuApp {
   constructor() {
@@ -766,7 +346,7 @@ class SumdokuApp {
     document.body.classList.remove('notes-size-normal', 'notes-size-large', 'notes-size-xlarge');
     document.body.classList.add(`notes-size-${this.settings.notesSize || 'large'}`);
 
-    this.maxMistakes = (this.settings.maxLives === 'unlimited') ? 999999 : parseInt(this.settings.maxLives || 3, 10);
+    this.maxMistakes = (this.rules.maxLives === 'unlimited') ? 999999 : parseInt(this.rules.maxLives || 3, 10);
 
     const timerBox = document.getElementById('timer-box');
     if (timerBox) timerBox.style.display = this.settings.showTimer ? 'flex' : 'none';
@@ -775,7 +355,7 @@ class SumdokuApp {
     if (scoreBox) scoreBox.style.display = this.settings.showScore ? 'flex' : 'none';
 
     if (this.dom && this.dom.mistakes) {
-      this.dom.mistakes.textContent = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit)
+      this.dom.mistakes.textContent = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit)
         ? `${this.mistakes} / ∞`
         : `${this.mistakes} / ${this.maxMistakes}`;
     }
@@ -1075,6 +655,7 @@ class SumdokuApp {
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate,
+        gameRules: this.gameRules || null,
         currentGameReplay: this.currentGameReplay || null
       };
       localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(state));
@@ -1129,6 +710,8 @@ class SumdokuApp {
       this.dailyDate = state.dailyDate || null;
       this.isBattle = false;
 
+      this.gameRules = state.gameRules || normalizedRules(this.settings);
+      this.maxMistakes = this.rules.maxLives === "unlimited" ? 999999 : Number(this.rules.maxLives);
       this.currentGameReplay = state.currentGameReplay || {
         id: Date.now(),
         date: `${new Date().getMonth() + 1}월 ${new Date().getDate()}일 ${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`,
@@ -1163,7 +746,7 @@ class SumdokuApp {
 
       const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty.toUpperCase();
       this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
-      const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+      const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
       this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
       this.dom.gameScore.textContent = this.score;
 
@@ -2118,109 +1701,6 @@ class SumdokuApp {
     this.setupHostRoom();
   }
 
-  setupHostRoom() {
-    this.battleRole = 1;
-    let localIp = '127.0.0.1';
-    if (window.AndroidBridge && window.AndroidBridge.getLocalIpAddress) {
-      localIp = window.AndroidBridge.getLocalIpAddress();
-    }
-    this.battleHostIp = localIp;
-
-    const bDiff = this.battleDiff || 'expert';
-    // 대전용 동일 맵 사전 생성 (선택한 난이도로 생성)
-    const puzzle = this.generator.generate(bDiff);
-    puzzle.difficulty = bDiff;
-    this.battlePuzzleData = puzzle;
-
-    const timeLimitSec = (this.battleMode === 'score') ? 300 : 0;
-
-    let resJson = { ok: true, code: '88' };
-    if (window.AndroidBridge && window.AndroidBridge.startBattleServer) {
-      try {
-        const raw = window.AndroidBridge.startBattleServer(this.battleMode, bDiff, timeLimitSec, JSON.stringify(puzzle));
-        resJson = JSON.parse(raw);
-      } catch (e) {}
-    }
-
-    const code = resJson.code || (localIp.includes('.') ? localIp.split('.').pop() : '88');
-    this.dom.battleMyCode.textContent = `ROOM #${code}`;
-    this.dom.battleMyIp.textContent = `Wi-Fi 주소: ${localIp}:8888`;
-    this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중...';
-    this.dom.btnBattleStartMatch.disabled = true;
-
-    // 호스트 대기 폴링
-    clearInterval(this.hostPollTimer);
-    this.hostPollTimer = setInterval(async () => {
-      try {
-        const resp = await fetch(`http://${localIp}:8888/api/status`);
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.guestJoined) {
-            this.dom.battleWaitText.textContent = '상대방 접속 완료! [배틀 시작]을 눌러주세요!';
-            this.dom.btnBattleStartMatch.disabled = false;
-          }
-        }
-      } catch (e) {}
-    }, 1000);
-  }
-
-  async connectToHost() {
-    let input = this.dom.battleInputTarget.value.trim();
-    if (!input) {
-      this.showToast('호스트 IP 또는 방 번호를 입력해 주세요.');
-      return;
-    }
-
-    let targetIp = input;
-    // 숫자 1~3자리인 경우 본인 서브넷 IP와 결합 (예: 25 -> 192.168.0.25)
-    if (/^\d{1,3}$/.test(input)) {
-      let myIp = '192.168.0.1';
-      if (window.AndroidBridge && window.AndroidBridge.getLocalIpAddress) {
-        myIp = window.AndroidBridge.getLocalIpAddress();
-      }
-      const parts = myIp.split('.');
-      if (parts.length === 4) {
-        parts[3] = input;
-        targetIp = parts.join('.');
-      }
-    }
-    if (!targetIp.includes(':')) targetIp += ':8888';
-
-    this.showToast('호스트 연결 시도 중...');
-    try {
-      const resp = await fetch(`http://${targetIp}/api/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Guest' })
-      });
-      if (!resp.ok) throw new Error();
-      const res = await resp.json();
-      if (res.ok) {
-        this.battleRole = 2;
-        this.battleHostUrl = `http://${targetIp}`;
-        this.showToast('방 참가 성공! 호스트가 게임을 시작하면 자동 시작됩니다.');
-        this.dom.modalBattleLobby.classList.add('hidden');
-
-        // 게스트 시작 대기 폴링
-        clearInterval(this.guestWaitTimer);
-        this.guestWaitTimer = setInterval(async () => {
-          try {
-            const roomResp = await fetch(`${this.battleHostUrl}/api/room`);
-            if (roomResp.ok) {
-              const rData = await roomResp.json();
-              if (rData.status === 'playing') {
-                clearInterval(this.guestWaitTimer);
-                this.startBattleMatch(2, rData.puzzle, rData.mode);
-              }
-            }
-          } catch (e) {}
-        }, 600);
-      }
-    } catch (e) {
-      this.showToast('호스트 연결에 실패했습니다. IP와 Wi-Fi를 확인해 주세요.');
-    }
-  }
-
   startBattleMatch(role, puzzleData, bMode) {
     clearInterval(this.hostPollTimer);
     clearInterval(this.guestWaitTimer);
@@ -2253,13 +1733,15 @@ class SumdokuApp {
     const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
 
     let consecutivePollErrors = 0;
+    let pollBusy = false;
     this.battlePollInterval = setInterval(async () => {
-      if (!this.isBattle || this.isPaused) return;
+      if (!this.isBattle || this.isPaused || pollBusy) return;
+      pollBusy = true;
 
       const myFilled = this.countFilledCells();
       try {
         // 내 상태 전송
-        await fetch(`${targetUrl}/api/progress`, {
+        await this.battleFetch(`${targetUrl}/api/progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2272,7 +1754,7 @@ class SumdokuApp {
         });
 
         // 상대 상태 수신
-        const pResp = await fetch(`${targetUrl}/api/progress`);
+        const pResp = await this.battleFetch(`${targetUrl}/api/progress`);
         if (pResp.ok) {
           consecutivePollErrors = 0;
           const pData = await pResp.json();
@@ -2301,6 +1783,7 @@ class SumdokuApp {
           this.handleBattleEnd(true, '상대방과의 연결이 끊어졌거나 방을 나갔습니다! 당신의 승리! 🏆');
         }
       }
+      finally { pollBusy = false; }
     }, 600);
   }
 
@@ -2356,9 +1839,9 @@ class SumdokuApp {
     }
 
     // 상대방 실수 허용치 초과 탈락 판정 (설정에 따라 게임 오버 여부 및 목숨 개수 적용)
-    const isBattleEliminationAllowed = this.settings.mistakeLimit &&
-                                       this.settings.maxLives !== 'unlimited' &&
-                                       this.settings.livesExhaustedAction === 'game_over';
+    const isBattleEliminationAllowed = this.rules.mistakeLimit &&
+                                       this.rules.maxLives !== 'unlimited' &&
+                                       this.rules.livesExhaustedAction === 'game_over';
     if (isBattleEliminationAllowed && opp.mistakes >= this.maxMistakes) {
       this.handleBattleEnd(true, `상대방이 허용 실수(${this.maxMistakes}회) 초과로 탈락했습니다! 당신의 승리! 🏆`);
       return;
@@ -2536,12 +2019,12 @@ class SumdokuApp {
     this.score = 0;
     this.combo = 0;
     this.dom.gameScore.textContent = '0';
-    this.maxMistakes = (this.settings.maxLives === 'unlimited') ? 999999 : parseInt(this.settings.maxLives || 3, 10);
-    const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+    this.maxMistakes = (this.rules.maxLives === 'unlimited') ? 999999 : parseInt(this.rules.maxLives || 3, 10);
+    const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
     this.dom.mistakes.textContent = `0 / ${maxMistakesDisplay}`;
     this.undoStack = [];
     this.isWin = false;
-    this.hintsRemaining = (this.settings.initialHints === 'unlimited') ? 999999 : parseInt(this.settings.initialHints || 3, 10);
+    this.hintsRemaining = (this.rules.initialHints === 'unlimited') ? 999999 : parseInt(this.rules.initialHints || 3, 10);
     this.updateHintBadge();
 
     // 타임어택 제한 시간 설정
@@ -3054,7 +2537,7 @@ class SumdokuApp {
           this.dom.gameScore.textContent = this.score;
 
           this.mistakes++;
-          const maxMistakesDisplay = (this.settings.maxLives === 'unlimited' || !this.settings.mistakeLimit) ? '∞' : this.maxMistakes;
+          const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
           this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
 
           if (this.settings.autoCheck) {
@@ -3062,9 +2545,9 @@ class SumdokuApp {
           }
 
           // 목숨 소진 및 게임 오버 판정 (일반 모드 및 배틀 모드 둘 다 설정 적용)
-          const isGameOverAllowed = this.settings.mistakeLimit &&
-                                    this.settings.maxLives !== 'unlimited' &&
-                                    this.settings.livesExhaustedAction === 'game_over';
+          const isGameOverAllowed = this.rules.mistakeLimit &&
+                                    this.rules.maxLives !== 'unlimited' &&
+                                    this.rules.livesExhaustedAction === 'game_over';
 
           if (isGameOverAllowed && this.mistakes >= this.maxMistakes) {
             if (this.isBattle) {
@@ -3184,14 +2667,14 @@ class SumdokuApp {
 
   updateHintBadge() {
     if (!this.dom.hintBadge) return;
-    if (this.settings.initialHints === 'unlimited') {
+    if (this.rules.initialHints === 'unlimited') {
       this.dom.hintBadge.textContent = '∞';
       this.dom.hintBadge.classList.remove('badge-extra', 'badge-empty');
     } else if (this.hintsRemaining > 0) {
       this.dom.hintBadge.textContent = this.hintsRemaining;
       this.dom.hintBadge.classList.remove('badge-extra', 'badge-empty');
     } else {
-      if (this.settings.hintExhaustedAction === 'disallow') {
+      if (this.rules.hintExhaustedAction === 'disallow') {
         this.dom.hintBadge.textContent = '0';
         this.dom.hintBadge.classList.remove('badge-extra');
         this.dom.hintBadge.classList.add('badge-empty');
@@ -3206,7 +2689,7 @@ class SumdokuApp {
 
   useHint() {
     if (this.currentView !== 'game' || this.isPaused) return;
-    if (this.hintsRemaining <= 0 && this.settings.initialHints !== 'unlimited' && this.settings.hintExhaustedAction === 'disallow') {
+    if (this.hintsRemaining <= 0 && this.rules.initialHints !== 'unlimited' && this.rules.hintExhaustedAction === 'disallow') {
       this.sound.play('error');
       this.showToast('남은 힌트가 없습니다 (힌트 소진 시 추가 사용 금지 설정)');
       return;
@@ -3230,7 +2713,7 @@ class SumdokuApp {
       this.board[r][c].error = false;
 
       let hintMsg = '';
-      if (this.settings.initialHints === 'unlimited') {
+      if (this.rules.initialHints === 'unlimited') {
         this.score = Math.max(0, this.score - 30);
         this.showScoreDelta(-30, r, c, '힌트');
         hintMsg = `[힌트] 케이지 합계 제약으로 ${answer} 확정! (무제한 힌트, -30점)`;

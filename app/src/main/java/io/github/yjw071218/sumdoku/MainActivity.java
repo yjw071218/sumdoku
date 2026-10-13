@@ -121,7 +121,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.0.16";
+            return "1.0.17";
         }
     }
 
@@ -194,7 +194,9 @@ public class MainActivity extends Activity {
             battleServer.configureRoom(mode, diff, timeLimitSec, puzzleJson);
             boolean ok = battleServer.start(8888);
             String ip = BattleServer.getLocalIpAddress();
-            String code = ip.contains(".") ? ip.substring(ip.lastIndexOf('.') + 1) : "88";
+            long address = 0;
+            for (String octet : ip.split("\\.")) address = address * 256 + Integer.parseInt(octet);
+            String code = String.format(java.util.Locale.ROOT, "%010d%02d", address, address % 97);
             return String.format("{\"ok\":%b,\"ip\":\"%s\",\"port\":8888,\"code\":\"%s\"}", ok, ip, code);
         }
 

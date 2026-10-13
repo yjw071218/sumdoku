@@ -1,0 +1,46 @@
+const {chromium}=require('playwright');const fs=require('fs'),http=require('http'),path=require('path'),assert=require('assert');
+const root=path.resolve(__dirname,'../app/src/main/assets');
+const output=path.join(require('os').tmpdir(),'sumdoku-browser-results');fs.mkdirSync(output,{recursive:true});
+(async()=>{const server=http.createServer((q,r)=>{let p=path.join(root,q.url==='/'?'index.html':q.url.split('?')[0]);try{r.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':'text/html');r.end(fs.readFileSync(p));}catch{r.writeHead(404).end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});const page=await browser.newPage({viewport:{width:390,height:844}});let errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('https://api.github.com/**',r=>r.fulfill({status:200,body:'{"tag_name":"v1.0.17"}'}));
+await page.addInitScript(()=>{window.nativeCalls=[];window.AndroidBridge={getLocalIpAddress:()=> '172.16.18.247',stopBattleServer(){},startBattleServer(mode,diff,time,puzzle){nativeCalls.push(JSON.parse(puzzle));return JSON.stringify({ok:true,ip:'172.16.18.247'});}}});
+await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.app);
+const timing=await page.evaluate(()=>{app.applyTheme('theme-dark');const t=performance.now();app.openBattleLobby();return performance.now()-t});
+assert(timing<150,'lobby blocks main thread');assert.equal(await page.evaluate(()=>nativeCalls.length),0);
+await page.locator('#battle-host-view [data-quick-setting="maxLives"]').selectOption('5');await page.locator('#battle-host-view [data-quick-setting="initialHints"]').selectOption('0');
+assert.equal(await page.evaluate(()=>app.settings.maxLives),'5');
+const roundtrip=await page.evaluate(()=>['0.0.0.0','172.16.18.247','192.168.5.23','255.255.255.255'].every(ip=>RoomCode.decode(RoomCode.encode(ip))===ip));assert(roundtrip);
+const rejected=await page.evaluate(()=>{try{RoomCode.decode('999999999999');return false}catch{return true}});assert(rejected);
+await page.screenshot({path:path.join(output,'lobby-dark.png'),fullPage:true});
+for(const width of [320,390,768]){await page.setViewportSize({width,height:844});const overflow=await page.evaluate(()=>{let el=document.querySelector('#modal-battle-lobby .modal-card');return el.scrollWidth>el.clientWidth+1});assert(!overflow,`overflow ${width}`)}
+await page.locator('[data-bdiff="easy"]').click();await page.locator('#btn-create-room').click();await page.waitForFunction(()=>nativeCalls.length>0,{},{timeout:120000});
+assert.equal(await page.evaluate(()=>nativeCalls[0].rules.maxLives),'5');assert.equal(await page.evaluate(()=>nativeCalls[0].rules.initialHints),'0');
+let solve=await page.evaluate(()=>app.generator.solveDeductivelyAdvanced(nativeCalls[0].solution,nativeCalls[0].cages));assert.equal(solve,81);
+await page.evaluate(()=>{app.cancelRoomPreparation();app.dom.modalBattleLobby.classList.add('hidden');const p=nativeCalls[0];app.startNewGame('easy',null,'standard',p);});
+await page.waitForFunction(()=>app.board.length===9);assert.equal(await page.evaluate(()=>app.board.flat().filter(c=>c.val!==0).length),0);
+assert.equal(await page.evaluate(()=>app.hintsRemaining),0);
+await page.evaluate(()=>{app.settings.maxLives='1';app.applySettings()});assert.equal(await page.evaluate(()=>app.maxMistakes),5);
+await page.setViewportSize({width:390,height:844});
+await page.waitForTimeout(300);
+assert.equal(await page.evaluate(()=>app.currentView),'game');
+await page.screenshot({path:path.join(output,'game-dark.png'),fullPage:true});
+const checksumTrials = await page.evaluate(()=>{for(let i=0;i<1000;i++){const ip=Array.from({length:4},()=>Math.floor(Math.random()*256)).join('.');if(RoomCode.decode(RoomCode.encode(ip))!==ip)return false;}return true;});assert(checksumTrials);
+await page.evaluate(()=>{app.rules.hintExhaustedAction='disallow'; app.useHint();});
+assert.equal(await page.evaluate(()=>app.board.flat().filter(c=>c.val).length),0,'zero hints must not reveal answer');
+await page.evaluate(()=>{app.saveOngoingGame(); app.settings.maxLives='1'; app.gameRules=null; app.restoreOngoingGame();});
+assert.equal(await page.evaluate(()=>app.maxMistakes),5,'restore match rules');
+await page.evaluate(()=>{app.openBattleLobby();app.prepareBattleRoom();app.cancelRoomPreparation();});
+await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>nativeCalls.length),1,'cancelled worker must not publish room');
+// A guest on another subnet resolves the same full address and receives host rules.
+await page.route('http://10.20.30.40:8888/**',async route=>{
+ const puzzle=await page.evaluate(()=>nativeCalls[0]);
+ const url=route.request().url();
+ await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(url.endsWith('/api/room')?{status:'playing',mode:'race',puzzle}:{ok:true})});
+});
+await page.evaluate(()=>{app.settings.maxLives='1';app.dom.tabBattleJoin.click();app.dom.battleInputTarget.value=RoomCode.encode('10.20.30.40');app.connectToHost();});
+await page.waitForFunction(()=>app.isBattle && app.battleRole===2);
+assert.equal(await page.evaluate(()=>app.maxMistakes),5,'guest must use host lives');
+assert.equal(await page.evaluate(()=>app.hintsRemaining),0,'guest must use host hints');
+await page.evaluate(()=>app.endBattleSession());
+assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,lobbyMs:timing,logicSolved:solve,errors}));await browser.close();server.close();})().catch(e=>{console.error(e);process.exit(1)});

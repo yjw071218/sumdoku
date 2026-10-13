@@ -1,6 +1,8 @@
 package io.github.yjw071218.sumdoku;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Inet4Address;
@@ -27,11 +29,11 @@ public class BattleServer {
     private int port = 8888;
 
     // 대전 방 상태
-    private String roomStatus = "waiting"; // waiting, playing, ended
-    private String battleMode = "race";     // race, score, survival
-    private String difficulty = "medium";
-    private int timeLimit = 300;            // 타임어택 제한 시간(초)
-    private String puzzleJson = "{}";
+    private volatile String roomStatus = "waiting"; // waiting, playing, ended
+    private volatile String battleMode = "race";     // race, score, survival
+    private volatile String difficulty = "medium";
+    private volatile int timeLimit = 300;            // 타임어택 제한 시간(초)
+    private volatile String puzzleJson = "{}";
 
     // 양 플레이어 실시간 진행 상태
     private final ConcurrentHashMap<String, String> p1State = new ConcurrentHashMap<>();
@@ -48,14 +50,16 @@ public class BattleServer {
         try {
             serverSocket = new ServerSocket(port);
             running = true;
-            clientPool = Executors.newCachedThreadPool();
+            clientPool = Executors.newFixedThreadPool(4);
+            final ServerSocket listeningSocket = serverSocket;
+            final ExecutorService pool = clientPool;
             serverThread = new Thread(() -> {
-                while (running && serverSocket != null && !serverSocket.isClosed()) {
+                while (!listeningSocket.isClosed()) {
                     try {
-                        Socket socket = serverSocket.accept();
-                        clientPool.submit(() -> handleClient(socket));
+                        Socket socket = listeningSocket.accept();
+                        pool.submit(() -> handleClient(socket));
                     } catch (Exception e) {
-                        if (!running) break;
+                        if (listeningSocket.isClosed()) break;
                     }
                 }
             });
@@ -112,10 +116,11 @@ public class BattleServer {
 
     private void handleClient(Socket socket) {
         try (socket) {
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            socket.setSoTimeout(5000);
+            InputStream in = new BufferedInputStream(socket.getInputStream());
             OutputStream out = socket.getOutputStream();
 
-            String requestLine = in.readLine();
+            String requestLine = readHeaderLine(in);
             if (requestLine == null) return;
 
             String[] parts = requestLine.split(" ");
@@ -126,7 +131,7 @@ public class BattleServer {
             // 헤더 파싱
             int contentLength = 0;
             String line;
-            while ((line = in.readLine()) != null && !line.isEmpty()) {
+            while ((line = readHeaderLine(in)) != null && !line.isEmpty()) {
                 if (line.toLowerCase().startsWith("content-length:")) {
                     try {
                         contentLength = Integer.parseInt(line.substring(15).trim());
@@ -134,18 +139,15 @@ public class BattleServer {
                 }
             }
 
-            // 바디 읽기
-            StringBuilder body = new StringBuilder();
-            if (contentLength > 0) {
-                char[] buf = new char[contentLength];
-                int readTotal = 0;
-                while (readTotal < contentLength) {
-                    int r = in.read(buf, readTotal, contentLength - readTotal);
-                    if (r == -1) break;
-                    readTotal += r;
-                }
-                body.append(buf, 0, readTotal);
+            if (contentLength < 0 || contentLength > 262144) { sendResponse(out, 413, "{}"); return; }
+            byte[] payload = new byte[contentLength];
+            int received = 0;
+            while (received < contentLength) {
+                int count = in.read(payload, received, contentLength - received);
+                if (count < 0) return;
+                received += count;
             }
+            String body = new String(payload, StandardCharsets.UTF_8);
 
             // CORS 프리플라이트 처리
             if ("OPTIONS".equals(method)) {
@@ -196,6 +198,17 @@ public class BattleServer {
 
             sendResponse(out, statusCode, responseJson);
         } catch (Exception ignored) {}
+    }
+
+    private String readHeaderLine(InputStream in) throws Exception {
+        ByteArrayOutputStream line = new ByteArrayOutputStream();
+        int value;
+        while ((value = in.read()) != -1) {
+            if (value == 10) break;
+            if (value != 13) line.write(value);
+            if (line.size() > 8192) throw new java.io.IOException("Header too long");
+        }
+        return value == -1 && line.size() == 0 ? null : new String(line.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private void sendResponse(OutputStream out, int code, String json) throws Exception {
