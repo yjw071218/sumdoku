@@ -214,7 +214,36 @@ SumdokuApp.prototype.openBattleLobby = function() {
     return;
   }
   this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(panel => { panel.open = false; });
+  // 배틀 동안 앱의 연결을 Wi-Fi에 고정합니다(모바일 데이터 경로로 방 탐색이 새는 문제 방지).
+  try { bridge?.setBattleNetwork?.(true); } catch (_) {}
+  this.updateMobileDataWarning();
   return baseOpenBattleLobby.apply(this, arguments);
+};
+
+const MOBILE_DATA_WARNING = '모바일 데이터가 켜져 있습니다. 연결이 끊기거나 방을 찾지 못할 수 있으니 배틀 중에는 모바일 데이터를 꺼 주세요.';
+SumdokuApp.prototype.updateMobileDataWarning = function() {
+  let on = false;
+  try { on = !!window.AndroidBridge?.isMobileDataEnabled?.(); } catch (_) {}
+  const card = this.dom.modalBattleLobby?.querySelector('.modal-card');
+  let note = document.getElementById('battle-mobile-data-warning');
+  if (on && card && !note) {
+    note = document.createElement('p');
+    note.id = 'battle-mobile-data-warning'; note.className = 'battle-network-warning'; note.setAttribute('role', 'alert');
+    note.textContent = '⚠️ ' + MOBILE_DATA_WARNING;
+    card.querySelector('.modal-settings-header')?.after(note);
+  } else if (!on && note) note.remove();
+  if (on) this.showToast(MOBILE_DATA_WARNING, 5000);
+  return on;
+};
+
+// 배틀을 완전히 떠나 홈으로 가면 Wi-Fi 고정을 해제해 업데이트 확인 등 일반 인터넷 사용을 복원합니다.
+const baseSwitchViewNet = SumdokuApp.prototype.switchView;
+SumdokuApp.prototype.switchView = function(name) {
+  const result = baseSwitchViewNet.apply(this, arguments);
+  if (name === 'home' && !this.isBattle && this.dom.modalBattleLobby?.classList.contains('hidden')) {
+    try { window.AndroidBridge?.setBattleNetwork?.(false); } catch (_) {}
+  }
+  return result;
 };
 
 SumdokuApp.prototype.cancelRoomPreparation = function() {
@@ -469,9 +498,18 @@ SumdokuApp.prototype.connectToHost = async function() {
       this.joinBusy = true;
       this.dom.btnBattleConnect.disabled = true;
       this.dom.btnBattleConnect.textContent = '방 찾는 중…';
-      target = window.AndroidBridge?.findRoomAsync
-        ? await RoomFinder.findNative(roomCode)
-        : await RoomFinder.find(roomCode, window.AndroidBridge?.getLocalIpAddress?.(), (u, o) => fetch(u, o));
+      // 네이티브 탐색이 실패하면 한 번 더, 그래도 실패하면 WebView 스캔으로 다시 찾습니다.
+      const ownIp = window.AndroidBridge?.getLocalIpAddress?.();
+      let lastError;
+      target = null;
+      const attempts = window.AndroidBridge?.findRoomAsync
+        ? [() => RoomFinder.findNative(roomCode), () => RoomFinder.findNative(roomCode), () => RoomFinder.find(roomCode, ownIp, (u, o) => fetch(u, o))]
+        : [() => RoomFinder.find(roomCode, ownIp, (u, o) => fetch(u, o)), () => RoomFinder.find(roomCode, ownIp, (u, o) => fetch(u, o), { timeout: 2500 })];
+      for (const attempt of attempts) {
+        try { target = await attempt(); break; }
+        catch (e) { lastError = e; if (/이미 다른 사람|Wi-Fi 주소/.test(e.message)) break; }
+      }
+      if (!target) throw lastError || new Error(RoomFinder.notFoundMessage(roomCode));
     } else if (/^[\d\s-]+$/.test(target) && digitsOnly.length === 12) target = RoomCode.decode(target);
     else if (/^\d+$/.test(digitsOnly)) throw new Error('방 코드는 4자리 숫자입니다.');
     else if (/^\d{1,3}\.\d{1,3}$/.test(target)) {
@@ -488,7 +526,11 @@ SumdokuApp.prototype.connectToHost = async function() {
     this.dom.btnBattleConnect.textContent = '연결 중…';
     const token = this.roomGeneration;
     const url = `http://${ip}:${port}`;
-    const joinRes = await this.battleFetch(`${url}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roomCode ? { code: roomCode } : {}) });
+    let joinRes;
+    for (let i = 0; i < 3; i++) {
+      try { joinRes = await this.battleFetch(`${url}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roomCode ? { code: roomCode } : {}) }); break; }
+      catch (e) { if (i === 2 || token !== this.roomGeneration) throw e; await new Promise(r => setTimeout(r, 400)); }
+    }
     const result = await joinRes.json().catch(() => ({}));
     if (result.error === 'wrong_code') throw new Error('방 코드가 맞지 않습니다.');
     if (result.error === 'room_full') throw new Error('이미 다른 사람이 참가한 방입니다.');

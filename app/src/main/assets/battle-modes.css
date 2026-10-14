@@ -26,3 +26,6 @@ body.turn-theirs.pencil-mode .keypad-btn { opacity:1; }
 #btn-auto-notes.rule-locked::after { content:'🔒'; position:absolute; top:-2px; right:2px; font-size:11px; }
 #btn-auto-notes { position:relative; }
 @media (prefers-reduced-motion: reduce) { .battle-clock *, .cell.opp-drop { animation:none!important; } }
+
+.battle-network-warning { margin:0 0 12px; padding:8px 10px; border-radius:10px; background:#f59e0b22; color:#b45309; font-size:12px; line-height:1.5; text-align:left; }
+.theme-dark .battle-network-warning { color:#fbbf24; }

@@ -37,6 +37,9 @@ public final class RoomDiscovery {
     static final String ASK = "SUMDOKU_FIND:";
     static final String ANSWER = "SUMDOKU_HERE:";
     private static final int MAX_SCAN = 4096;
+    /** 휴대폰 Wi-Fi 절전으로 첫 응답이 수백 ms~1초 이상 늦을 수 있어 넉넉하게 기다립니다. */
+    static final long BROADCAST_WINDOW_MS = 3000;
+    static final long CONNECT_TIMEOUT_MS = 1200;
 
     private RoomDiscovery() {}
 
@@ -136,7 +139,17 @@ public final class RoomDiscovery {
         // 2단계: 동시에 NIO 논블로킹 스캐너 실행 (384채널 윈도우 슬라이딩)
         int[] range = scanRange(ia);
         List<String> order = buildScanOrder(range[0], range[1], ia.getAddress());
-        findByScanNio(code, order, found, foundVia);
+        // 같은 /24(대부분의 가정·핫스팟 방장)는 Wi-Fi 절전 지연을 고려해 넉넉히, 나머지 큰 내부망은 빠르게 확인합니다.
+        String self = ia.getAddress().getHostAddress();
+        String prefix = self.substring(0, self.lastIndexOf('.') + 1);
+        List<String> near = new ArrayList<>(), far = new ArrayList<>();
+        for (String h : order) (h.startsWith(prefix) ? near : far).add(h);
+        findByScanNio(code, near, found, foundVia, CONNECT_TIMEOUT_MS, 254);
+        if (found.get() == null) findByScanNio(code, far, found, foundVia, 250, 384);
+        // 스캔이 먼저 끝나도 브로드캐스트 응답 대기 시간이 남아 있으면 끝까지 기다립니다.
+        if (found.get() == null) { try { bcast.join(BROADCAST_WINDOW_MS + 500); } catch (InterruptedException ignored) {} }
+        // 마지막으로 가까운 주소를 더 긴 대기 시간으로 한 번 더 확인합니다.
+        if (found.get() == null) findByScanNio(code, near, found, foundVia, 2500, 254);
 
         if (found.get() != null) {
             return "{\"ok\":true,\"ip\":\"" + found.get() + "\",\"via\":\"" + foundVia.get() + "\",\"scanned\":" + range[1] + "}";
@@ -155,14 +168,14 @@ public final class RoomDiscovery {
             if (ia != null && ia.getBroadcast() != null) targets.add(ia.getBroadcast());
             byte[] ask = (ASK + code).getBytes(StandardCharsets.UTF_8);
             byte[] buf = new byte[256];
-            long deadline = System.currentTimeMillis() + 1500;
-            int round = 0;
+            long deadline = System.currentTimeMillis() + BROADCAST_WINDOW_MS;
+            long nextSend = 0;
             while (found.get() == null && System.currentTimeMillis() < deadline) {
-                if (round < 3) {
+                if (System.currentTimeMillis() >= nextSend) {
                     for (InetAddress t : targets) {
                         try { s.send(new DatagramPacket(ask, ask.length, t, UDP_PORT)); } catch (Exception ignored) {}
                     }
-                    round++;
+                    nextSend = System.currentTimeMillis() + 300;
                 }
                 try {
                     DatagramPacket p = new DatagramPacket(buf, buf.length);
@@ -213,8 +226,10 @@ public final class RoomDiscovery {
     }
 
     private static void findByScanNio(String code, List<String> hosts, AtomicReference<String> found, AtomicReference<String> foundVia) {
-        final int concurrency = 384;
-        final long timeoutMs = 180;
+        findByScanNio(code, hosts, found, foundVia, CONNECT_TIMEOUT_MS, 256);
+    }
+
+    private static void findByScanNio(String code, List<String> hosts, AtomicReference<String> found, AtomicReference<String> foundVia, long timeoutMs, int concurrency) {
 
         try (Selector selector = Selector.open()) {
             int cursor = 0;
@@ -296,8 +311,8 @@ public final class RoomDiscovery {
 
     static boolean probe(String host, String code) {
         try (Socket s = new Socket()) {
-            s.connect(new InetSocketAddress(host, 8888), 250);
-            s.setSoTimeout(600);
+            s.connect(new InetSocketAddress(host, 8888), 2000);
+            s.setSoTimeout(2500);
             OutputStream out = s.getOutputStream();
             out.write(("GET /api/hello HTTP/1.0\r\nHost: " + host + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
             out.flush();

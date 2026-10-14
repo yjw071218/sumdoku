@@ -291,6 +291,30 @@
     else this.handleBattleEnd(mine > opp, mine > opp ? `판 완성! 점수 대결 승리 (${mine} vs ${opp}) 🏆` : `판 완성! 점수 대결 패배 (${mine} vs ${opp})`);
   };
 
+  // ---------------- 결과 서버 확정 ----------------
+  // 한 기기에서 정해진 승패를 서버에 기록해 상대 기기도 같은 결과를 표시합니다.
+  // (기존에는 기권만 서버에 기록되어, 상대가 마지막 진행 상황을 받지 못하면 결과창이 뜨지 않았습니다.)
+  const baseBattleEnd = P.handleBattleEnd;
+  P.handleBattleEnd = function (isVictory, reason) {
+    const wasBattle = this.isBattle, role = this.battleRole, epoch = this.battleEpoch;
+    const url = role === 1 ? 'http://127.0.0.1:8888' : this.battleHostUrl;
+    const result = baseBattleEnd.apply(this, arguments);
+    if (!wasBattle || this._battleEndFromServer || this.forfeitPending || !url || (role !== 1 && role !== 2)) return result;
+    const text = String(reason || '');
+    if (/기권|연결이 끊어/.test(text)) return result;
+    const won = document.getElementById('battle-result-banner')?.classList.contains('win');
+    const draw = /무승부/.test(text);
+    const kind = /판 완성/.test(text) ? 'turn' : /음수/.test(text) ? 'negative' : /제한 시간/.test(text) ? 'timeup' : /탈락/.test(text) ? 'eliminated' : 'completed';
+    const body = JSON.stringify({ player: role, reason: kind, winner: draw ? 0 : (won ? role : 3 - role),
+      filled: this.countFilledCells(), score: this.score, mistakes: this.mistakes, isWin: !!won });
+    const send = async (tries) => {
+      try { await this.battleRequest(`${url}/api/end`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
+      catch (_) { if (tries > 1 && this.battleEpoch === epoch) setTimeout(() => send(tries - 1), 500); }
+    };
+    send(4);
+    return result;
+  };
+
   // ---------------- 자동 메모 허용 규칙 ----------------
   P.applyAutoNotesRule = function () {
     const allowed = this.rules.allowAutoNotes !== false;

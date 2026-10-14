@@ -43,7 +43,7 @@ public class RoomDiscoverySmoke {
             long missingMs = System.currentTimeMillis() - t2;
             System.out.println("find 9999 -> " + missing + " in " + missingMs + "ms");
             require(missing.contains("not_found"), "unknown code not found");
-            require(missingMs < 4500, "4096 address scan must complete within 4.5s: " + missingMs + "ms");
+            require(missingMs < 12000, "4096 address scan (near /24 with power-save tolerance, far fast, broadcast wait, near recheck) must complete within 12s: " + missingMs + "ms");
             System.out.println("local wifi ip: " + RoomDiscovery.localIp());
             System.out.println("PASS: room discovery");
         } finally { server.stop(); }

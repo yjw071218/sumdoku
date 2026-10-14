@@ -47,6 +47,7 @@ public class BattleServer {
     private volatile long lastGuestActiveTime = 0;
     private volatile int endedBy = 0;
     private volatile String endReason = "";
+    private volatile int endWinner = -1; // -1 미정, 0 무승부, 1/2 승자
     private String terminalProgress = null;
     // 배틀 채팅: 최근 60개만 보관
     private final java.util.ArrayList<String> chatLog = new java.util.ArrayList<>();
@@ -184,7 +185,7 @@ public class BattleServer {
         this.p2State.clear();
         this.lastGuestActiveTime = 0;
         this.endedBy = 0;
-        this.endReason = "";
+        this.endReason = ""; this.endWinner = -1;
         this.chatLog.clear();
         this.generationProgress = null; resetTurns();
         String code = jsonString(this.puzzleJson, "roomCode");
@@ -196,7 +197,7 @@ public class BattleServer {
         this.generationProgress = null; resetTurns();
         this.roomStatus = "playing";
         this.endedBy = 0;
-        this.endReason = "";
+        this.endReason = ""; this.endWinner = -1;
     }
 
     private void resetRoom() {
@@ -211,7 +212,7 @@ public class BattleServer {
         this.puzzleJson = "{}";
         this.lastGuestActiveTime = 0;
         this.endedBy = 0;
-        this.endReason = "";
+        this.endReason = ""; this.endWinner = -1;
     }
 
     private void handleClient(Socket socket) {
@@ -330,7 +331,7 @@ public class BattleServer {
                 puzzleJson = "{}";
                 generationProgress = null; resetTurns();
                 endedBy = 0;
-                endReason = "";
+                endReason = ""; endWinner = -1;
                 lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = "{\"ok\":true,\"status\":\"waiting\"}";
             } else if (path.startsWith("/api/generating")) {
@@ -350,7 +351,7 @@ public class BattleServer {
                     roomStatus = "playing";
                     terminalProgress = null;
                     endedBy = 0;
-                    endReason = "";
+                    endReason = ""; endWinner = -1;
                     responseJson = "{\"ok\":true,\"status\":\"playing\"}";
                 }
             } else if (path.startsWith("/api/room")) {
@@ -421,7 +422,11 @@ public class BattleServer {
                 } else {
                     if ("playing".equals(roomStatus)) {
                         (player == 1 ? p1State : p2State).put("data", body);
-                        finishMatch(player, flag(body, "forfeit") || flag(body, "resigned") ? "forfeit" : "completed");
+                        boolean forfeit = flag(body, "forfeit") || flag(body, "resigned");
+                        String kind = jsonString(body, "reason");
+                        if (forfeit || kind == null || !kind.matches("completed|turn|eliminated|timeup|negative")) kind = forfeit ? "forfeit" : "completed";
+                        int winner = forfeit ? 3 - player : jsonInt(body, "winner", "completed".equals(kind) ? player : -1);
+                        finishMatch(player, kind, winner < 0 || winner > 2 ? -1 : winner);
                     }
                     responseJson = progressSnapshot();
                 }
@@ -476,7 +481,12 @@ public class BattleServer {
     }
 
     private void finishMatch(int player, String reason) {
+        finishMatch(player, reason, "forfeit".equals(reason) ? 3 - player : "completed".equals(reason) ? player : -1);
+    }
+
+    private void finishMatch(int player, String reason, int winner) {
         if (!"playing".equals(roomStatus)) return;
+        endWinner = winner;
         endedBy = player;
         endReason = reason;
         roomStatus = "ended";
@@ -487,8 +497,8 @@ public class BattleServer {
         // Retain the previous result while a rematch is waiting, so a slow peer
         // can still observe the terminal event before joining the new lobby.
         if (terminalProgress != null) return terminalProgress;
-        return String.format("{\"ok\":true,\"p1\":%s,\"p2\":%s,\"status\":\"%s\",\"endedBy\":%d,\"endReason\":\"%s\"}",
-            p1State.getOrDefault("data", "{}"), p2State.getOrDefault("data", "{}"), roomStatus, endedBy, endReason);
+        return String.format("{\"ok\":true,\"p1\":%s,\"p2\":%s,\"status\":\"%s\",\"endedBy\":%d,\"endReason\":\"%s\",\"winner\":%d}",
+            p1State.getOrDefault("data", "{}"), p2State.getOrDefault("data", "{}"), roomStatus, endedBy, endReason, endWinner);
     }
 
     private String readHeaderLine(InputStream in) throws Exception {

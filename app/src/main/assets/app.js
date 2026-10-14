@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.12";
+const APP_VERSION = "1.1.13";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -2426,11 +2426,21 @@ class SumdokuApp {
       this.handleBattleEnd(!own, own ? '게임을 기권했습니다. 상대방의 승리로 종료되었습니다.' : '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
       return true;
     }
-    if (result.endReason === 'completed') {
-      this.handleBattleEnd(own, own ? '스도쿠를 먼저 완성했습니다!' : '상대방이 먼저 스도쿠를 완성했습니다!');
-      return true;
-    }
-    return false;
+    const winner = typeof result.winner === 'number' && result.winner >= 0 ? result.winner : (result.endReason === 'completed' ? actor : -1);
+    if (winner < 0) return false;
+    const won = winner === this.battleRole;
+    const oppData = (this.battleRole === 1 ? result.p2 : result.p1) || {};
+    const oppScore = Number(oppData.score) || 0;
+    this._battleEndFromServer = true;
+    try {
+      if (winner === 0) this.handleBattleEnd(false, `무승부입니다 (${this.score}점 동점)`);
+      else if (result.endReason === 'turn') this.handleBattleEnd(won, won ? `판 완성! 점수 대결 승리 (${this.score} vs ${oppScore}) 🏆` : `판 완성! 점수 대결 패배 (${this.score} vs ${oppScore})`);
+      else if (result.endReason === 'eliminated') this.handleBattleEnd(won, won ? '상대방이 목숨을 모두 잃어 탈락했습니다! 당신의 승리! 🏆' : '목숨을 모두 잃어 탈락했습니다!');
+      else if (result.endReason === 'timeup') this.handleBattleEnd(won, won ? `제한 시간 종료! 점수 대결에서 승리했습니다! (${this.score} vs ${oppScore})` : `제한 시간 종료! 점수 대결에서 패배했습니다. (${this.score} vs ${oppScore})`);
+      else if (result.endReason === 'negative') this.handleBattleEnd(won, won ? '상대방의 점수가 음수가 되어 당신의 승리! 🏆' : '점수가 음수여서 실패 처리되었습니다.');
+      else this.handleBattleEnd(won, won ? '스도쿠를 먼저 완성했습니다!' : '상대방이 먼저 스도쿠를 완성했습니다!');
+    } finally { this._battleEndFromServer = false; }
+    return true;
   }
 
   updateOpponentProgress(opp) {

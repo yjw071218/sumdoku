@@ -218,7 +218,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.12";
+            return "1.1.13";
         }
     }
 
@@ -275,6 +275,7 @@ public class MainActivity extends Activity {
     private BattleServer battleServer;
     // 일부 기기는 이 잠금이 없으면 방장 쪽에서 브로드캐스트 패킷을 버립니다.
     private android.net.wifi.WifiManager.MulticastLock multicastLock;
+    private android.net.wifi.WifiManager.WifiLock wifiLock;
 
     private void setMulticast(boolean on) {
         try {
@@ -286,8 +287,19 @@ public class MainActivity extends Activity {
                     multicastLock.setReferenceCounted(false);
                 }
                 multicastLock.acquire();
-            } else if (multicastLock != null && multicastLock.isHeld()) {
-                multicastLock.release();
+                // 방이 열려 있는 동안 Wi-Fi 절전으로 탐색 응답이 늦어지지 않게 합니다.
+                if (wifiLock == null) {
+                    android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+                    if (wm != null) {
+                        @SuppressWarnings("deprecation") int mode = Build.VERSION.SDK_INT >= 29 ? android.net.wifi.WifiManager.WIFI_MODE_FULL_LOW_LATENCY : android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF;
+                        wifiLock = wm.createWifiLock(mode, "sumdoku-battle");
+                        wifiLock.setReferenceCounted(false);
+                    }
+                }
+                if (wifiLock != null) wifiLock.acquire();
+            } else {
+                if (multicastLock != null && multicastLock.isHeld()) multicastLock.release();
+                if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
             }
         } catch (Exception ignored) {}
     }
@@ -334,7 +346,43 @@ public class MainActivity extends Activity {
         if (hasFocus) { applyImmersive(); requestStatusRefresh(); }
     }
 
+    /** 배틀 중에는 모든 소켓을 Wi-Fi에 고정합니다. Wi-Fi에 인터넷이 없으면 Android가 모바일 데이터를 기본 경로로 써서 방 탐색·접속이 실패할 수 있습니다. */
+    private boolean bindToWifi(boolean on) {
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+        if (!on) { cm.bindProcessToNetwork(null); return true; }
+        for (android.net.Network network : cm.getAllNetworks()) {
+            android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+            if (caps != null && caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) return cm.bindProcessToNetwork(network);
+        }
+        return false;
+    }
+
+    private boolean isMobileDataOn() {
+        try {
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+            if (tm != null && tm.isDataEnabled()) return true;
+        } catch (Exception ignored) {}
+        try {
+            if (android.provider.Settings.Global.getInt(getContentResolver(), "mobile_data", 0) == 1) return true;
+        } catch (Exception ignored) {}
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm != null) for (android.net.Network n : cm.getAllNetworks()) {
+                android.net.NetworkCapabilities c = cm.getNetworkCapabilities(n);
+                if (c != null && c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     private class AndroidBridgeInterface {
+        @JavascriptInterface
+        public boolean isMobileDataEnabled() { return isMobileDataOn(); }
+
+        @JavascriptInterface
+        public boolean setBattleNetwork(boolean on) { return bindToWifi(on); }
+
         @JavascriptInterface
         public boolean isWifiConnected() {
             android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -409,6 +457,7 @@ public class MainActivity extends Activity {
                 battleServer = new BattleServer();
             }
             battleServer.configureRoom(mode, diff, timeLimitSec, puzzleJson);
+            bindToWifi(true);
             boolean ok = battleServer.start(8888);
             if (ok) setMulticast(true);
             String ip = BattleServer.getLocalIpAddress();
@@ -421,6 +470,7 @@ public class MainActivity extends Activity {
         /** v1.0.42: 4자리 코드로 방 찾기(비동기). 최근 접속 IP가 있으면 우선 확인합니다. */
         @JavascriptInterface
         public void findRoomAsync(final String code, final String lastHost) {
+            bindToWifi(true);
             RoomDiscovery.find(code, lastHost, json -> mainHandler.post(() ->
                 webView.evaluateJavascript("if (window.onRoomFound) { window.onRoomFound(" + json + "); }", null)));
         }
