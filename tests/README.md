@@ -7,6 +7,8 @@ n- `node tests/hint-dock.cjs`: 8개 화면 크기에서 힌트 카드가 보드�
 n- `node tests/features.cjs`: 자동 메모, 케이지 색상, 완성 애니메이션, 볼륨·진동 설정, 연속 기록·업적, 배틀 채팅(모의 서버), 6버튼 툴바 폭을 검사합니다.
 n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬운 기법 우선 힌트, 힌트 정답 일치를 검사합니다.
 
+- `node tests/room-recreate.cjs`: 방을 연속으로 다시 만들어도 늦은 /api/close가 새 방을 닫지 않는지 검사합니다.
+
 - `node tests/polish.cjs`: 세 가지 테마의 홈 화면, 키보드 선택, 참가 오류 표시, 대화상자 초점 순환·복귀와 코드 복사를 검사합니다.
 
 - `node tests/deduction.cjs`: 고정 시드 60개 퍼즐에서 모든 후보 소거의 정답 보존, Naked/Hidden Pairs·Triples, 교차 소거, 확장 45 규칙 실행, 추론 의존성 누락 여부, 모순/다중 후보에서 힌트 거부를 검사합니다. 모든 난이도의 생성 결과는 유일해와 81칸 연역 완성을 통과해야 합니다.

@@ -115,6 +115,7 @@ public class BattleServer {
         this.lastGuestActiveTime = 0;
         this.endedBy = 0;
         this.endReason = "";
+        this.chatLog.clear();
     }
 
     public synchronized void startMatch() {

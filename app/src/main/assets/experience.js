@@ -139,6 +139,7 @@ SumdokuApp.prototype.openDifficultyModal = function() {baseOpenDifficulty.call(t
 
 SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.hideGeneratingOverlay();
+  const hadHostRoom = !!this.hostRoomCreated;
   this.hostRoomCreated = false;
   this.battleStarting = false;
   this.roomGeneration = (this.roomGeneration || 0) + 1;
@@ -159,7 +160,9 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   }
 
   // 방장이 방을 나간 경우 서버에 /api/close 전송 (방 폭파)
-  if (this.battleRole === 1 && this.battleHostIp) {
+  // Android에서는 아래 stopBattleServer()가 서버를 직접 닫습니다. HTTP /api/close는 비동기라
+  // 바로 이어서 새 방을 열면 새 서버에 늦게 도착해 새 방을 '닫힘'으로 바꿔 버립니다(참가 즉시 퇴장 버그).
+  if (this.battleRole === 1 && this.battleHostIp && hadHostRoom && !window.AndroidBridge?.stopBattleServer) {
     try {
       fetch(`http://${this.battleHostIp}:8888/api/close`, {
         method: 'POST'
