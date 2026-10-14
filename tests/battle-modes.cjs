@@ -58,12 +58,51 @@ const url='file:///'+path.resolve('app/src/main/assets/index.html').split(path.s
  assert.ok(/승리/.test(res[0])&&/패배/.test(res[1]),res.join(' / '));
  // 6) 서바이벌: 시간 초과 시 목숨 -1, 상대 정답 시 내 시간 감소, 목숨 소진 시 탈락(소진 설정이 '계속'이어도)
  await start(host,1,'survival',{livesExhaustedAction:'continue'});
+ const bank=await host.evaluate(()=>{
+  clearInterval(app.modeTimer);clearInterval(app.battlePollInterval);
+  const s=app.survival, clock=document.getElementById('battle-clock');
+  const originalNow=performance.now;performance.now=()=>1000;
+  const read=()=>({tier:clock.dataset.tier,extra:!clock.querySelector('.bc-extra').hidden,
+   labels:[...clock.querySelectorAll('.bc-multiplier')].filter(e=>!e.hidden&& !e.parentElement.hidden).map(e=>e.textContent),
+   widths:[...clock.querySelectorAll('.bc-fill')].map(e=>parseFloat(e.style.width)),
+   color:clock.querySelector('.bc-extra .bc-fill').style.background});
+  try {
+   const levels=[90,135,180,181,90001,90,9].map(left=>{s.left=left;s.last=1000;app.tickBattleMode();return read();});
+   s.left=80;s.last=1000;app.isPencilMode=false;app.selectCell(0,0);app.handleNumberInput(app.solution[0][0]);
+   const reward=s.left;app.handleNumberInput(app.solution[0][0]);const repeat=s.left;
+   app.undo();app.handleNumberInput(app.solution[0][0]);const undo=s.left;
+   app.selectCell(0,1);app.isPencilMode=true;app.handleNumberInput(app.solution[0][1]);app.isPencilMode=false;
+   const pencil=s.left;app.handleNumberInput(app.solution[0][1]);const second=s.left;
+   return {full:s.full,levels,reward,repeat,undo,pencil,second};
+  } finally {performance.now=originalNow;s.left=s.full;s.last=performance.now();app.modeTimer=setInterval(()=>app.tickBattleMode(),250);}
+ });
+ assert.equal(bank.full,90);
+ assert.deepEqual(bank.levels.map(x=>x.tier),['1','2','2','3','1001','1','1']);
+ assert.deepEqual(bank.levels.map(x=>x.extra),[false,true,true,true,true,false,false]);
+ assert.deepEqual(bank.levels[0].labels,['x1']);assert.deepEqual(bank.levels[1].labels,['x2','x1']);
+ assert.deepEqual(bank.levels[1].widths,[50,100]);assert.deepEqual(bank.levels[2].widths,[100,100]);
+ assert.notEqual(bank.levels[1].color,bank.levels[3].color);
+ assert.equal(bank.reward,170);assert.equal(bank.repeat,170);assert.equal(bank.undo,170);assert.equal(bank.pencil,170);assert.equal(bank.second,260);
+ for(const [width,height] of [[320,568],[390,844],[768,1024],[1024,768]]) {
+  await host.setViewportSize({width,height});
+  await host.evaluate(()=>{app.survival.left=90001;app.survival.last=performance.now();app.tickBattleMode();});
+  await host.waitForTimeout(300);
+  const layout=await host.evaluate(()=>{
+   const clock=document.getElementById('battle-clock'),extra=clock.querySelector('.bc-extra').getBoundingClientRect(),base=clock.querySelector('.bc-base').getBoundingClientRect();
+   const cr=clock.getBoundingClientRect();
+   return {stacked:extra.bottom<=base.top,inside:cr.left>=0&&cr.right<=innerWidth+1,
+    tracks:[...clock.querySelectorAll('.bc-track')].every(e=>e.getBoundingClientRect().width>10),fits:clock.scrollWidth<=clock.clientWidth+1};
+  });
+  assert.deepEqual(layout,{stacked:true,inside:true,tracks:true,fits:true},`${width}x${height} stacked clock`);
+ }
+ await host.setViewportSize({width:390,height:844});
+ await host.evaluate(()=>{app.survival.left=app.survival.full;app.survival.last=performance.now();});
  const sv=await host.evaluate(async()=>{const s=app.survival,full=s.full;
   app.updateOpponentProgress({filled:1,score:0,mistakes:0});app.updateOpponentProgress({filled:3,score:0,mistakes:0});
   const drained=full-s.left;s.left=0.05;await new Promise(r=>setTimeout(r,400));const m1=app.mistakes;
   s.left=0.05;await new Promise(r=>setTimeout(r,400));s.left=0.05;await new Promise(r=>setTimeout(r,400));
   return {full,drained:Math.round(drained),m1,battle:app.isBattle,sub:document.getElementById('battle-result-sub').textContent};});
- assert.equal(sv.m1,1);assert.ok(sv.drained>=7,'drain '+sv.drained);assert.equal(sv.battle,false);assert.match(sv.sub,/탈락/);
+ assert.equal(sv.full,90);assert.equal(sv.m1,1);assert.ok(sv.drained>=7,'drain '+sv.drained);assert.equal(sv.battle,false);assert.match(sv.sub,/탈락/);
  // 7) 자동 메모 금지 규칙
  await start(host,1,'race',{allowAutoNotes:false});
  const an=await host.evaluate(()=>{app.toggleAutoNotes();return {filled:app.board.flat().filter(c=>c.notes.size).length,locked:document.getElementById('btn-auto-notes')?.classList.contains('rule-locked')};});

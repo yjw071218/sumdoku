@@ -2,6 +2,14 @@
 (() => {
   const T = window.UI_TRANSLATIONS = window.UI_TRANSLATIONS || {};
   const rows = {
+    '90초로 시작하며 새 정답마다 90초가 상한 없이 쌓입니다. 90초마다 바의 배수와 색상이 바뀝니다. 시간 소진 시 목숨 -1, 상대 정답 시 시간 감소. 먼저 완성하거나 끝까지 살아남으면 승리': [
+      'Start with 90 seconds. Each newly solved cell adds 90 seconds with no cap. Every 90 seconds changes the bar multiplier and color. Lose a life when time runs out; opponent answers reduce your time. Finish first or outlast them to win.',
+      '90秒で開始し、新しく正解したマスごとに90秒が上限なく加算されます。90秒ごとにバーの倍率と色が変わります。時間切れでライフ−1、相手の正解で残り時間が減少。先に完成するか最後まで生き残れば勝利。',
+      '从90秒开始，每新答对一格增加90秒，无上限。每90秒改变进度条倍数和颜色。时间耗尽失去一条命，对手答对会减少你的时间。先完成或坚持到最后获胜。',
+      '從90秒開始，每新答對一格增加90秒，無上限。每90秒改變進度條倍數和顏色。時間耗盡失去一條命，對手答對會減少你的時間。先完成或堅持到最後獲勝。',
+      'Empiezas con 90 segundos. Cada nueva casilla correcta añade 90 segundos sin límite. El multiplicador y el color cambian cada 90 segundos. Pierdes una vida al agotarse el tiempo; los aciertos del rival lo reducen. Termina primero o sobrevive para ganar.',
+      'Départ à 90 secondes. Chaque nouvelle case juste ajoute 90 secondes sans plafond. Le multiplicateur et la couleur changent tous les 90 secondes. Une vie perdue à zéro ; les réponses adverses réduisent votre temps. Finissez en premier ou survivez pour gagner.',
+      'Start mit 90 Sekunden. Jedes neu gelöste Feld bringt 90 Sekunden ohne Obergrenze. Multiplikator und Farbe wechseln alle 90 Sekunden. Bei Zeitablauf verlierst du ein Leben; richtige Antworten des Gegners verkürzen deine Zeit. Zuerst fertig werden oder überleben gewinnt.'],
     '자동 메모 기능': ['Auto notes','自動メモ','自动笔记','自動筆記','Notas automáticas','Notes automatiques','Auto-Notizen'],
     '자동 메모': ['Auto notes','自動メモ','自动笔记','自動筆記','Notas automáticas','Notes automatiques','Auto-Notizen'],
     '허용': ['Allowed','許可','允许','允許','Permitido','Autorisé','Erlaubt'],

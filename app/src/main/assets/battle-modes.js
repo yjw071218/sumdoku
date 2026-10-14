@@ -7,7 +7,7 @@
  */
 (() => {
   const P = SumdokuApp.prototype;
-  const PRESSURE = { easy: 45, medium: 60, hard: 75, expert: 90 };
+  const SURVIVAL_SECONDS = 90;
   const OPP_DRAIN = 4;          // 상대가 정답을 넣을 때마다 줄어드는 내 시간(초)
   const MIN_LEFT = 6;
   const TURN_TIMEOUT_PENALTY = 30;
@@ -25,7 +25,7 @@
       el = document.createElement('div');
       el.id = 'battle-clock'; el.className = 'battle-clock hidden';
       el.setAttribute('role', 'timer'); el.setAttribute('aria-live', 'off');
-      el.innerHTML = '<span class="bc-label"></span><span class="bc-time"></span><span class="bc-track"><span class="bc-fill"></span></span>';
+      el.innerHTML = '<span class="bc-label"></span><span class="bc-time"></span><span class="bc-bars"><span class="bc-layer bc-extra" hidden><span class="bc-track"><span class="bc-fill"></span></span><span class="bc-multiplier"></span></span><span class="bc-layer bc-base"><span class="bc-track"><span class="bc-fill"></span></span><span class="bc-multiplier"></span></span></span>';
       const host = document.getElementById('battle-hud');
       (host || document.body).append(el);
     }
@@ -37,7 +37,26 @@
     el.dataset.state = state;
     el.querySelector('.bc-label').textContent = label;
     el.querySelector('.bc-time').textContent = `${Math.max(0, Math.ceil(left))}초`;
-    el.querySelector('.bc-fill').style.width = `${Math.max(0, Math.min(100, (left / full) * 100))}%`;
+    const survival = state === 'survival';
+    const remaining = Math.max(0, left);
+    const tier = survival ? Math.max(1, Math.ceil(remaining / full)) : 1;
+    const extra = el.querySelector('.bc-extra');
+    extra.hidden = tier === 1;
+    // 두 줄만 사용: 아래는 직전까지 채운 단계, 위는 현재 쌓이는 90초 구간.
+    // 배수가 커져도 HUD 높이가 계속 늘어나 보드를 가리지 않습니다.
+    const paintLayer = (layer, level, amount) => {
+      const fill = layer.querySelector('.bc-fill');
+      fill.style.width = `${Math.max(0, Math.min(100, amount / full * 100))}%`;
+      const hue = (142 + (level - 1) * 137.508) % 360;
+      fill.style.background = survival
+        ? `linear-gradient(90deg, hsl(${hue} 72% 43%), hsl(${(hue + 28) % 360} 80% 57%))` : '';
+      const multiplier = layer.querySelector('.bc-multiplier');
+      multiplier.hidden = !survival;
+      multiplier.textContent = survival ? `x${level}` : '';
+    };
+    paintLayer(el.querySelector('.bc-base'), Math.max(1, tier - 1), tier > 1 ? full : remaining);
+    paintLayer(extra, tier, remaining - (tier - 1) * full);
+    el.dataset.tier = String(tier);
     el.classList.toggle('danger', left <= Math.min(10, full * 0.25));
   }
   function hideClock() { document.getElementById('battle-clock')?.classList.add('hidden'); }
@@ -68,10 +87,10 @@
   P.startBattleMatch = function (role, puzzle, mode) {
     clearInterval(this.modeTimer); this.survival = null; this.turnState = null; hideClock();
     const result = baseStart.apply(this, arguments);
-    const diff = (puzzle && puzzle.difficulty) || this.battleDiff || 'expert';
     if (mode === 'survival') {
-      const full = PRESSURE[diff] || 60;
-      this.survival = { full, left: full, last: performance.now(), oppFilled: 0 };
+      const full = SURVIVAL_SECONDS;
+      this.survival = { full, left: full, last: performance.now(), oppFilled: 0, rewarded: new Set() };
+      paintClock('🛡️ 생존 시간', full, full, 'survival');
     } else if (mode === 'turn') {
       const limit = +(this.rules.turnSeconds || puzzle?.rules?.turnSeconds || 30);
       this.turnState = { limit, seq: 0, player: 1, startedAt: performance.now(), nextSeq: 0, scores: { 1: 0, 2: 0 }, busy: false, passFor: -1, polling: false, finished: false };
@@ -179,8 +198,11 @@
     const before = this.mistakes;
     const result = baseInput.call(this, num);
     if (isSurvival(this) && !this.isPencilMode && this.survival) {
-      if (this.board[r][c].val === num && num === this.solution[r][c] && !solvedAlready) {
-        this.survival.left = this.survival.full;
+      const rewardKey = r * 9 + c;
+      if (this.board[r][c].val === num && num === this.solution[r][c] && !solvedAlready && !this.survival.rewarded.has(rewardKey)) {
+        this.survival.rewarded.add(rewardKey);
+        this.survival.left += SURVIVAL_SECONDS;
+        paintClock('🛡️ 생존 시간', this.survival.left, this.survival.full, 'survival');
         hud().classList.add('bc-refill'); setTimeout(() => hud().classList.remove('bc-refill'), 400);
       } else if (this.mistakes > before) this.checkSurvivalElimination();
     }

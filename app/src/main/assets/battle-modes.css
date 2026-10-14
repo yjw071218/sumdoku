@@ -2,11 +2,16 @@
 .battle-clock { display:grid; grid-template-columns:auto auto 1fr; align-items:center; gap:8px; margin-top:6px; padding:6px 10px; border-radius:10px; background:var(--ui-soft,#f1f5f9); font-size:12px; font-weight:700; color:var(--ui-ink,#172033); }
 .battle-clock.hidden { display:none; }
 .battle-clock .bc-time { font-variant-numeric:tabular-nums; min-width:34px; }
+.battle-clock .bc-bars { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.battle-clock .bc-layer { display:flex; align-items:center; gap:5px; min-width:0; }
+.battle-clock .bc-layer[hidden], .battle-clock .bc-multiplier[hidden] { display:none; }
+.battle-clock .bc-layer .bc-track { flex:1; min-width:0; }
+.battle-clock .bc-multiplier { font-size:10px; line-height:1; font-variant-numeric:tabular-nums; }
 .battle-clock .bc-track { height:8px; border-radius:99px; background:#94a3b833; overflow:hidden; }
 .battle-clock .bc-fill { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#22c55e,#84cc16); transition:width .25s linear; }
 .battle-clock[data-state="theirs"] .bc-fill { background:linear-gradient(90deg,#94a3b8,#cbd5e1); }
 .battle-clock[data-state="mine"] { box-shadow:0 0 0 2px #6366f1 inset; }
-.battle-clock.danger .bc-fill { background:linear-gradient(90deg,#ef4444,#f97316); }
+.battle-clock.danger .bc-fill { background:linear-gradient(90deg,#ef4444,#f97316)!important; }
 .battle-clock.danger .bc-time { color:#ef4444; animation:bcPulse .6s ease-in-out infinite alternate; }
 .battle-clock.bc-shake { animation:bcShake .35s ease; }
 .battle-clock.bc-refill .bc-fill { animation:bcRefill .4s ease; }

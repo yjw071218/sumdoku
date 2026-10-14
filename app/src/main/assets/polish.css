@@ -274,6 +274,10 @@ body.battle-active.assistant-visible .game-main-content { padding-top:8px; paddi
    이제 모든 칸에 같은 값을 적용합니다(가장 붐비는 한 칸 케이지 배지 기준으로 겹치지 않는 값).
    transform 대신 translate 속성을 써서 완성 애니메이션(scale)과 충돌하지 않습니다. */
 #sudoku-board .cell .cell-value { translate: 0.2em 0.2em; font-size: 0.9em; }
+/* 태블릿은 중앙 정렬, 휴대폰은 합계와 겹치지 않도록 기존 이동 유지. */
+@media (min-width: 600px) {
+  #sudoku-board .cell .cell-value { translate: none; }
+}
 #sudoku-board .cell.single-cage .cell-cage-sum { padding: 0 2px; border-radius: 3px; line-height: 1.1; }
 @media (max-width: 380px) {
   #sudoku-board .cell .cell-value { translate: 0.22em 0.24em; font-size: 0.84em; }

@@ -5,7 +5,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  const b=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
  const fails=[];
  try{
-  for(const [w,h] of [[320,568],[360,640],[390,844],[768,1024],[1400,844]]) for(const battle of [0,1]){
+  for(const [w,h] of [[320,568],[360,640],[390,844],[599,900],[600,960],[768,1024],[1024,768],[1400,844]]) for(const battle of [0,1]){
    const p=await b.newPage({viewport:{width:w,height:h}});
    await p.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.39'}}));
    await p.goto('file:///'+path.resolve('app/src/main/assets/index.html').split(path.sep).join('/'));
@@ -28,6 +28,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    },battle);
    const same=(a,b)=>a.font===b.font&&Math.abs(a.dx-b.dx)<0.02&&Math.abs(a.dy-b.dy)<0.02;
    if(!same(r.withSum,r.noSum)||!same(r.single,r.noSum))fails.push({w,h,battle,...r});
+   for(const cell of [r.withSum,r.noSum,r.single]) {
+    const positioned = w >= 600
+     ? Math.abs(cell.dx - 0.5) < 0.02 && Math.abs(cell.dy - 0.5) < 0.02
+     : cell.dx > 0.52 && cell.dy > 0.52;
+    if(!positioned)fails.push({w,h,battle,position:cell});
+   }
    const loud=r.toasts.filter(x=>/보너스|점\)|COMBO|콤보/.test(x));if(loud.length)fails.push({w,battle,loud});
    await p.close();
   }
