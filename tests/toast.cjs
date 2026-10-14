@@ -1,4 +1,4 @@
-// 안내 메시지(예: 케이지 완성 보너스)가 보드·키패드·툴바를 가리지 않는지 여러 화면에서 검사
+// 안내 메시지(점수·보너스 안내는 v1.0.39부터 표시하지 않음)가 보드·키패드·툴바를 가리지 않는지 여러 화면에서 검사
 const assert=require('node:assert/strict'),path=require('node:path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
@@ -16,7 +16,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     if(battle){app.battleHostIp='127.0.0.1';app.startBattleMatch(1,{solution,cages,difficulty:'easy'},'race');clearInterval(app.battlePollInterval);}
     else app.startNewGame('easy',null,'standard',{solution,cages});
     await new Promise(r=>setTimeout(r,300));
-    app.showToast('케이지 완성 보너스! (+75점) 아주 긴 안내 문장도 줄바꿈되어 표시됩니다',5000);
+    app.showToast('메시지를 보내지 못했습니다. 연결을 확인해 주세요 · 아주 긴 안내 문장도 줄바꿈되어 표시됩니다',5000);
     await new Promise(r=>setTimeout(r,400));
     const t=document.getElementById('toast')||app.dom.toast,tr=t.getBoundingClientRect();
     const hit=sel=>[...document.querySelectorAll(sel)].filter(e=>e.getClientRects().length).some(e=>{const b=e.getBoundingClientRect();return !(tr.bottom<=b.top||tr.top>=b.bottom||tr.right<=b.left||tr.left>=b.right);});

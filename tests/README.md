@@ -20,6 +20,8 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 - `node tests/cell-overlap.cjs`: 합계 숫자와 입력 숫자가 겹치지 않는지 검사합니다.
 - `node tests/auto-notes-toggle.cjs`: 자동 메모 켜기·끄기와 직접 적은 메모 복원을 검사합니다.
 
+- `node tests/cell-consistency.cjs`: 모든 칸의 입력 숫자 크기·위치가 같은지, 점수·보너스 안내가 뜨지 않는지 검사합니다.
+
 - `node tests/polish.cjs`: 세 가지 테마의 홈 화면, 키보드 선택, 참가 오류 표시, 대화상자 초점 순환·복귀와 코드 복사를 검사합니다.
 
 - `node tests/deduction.cjs`: 고정 시드 60개 퍼즐에서 모든 후보 소거의 정답 보존, Naked/Hidden Pairs·Triples, 교차 소거, 확장 45 규칙 실행, 추론 의존성 누락 여부, 모순/다중 후보에서 힌트 거부를 검사합니다. 모든 난이도의 생성 결과는 유일해와 81칸 연역 완성을 통과해야 합니다.

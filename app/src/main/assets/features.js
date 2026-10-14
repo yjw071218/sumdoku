@@ -579,3 +579,16 @@
     });
   });
 })();
+
+/* v1.0.39: 점수·보너스·콤보처럼 화면(점수판·콤보 게이지·칸 표시)에 이미 드러나는 안내는
+ * 상단 점수를 가리지 않도록 띄우지 않습니다. 오류·연결·힌트 없음 같은 안내는 그대로 표시합니다. */
+(() => {
+  const QUIET = [/보너스/, /\(\+[\d,]+점\)/, /\(-\d+점\)/, /퍼펙트 클리어/, /노힌트/, /연역 추론 보장/, /배틀 시작!/,
+    /^⚡/, /이전 게임을 이어서/, /일일 도전 .*시작합니다/, /^실행 취소되었습니다/, /^테마: /];
+  const P = SumdokuApp.prototype, base = P.showToast;
+  P.isQuietToast = msg => QUIET.some(re => re.test(String(msg)));
+  P.showToast = function (msg, ...rest) {
+    if (P.isQuietToast(msg)) return;
+    return base.call(this, msg, ...rest);
+  };
+})();
