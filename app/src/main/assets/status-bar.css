@@ -17,7 +17,7 @@ body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
   overflow: hidden; white-space: nowrap; justify-content: flex-end;
 }
 #app-statusbar .sb-wifi { display: flex; }
-#app-statusbar .sb-batt { display: flex; align-items: center; gap: 4px; }
+#app-statusbar .sb-batt { display: flex; align-items: center; gap: 9px; /* 돌출부(4px) 바깥으로 숫자와 여백 확보 */ }
 #app-statusbar .sb-batt-body { position: relative; width: 24px; height: 12px; border: 1.6px solid currentColor; border-radius: 4px; padding: 1.5px; box-sizing: border-box; }
 #app-statusbar .sb-batt-body::after { content: ''; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; border-radius: 0 2px 2px 0; background: currentColor; }
 #app-statusbar .sb-batt-fill { display: block; height: 100%; border-radius: 2px; background: currentColor; transition: width .6s ease, background-color .3s; }
