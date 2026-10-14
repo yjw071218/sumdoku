@@ -44,8 +44,8 @@ const KillerDeduction = (() => {
         const touching=cageUnits.filter(c=>c.cells.some(i=>inside.has(i)));
         const covered=new Set(contained.flatMap(c=>c.cells));
         const label=`${group.map(h=>h.name).join(' + ')} (합 ${45*size})`;
-        add([...inside].filter(i=>!covered.has(i)),45*size-contained.reduce((s,c)=>s+c.sum,0),`45의 법칙 Innie: ${label} − 내부 케이지 합`);
-        add(touching.flatMap(c=>c.cells.filter(i=>!inside.has(i))),touching.reduce((s,c)=>s+c.sum,0)-45*size,`45의 법칙 Outie: 걸친 케이지 합 − ${label}`);
+        add([...inside].filter(i=>!covered.has(i)),45*size-contained.reduce((s,c)=>s+c.sum,0),`45의 법칙(${group.map(h=>h.name).join('+')})`);
+        add(touching.flatMap(c=>c.cells.filter(i=>!inside.has(i))),touching.reduce((s,c)=>s+c.sum,0)-45*size,`45의 법칙(${group.map(h=>h.name).join('+')} 바깥)`);
       });
     }
     const constraints=units.map(u=>({...u,type:'unit'})).concat(boundaries.map(u=>({...u,type:'boundary'})));
@@ -54,10 +54,12 @@ const KillerDeduction = (() => {
     const value={units,cageUnits,peers,constraints,watching};
     topologyCache.set(cages,value);return value;
   }
-  function solve(cages,board=null,traced=false) {
+  function solve(cages,board=null,traced=false,level=4) {
+    // level 1: 확정/유일 위치/케이지 조합, 2: +쌍·세쌍·교차 제거, 3: +45 합 범위, 4: 전체
     const t=topology(cages), masks=new Uint16Array(81).fill(ALL);
     const proof=Array.from({length:81},()=>new Set()), events=[], trace=[];
-    const pending=new Set(t.constraints.map((_,i)=>i));
+    const pending=new Set(t.constraints.map((_,i)=>i).filter(i=>level>=3||t.constraints[i].type==='unit'));
+    const enqueue=k=>{if(level>=3||t.constraints[k].type==='unit')pending.add(k);};
     let contradiction=false, visits=0;
     const givens=new Uint8Array(81);
     for(let i=0;i<81;i++) {
@@ -79,7 +81,7 @@ const KillerDeduction = (() => {
           trace.push({r:Math.floor(i/9),c:i%9,before:digits(masks[i]),after:digits(m),reason,eventId:id});
         }
         masks[i]=m;
-        for(const k of t.watching[i])pending.add(k);
+        for(const k of t.watching[i])enqueue(k);
       }
     }
     // Matching-based cage filtering: a combination must admit a distinct digit
@@ -112,14 +114,14 @@ const KillerDeduction = (() => {
         }
       }
       if(!valid){contradiction=true;return 0;}
-      reduce(ordered.map((i,k)=>[i,allowed[k]]),`${u.name}의 ${ordered.length}칸에 중복 없이 배치할 수 있는 합 ${u.sum}의 조합만 남깁니다.`,u.cells,'cage-combination');
+      reduce(ordered.map((i,k)=>[i,allowed[k]]),`${u.name}(${ordered.length}칸): 들어갈 수 있는 숫자는 ${digits(allowed.reduce((m,a)=>m|a,0)).join('·')}뿐`,u.cells,'cage-combination');
       return mandatory;
     }
     function unit(u) {
       // MRV: propagate confirmed cells before larger subsets.
       for(const i of u.cells) if(count[masks[i]]===1) {
         const bit=masks[i];
-        reduce(u.cells.filter(j=>j!==i).map(j=>[j,ALL^bit]),`${pos(i)} = ${digits(bit)[0]}이므로 ${u.name}의 다른 칸에서 이 숫자를 제외합니다.`,[i],'single');
+        reduce(u.cells.filter(j=>j!==i).map(j=>[j,ALL^bit]),`${pos(i)} = ${digits(bit)[0]} → ${u.name}의 다른 칸에서 ${digits(bit)[0]} 제외`,[i],'single');
       }
       if(contradiction)return;
       const mandatory=u.full?ALL:cageFilter(u);
@@ -127,20 +129,21 @@ const KillerDeduction = (() => {
       for(const n of digits(mandatory)) {
         const cells=u.cells.filter(i=>masks[i]&(1<<n));
         if(!cells.length){contradiction=true;return;}
-        if(cells.length===1)reduce([[cells[0],1<<n]],`${u.name}에서 ${n}이 들어갈 수 있는 곳은 ${pos(cells[0])}뿐입니다.`,u.cells,'hidden-single');
+        if(cells.length===1)reduce([[cells[0],1<<n]],`${u.name}에서 ${n}이 갈 수 있는 곳은 ${pos(cells[0])}뿐`,u.cells,'hidden-single');
       }
+      if(level<2)return;
       for(const n of [2,3]) {
         const small=u.cells.filter(i=>count[masks[i]]>=2&&count[masks[i]]<=n);
         choose(small,n,selected=>{
           const union=selected.reduce((m,i)=>m|masks[i],0);
           if(count[union]!==n)return;
-          reduce(u.cells.filter(i=>!selected.includes(i)).map(i=>[i,ALL^union]),`${u.name}의 ${selected.map(pos).join(', ')}이 {${digits(union).join(', ')}}을 독점하므로 다른 칸에서 제외합니다 (Naked ${n===2?'Pair':'Triple'}).`,selected,'naked-'+n);
+          reduce(u.cells.filter(i=>!selected.includes(i)).map(i=>[i,ALL^union]),`${selected.map(pos).join(', ')}이 ${digits(union).join('·')}를 나눠 가짐 → ${u.name}의 다른 칸에서 제외`,selected,'naked-'+n);
         });
         const possible=digits(mandatory).filter(d=>{const len=u.cells.filter(i=>masks[i]&(1<<d)).length;return len>=2&&len<=n;});
         choose(possible,n,selected=>{
           const bits=selected.reduce((m,d)=>m|(1<<d),0), cells=u.cells.filter(i=>masks[i]&bits);
           if(cells.length!==n)return;
-          reduce(cells.map(i=>[i,bits]),`${u.name}에 반드시 들어가는 {${selected.join(', ')}}의 위치가 ${cells.map(pos).join(', ')}뿐이므로 이 칸의 나머지 후보를 제외합니다 (Hidden ${n===2?'Pair':'Triple'}).`,u.cells,'hidden-'+n);
+          reduce(cells.map(i=>[i,bits]),`${u.name}의 ${selected.join('·')}는 ${cells.map(pos).join(', ')}에만 들어감 → 이 칸들의 다른 후보 제외`,u.cells,'hidden-'+n);
         });
       }
       if(!u.full)return;
@@ -149,7 +152,7 @@ const KillerDeduction = (() => {
         if(cells.length<2||cells.length>3)continue;
         for(const other of houses) {
           if(other.cells===u.cells||!cells.every(i=>other.cells.includes(i)))continue;
-          reduce(other.cells.filter(i=>!u.cells.includes(i)).map(i=>[i,ALL^(1<<d)]),`${u.name}의 ${d} 후보가 ${other.name}과 겹치는 칸에만 있으므로 ${other.name}의 바깥 후보를 지웁니다 (교차 후보 제거).`,u.cells,'locked-candidate');
+          reduce(other.cells.filter(i=>!u.cells.includes(i)).map(i=>[i,ALL^(1<<d)]),`${u.name}의 ${d}는 ${other.name}과 겹치는 칸에만 있음 → ${other.name} 나머지에서 ${d} 제외`,u.cells,'locked-candidate');
         }
       }
     }
@@ -162,8 +165,8 @@ const KillerDeduction = (() => {
       const max=empty.map(i=>31-Math.clz32(masks[i]));
       const lo=min.reduce((a,b)=>a+b,0),hi=max.reduce((a,b)=>a+b,0);
       if(target<lo||target>hi){contradiction=true;return;}
-      reduce(empty.map((i,k)=>[i,digits(masks[i]).filter(d=>d+lo-min[k]<=target&&d+hi-max[k]>=target).reduce((m,d)=>m|(1<<d),0)]),`${u.name} = ${u.sum}입니다. 확정된 합을 빼면 ${empty.map(pos).join(', ')}의 합은 ${target}이므로 최솟값·최댓값 범위를 벗어나는 후보를 제외합니다.`,u.cells,'45-bound');
-      if(contradiction||empty.length>4)return;
+      reduce(empty.map((i,k)=>[i,digits(masks[i]).filter(d=>d+lo-min[k]<=target&&d+hi-max[k]>=target).reduce((m,d)=>m|(1<<d),0)]),`${u.name}: ${empty.map(pos).join(', ')}의 합은 ${target} → 범위를 벗어나는 후보 제외`,u.cells,'45-bound');
+      if(contradiction||empty.length>4||level<4)return;
       const supports=new Uint16Array(empty.length),values=[],limit=20000;
       let nodes=0,aborted=false;
       const visit=(k,left)=>{
@@ -180,7 +183,7 @@ const KillerDeduction = (() => {
       };
       visit(0,target);
       // An incomplete enumeration must never remove a candidate.
-      if(!aborted)reduce(empty.map((i,k)=>[i,supports[k]]),`${u.name}에서 남은 ${empty.length}칸의 합 ${target}을 만족하는 배치만 남깁니다. 서로 같은 행·열·박스·케이지의 숫자는 중복될 수 없습니다.`,u.cells,'45-combination');
+      if(!aborted)reduce(empty.map((i,k)=>[i,supports[k]]),`${u.name}: ${empty.map(pos).join(', ')}의 합이 ${target}이 되는 배치만 남김`,u.cells,'45-combination');
     }
     while(pending.size&&!contradiction) {
       // Dirty units only. Prefer the most constrained small unit, then 45 sums.
@@ -198,16 +201,35 @@ const KillerDeduction = (() => {
     if(!contradiction)for(let i=0;i<81;i++)if(count[masks[i]]===1)solvedCells.push([Math.floor(i/9),i%9]);
     return {solvedCount:solvedCells.length,solvedCells,trace,events,proof:proof.map(p=>[...p].sort((a,b)=>a-b)),contradiction,visits,candidates:Array.from({length:9},(_,r)=>Array.from(masks.slice(r*9,r*9+9))),givens};
   }
+  const LEVEL_NAME=['','기본 추론','쌍·교차 후보','45의 법칙','45의 법칙 조합'];
+  const STEP_WEIGHT={'single':0.2,'hidden-single':1,'cage-combination':1,'naked-2':2,'hidden-2':2,'locked-candidate':2,'naked-3':3,'hidden-3':3,'45-bound':3,'45-combination':4};
+  // Easiest first: try the weakest technique set that confirms any cell, then
+  // choose the cell whose proof is lightest (singles are cheap, triples expensive).
   function hint(cages,board) {
-    const result=solve(cages,board,true);
-    if(result.contradiction)return null;
-    const targets=result.solvedCells.map(([r,c])=>r*9+c).filter(i=>!result.givens[i]);
-    targets.sort((a,b)=>result.proof[a].length-result.proof[b].length||a-b);
-    if(!targets.length)return null;
-    const i=targets[0],r=Math.floor(i/9),c=i%9,answer=digits(result.candidates[r][c])[0];
-    const steps=result.proof[i].map(id=>result.events[id]);
-    const cage=cages.find(cg=>cg.cells.some(([rr,cc])=>rr===r&&cc===c));
-    return {r,c,answer,stepsCount:steps.length,proof:steps,badgeText:`연역 추론 · ${steps.length}단계`,posName:pos(i),cageInfo:`케이지 합 ${cage.sum}`,explanation:`찾은 확정 경로 중 필요한 추론 단계가 가장 적은 칸입니다.\n${steps.map((s,k)=>`${k+1}. ${s.reason}`).join('\n')}\n따라서 ${pos(i)}은 ${answer}입니다.`};
+    for(let level=1;level<=4;level++) {
+      const result=solve(cages,board,true,level);
+      if(result.contradiction)return null;
+      const targets=result.solvedCells.map(([r,c])=>r*9+c).filter(i=>!result.givens[i]);
+      if(!targets.length)continue;
+      const cost=i=>result.proof[i].reduce((s,id)=>s+(STEP_WEIGHT[result.events[id].technique]||2),0);
+      targets.sort((a,b)=>cost(a)-cost(b)||result.proof[a].length-result.proof[b].length||a-b);
+      const i=targets[0],r=Math.floor(i/9),c=i%9,answer=digits(result.candidates[r][c])[0];
+      const steps=result.proof[i].map(id=>result.events[id]);
+      const cage=cages.find(cg=>cg.cells.some(([rr,cc])=>rr===r&&cc===c));
+      const singles=steps.filter(s=>s.technique==='single');
+      const key=steps.filter(s=>s.technique!=='single');
+      const shown=key.length<=5?key:key.slice(-4);
+      const lines=[];
+      if(singles.length){
+        const placed=[...new Set(singles.map(s=>s.reason.split(' → ')[0]))];
+        lines.push(`이미 놓인 숫자(${placed.slice(0,4).join(', ')}${placed.length>4?' 등':''})를 같은 행·열·박스·케이지에서 지웁니다.`);
+      }
+      if(key.length>shown.length)lines.push(`(앞선 ${key.length-shown.length}단계 생략)`);
+      shown.forEach(s=>lines.push(s.reason));
+      return {r,c,answer,level,stepsCount:steps.length,proof:steps,badgeText:`${LEVEL_NAME[level]} · ${key.length||1}단계`,posName:pos(i),cageInfo:`케이지 합 ${cage.sum}`,
+        explanation:`${lines.map((l,k)=>`${k+1}. ${l}`).join('\n')}\n→ ${pos(i)}은 ${answer}입니다.`};
+    }
+    return null;
   }
   return {solve,hint,count,combos,topology};
 })();

@@ -243,16 +243,16 @@ SumdokuApp.prototype.createHostRoom = function() {
 
 SumdokuApp.prototype.updateHostLobbyUI = function() {
   if (this.dom.hostP1Status) {
-    this.dom.hostP1Status.textContent = '방장';
-    this.dom.hostP1Status.className = `ready-pill ${this.hostP1Ready ? 'ready' : 'not-ready'}`;
+    this.dom.hostP1Status.textContent = this.hostP1Ready ? '준비 완료' : '준비 중';
+    this.dom.hostP1Status.className = `ready-pill ${this.hostP1Ready ? 'ready' : 'waiting'}`;
   }
   if (this.dom.hostP2Status) {
     if (!this.guestJoined) {
       this.dom.hostP2Status.textContent = '미접속';
-      this.dom.hostP2Status.className = 'ready-pill not-ready';
+      this.dom.hostP2Status.className = 'ready-pill offline';
     } else {
-      this.dom.hostP2Status.textContent = this.hostP2Ready ? '준비 완료' : '준비 중...';
-      this.dom.hostP2Status.className = `ready-pill ${this.hostP2Ready ? 'ready' : 'not-ready'}`;
+      this.dom.hostP2Status.textContent = this.hostP2Ready ? '준비 완료' : '접속 · 준비 중';
+      this.dom.hostP2Status.className = `ready-pill ${this.hostP2Ready ? 'ready' : 'waiting'}`;
     }
   }
   if (this.dom.btnBattleHostReady) {
@@ -404,12 +404,12 @@ SumdokuApp.prototype.connectToHost = async function() {
 
 SumdokuApp.prototype.updateGuestLobbyUI = function() {
   if (this.dom.guestP1Status) {
-    this.dom.guestP1Status.textContent = '방장';
-    this.dom.guestP1Status.className = `ready-pill ${this.guestP1Ready ? 'ready' : 'not-ready'}`;
+    this.dom.guestP1Status.textContent = this.guestP1Ready ? '준비 완료' : '준비 중';
+    this.dom.guestP1Status.className = `ready-pill ${this.guestP1Ready ? 'ready' : 'waiting'}`;
   }
   if (this.dom.guestP2Status) {
-    this.dom.guestP2Status.textContent = this.guestP2Ready ? '준비 완료' : '대기 중';
-    this.dom.guestP2Status.className = `ready-pill ${this.guestP2Ready ? 'ready' : 'not-ready'}`;
+    this.dom.guestP2Status.textContent = this.guestP2Ready ? '준비 완료' : '준비 중';
+    this.dom.guestP2Status.className = `ready-pill ${this.guestP2Ready ? 'ready' : 'waiting'}`;
   }
   if (this.dom.btnBattleGuestReady) {
     this.dom.btnBattleGuestReady.textContent = this.guestP2Ready ? '준비 취소' : '준비 완료';

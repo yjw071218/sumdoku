@@ -46,7 +46,7 @@ class SumdokuGenerator {
       // [2단계: 스마트 케이지 분할]
       let cages = (template && this.mapCageTemplate(template, solution)) || this.createSmartCages(solution, currentAnchors, rng);
       let singles = cages.filter(c => c.cells.length === 1);
-      if (singles.length !== currentAnchors) continue;
+      if (singles.length !== currentAnchors || !this.hasBalancedCageSizes(cages)) continue;
 
       // [★ 2.5단계: 초고속 유일해 검증 + 국소 수리 (Local Area Repair)]
       let isUnique = false;
@@ -71,7 +71,7 @@ class SumdokuGenerator {
       // [3단계: 인간 모사 연역 솔버 검증]
       const solved = this.solveDeductivelyAdvanced(solution, cages);
       const minRequired = 81;
-      if (solved >= minRequired) {
+      if (solved >= minRequired && this.hasBalancedCageSizes(cages)) {
         return {
           solution,
           cages,
@@ -129,7 +129,7 @@ class SumdokuGenerator {
       // [2단계: 스마트 케이지 분할]
       let cages = (template && this.mapCageTemplate(template, solution)) || this.createSmartCages(solution, currentAnchors, rng);
       let singles = cages.filter(c => c.cells.length === 1);
-      if (singles.length !== currentAnchors) continue;
+      if (singles.length !== currentAnchors || !this.hasBalancedCageSizes(cages)) continue;
 
       if (attempts <= 2 && onProgress) {
         onProgress({
@@ -232,7 +232,7 @@ class SumdokuGenerator {
       const solvedCells = detailed.solvedCells;
       const minRequired = 81;
 
-      if (solvedCount >= minRequired) {
+      if (solvedCount >= minRequired && this.hasBalancedCageSizes(cages)) {
         if (onProgress) {
           onProgress({
             diffKr,
@@ -629,15 +629,26 @@ class SumdokuGenerator {
   createCageTemplate(anchors, rng) {
     const path = Array.from({length:81}, (_,i)=>[Math.floor(i/9), Math.floor(i/9)%2 ? 8-i%9 : i%9]);
     const transpose=rng()<0.5, flipR=rng()<0.5, flipC=rng()<0.5;
+    // v1.0.29 used dominoes only, which made accepted puzzles ~90% two-cell cages.
+    // Mix sizes like createSmartCages (2,2,3,3,4) so templates only add variety.
     const sizes=Array(anchors).fill(1);
     let remaining=81-anchors;
-    if(remaining%2){sizes.push(3);remaining-=3;}
-    while(remaining){sizes.push(2);remaining-=2;}
+    while(remaining){
+      const pick=[2,2,3,3,4][Math.floor(rng()*5)];
+      const size=remaining-pick===1?pick+1:Math.min(pick,remaining);
+      sizes.push(size);remaining-=size;
+    }
     for(let i=sizes.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[sizes[i],sizes[j]]=[sizes[j],sizes[i]];}
     let cursor=0;
     return sizes.map(size=>path.slice(cursor,cursor+=size).map(([r,c])=>{
       if(transpose)[r,c]=[c,r];return [flipR?8-r:r,flipC?8-c:c];
     }));
+  }
+
+  // Rejects layouts dominated by two-cell cages (the v1.0.29 regression).
+  hasBalancedCageSizes(cages) {
+    const multi=cages.filter(c=>c.cells.length>1);
+    return multi.length>0 && multi.filter(c=>c.cells.length===2).length/multi.length<=0.6;
   }
 
   mapCageTemplate(template, solution) {

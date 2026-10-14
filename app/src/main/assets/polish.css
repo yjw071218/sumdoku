@@ -90,7 +90,19 @@
 .slot-name { color:var(--ui-ink)!important; }
 .ready-pill { display:inline-flex; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
 .ready-pill.ready { color:var(--ui-success); background:var(--ui-success-soft); }
-.ready-pill.not-ready { color:var(--ui-muted); background:var(--ui-panel); border:1px solid var(--ui-line); }
+.ready-pill { gap:6px; align-items:center; border:1px solid transparent; }
+.ready-pill::before { content:""; width:8px; height:8px; border-radius:50%; flex-shrink:0; background:currentColor; }
+.ready-pill.ready { border-color:color-mix(in srgb, var(--ui-success) 45%, transparent); }
+.ready-pill.ready::before { content:"✓"; width:auto; height:auto; background:none; font-size:12px; line-height:1; }
+/* 미접속: 빈 원 + 점선 테두리 + 흐린 글자 → 아무도 없음 */
+.ready-pill.offline, .ready-pill.not-ready { color:var(--ui-muted); background:transparent; border:1px dashed var(--ui-line); opacity:.8; }
+.ready-pill.offline::before, .ready-pill.not-ready::before { background:transparent; border:1.5px solid currentColor; box-sizing:border-box; }
+/* 준비 중: 접속은 했고 준비 전 → 주황색, 깜빡이는 점 */
+.ready-pill.waiting { color:#d98a00; background:color-mix(in srgb, #f5a524 16%, transparent); border-color:color-mix(in srgb, #f5a524 45%, transparent); }
+.theme-dark .ready-pill.waiting { color:#ffc861; }
+.ready-pill.waiting::before { animation:ready-pulse 1.4s ease-in-out infinite; }
+@keyframes ready-pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.35; transform:scale(.7); } }
+@media (prefers-reduced-motion:reduce) { .ready-pill.waiting::before { animation:none; } }
 .battle-code-display { padding:10px 0 6px; letter-spacing:1.5px; font-weight:800; }
 .btn-copy-code { min-height:36px; padding:6px 10px; border:1px solid var(--ui-line); border-radius:9px; background:var(--ui-panel); color:var(--ui-accent); }
 .battle-input-label { display:block; text-align:left; color:var(--ui-ink); font-size:13px; font-weight:700; margin-bottom:8px; }
