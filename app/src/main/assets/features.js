@@ -150,7 +150,7 @@
   const baseRender = P.updateBoardDisplay;
   P.updateBoardDisplay = function () {
     const result = baseRender.apply(this, arguments);
-    try { applyTint(this); } catch (e) {}
+    try { applyTint(this); syncAutoBtn(this); } catch (e) {}
     return result;
   };
   const baseHighlights = P.updateHighlights;
@@ -198,9 +198,32 @@
     }
     return out;
   }
+  // v1.0.38: 자동 메모는 켜기/끄기 토글. 끌 때는 켜기 전에 직접 적어 둔 메모로 되돌립니다.
+  const syncAutoBtn = app => {
+    const btn = document.getElementById('btn-auto-notes');
+    const on = !!(app._autoNotes && app._autoNotes.board === app.board);
+    if (btn) { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', String(on)); }
+    return on;
+  };
+  P.syncAutoNotesButton = function () { return syncAutoBtn(this); };
+  P.toggleAutoNotes = function () {
+    if (this.currentView !== 'game' || this.isPaused || this.isWin || !this.board || !this.cages) return;
+    if (!syncAutoBtn(this)) return this.fillAutoNotes();
+    const saved = this._autoNotes.notes;
+    this.saveSnapshot();
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+      if (!this.board[r][c].val) this.board[r][c].notes = new Set(saved[r][c]);
+    }
+    this._autoNotes = null; syncAutoBtn(this);
+    this.updateBoardDisplay();
+    if (this.saveOngoingGame) this.saveOngoingGame();
+    this.sound.play('click');
+    this.showToast('자동 메모를 껐습니다 · 직접 적은 메모로 되돌림');
+  };
   P.fillAutoNotes = function () {
     if (this.currentView !== 'game' || this.isPaused || this.isWin || !this.board || !this.cages) return;
     const cand = candidates(this);
+    this._autoNotes = { board: this.board, notes: this.board.map(row => row.map(cell => [...(cell.notes || [])])) };
     this.saveSnapshot();
     let filled = 0;
     for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
@@ -212,7 +235,9 @@
     this.updateBoardDisplay();
     if (this.saveOngoingGame) this.saveOngoingGame();
     this.sound.play('click');
-    this.showToast(filled ? `후보 숫자 ${filled}칸 채움 · 실행 취소 가능` : '채울 빈칸이 없습니다');
+    if (!filled) this._autoNotes = null;
+    syncAutoBtn(this);
+    this.showToast(filled ? `자동 메모 켬 · 후보 숫자 ${filled}칸 채움 (한 번 더 누르면 끔)` : '채울 빈칸이 없습니다');
   };
 
   /* ---------- 5. 오늘의 퍼즐 연속 기록 ---------- */
@@ -470,7 +495,7 @@
     btn.id = 'btn-auto-notes'; btn.className = 'tool-btn'; btn.type = 'button';
     btn.title = '모든 빈칸에 후보 숫자 채우기'; btn.setAttribute('aria-label', '자동 메모: 모든 빈칸에 후보 숫자 채우기');
     btn.innerHTML = `<div class="tool-icon">${svg('<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/>')}</div><span class="tool-label">자동 메모</span>`;
-    btn.addEventListener('click', () => app.fillAutoNotes());
+    btn.addEventListener('click', () => app.toggleAutoNotes());
     pencil.after(btn);
   }
   function buildChat(app) {
@@ -550,7 +575,7 @@
     // 키보드: A = 자동 메모
     document.addEventListener('keydown', e => {
       if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
-      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && app.currentView === 'game' && !document.querySelector('.modal-backdrop:not(.hidden)')) app.fillAutoNotes();
+      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && app.currentView === 'game' && !document.querySelector('.modal-backdrop:not(.hidden)')) app.toggleAutoNotes();
     });
   });
 })();

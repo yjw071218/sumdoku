@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),pat
 const A=path.join(__dirname,'../app/src/main/assets/');
 const ctx={console,Math,Date};vm.createContext(ctx);
 vm.runInContext(['deduction.js','human-hint.js','generator.js'].map(f=>fs.readFileSync(A+f,'utf8')).join('\n')+'\nthis.G=SumdokuGenerator;this.KD=KillerDeduction;',ctx);
-const g=new ctx.G(),levels=[0,0,0,0,0];let wrong=0,stuck=[],dup=0,long=0,samples=[];
+const g=new ctx.G(),levels=[0,0,0,0,0];let echo=[],wrong=0,stuck=[],dup=0,long=0,samples=[];
 const diffs=(process.env.DIFFS||'easy,easy,medium,medium,hard,hard,expert,expert').split(',');
 for(const diff of diffs){
  const {solution,cages}=g.generate(diff);
@@ -14,13 +14,14 @@ for(const diff of diffs){
   if(!h){stuck.push({diff,filled});break;}
   if(h.answer!==solution[h.r][h.c])wrong++;
   levels[h.level]++;
-  const lines=h.explanation.split('\n');if(new Set(lines).size!==lines.length)dup++;if(lines.length>9)long++;
+  const lines=h.explanation.split('\n');if(new Set(lines).size!==lines.length)dup++;if(lines.length>9)long++;if(/= (d+) = (?!d)/.test(h.explanation)||/(^|[^d−+ ]) ?(d+) = (?!d)/.test(h.explanation.replace(/d+행 d+열/g,'')))echo.push(h.explanation);
   if(samples.length<6&&h.level>=2&&!samples.some(s=>s.level===h.level))samples.push({level:h.level,text:h.explanation});
   board[h.r][h.c].val=h.answer;filled++;
  }
 }
 console.log(JSON.stringify({levels:levels.slice(1),wrong,dup,long,stuck},null,1));
 samples.forEach(s=>console.log('--- level',s.level,'\n'+s.text));
+assert.equal(echo.length,0,'no echoed equations like "= 6 = 6": '+echo[0]);
 assert.equal(wrong,0,'hint answers must match the solution');
 assert.equal(dup,0,'no repeated explanation lines');
 assert.equal(long,0,'explanations stay short');

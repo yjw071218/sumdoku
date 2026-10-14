@@ -231,7 +231,7 @@
         const sum = 45 - cs - known.reduce((s, j) => s + val[j], 0);
         const intro = [
           `${h.name}의 숫자 합은 1부터 9까지 더한 45입니다.`,
-          `${h.name} 안에 완전히 들어 있는 케이지의 합: ${contained.map(u => u.sum).join(' + ')} = ${cs}`
+          `${h.name} 안에 완전히 들어 있는 케이지의 합: ${contained.length > 1 ? `${contained.map(u => u.sum).join(' + ')} = ${cs}` : cs}`
         ];
         if (restEmpty.length === 1) {
           const i = restEmpty[0];
@@ -257,9 +257,9 @@
       const v = ts + us - 45 - knownOut.reduce((s, j) => s + val[j], 0);
       if (v >= 1 && v <= 9 && masks[i] & (1 << v)) push({ level: 3, i, v, cost: 32, src: [...allCells], lines: [
         `${h.name}의 숫자 합은 45입니다.`,
-        `${h.name}에 걸친 케이지를 모두 더하면 ${all.map(u => u.sum).join(' + ')} = ${ts}${us ? `, 케이지 밖 숫자 ${uncovered.map(j => val[j]).join('+')}까지 더하면 ${ts + us}` : ''}입니다.`,
-        `45를 넘는 ${ts + us - 45}은(는) ${h.name} 밖으로 튀어나온 칸의 합이고, 그중 빈칸은 ${pos(i)} 하나입니다.`,
-        `${pos(i)} = ${ts + us - 45}${knownOut.length ? ' − ' + knownOut.map(j => val[j]).join(' − ') : ''} = ${v}`
+        `${h.name}에 걸친 케이지를 모두 더하면 ${all.length > 1 ? `${all.map(u => u.sum).join(' + ')} = ${ts}` : ts}${us ? `, 케이지 밖 숫자 ${uncovered.map(j => val[j]).join('+')}까지 더하면 ${ts + us}` : ''}입니다.`,
+        `45를 넘는 ${ts + us - 45}${hasBatchim(ts + us - 45) ? '은' : '는'} ${h.name} 밖으로 튀어나온 칸의 합이고, 그중 빈칸은 ${pos(i)} 하나입니다.`,
+        knownOut.length ? `${pos(i)} = ${ts + us - 45} − ${knownOut.map(j => val[j]).join(' − ')} = ${v}` : `따라서 ${pos(i)} = ${ts + us} − 45 = ${v}`
       ] });
     }
 

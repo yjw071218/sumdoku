@@ -268,3 +268,25 @@ body.battle-active.assistant-visible .game-main-content { padding-top:8px; paddi
 #app.theme-dark #sudoku-board .cell.single-cage .cage-inset-border { border-color:#60a5fa; background:rgba(96,165,250,.22); box-shadow:none; }
 .theme-dark #sudoku-board .cell.single-cage .cell-cage-sum,
 #app.theme-dark #sudoku-board .cell.single-cage .cell-cage-sum { background:#3b82f6; color:#fff; }
+
+/* ===== v1.0.38 · 합계 숫자와 입력 숫자가 겹치지 않게 =====
+   합계가 있는 칸의 입력 숫자를 오른쪽 아래로 살짝 옮기고 약간 줄입니다.
+   transform 대신 translate 속성을 써서 완성 애니메이션(scale)과 충돌하지 않습니다. */
+#sudoku-board .cell.has-cage-sum .cell-value { translate: 0.14em 0.16em; font-size: 0.9em; }
+#sudoku-board .cell.single-cage .cell-cage-sum { padding: 0 2px; border-radius: 3px; line-height: 1.1; }
+@media (max-width: 380px) {
+  #sudoku-board .cell.has-cage-sum .cell-value { translate: 0.18em 0.2em; font-size: 0.84em; }
+}
+/* 아주 작은 보드(작은 휴대폰·배틀 세로 화면): 칸이 20~30px라 더 비켜 둠 */
+@media (max-width: 340px) {
+  #sudoku-board .cell.has-cage-sum .cell-value { translate: 0.22em 0.24em; font-size: 0.78em; }
+  #sudoku-board .cell-cage-sum { font-size: 8px; }
+}
+@media (max-width: 380px) {
+  body.battle-active #sudoku-board .cell.has-cage-sum .cell-value { translate: 0.34em 0.36em; font-size: 0.7em; }
+}
+#sudoku-board .cell.single-cage .cell-value { translate: 0.2em 0.2em; }
+@media (max-width: 380px) {
+  body.battle-active #sudoku-board .cell.single-cage .cell-value { translate: 0.36em 0.38em; }
+  body.battle-active #sudoku-board .cell.single-cage .cell-cage-sum { padding: 0 1px; line-height: 1; }
+}
