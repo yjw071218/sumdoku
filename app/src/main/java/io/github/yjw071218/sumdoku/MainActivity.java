@@ -59,12 +59,35 @@ public class MainActivity extends Activity {
         rootLayout.setFitsSystemWindows(false);
         rootLayout.setOnApplyWindowInsetsListener((v, insets) -> {
             float d = getResources().getDisplayMetrics().density;
-            int cutTop = 0;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && insets.getDisplayCutout() != null) cutTop = insets.getDisplayCutout().getSafeInsetTop();
-            safeTopDp = cutTop / d;
+            int sbHeight = 0;
+            int sbResId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            if (sbResId > 0) sbHeight = getResources().getDimensionPixelSize(sbResId);
+
+            int cutTop = 0, cutBottom = 0;
+            float cutLeftDp = -1f, cutRightDp = -1f;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && insets.getDisplayCutout() != null) {
+                android.view.DisplayCutout cutout = insets.getDisplayCutout();
+                cutTop = cutout.getSafeInsetTop();
+                java.util.List<android.graphics.Rect> rects = cutout.getBoundingRects();
+                if (rects != null && !rects.isEmpty()) {
+                    android.graphics.Rect r = rects.get(0);
+                    cutBottom = r.bottom;
+                    cutLeftDp = r.left / d;
+                    cutRightDp = r.right / d;
+                }
+            }
+            int effectiveTop = Math.max(sbHeight, Math.max(cutTop, cutBottom));
+            if (effectiveTop <= 0) effectiveTop = insets.getSystemWindowInsetTop();
+            safeTopDp = effectiveTop > 0 ? (effectiveTop / d) : 36f;
+            cutoutLeftDp = cutLeftDp;
+            cutoutRightDp = cutRightDp;
+
             // 상단은 앱이 직접 처리하고, 내비게이션 바·키보드 영역만 비워 둡니다.
             v.setPadding(insets.getSystemWindowInsetLeft(), 0, insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
-            if (webView != null) webView.post(() -> webView.evaluateJavascript("window.onAppSafeTop&&window.onAppSafeTop(" + safeTopDp + ")", null));
+            final float st = safeTopDp, cl = cutLeftDp, cr = cutRightDp;
+            if (webView != null) webView.post(() -> {
+                webView.evaluateJavascript("window.onAppCutout&&window.onAppCutout(" + st + "," + cl + "," + cr + ");window.onAppSafeTop&&window.onAppSafeTop(" + st + ")", null);
+            });
             return insets;
         });
         setContentView(rootLayout);
@@ -135,7 +158,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.3";
+            return "1.1.4";
         }
     }
 
@@ -218,7 +241,9 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    private volatile float safeTopDp = 0f;
+    private volatile float safeTopDp = 36f;
+    private volatile float cutoutLeftDp = -1f;
+    private volatile float cutoutRightDp = -1f;
 
     @SuppressWarnings("deprecation")
     private void applyImmersive() {
@@ -236,7 +261,7 @@ public class MainActivity extends Activity {
     }
 
     private class AndroidBridgeInterface {
-        /** v1.1.1 앱 전용 상태바: {"level":0~100,"charging":bool,"safeTop":dp} */
+        /** v1.1.1 앱 전용 상태바: 시간, 배터리, 실제 활성 모드/네트워크 상태만 제공 */
         @JavascriptInterface
         public String getDeviceStatus() {
             int level = -1; boolean charging = false;
@@ -278,50 +303,10 @@ public class MainActivity extends Activity {
             try {
                 airplane = Settings.Global.getInt(getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
             } catch (Exception ignored) {}
-            boolean bluetooth = false;
-            try {
-                bluetooth = Settings.Global.getInt(getContentResolver(), "bluetooth_on", 0) != 0;
-            } catch (Exception ignored) {}
-            if (!bluetooth) {
-                try {
-                    android.bluetooth.BluetoothAdapter ba = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
-                    if (ba != null && ba.isEnabled()) bluetooth = true;
-                } catch (Exception ignored) {}
-            }
-            boolean alarm = false;
-            try {
-                android.app.AlarmManager arm = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-                if (arm != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        alarm = arm.getNextAlarmClock() != null;
-                    } else {
-                        String next = Settings.System.getString(getContentResolver(), Settings.System.NEXT_ALARM_FORMATTED);
-                        alarm = next != null && !next.isEmpty();
-                    }
-                }
-            } catch (Exception ignored) {}
-            boolean powerSave = false;
-            try {
-                android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
-                if (pm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    powerSave = pm.isPowerSaveMode();
-                }
-            } catch (Exception ignored) {}
-            boolean location = false;
-            try {
-                android.location.LocationManager lm = (android.location.LocationManager) getSystemService(LOCATION_SERVICE);
-                if (lm != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        location = lm.isLocationEnabled();
-                    } else {
-                        int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
-                        location = mode != Settings.Secure.LOCATION_MODE_OFF;
-                    }
-                }
-            } catch (Exception ignored) {}
+            boolean is24 = android.text.format.DateFormat.is24HourFormat(MainActivity.this);
             return String.format(java.util.Locale.ROOT,
-                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"airplane\":%b,\"bluetooth\":%b,\"alarm\":%b,\"powerSave\":%b,\"location\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"safeTop\":%.1f}",
-                level, charging, wifi, cellular, airplane, bluetooth, alarm, powerSave, location, ringer, dnd, safeTopDp);
+                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
+                level, charging, wifi, cellular, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
         }
 
         @JavascriptInterface

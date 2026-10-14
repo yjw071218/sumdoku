@@ -3,7 +3,7 @@
 body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
 #app-statusbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 4000; height: var(--sb-h);
-  padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+  padding: 0 var(--sb-pad-right, max(16px, env(safe-area-inset-right))) 0 var(--sb-pad-left, max(16px, env(safe-area-inset-left)));
   display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;
   font: 700 13px/1 -apple-system, "Pretendard", Roboto, sans-serif; font-variant-numeric: tabular-nums;
   color: var(--text-primary, #172033); pointer-events: none;
@@ -11,7 +11,11 @@ body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
   animation: sbIn .4s cubic-bezier(.16,1,.3,1);
 }
 @keyframes sbIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
-#app-statusbar .sb-right { display: flex; align-items: center; gap: 8px; }
+#app-statusbar .sb-right {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  max-width: var(--sb-right-max, calc(50% - 24px));
+  overflow: hidden; white-space: nowrap; justify-content: flex-end;
+}
 #app-statusbar .sb-wifi { display: flex; }
 #app-statusbar .sb-batt { display: flex; align-items: center; gap: 4px; }
 #app-statusbar .sb-batt-body { position: relative; width: 24px; height: 12px; border: 1.6px solid currentColor; border-radius: 4px; padding: 1.5px; box-sizing: border-box; }
@@ -29,10 +33,13 @@ body.has-app-statusbar .modal-backdrop { padding-top: var(--sb-h); box-sizing: b
 body.has-app-statusbar .modal-card { max-height: calc(100dvh - var(--sb-h) - 24px); }
 body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 @media (prefers-reduced-motion: reduce) { #app-statusbar, #app-statusbar * { animation: none !important; } }
-/* v1.1.2: 테마 색 · 날짜/요일 · 방해 금지/진동/무음 아이콘 */
+/* v1.1.2: 테마 색 · 방해 금지/진동/무음 아이콘 */
 #app-statusbar { background: var(--bg-primary, #f8fafc); color: var(--text-primary, #172033); transition: background-color .3s, color .3s; }
-#app-statusbar .sb-left { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
-#app-statusbar .sb-date { font-size: 12px; font-weight: 600; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app-statusbar .sb-left {
+  display: flex; align-items: baseline; min-width: 0;
+  max-width: var(--sb-left-max, calc(50% - 24px));
+  overflow: hidden; white-space: nowrap;
+}
 #app-statusbar .sb-modes { display: flex; align-items: center; gap: 6px; }
 #app-statusbar .sb-modes:empty { display: none; }
 #app-statusbar .sb-net { display: flex; align-items: center; gap: 5px; }
