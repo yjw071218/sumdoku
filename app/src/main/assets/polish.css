@@ -144,3 +144,80 @@ button, [role="button"], input { touch-action:manipulation; }
   body.battle-active .keypad { gap:2px; }
   body.battle-active .key-btn { padding:2px; }
 }
+
+/* ===== v1.0.32 · 힌트 카드 도킹: 보드를 절대 가리지 않음 ===== */
+#floating-hint-card.floating-hint-card {
+  position:relative; inset:auto; left:auto; bottom:auto; transform:none;
+  width:100%; max-width:none; margin:0; z-index:1;
+  display:flex; flex-direction:column; gap:8px;
+  padding:12px 14px; border-radius:16px; border-width:1px;
+  border-color:color-mix(in srgb, var(--ui-accent, #3b82f6) 45%, transparent);
+  box-shadow:0 4px 18px rgba(0,0,0,.10);
+  animation:hintDockIn .22s cubic-bezier(.16,1,.3,1);
+}
+#floating-hint-card.hidden { display:none; }
+@keyframes hintDockIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+/* 힌트가 열린 동안 툴바·키패드 자리를 카드가 차지 */
+body.hint-open #view-game .action-toolbar,
+body.hint-open #view-game .keypad-container,
+body.hint-open #view-game #tablet-assistant-card { display:none !important; }
+body.hint-open #view-game .controls-column { min-height:0; }
+#floating-hint-card .hint-card-header { margin:0; }
+#floating-hint-card .hint-card-body { margin:0; display:flex; flex-direction:column; gap:8px; min-height:0; }
+#floating-hint-card .hint-target-row { flex-wrap:wrap; margin:0; font-size:.85rem; }
+#floating-hint-card .hint-target-label { font-size:.72rem; padding:1px 6px; border-radius:6px; background:var(--ui-panel, rgba(0,0,0,.05)); }
+#floating-hint-card .hint-logic-text {
+  margin:0; padding:8px 10px 8px 12px; max-height:min(34vh, 230px); overflow-y:auto; overscroll-behavior:contain;
+  font-size:.86rem; line-height:1.5;
+}
+.hint-steps { margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px; }
+.hint-steps li { overflow-wrap:anywhere; }
+.hint-steps li::marker { font-weight:800; color:var(--ui-accent, #3b82f6); }
+.hint-conclusion { margin:6px 0 0; font-weight:800; }
+#floating-hint-card .hint-answer-row { margin:0; }
+.hint-answer-val {
+  display:inline-grid; place-items:center; min-width:36px; height:36px; border-radius:10px;
+  background:color-mix(in srgb, #10b981 15%, transparent); transition:filter .2s, background .2s;
+}
+.hint-answer-val.concealed { color:transparent !important; cursor:pointer; position:relative;
+  background:repeating-linear-gradient(45deg, rgba(127,127,127,.18) 0 6px, rgba(127,127,127,.30) 6px 12px); }
+.hint-answer-val.concealed::after { content:"보기"; position:absolute; color:var(--ui-muted, #64748b); font-size:.72rem; font-weight:800; }
+#floating-hint-card .hint-card-footer { gap:8px; }
+#floating-hint-card .hint-card-footer .btn { flex:1; min-height:44px; padding:8px 12px !important; font-size:.88rem !important; border-radius:12px; }
+#floating-hint-card .hint-card-close-btn { min-width:36px; min-height:36px; }
+
+/* 보드 하이라이트: 대상 칸은 또렷하게, 근거 칸은 옅게. 크기 변화 없는 펄스 */
+#sudoku-board .cell.hint-target-highlight {
+  outline:3px solid #3b82f6 !important; outline-offset:-3px;
+  animation:hintCellPulse 1.3s ease-in-out infinite alternate !important; transform:none !important;
+}
+@keyframes hintCellPulse { from { background-color:rgba(59,130,246,.16); } to { background-color:rgba(59,130,246,.34); } }
+#sudoku-board .cell.hint-evidence { background-image:linear-gradient(rgba(245,165,36,.22), rgba(245,165,36,.22)) !important; }
+@media (prefers-reduced-motion:reduce) {
+  #sudoku-board .cell.hint-target-highlight, #floating-hint-card.floating-hint-card { animation:none !important; }
+}
+
+/* ===== v1.0.32 · 전반적 UI/UX 다듬기 ===== */
+:focus-visible { outline:2px solid var(--ui-accent, #3b82f6); outline-offset:2px; }
+.btn, .tool-btn, .key-btn, .icon-btn { -webkit-tap-highlight-color:transparent; transition:transform .12s ease, background-color .15s, box-shadow .15s; }
+.btn:active, .tool-btn:active, .key-btn:active, .icon-btn:active { transform:scale(.96); }
+.btn:disabled, .key-btn:disabled { opacity:.45; transform:none; }
+.key-btn { border-radius:12px; font-variant-numeric:tabular-nums; }
+.toast { max-width:min(92vw, 420px); text-align:center; line-height:1.4; border-radius:12px; }
+.modal-card { border-radius:20px; }
+.modal-card h3 { line-height:1.3; }
+.modal-footer { gap:8px; }
+.modal-footer .btn { min-height:44px; }
+#view-game .game-header, #view-game .game-sub-bar { font-variant-numeric:tabular-nums; }
+@media (prefers-reduced-motion:reduce) {
+  .btn, .tool-btn, .key-btn, .icon-btn { transition:none; }
+  .btn:active, .tool-btn:active, .key-btn:active, .icon-btn:active { transform:none; }
+}
+/* 낮은 화면(가로 휴대폰 등): 카드 압축, 설명만 내부 스크롤 */
+@media (max-height:520px) {
+  #floating-hint-card.floating-hint-card { padding:8px 10px; gap:5px; }
+  #floating-hint-card .hint-card-body { gap:5px; }
+  #floating-hint-card .hint-logic-text { max-height:84px; font-size:.8rem; padding:5px 8px; }
+  #floating-hint-card .hint-card-footer .btn { min-height:38px; }
+  .hint-answer-val { min-width:30px; height:30px; }
+}

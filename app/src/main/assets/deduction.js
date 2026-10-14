@@ -72,7 +72,7 @@ const KillerDeduction = (() => {
       const dependencies=new Set();
       if(traced) for(const i of sources) for(const p of proof[i]) dependencies.add(p);
       const id=events.length;
-      if(traced) events.push({id,reason,technique,dependencies:[...dependencies],updates:actual.map(([i,m])=>({i,before:masks[i],after:m}))});
+      if(traced) events.push({id,reason,technique,sources:[...sources],dependencies:[...dependencies],updates:actual.map(([i,m])=>({i,before:masks[i],after:m}))});
       for(const [i,m] of actual) {
         if(!m) contradiction=true;
         if(traced) {
