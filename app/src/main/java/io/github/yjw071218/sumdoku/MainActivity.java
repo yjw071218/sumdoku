@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
             filter.addAction(Intent.ACTION_POWER_CONNECTED);
             filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
             filter.addAction(android.media.AudioManager.RINGER_MODE_CHANGED_ACTION);
+            filter.addAction("android.media.INTERNAL_RINGER_MODE_CHANGED_ACTION");
             filter.addAction(android.app.NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
             filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
             if (Build.VERSION.SDK_INT >= 33) registerReceiver(deviceStatusReceiver, filter, android.content.Context.RECEIVER_EXPORTED);
@@ -110,6 +111,11 @@ public class MainActivity extends Activity {
         FrameLayout rootLayout = new FrameLayout(this);
         rootLayout.setFitsSystemWindows(false);
         rootLayout.setOnApplyWindowInsetsListener((v, insets) -> {
+            // 충전·알림 등으로 시스템 상단바가 나타나면 곧바로 다시 숨깁니다.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets.isVisible(android.view.WindowInsets.Type.statusBars())) {
+                mainHandler.removeCallbacks(rehideBars);
+                mainHandler.postDelayed(rehideBars, 300);
+            }
             float d = getResources().getDisplayMetrics().density;
             int sbHeight = 0;
             int sbResId = getResources().getIdentifier("status_bar_height", "dimen", "android");
@@ -212,7 +218,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.9";
+            return "1.1.11";
         }
     }
 
@@ -308,7 +314,7 @@ public class MainActivity extends Activity {
             getWindow().setDecorFitsSystemWindows(false);
             android.view.WindowInsetsController controller = getWindow().getInsetsController();
             if (controller != null) {
-                controller.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_DEFAULT);
+                controller.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 controller.hide(android.view.WindowInsets.Type.statusBars());
             }
             return;
@@ -316,8 +322,11 @@ public class MainActivity extends Activity {
         decor.setSystemUiVisibility(
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN);
+            | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+            | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
+
+    private final Runnable rehideBars = this::applyImmersive;
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -368,7 +377,8 @@ public class MainActivity extends Activity {
             try {
                 android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
                 if (am != null) {
-                    int rm = am.getRingerMode();
+                    // 사용자가 설정한 벨소리 모드를 우선 사용합니다. getRingerMode()는 방해 금지 등에 의해 무음으로 보고될 수 있습니다.
+                    int rm = android.provider.Settings.Global.getInt(getContentResolver(), "mode_ringer", am.getRingerMode());
                     ringer = rm == android.media.AudioManager.RINGER_MODE_VIBRATE ? "vibrate" : rm == android.media.AudioManager.RINGER_MODE_SILENT ? "silent" : "normal";
                 }
             } catch (Exception ignored) {}
