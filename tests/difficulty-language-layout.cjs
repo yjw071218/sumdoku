@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+(async()=>{const b=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});try{
+const p=await b.newPage();await p.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.47'}}));await p.goto('file:///'+path.resolve('app/src/main/assets/index.html').replace(/\\/g,'/'));await p.waitForFunction(()=>window.app);let cases=0;
+for(const [width,height] of [[320,568],[390,844],[430,932],[844,390],[1024,768]])for(const lang of ['ko','en','ja','zh','zh-TW','es','fr','de'])for(const scale of [1,1.3]){
+ await p.setViewportSize({width,height});await p.evaluate(({lang,scale})=>{I18N.setLanguage(lang);document.documentElement.style.fontSize=16*scale+'px';document.getElementById('modal-difficulty').classList.remove('hidden');document.querySelectorAll('#modal-difficulty details').forEach(e=>e.open=true);},{lang,scale});await p.waitForTimeout(25);
+ const issues=await p.evaluate(()=>{const card=document.querySelector('#modal-difficulty .modal-card'),bounds=card.getBoundingClientRect(),issues=[];if(bounds.top<0||bounds.bottom>innerHeight+1)issues.push('vertical viewport');if(card.scrollWidth>card.clientWidth+1)issues.push('horizontal scroll');for(const e of card.querySelectorAll('button,span,label,input,summary,h3,p')){if(!e.getClientRects().length)continue;const r=e.getBoundingClientRect();if(r.left<bounds.left-1||r.right>bounds.right+1)issues.push(e.id||e.className||e.tagName);}return issues;});assert.deepEqual(issues,[],`${width}x${height} ${lang} font ${scale}`);cases++;
+}
+await p.setViewportSize({width:390,height:844});await p.evaluate(()=>{I18N.setLanguage('ja');document.documentElement.style.fontSize='16px';app.applyTheme('theme-sepia');document.querySelector('#modal-difficulty .modal-card').scrollTop=0;});await p.screenshot({path:'build/difficulty-layout-ja.png'});console.log('PASS: '+cases+' language / viewport / font-size combinations');
+}finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

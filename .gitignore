@@ -5,3 +5,6 @@ app/build/
 .idea/
 local.properties
 .DS_Store
+
+# Release APKs are distributed through GitHub Releases.
+*.[aA][pP][kK]

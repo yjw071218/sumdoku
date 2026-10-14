@@ -13,3 +13,66 @@ select.app-choice-source { display:none!important; }
 .choice-option.selected::after { content:'✓'; position:absolute; right:16px; top:13px; color:#6366f1; }
 .choice-option:focus-visible,.choice-close:focus-visible,.app-choice-trigger:focus-visible { outline:3px solid #818cf8; outline-offset:2px; }
 @media(max-width:480px) { .choice-dialog { margin:auto auto 16px; } }
+/* Translated text must wrap within its own column, including CJK text. */
+.settings-info { box-sizing:border-box; }
+.settings-info .s-title,
+.settings-info .s-desc {
+  min-width:0;
+  max-width:100%;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere;
+  line-height:1.5;
+}
+/* Full-width controls leave long labels and option names room to grow. */
+.settings-item:has(> .app-choice-trigger),
+.settings-item:has(> .settings-input) {
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:8px!important;
+}
+.settings-item:has(> .app-choice-trigger) > .settings-info,
+.settings-item:has(> .settings-input) > .settings-info {
+  padding-right:0!important;
+  width:100%;
+}
+.settings-item > .app-choice-trigger,
+.settings-item > .settings-input {
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere;
+  box-sizing:border-box;
+}
+/* Long translated labels expand vertically rather than widening the dialog. */
+#modal-difficulty .modal-card { min-width:0; box-sizing:border-box; }
+#modal-difficulty .mode-select-btn {
+  min-width:0;
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:anywhere;
+  line-height:1.5;
+  height:auto;
+}
+#modal-difficulty .diff-card-btn,
+#modal-difficulty .diff-card-header { min-width:0; max-width:100%; }
+#modal-difficulty .diff-card-header { flex-wrap:wrap; }
+#modal-difficulty .diff-tag,
+#modal-difficulty .diff-hint-count,
+#modal-difficulty .diff-card-desc,
+#modal-difficulty h3,
+#modal-difficulty p,
+#modal-difficulty .modal-footer .btn {
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  word-break:normal;
+  overflow-wrap:anywhere;
+}
+#modal-difficulty .quick-settings-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#modal-difficulty .quick-settings-grid > * { min-width:0; overflow-wrap:anywhere; }
+@media(max-width:400px) {
+  #modal-difficulty .play-mode-options { flex-direction:column; }
+  #modal-difficulty .quick-settings-grid { grid-template-columns:minmax(0,1fr); }
+}
