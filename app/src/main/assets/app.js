@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.7";
+const APP_VERSION = "1.1.8";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -1723,6 +1723,7 @@ class SumdokuApp {
     this.dom.btnGameSettings.addEventListener('click', () => {
       this.sound.play('click');
       this.dom.modalSettings.classList.remove('hidden');
+      this.dom.modalSettings.querySelector('.modal-card').scrollTop = 0;
     });
 
     // 게임 내 설정 모달

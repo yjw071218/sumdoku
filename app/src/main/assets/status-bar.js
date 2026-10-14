@@ -17,6 +17,7 @@
     de: { dnd: 'Nicht stören', vibrate: 'Vibration', silent: 'Lautlos', charging: 'Wird geladen', wifi: 'WLAN', cellular: 'Mobile Daten', airplane: 'Flugmodus' }
   };
   const lang = () => (window.I18N && LABELS[I18N.currentLang]) ? I18N.currentLang : 'ko';
+  const OFFLINE_LABELS = {ko:'인터넷 연결 끊김',en:'No internet connection',ja:'インターネット未接続',zh:'无互联网连接','zh-TW':'無網際網路連線',es:'Sin conexión a Internet',fr:'Pas de connexion Internet',de:'Keine Internetverbindung'};
   const L = () => LABELS[lang()];
   let bar, safeTop = 0, last = {};
 
@@ -51,6 +52,7 @@
 
   const svg = (body, title) => `<svg viewBox="0 0 24 24" width="15" height="15" role="img" aria-label="${title}"><title>${title}</title>${body}</svg>`;
   const ICON = {
+    offline: () => svg('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c-4 4-4 14 0 18M12 3c2 2 3 5 3 8M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>', OFFLINE_LABELS[lang()]),
     wifi: () => svg('<g><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></g>', L().wifi),
     cellular: () => svg('<path d="M3 15h2.5v4H3v-4zm4.5-4H10v8H7.5v-8zm4.5-4H14.5v12H12V7zm4.5-4H19v16h-2.5V3z" fill="currentColor"/>', L().cellular),
     airplane: () => svg('<path d="M10.18 9L3 13.5V15l7.18-2.16V18L8 19.5V21l4-1 4 1v-1.5L13.82 18v-5.16L21 15v-1.5L13.82 9V3.5a1.82 1.82 0 0 0-3.64 0V9z" fill="currentColor"/>', L().airplane),
@@ -103,6 +105,8 @@
       setHtmlIfChanged(bar.querySelector('.sb-wifi'), '');
     }
 
+    const offline = typeof st.internet === 'boolean' ? !st.internet : st.wifi === false && st.cellular === false;
+    setHtmlIfChanged(bar.querySelector('.sb-offline'), offline ? ICON.offline() : '');
     const lv = st.level >= 0 ? st.level : null;
     const batt = bar.querySelector('.sb-batt');
     batt.dataset.low = lv != null && lv <= 15 && !st.charging ? '1' : '';
@@ -114,6 +118,7 @@
       st.airplane && L().airplane,
       !st.airplane && st.wifi && L().wifi,
       !st.airplane && !st.wifi && st.cellular && L().cellular,
+      offline && OFFLINE_LABELS[lang()],
       st.dnd && L().dnd,
       st.ringer === 'vibrate' && L().vibrate,
       st.ringer === 'silent' && L().silent,
@@ -122,6 +127,8 @@
     bar.setAttribute('aria-label', [time, lv != null ? lv + '%' : '', ...extra].filter(Boolean).join(' · '));
   }
 
+  window.onAppDeviceStatusChanged = () => render();
+  window.addEventListener('focus', () => render());
   window.addEventListener('DOMContentLoaded', () => {
     if (!bridge()) return;
     document.body.classList.add('has-app-statusbar');
@@ -129,10 +136,13 @@
     bar.id = 'app-statusbar'; bar.setAttribute('role', 'status'); bar.dataset.userContent = '';
     bar.innerHTML = '<span class="sb-left"><span class="sb-time"></span></span><span class="sb-right"><span class="sb-modes"></span><span class="sb-net"><span class="sb-airplane"></span><span class="sb-cellular"></span><span class="sb-wifi"></span></span><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span><span class="sb-bolt" aria-hidden="true"><svg viewBox="0 0 7 10" xmlns="http://www.w3.org/2000/svg"><path d="M4 0 0 6h3l-1 4 5-6H4z"/></svg></span></span><span class="sb-batt-text"></span></span></span>';
     (document.getElementById('app') || document.body).append(bar);
+    const offline = document.createElement('span'); offline.className = 'sb-offline';
+    bar.querySelector('.sb-net').append(offline);
     render();
     const tick = () => { render(); setTimeout(tick, 60000 - Date.now() % 60000 + 50); };
     setTimeout(tick, 60000 - Date.now() % 60000 + 50);
-    setInterval(render, 5000);
+    // 네이티브 변경 이벤트가 기본 경로이며 폴링은 이벤트 누락을 보완합니다.
+    setInterval(() => { if (!document.hidden) render(); }, 1000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
     if (window.I18N && I18N.setLanguage) { const base = I18N.setLanguage; I18N.setLanguage = function () { const r = base.apply(this, arguments); render(); return r; }; }
   });

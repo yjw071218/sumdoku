@@ -133,7 +133,7 @@ SumdokuApp.prototype.bindEvents = function() {
 };
 
 SumdokuApp.prototype.installQuickSettings = function(container, battle) {
-  const panel = document.createElement('details'); panel.className = 'quick-settings'; panel.open = true;
+  const panel = document.createElement('details'); panel.className = 'quick-settings';
   const summary = document.createElement('summary'); summary.textContent = battle ? '대전 규칙 · 두 플레이어 공통' : '시작 전 설정'; panel.append(summary);
   const grid = document.createElement('div'); grid.className = 'quick-settings-grid'; panel.append(grid);
   const fields = [
@@ -195,7 +195,27 @@ SumdokuApp.prototype.syncQuickSettings = function() {
   });
 };
 const baseOpenDifficulty = SumdokuApp.prototype.openDifficultyModal;
-SumdokuApp.prototype.openDifficultyModal = function() {baseOpenDifficulty.call(this); this.syncQuickSettings();};
+SumdokuApp.prototype.openDifficultyModal = function() {
+  this.dom.modalDiff.querySelectorAll('.quick-settings').forEach(panel => { panel.open = false; });
+  baseOpenDifficulty.call(this);
+  this.syncQuickSettings();
+};
+const baseOpenBattleLobby = SumdokuApp.prototype.openBattleLobby;
+SumdokuApp.prototype.openBattleLobby = function() {
+  // 매 클릭마다 다시 확인합니다. 인터넷이 없는 로컬 Wi-Fi도 대전에 사용할 수 있습니다.
+  const bridge = window.AndroidBridge;
+  let wifiConnected;
+  try {
+    if (bridge?.isWifiConnected) wifiConnected = bridge.isWifiConnected();
+    else if (bridge?.getDeviceStatus) wifiConnected = JSON.parse(bridge.getDeviceStatus()).wifi;
+  } catch (_) { /* 브리지 상태를 알 수 없는 브라우저에서는 기존 진입 유지 */ }
+  if (wifiConnected === false) {
+    this.showToast('배틀을 하려면 Wi-Fi를 켜고 같은 Wi-Fi에 연결해 주세요.', 4500);
+    return;
+  }
+  this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(panel => { panel.open = false; });
+  return baseOpenBattleLobby.apply(this, arguments);
+};
 
 SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.hideGeneratingOverlay();

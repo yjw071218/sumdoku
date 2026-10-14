@@ -37,6 +37,60 @@ public class MainActivity extends Activity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final String PREFS_NAME = "sumdoku_app_prefs";
     private static final String KEY_HOT_VERSION = "hot_update_version";
+    private android.content.BroadcastReceiver deviceStatusReceiver;
+    private android.net.ConnectivityManager.NetworkCallback deviceNetworkCallback;
+    private final Runnable statusRefresh = () -> {
+        if (webView != null) webView.evaluateJavascript("window.onAppDeviceStatusChanged&&window.onAppDeviceStatusChanged()", null);
+    };
+
+    private void requestStatusRefresh() {
+        mainHandler.removeCallbacks(statusRefresh);
+        mainHandler.postDelayed(statusRefresh, 40);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        applyImmersive();
+        if (deviceStatusReceiver == null) {
+            deviceStatusReceiver = new android.content.BroadcastReceiver() {
+                @Override public void onReceive(android.content.Context context, Intent intent) {
+                    requestStatusRefresh();
+                    String action = intent.getAction();
+                    if (hasWindowFocus() && (Intent.ACTION_POWER_CONNECTED.equals(action) || Intent.ACTION_POWER_DISCONNECTED.equals(action))) applyImmersive();
+                }
+            };
+            android.content.IntentFilter filter = new android.content.IntentFilter();
+            filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+            filter.addAction(Intent.ACTION_POWER_CONNECTED);
+            filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+            filter.addAction(android.media.AudioManager.RINGER_MODE_CHANGED_ACTION);
+            filter.addAction(android.app.NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
+            filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(deviceStatusReceiver, filter, android.content.Context.RECEIVER_EXPORTED);
+            else registerReceiver(deviceStatusReceiver, filter);
+        }
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (cm != null && deviceNetworkCallback == null) {
+            deviceNetworkCallback = new android.net.ConnectivityManager.NetworkCallback() {
+                @Override public void onAvailable(android.net.Network network) { requestStatusRefresh(); }
+                @Override public void onLost(android.net.Network network) { requestStatusRefresh(); }
+                @Override public void onCapabilitiesChanged(android.net.Network network, android.net.NetworkCapabilities caps) { requestStatusRefresh(); }
+            };
+            cm.registerDefaultNetworkCallback(deviceNetworkCallback);
+        }
+        requestStatusRefresh();
+    }
+
+    @Override
+    protected void onPause() {
+        if (deviceStatusReceiver != null) { unregisterReceiver(deviceStatusReceiver); deviceStatusReceiver = null; }
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (cm != null && deviceNetworkCallback != null) cm.unregisterNetworkCallback(deviceNetworkCallback);
+        deviceNetworkCallback = null;
+        mainHandler.removeCallbacks(statusRefresh);
+        super.onPause();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,7 +212,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.7";
+            return "1.1.8";
         }
     }
 
@@ -247,20 +301,41 @@ public class MainActivity extends Activity {
 
     @SuppressWarnings("deprecation")
     private void applyImmersive() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+            android.view.WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_DEFAULT);
+                controller.hide(android.view.WindowInsets.Type.statusBars());
+            }
+            return;
+        }
         getWindow().getDecorView().setSystemUiVisibility(
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-            | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) applyImmersive();
+        if (hasFocus) { applyImmersive(); requestStatusRefresh(); }
     }
 
     private class AndroidBridgeInterface {
+        @JavascriptInterface
+        public boolean isWifiConnected() {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            // 기본 인터넷 경로가 모바일 데이터여도 연결된 로컬 Wi-Fi가 있으면 허용합니다.
+            for (android.net.Network network : cm.getAllNetworks()) {
+                android.net.NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
+                if (capabilities != null && capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)) return true;
+            }
+            return false;
+        }
+
         /** v1.1.1 앱 전용 상태바: 시간, 배터리, 실제 활성 모드/네트워크 상태만 제공 */
         @JavascriptInterface
         public String getDeviceStatus() {
@@ -271,10 +346,11 @@ public class MainActivity extends Activity {
                     int l = b.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1), sc = b.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100);
                     if (l >= 0 && sc > 0) level = Math.round(l * 100f / sc);
                     int st = b.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
-                    charging = st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL;
+                    boolean plugged = b.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0;
+                    charging = plugged && (st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL);
                 }
             } catch (Exception ignored) {}
-            boolean wifi = false, cellular = false;
+            boolean wifi = false, cellular = false, internet = false;
             try {
                 android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
                 if (cm != null) {
@@ -282,6 +358,7 @@ public class MainActivity extends Activity {
                     if (nc != null) {
                         wifi = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
                         cellular = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR);
+                        internet = nc.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
                     }
                 }
             } catch (Exception ignored) {}
@@ -305,8 +382,8 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
             boolean is24 = android.text.format.DateFormat.is24HourFormat(MainActivity.this);
             return String.format(java.util.Locale.ROOT,
-                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
-                level, charging, wifi, cellular, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
+                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"internet\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
+                level, charging, wifi, cellular, internet, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
         }
 
         @JavascriptInterface

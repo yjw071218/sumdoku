@@ -2,6 +2,7 @@
 (() => {
   const T = window.UI_TRANSLATIONS = window.UI_TRANSLATIONS || {};
   const rows = {
+    '배틀을 하려면 Wi-Fi를 켜고 같은 Wi-Fi에 연결해 주세요.': ['To battle, turn on Wi-Fi and connect to the same Wi-Fi network.','対戦するにはWi-Fiをオンにして、同じWi-Fiに接続してください。','要对战，请开启Wi-Fi并连接到同一个Wi-Fi网络。','若要對戰，請開啟Wi-Fi並連線到同一個Wi-Fi網路。','Para jugar, activa el Wi-Fi y conecta ambos dispositivos a la misma red.','Pour jouer, activez le Wi-Fi et connectez les appareils au même réseau.','Aktiviere für ein Duell WLAN und verbinde beide Geräte mit demselben WLAN.'],
     '90초로 시작하며 새 정답마다 90초가 상한 없이 쌓입니다. 90초마다 바의 배수와 색상이 바뀝니다. 시간 소진 시 목숨 -1, 상대 정답 시 시간 감소. 먼저 완성하거나 끝까지 살아남으면 승리': [
       'Start with 90 seconds. Each newly solved cell adds 90 seconds with no cap. Every 90 seconds changes the bar multiplier and color. Lose a life when time runs out; opponent answers reduce your time. Finish first or outlast them to win.',
       '90秒で開始し、新しく正解したマスごとに90秒が上限なく加算されます。90秒ごとにバーの倍率と色が変わります。時間切れでライフ−1、相手の正解で残り時間が減少。先に完成するか最後まで生き残れば勝利。',

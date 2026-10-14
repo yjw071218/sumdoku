@@ -30,8 +30,15 @@ body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
 /* 화면 콘텐츠는 상태바 아래에서 시작합니다. */
 body.has-app-statusbar .view { top: var(--sb-h); padding-top: 8px; }
 body.has-app-statusbar.battle-active #view-game { top: var(--sb-h); height: calc(100% - var(--sb-h)); padding-top: 4px; }
-body.has-app-statusbar .modal-backdrop { padding-top: var(--sb-h); box-sizing: border-box; }
-body.has-app-statusbar .modal-card { max-height: calc(100dvh - var(--sb-h) - 24px); }
+/* 모바일의 !important 패딩·높이 규칙보다 우선해 상태바 아래에 모서리 여백을 둡니다. */
+body.has-app-statusbar .modal-backdrop {
+  padding-top: calc(var(--sb-h) + 12px) !important;
+  padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box;
+}
+body.has-app-statusbar .modal-card {
+  max-height: min(100%, calc(100dvh - var(--sb-h) - 24px - env(safe-area-inset-bottom))) !important;
+}
 body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 @media (prefers-reduced-motion: reduce) { #app-statusbar, #app-statusbar * { animation: none !important; } }
 /* v1.1.2: 테마 색 · 방해 금지/진동/무음 아이콘 */
@@ -45,4 +52,5 @@ body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 #app-statusbar .sb-modes:empty { display: none; }
 #app-statusbar .sb-net { display: flex; align-items: center; gap: 5px; }
 #app-statusbar .sb-net span:empty { display: none; }
+#app-statusbar .sb-offline { display:flex; align-items:center; }
 #app-statusbar .sb-cellular, #app-statusbar .sb-airplane, #app-statusbar .sb-wifi { display: flex; align-items: center; }
