@@ -30,7 +30,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     await new Promise(r=>setTimeout(r,100));
     const cards=[...document.querySelectorAll('#panel-awards .ach-card')];
     const got=cards.filter(c=>c.classList.contains('got')).map(c=>c.querySelector('strong').textContent);
-    return {res,statsAch,cards:cards.length,got,oldGrid:!!document.getElementById('awards-list-grid')};
+    const groups=[...document.querySelectorAll('.hub-card-group')];
+    const minGap=groups.length>1?Math.min(...groups.slice(0,-1).map((g,i)=>Math.round(groups[i+1].getBoundingClientRect().top-g.getBoundingClientRect().bottom))):8;
+    return {res,statsAch,cards:cards.length,got,oldGrid:!!document.getElementById('awards-list-grid'),minGap};
    });
    await p.screenshot({path:path.join(os.tmpdir(),`sumdoku-hub-${w}.png`)});
    out.push({w,tablet,...r});await p.close();
@@ -38,6 +40,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  }finally{await browser.close()}
  const fail=[];
  for(const r of out){
+  if(r.tablet&&r.minGap<6)fail.push([r.w,'card group gap collapsed',r.minGap]);
   for(const name of ['통계','어워드','게임 설정']){
    const t=r.res[name];
    if(r.tablet){ if(t.filter(x=>x==='설정').length!==1||!t.includes(name))fail.push([r.w,name,t]); }

@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.1.2";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -1014,14 +1014,22 @@ class SumdokuApp {
 
   // 모바일 안드로이드 스타일 설정 상세 화면 진입
   enterMobileHubDetail(title = '설정') {
+    const mobile = !document.querySelector('.hub-header-right') || getComputedStyle(document.querySelector('.hub-header-right')).display === 'none';
+    if (!mobile) {
+      this.isMobileHubInDetail = false;
+      const hubContainer = document.querySelector('.hub-container');
+      if (hubContainer) hubContainer.classList.remove('mobile-detail-mode');
+      if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.add('hidden');
+      if (this.dom.btnHubHome) this.dom.btnHubHome.classList.remove('hidden');
+      if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = window.I18N ? window.I18N.t('hub_main_title', '설정') : '설정';
+      return;
+    }
     this.isMobileHubInDetail = true;
     const hubContainer = document.querySelector('.hub-container');
     if (hubContainer) hubContainer.classList.add('mobile-detail-mode');
     if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.remove('hidden');
     if (this.dom.btnHubHome) this.dom.btnHubHome.classList.add('hidden');
-    // 모바일: 상세 화면에서는 선택한 항목 이름을 제목으로 표시 (태블릿은 왼쪽 목록 제목 '설정' 유지)
-    const mobile = !document.querySelector('.hub-header-right') || getComputedStyle(document.querySelector('.hub-header-right')).display === 'none';
-    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = mobile ? title : '설정';
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = title;
   }
 
   // 모바일 안드로이드 스타일 설정 목록 화면으로 복귀

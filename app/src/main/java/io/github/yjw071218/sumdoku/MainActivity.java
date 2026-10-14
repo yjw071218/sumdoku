@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.1";
+            return "1.1.2";
         }
     }
 
@@ -255,7 +255,17 @@ public class MainActivity extends Activity {
                 android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(cm.getActiveNetwork());
                 wifi = nc != null && nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
             } catch (Exception ignored) {}
-            return String.format(java.util.Locale.ROOT, "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"safeTop\":%.1f}", level, charging, wifi, safeTopDp);
+            String ringer = "normal"; boolean dnd = false;
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
+                int rm = am.getRingerMode();
+                ringer = rm == android.media.AudioManager.RINGER_MODE_VIBRATE ? "vibrate" : rm == android.media.AudioManager.RINGER_MODE_SILENT ? "silent" : "normal";
+            } catch (Exception ignored) {}
+            try {
+                android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                dnd = nm.getCurrentInterruptionFilter() > android.app.NotificationManager.INTERRUPTION_FILTER_ALL;
+            } catch (Exception ignored) {}
+            return String.format(java.util.Locale.ROOT, "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"safeTop\":%.1f}", level, charging, wifi, ringer, dnd, safeTopDp);
         }
 
         @JavascriptInterface

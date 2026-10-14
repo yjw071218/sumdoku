@@ -1,9 +1,9 @@
-/* v1.1.1 앱 전용 상태바. --sb-safe: 노치(카메라) 높이, --sb-h: 상태바 전체 높이 */
+/* v1.1.3 앱 전용 상태바. 카메라섬(노치/펀치홀)과 같은 수평 라인에 일체감 있게 정렬합니다. */
 :root { --sb-safe: 0px; --sb-h: 0px; }
-body.has-app-statusbar { --sb-h: calc(var(--sb-safe) + 28px); }
+body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
 #app-statusbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 4000; height: var(--sb-h);
-  padding: var(--sb-safe) max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left));
+  padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
   display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;
   font: 700 13px/1 -apple-system, "Pretendard", Roboto, sans-serif; font-variant-numeric: tabular-nums;
   color: var(--text-primary, #172033); pointer-events: none;
@@ -29,3 +29,10 @@ body.has-app-statusbar .modal-backdrop { padding-top: var(--sb-h); box-sizing: b
 body.has-app-statusbar .modal-card { max-height: calc(100dvh - var(--sb-h) - 24px); }
 body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 @media (prefers-reduced-motion: reduce) { #app-statusbar, #app-statusbar * { animation: none !important; } }
+/* v1.1.2: 테마 색 · 날짜/요일 · 방해 금지/진동/무음 아이콘 */
+#app-statusbar { background: var(--bg-primary, #f8fafc); color: var(--text-primary, #172033); transition: background-color .3s, color .3s; }
+#app-statusbar .sb-left { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+#app-statusbar .sb-date { font-size: 12px; font-weight: 600; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app-statusbar .sb-modes { display: flex; gap: 6px; }
+#app-statusbar .sb-modes:empty { display: none; }
+#app-statusbar .sb-modes svg { animation: sbIn .35s ease; }

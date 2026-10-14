@@ -14,7 +14,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    out.text=document.querySelector('.sb-time').textContent+'|'+document.querySelector('.sb-batt-text').textContent;out.low=document.querySelector('.sb-batt').dataset.low;
    window.__st.charging=true;window.__st.level=80;document.dispatchEvent(new Event('visibilitychange'));out.charging=document.querySelector('.sb-batt').dataset.charging;out.fill=document.querySelector('.sb-batt-fill').style.width;
    return out;});
-  assert.equal(r.barH,28+safe);for(const k of ['view-home','view-stats','view-daily'])assert.ok(r[k]>=r.barH,k+' '+JSON.stringify(r));
+  assert.equal(r.barH,Math.max(30,safe));for(const k of ['view-home','view-stats','view-daily'])assert.ok(r[k]>=r.barH,k+' '+JSON.stringify(r));
   assert.equal(r.low,'1');assert.equal(r.charging,'1');assert.equal(r.fill,'80%');assert.match(r.text,/\d.*\|14%/);
   if(w===390)await p.screenshot({path:'build/statusbar-390.png'});
   results.push(`${w}px:${r.text}`);await p.close();}
