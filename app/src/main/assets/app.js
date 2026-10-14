@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.36";
+const APP_VERSION = "1.0.37";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -888,7 +888,7 @@ class SumdokuApp {
     const targetItem = document.querySelector(`.hub-menu-item[data-hub-panel="${panelId}"]`);
     const targetTitle = title || targetItem?.dataset?.hubTitle || '설정';
     const titleEl = document.getElementById('hub-active-title');
-    if (titleEl) titleEl.textContent = '설정';
+    if (titleEl) titleEl.textContent = targetTitle;
 
     document.querySelectorAll('.hub-panel').forEach(p => p.classList.remove('active'));
     const targetPanel = document.getElementById(panelId);
@@ -946,7 +946,9 @@ class SumdokuApp {
     if (hubContainer) hubContainer.classList.add('mobile-detail-mode');
     if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.remove('hidden');
     if (this.dom.btnHubHome) this.dom.btnHubHome.classList.add('hidden');
-    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = '설정';
+    // 모바일: 상세 화면에서는 선택한 항목 이름을 제목으로 표시 (태블릿은 왼쪽 목록 제목 '설정' 유지)
+    const mobile = !document.querySelector('.hub-header-right') || getComputedStyle(document.querySelector('.hub-header-right')).display === 'none';
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = mobile ? title : '설정';
   }
 
   // 모바일 안드로이드 스타일 설정 목록 화면으로 복귀

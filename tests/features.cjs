@@ -113,7 +113,7 @@ const url = 'file:///' + path.resolve('app/src/main/assets/index.html').split(pa
       for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) app.board[r][c].val = app.solution[r][c];
       app.hintsUsed = 0; app.mistakes = 0; app.score = 500; app.resultReason = null; app.isWin = true;
       app.recordGameEnd(true);
-      app.renderStatsView();
+      app.renderAwardsList();
       return { s, hero: document.getElementById('daily-streak-hero')?.textContent, got: document.querySelectorAll('#achievements-section .ach-card.got').length, saved: Object.keys(JSON.parse(localStorage.getItem('sumdoku_achievements') || '{}')) };
     });
     assert.equal(ach.s.cur, 3); assert.ok(ach.hero.includes('연속 3일'));

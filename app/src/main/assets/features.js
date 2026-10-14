@@ -253,7 +253,7 @@
 
   /* ---------- 6. 업적 · 배지 ---------- */
   const ACH = [
-    { id: 'first_win', icon: '🎉', name: '첫 완성', desc: '퍼즐을 처음으로 완성', test: c => c.win },
+    { id: 'first_win', icon: '🎉', name: '첫 완성', desc: '퍼즐을 처음으로 완성', test: c => c.win || c.totalWins >= 1 },
     { id: 'no_hint', icon: '🧠', name: '순수 논리', desc: '힌트 없이 완성', test: c => c.win && c.hints === 0 },
     { id: 'perfect', icon: '💎', name: '무결점', desc: '실수 없이 완성', test: c => c.win && c.mistakes === 0 },
     { id: 'speed_easy', icon: '⚡', name: '번개손', desc: '초급을 5분 안에 완성', test: c => c.win && c.diff === 'easy' && c.time <= 300 },
@@ -266,11 +266,16 @@
     { id: 'daily_3', icon: '🔥', name: '3일 연속', desc: '오늘의 퍼즐 3일 연속 완료', test: c => c.dailyStreak >= 3 },
     { id: 'daily_7', icon: '📅', name: '일주일 개근', desc: '오늘의 퍼즐 7일 연속 완료', test: c => c.dailyStreak >= 7 },
     { id: 'battle_win', icon: '⚔️', name: '첫 배틀 승리', desc: '1:1 배틀에서 승리', test: c => c.battleWins >= 1 },
-    { id: 'battle_5', icon: '🥇', name: '배틀 강자', desc: '배틀 누적 5승', test: c => c.battleWins >= 5 }
+    { id: 'battle_5', icon: '🥇', name: '배틀 강자', desc: '배틀 누적 5승', test: c => c.battleWins >= 5 },
+    // v1.0.37: 기존 '어워드' 목록에서 합친 항목 (전적 기반이라 이미 달성한 기록도 인정)
+    { id: 'wins_5', icon: '🥈', name: '연역 추론의 달인', desc: '누적 5회 완성', test: c => c.totalWins >= 5 },
+    { id: 'expert_clear', icon: '🥇', name: '전문가 정복자', desc: '전문가 난이도 완성', test: c => c.expertWins >= 1 || (c.win && c.diff === 'expert') },
+    { id: 'streak_3', icon: '🔥', name: '연승 가도', desc: '3연승 달성', test: c => c.maxStreak >= 3 },
+    { id: 'streak_5', icon: '👑', name: '마스터 마인드', desc: '5연승 달성', test: c => c.maxStreak >= 5 }
   ];
   const unlocked = load('sumdoku_achievements', {});
   const counters = Object.assign({ battleWins: 0 }, load('sumdoku_ach_counters', {}));
-  function evaluate(app, ctx) {
+  function evaluate(app, ctx, silent) {
     const fresh = [];
     ACH.forEach(a => {
       if (unlocked[a.id]) return;
@@ -279,20 +284,23 @@
     });
     if (!fresh.length) return fresh;
     save('sumdoku_achievements', unlocked);
+    if (silent) return fresh;
     fresh.forEach((a, i) => setTimeout(() => {
       app.showToast(`${a.icon} 업적 달성 · ${a.name}`, 2600);
       app.sound.play('badge');
     }, 1300 + i * 2800));
     return fresh;
   }
-  P.evaluateAchievements = function (extra = {}) {
+  P.evaluateAchievements = function (extra = {}, silent = false) {
     const ctx = Object.assign({
       win: false, hints: this.hintsUsed || 0, mistakes: this.mistakes || 0, diff: this.difficulty,
       time: this.timerSeconds || 0, maxCombo: this._maxCombo || 0,
       totalWins: (this.stats && this.stats.totalWins) || 0,
-      dailyStreak: dailyStreak(this.dailyCleared).cur, battleWins: counters.battleWins
+      dailyStreak: dailyStreak(this.dailyCleared).cur, battleWins: counters.battleWins,
+      maxStreak: (this.stats && this.stats.maxStreak) || 0,
+      expertWins: (this.stats && this.stats.byDiff && this.stats.byDiff.expert && this.stats.byDiff.expert.wins) || 0
     }, extra);
-    return evaluate(this, ctx);
+    return evaluate(this, ctx, silent);
   };
   const baseRecord = P.recordGameEnd;
   P.recordGameEnd = function (isWin) {
@@ -315,13 +323,17 @@
     } catch (e) {}
     return result;
   };
+  // v1.0.37: 업적은 '어워드' 패널 하나로 통합 (통계 화면에서는 제거)
   P.renderAchievements = function () {
-    const panel = document.getElementById('panel-stats');
+    const panel = document.getElementById('panel-awards');
     if (!panel) return;
+    try { this.evaluateAchievements({ win: false }, true); } catch (e) {}
+    document.getElementById('awards-list-grid')?.remove();
     let sec = document.getElementById('achievements-section');
-    if (!sec) { sec = document.createElement('section'); sec.id = 'achievements-section'; sec.className = 'ach-section'; sec.dataset.keepEmoji = ''; panel.append(sec); }
+    if (!sec) { sec = document.createElement('section'); sec.id = 'achievements-section'; sec.className = 'ach-section'; sec.dataset.keepEmoji = ''; }
+    if (sec.parentElement !== panel) panel.append(sec);
     const got = ACH.filter(a => unlocked[a.id]).length;
-    sec.innerHTML = `<div class="ach-head"><h3>업적</h3><span class="ach-count">${got} / ${ACH.length}</span></div>
+    sec.innerHTML = `<div class="ach-head"><h3>달성 현황</h3><span class="ach-count">${got} / ${ACH.length}</span></div>
       <div class="ach-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${ACH.length}" aria-valuenow="${got}"><span style="width:${Math.round(got / ACH.length * 100)}%"></span></div>
       <div class="ach-grid"></div>`;
     const grid = sec.querySelector('.ach-grid');
@@ -336,7 +348,8 @@
     });
   };
   const baseStats = P.renderStatsView;
-  P.renderStatsView = function () { const r = baseStats.apply(this, arguments); try { this.renderAchievements(); } catch (e) {} return r; };
+  P.renderStatsView = function () { const r = baseStats.apply(this, arguments); document.querySelector('#panel-stats #achievements-section')?.remove(); return r; };
+  P.renderAwardsList = function () { this.renderAchievements(); };
 
   /* ---------- 7. 배틀 채팅 · 이모티콘 ---------- */
   const EMOJI = ['👍', '😂', '😮', '😭', '🔥', '👏', '🤝', '😎'];
