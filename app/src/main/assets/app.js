@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.44";
+const APP_VERSION = "1.0.45";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -881,6 +881,7 @@ class SumdokuApp {
     } else if (viewName === 'stats') {
       const settingsTitle = window.I18N ? window.I18N.t('hub_title_settings', '게임 설정') : '게임 설정';
       this.openHubPanel('panel-settings', settingsTitle);
+      this.exitMobileHubDetail();
     } else if (viewName === 'daily') {
       this.renderDailyCalendar();
     }
@@ -963,7 +964,7 @@ class SumdokuApp {
     if (hubContainer) hubContainer.classList.remove('mobile-detail-mode');
     if (this.dom.btnHubDetailBack) this.dom.btnHubDetailBack.classList.add('hidden');
     if (this.dom.btnHubHome) this.dom.btnHubHome.classList.remove('hidden');
-    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = '설정';
+    if (this.dom.hubHeaderTitle) this.dom.hubHeaderTitle.textContent = window.I18N ? window.I18N.t('hub_main_title', '설정') : '설정';
   }
 
   // ----------------- DOM 및 이벤트 바인딩 -----------------
@@ -4472,13 +4473,21 @@ class SumdokuApp {
     if (this.isDaily && typeof this.renderDailyCalendar === 'function') this.renderDailyCalendar();
     if (typeof this.updateKeypadBadges === 'function') this.updateKeypadBadges();
 
+    const mobile = !document.querySelector('.hub-header-right') || getComputedStyle(document.querySelector('.hub-header-right')).display === 'none';
+    const settingsLabel = window.I18N ? window.I18N.t('hub_main_title', '설정') : '설정';
     const activeItem = document.querySelector('.hub-menu-item.active');
-    if (activeItem) {
-      const title = activeItem.dataset.hubTitle || activeItem.textContent.trim();
-      const titleEl = document.getElementById('hub-active-title');
-      if (titleEl) titleEl.textContent = title;
-      const headerTitleEl = document.getElementById('hub-header-title');
-      if (headerTitleEl) headerTitleEl.textContent = title;
+    const itemTitle = activeItem ? (activeItem.dataset.hubTitle || activeItem.textContent.trim()) : settingsLabel;
+
+    const titleEl = document.getElementById('hub-active-title');
+    if (titleEl) titleEl.textContent = itemTitle;
+
+    const headerTitleEl = document.getElementById('hub-header-title');
+    if (headerTitleEl) {
+      if (mobile && this.isMobileHubInDetail) {
+        headerTitleEl.textContent = itemTitle;
+      } else {
+        headerTitleEl.textContent = settingsLabel;
+      }
     }
   }
 }
