@@ -107,8 +107,6 @@ public class MainActivity extends Activity {
             lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             getWindow().setAttributes(lp);
         }
-        applyImmersive();
-
         FrameLayout rootLayout = new FrameLayout(this);
         rootLayout.setFitsSystemWindows(false);
         rootLayout.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -145,6 +143,8 @@ public class MainActivity extends Activity {
             return insets;
         });
         setContentView(rootLayout);
+        // WindowInsetsController는 창의 DecorView가 생성된 뒤에 접근해야 합니다.
+        applyImmersive();
 
         webView = new WebView(this);
         WebSettings settings = webView.getSettings();
@@ -212,7 +212,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.8";
+            return "1.1.9";
         }
     }
 
@@ -301,6 +301,8 @@ public class MainActivity extends Activity {
 
     @SuppressWarnings("deprecation")
     private void applyImmersive() {
+        // onCreate/포커스 콜백 어디서 호출해도 창의 최상위 뷰를 먼저 생성합니다.
+        android.view.View decor = getWindow().getDecorView();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(false);
@@ -311,7 +313,7 @@ public class MainActivity extends Activity {
             }
             return;
         }
-        getWindow().getDecorView().setSystemUiVisibility(
+        decor.setSystemUiVisibility(
             android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN);
