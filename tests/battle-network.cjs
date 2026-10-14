@@ -23,7 +23,7 @@ const api=async(name,data)=>{const response=await fetch('http://127.0.0.1:18888/
   const solution=Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>(r*3+Math.floor(r/3)+c)%9+1));
   const puzzle={solution,cages:solution.flatMap((row,r)=>row.map((sum,c)=>({sum,cells:[[r,c]]}))),difficulty:'easy'};
   for(const actor of [1,2,0]){
-   await api('rematch',{});await api('join',{});await api('ready',{player:2,ready:true});await api('start',puzzle);
+   await api('rematch',{});await api('leave',{player:2});await api('join',{});await api('ready',{player:2,ready:true});await api('start',puzzle);
    for(let n=0;n<2;n++)await pages[n].evaluate(({role,puzzle})=>{
     clearInterval(app.rematchCheckTimer);document.querySelectorAll('.modal-backdrop').forEach(e=>e.classList.add('hidden'));
     app.battleHostIp='127.0.0.1';app.battleHostUrl='http://127.0.0.1:8888';

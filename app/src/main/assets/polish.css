@@ -241,3 +241,10 @@ body.hint-open #view-game .controls-column { min-height:0; }
     }
   }
 }
+
+/* ===== v1.0.35 · 안내 메시지(토스트)는 화면 위쪽에: 키패드·보드 숫자를 가리지 않음 ===== */
+.toast, .battle-active .toast {
+  top: calc(env(safe-area-inset-top) + 10px); bottom: auto;
+  max-width: min(92vw, 420px); z-index: 500;
+}
+.toast.hidden { transform: translate(-50%, -14px); }

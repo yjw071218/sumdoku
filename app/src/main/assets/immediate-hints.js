@@ -6,7 +6,7 @@
  };
  p.showImmediateHint=function(){
   const h=this.findImmediateHint();
-  if(!h){this.showToast('현재 지원하는 추론으로 바로 확정할 칸을 찾지 못했습니다. 입력한 숫자를 확인해 주세요. 힌트는 차감하지 않았습니다.');return;}
+  if(!h){this.showToast('지금 판에서는 사람이 한두 단계로 확정할 수 있는 칸이 없습니다. 자동 메모로 후보를 정리하거나 다른 곳을 먼저 채워 보세요. 힌트는 차감하지 않았습니다.',4500);return;}
   const unlimited=this.rules.initialHints==='unlimited';
   const penalty=unlimited||this.hintsRemaining>0?30:50;
   if(!unlimited&&this.hintsRemaining>0)this.hintsRemaining--;

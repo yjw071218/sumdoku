@@ -48,6 +48,8 @@ public class BattleServer {
     // 배틀 채팅: 최근 60개만 보관
     private final java.util.ArrayList<String> chatLog = new java.util.ArrayList<>();
     private int chatSeq = 0;
+    // v1.0.35: 같은 네트워크에 방이 여러 개 있어도 구분하는 4자리 방 코드
+    private volatile String roomCode = "";
 
     public BattleServer() {
         resetRoom();
@@ -116,6 +118,8 @@ public class BattleServer {
         this.endedBy = 0;
         this.endReason = "";
         this.chatLog.clear();
+        String code = jsonString(this.puzzleJson, "roomCode");
+        this.roomCode = code != null && code.matches("[0-9]{4}") ? code : "";
     }
 
     public synchronized void startMatch() {
@@ -198,6 +202,15 @@ public class BattleServer {
                     "{\"ok\":true,\"status\":\"%s\",\"guestJoined\":%b,\"p1Ready\":%b,\"p2Ready\":%b,\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"endedBy\":%d,\"endReason\":\"%s\"}",
                     roomStatus, guestJoined, p1Ready, p2Ready, battleMode, difficulty, timeLimit, endedBy, endReason
                 );
+            } else if (path.startsWith("/api/hello")) {
+                responseJson = String.format("{\"ok\":true,\"app\":\"sumdoku\",\"code\":\"%s\",\"status\":\"%s\",\"full\":%b}",
+                    roomCode, roomStatus, guestJoined && lastGuestActiveTime > 0 && System.currentTimeMillis() - lastGuestActiveTime <= 3500);
+            } else if (path.startsWith("/api/join") && !"closed".equals(roomStatus) && !roomCode.isEmpty() && jsonString(body, "code") != null && !roomCode.equals(jsonString(body, "code"))) {
+                statusCode = 403;
+                responseJson = "{\"ok\":false,\"error\":\"wrong_code\"}";
+            } else if (path.startsWith("/api/join") && guestJoined && lastGuestActiveTime > 0 && System.currentTimeMillis() - lastGuestActiveTime <= 3500) {
+                statusCode = 409;
+                responseJson = "{\"ok\":false,\"error\":\"room_full\"}";
             } else if (path.startsWith("/api/join")) {
                 guestJoined = true;
                 p2Ready = false;

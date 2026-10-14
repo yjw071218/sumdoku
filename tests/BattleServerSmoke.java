@@ -33,6 +33,23 @@ public class BattleServerSmoke {
                 System.in.read();
                 return;
             }
+            // v1.0.35: 4자리 방 코드 · 탐색(/api/hello) · 잘못된 코드 · 정원 초과
+            server.configureRoom("race", "easy", 0, "{\"roomCode\":\"4321\",\"rules\":{}}");
+            require(server.start(18888), "bind code room");
+            String hello = request("hello", null);
+            require(hello.contains("\"app\":\"sumdoku\"") && hello.contains("\"code\":\"4321\"") && hello.contains("\"full\":false"), "hello: " + hello);
+            boolean rejected = false;
+            try { request("join", "{\"code\":\"1234\"}"); } catch (AssertionError e) { rejected = true; }
+            require(rejected, "wrong code rejected");
+            require(request("status", null).contains("\"guestJoined\":false"), "wrong code does not join");
+            require(request("join", "{\"code\":\"4321\"}").contains("\"ok\":true"), "right code joins");
+            require(request("hello", null).contains("\"full\":true"), "hello reports full");
+            boolean full = false;
+            try { request("join", "{\"code\":\"4321\"}"); } catch (AssertionError e) { full = true; }
+            require(full, "second guest rejected while first is active");
+            request("leave", "{\"player\":2}");
+            require(request("join", "{\"code\":\"4321\"}").contains("\"ok\":true"), "rejoin after leave");
+            server.stop();
             for (int i = 0; i < 3; i++) {
                 server.configureRoom("race", "easy", 0, "{\"rules\":{\"maxLives\":\"5\",\"initialHints\":\"0\"}}");
                 require(server.start(18888), "bind");
@@ -77,7 +94,7 @@ public class BattleServerSmoke {
                 require(concurrent.equals(request("progress",null)),"terminal read is stable");
                 server.stop();
             }
-            System.out.println("PASS: join, shared rules, UTF-8, both roles forfeit, late progress, simultaneous forfeit, rematch retention, three restarts");
+            System.out.println("PASS: room code, join, shared rules, UTF-8, both roles forfeit, late progress, simultaneous forfeit, rematch retention, three restarts");
         } finally { server.stop(); }
     }
 }

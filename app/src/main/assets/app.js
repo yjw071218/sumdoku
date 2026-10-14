@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.34";
+const APP_VERSION = "1.0.35";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -2019,7 +2019,7 @@ class SumdokuApp {
     const handleCopyCode = async () => {
       const codeText = this.dom.battleMyCode ? this.dom.battleMyCode.textContent.trim() : '';
       const rawCode = codeText.replace(/\s+/g, '');
-      if (!/^\d{12}$/.test(rawCode)) {
+      if (!/^\d{4}$/.test(rawCode)) {
         this.showToast('먼저 방 준비를 완료해 주세요.');
         return;
       }
@@ -2046,7 +2046,7 @@ class SumdokuApp {
           document.body.removeChild(ta);
         } catch (e) {}
       }
-      this.showToast(copied ? `접속 코드를 복사했습니다. (${codeText})` : '코드를 복사하지 못했습니다. 표시된 12자리 숫자를 친구에게 알려 주세요.');
+      this.showToast(copied ? `접속 코드를 복사했습니다. (${codeText})` : '코드를 복사하지 못했습니다. 표시된 4자리 숫자를 친구에게 알려 주세요.');
     };
 
     if (this.dom.btnCopyBattleCode) {

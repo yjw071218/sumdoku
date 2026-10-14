@@ -18,6 +18,44 @@ const RoomCode = {
   }
 };
 
+// v1.0.35: 4자리 방 코드. 같은 Wi-Fi(/24)에서 8888 포트를 연 기기를 찾아 코드가 맞는 방에 접속합니다.
+// 방마다 코드가 무작위라 같은 네트워크에 방이 여러 개 있어도 구분됩니다.
+const RoomFinder = {
+  newCode() {
+    const buf = new Uint32Array(1);
+    (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : (buf[0] = Math.random() * 1e9);
+    return String(1000 + buf[0] % 9000);
+  },
+  lastHostKey: 'sumdoku_last_host_ip',
+  async find(code, ownIp, fetcher, { timeout = 1200, concurrency = 48, signal } = {}) {
+    const parts = String(ownIp || '').split('.');
+    if (parts.length !== 4) throw new Error('Wi-Fi 주소를 확인할 수 없습니다. 같은 Wi-Fi에 연결해 주세요.');
+    const prefix = parts.slice(0, 3).join('.');
+    const last = localStorage.getItem(this.lastHostKey);
+    const order = [];
+    if (last && last.startsWith(prefix + '.')) order.push(last);
+    for (let i = 1; i <= 254; i++) { const ip = `${prefix}.${i}`; if (!order.includes(ip)) order.push(ip); }
+    let found = null, full = false, cursor = 0;
+    const probe = async ip => {
+      const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), timeout);
+      const stop = () => ctrl.abort(); signal?.addEventListener('abort', stop);
+      try {
+        const res = await fetcher(`http://${ip}:8888/api/hello`, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const info = await res.json();
+        if (info.app === 'sumdoku' && info.code === code && info.status !== 'closed') {
+          if (info.full) full = true; else found = found || ip;
+        }
+      } catch (_) {} finally { clearTimeout(t); signal?.removeEventListener('abort', stop); }
+    };
+    const worker = async () => { while (!found && cursor < order.length && !signal?.aborted) await probe(order[cursor++]); };
+    await Promise.all(Array.from({ length: concurrency }, worker));
+    if (found) { try { localStorage.setItem(this.lastHostKey, found); } catch (_) {} return found; }
+    if (full) throw new Error('이미 다른 사람이 참가한 방입니다.');
+    throw new Error(`코드 ${code}인 방을 찾지 못했습니다. 같은 Wi-Fi인지, 방장이 방을 열어 두었는지 확인해 주세요.`);
+  }
+};
+
 const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction'];
 function normalizedRules(settings) {
   let maxLives = String(settings.maxLives ?? '3');
@@ -201,7 +239,8 @@ SumdokuApp.prototype.createHostRoom = function() {
     return;
   }
   try {
-    const dummyPuzzle = { difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
+    this.battleRoomCode = RoomFinder.newCode();
+    const dummyPuzzle = { difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings), roomCode: this.battleRoomCode };
     const response = JSON.parse(window.AndroidBridge.startBattleServer(
       this.battleMode || 'race',
       this.battleDiff || 'expert',
@@ -212,9 +251,8 @@ SumdokuApp.prototype.createHostRoom = function() {
     this.battleRole = 1;
     this.battleHostIp = response.ip;
     this.battlePuzzleData = null;
-    const code = RoomCode.encode(response.ip);
-    if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = code.match(/.{4}/g).join(' ');
-    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `${response.ip}:8888 · 숫자 12자리로 접속`;
+    if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = this.battleRoomCode;
+    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `같은 Wi-Fi에서 4자리 코드로 접속 · ${response.ip}`;
     this.hostP1Ready = true;
     this.hostP2Ready = false;
     this.guestJoined = false;
@@ -269,7 +307,7 @@ SumdokuApp.prototype.updateHostLobbyUI = function() {
   }
   if (this.dom.battleWaitText) {
     if (!this.guestJoined) {
-      this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중… (12자리 코드 공유)';
+      this.dom.battleWaitText.textContent = '상대방 접속을 기다리는 중… (4자리 코드 공유)';
     } else if (!bothReady) {
       this.dom.battleWaitText.textContent = '상대방 접속 완료 · 참가자가 준비하면 시작할 수 있습니다.';
     } else {
@@ -364,13 +402,18 @@ SumdokuApp.prototype.connectToHost = async function() {
   this.dom.battleInputTarget.removeAttribute('aria-invalid');
   let target = this.dom.battleInputTarget.value.trim();
   try {
-    if (!target) throw new Error('친구에게 받은 12자리 코드를 입력해 주세요.');
-    if (/^[\d\s-]+$/.test(target) && target.replace(/[\s-]/g, '').length === 12) target = RoomCode.decode(target);
-    else if (/^\d{1,3}$/.test(target)) {
-      const ip = window.AndroidBridge?.getLocalIpAddress?.();
-      if (!ip || +target > 254 || +target < 1) throw new Error('새 버전의 12자리 코드를 입력해 주세요.');
-      target = ip.split('.').slice(0, 3).concat(String(+target)).join('.');
-    }
+    if (!target) throw new Error('친구에게 받은 4자리 방 코드를 입력해 주세요.');
+    let roomCode = null;
+    const digitsOnly = target.replace(/[\s-]/g, '');
+    if (/^\d{4}$/.test(digitsOnly)) {
+      roomCode = digitsOnly;
+      this.joinBusy = true;
+      this.dom.btnBattleConnect.disabled = true;
+      this.dom.btnBattleConnect.textContent = '방 찾는 중…';
+      const ownIp = window.AndroidBridge?.getLocalIpAddress?.();
+      target = await RoomFinder.find(roomCode, ownIp, (u, o) => fetch(u, o));
+    } else if (/^[\d\s-]+$/.test(target) && digitsOnly.length === 12) target = RoomCode.decode(target);
+    else if (/^\d+$/.test(digitsOnly)) throw new Error('방 코드는 4자리 숫자입니다.');
     const [ip, port = '8888'] = target.split(':');
     RoomCode.encode(ip);
     if (!/^\d{1,5}$/.test(port) || +port < 1 || +port > 65535 || target.split(':').length > 2) throw new Error('주소를 확인해 주세요.');
@@ -379,7 +422,11 @@ SumdokuApp.prototype.connectToHost = async function() {
     this.dom.btnBattleConnect.textContent = '연결 중…';
     const token = this.roomGeneration;
     const url = `http://${ip}:${port}`;
-    const result = await this.battleRequest(`${url}/api/join`, { method: 'POST' });
+    const joinRes = await this.battleFetch(`${url}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roomCode ? { code: roomCode } : {}) });
+    const result = await joinRes.json().catch(() => ({}));
+    if (result.error === 'wrong_code') throw new Error('방 코드가 맞지 않습니다.');
+    if (result.error === 'room_full') throw new Error('이미 다른 사람이 참가한 방입니다.');
+    if (!joinRes.ok) throw new Error('방 참가에 실패했습니다.');
     if (token !== this.roomGeneration) return;
     if (!result.ok) throw new Error('방 참가에 실패했습니다.');
     this.battleRole = 2;
