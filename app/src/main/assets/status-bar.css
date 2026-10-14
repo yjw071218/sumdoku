@@ -33,6 +33,8 @@ body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 #app-statusbar { background: var(--bg-primary, #f8fafc); color: var(--text-primary, #172033); transition: background-color .3s, color .3s; }
 #app-statusbar .sb-left { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
 #app-statusbar .sb-date { font-size: 12px; font-weight: 600; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#app-statusbar .sb-modes { display: flex; gap: 6px; }
+#app-statusbar .sb-modes { display: flex; align-items: center; gap: 6px; }
 #app-statusbar .sb-modes:empty { display: none; }
-#app-statusbar .sb-modes svg { animation: sbIn .35s ease; }
+#app-statusbar .sb-net { display: flex; align-items: center; gap: 5px; }
+#app-statusbar .sb-net span:empty { display: none; }
+#app-statusbar .sb-cellular, #app-statusbar .sb-airplane, #app-statusbar .sb-wifi { display: flex; align-items: center; }

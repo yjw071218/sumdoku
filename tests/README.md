@@ -56,3 +56,4 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 - `tests/TurnModeSmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 실행합니다. 턴 순서, 잘못된 차례/오래된 수 거부, 시간 초과 패스 보호, 재대결 초기화를 검사합니다.
 - `node tests/status-bar.cjs`: 앱 전용 상태바 표시·높이·배터리/충전 상태·화면 겹침을 검사합니다.
 - `node tests/status-bar-theme.cjs`: 상태바 테마 연동(라이트·다크·세피아), 날짜/시계, 방해금지/진동 아이콘 및 8개 언어 접근성 라벨을 검사합니다.
+- `node tests/status-bar-indicators.cjs`: 상태바 아이콘 바운스 애니메이션 제거(통통 튀는 현상 해결), 전체 시스템 상태(모바일 데이터, 비행기 탑승 모드, 블루투스, 알람, 절전 모드, 위치) 아이콘 렌더링 및 8개 언어 접근성 라벨을 검사합니다.

@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.2";
+            return "1.1.3";
         }
     }
 
@@ -249,23 +249,79 @@ public class MainActivity extends Activity {
                     charging = st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL;
                 }
             } catch (Exception ignored) {}
-            boolean wifi = false;
+            boolean wifi = false, cellular = false;
             try {
                 android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-                android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(cm.getActiveNetwork());
-                wifi = nc != null && nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
+                if (cm != null) {
+                    android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(cm.getActiveNetwork());
+                    if (nc != null) {
+                        wifi = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
+                        cellular = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR);
+                    }
+                }
             } catch (Exception ignored) {}
             String ringer = "normal"; boolean dnd = false;
             try {
                 android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
-                int rm = am.getRingerMode();
-                ringer = rm == android.media.AudioManager.RINGER_MODE_VIBRATE ? "vibrate" : rm == android.media.AudioManager.RINGER_MODE_SILENT ? "silent" : "normal";
+                if (am != null) {
+                    int rm = am.getRingerMode();
+                    ringer = rm == android.media.AudioManager.RINGER_MODE_VIBRATE ? "vibrate" : rm == android.media.AudioManager.RINGER_MODE_SILENT ? "silent" : "normal";
+                }
             } catch (Exception ignored) {}
             try {
                 android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                dnd = nm.getCurrentInterruptionFilter() > android.app.NotificationManager.INTERRUPTION_FILTER_ALL;
+                if (nm != null) {
+                    dnd = nm.getCurrentInterruptionFilter() > android.app.NotificationManager.INTERRUPTION_FILTER_ALL;
+                }
             } catch (Exception ignored) {}
-            return String.format(java.util.Locale.ROOT, "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"safeTop\":%.1f}", level, charging, wifi, ringer, dnd, safeTopDp);
+            boolean airplane = false;
+            try {
+                airplane = Settings.Global.getInt(getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+            } catch (Exception ignored) {}
+            boolean bluetooth = false;
+            try {
+                bluetooth = Settings.Global.getInt(getContentResolver(), "bluetooth_on", 0) != 0;
+            } catch (Exception ignored) {}
+            if (!bluetooth) {
+                try {
+                    android.bluetooth.BluetoothAdapter ba = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+                    if (ba != null && ba.isEnabled()) bluetooth = true;
+                } catch (Exception ignored) {}
+            }
+            boolean alarm = false;
+            try {
+                android.app.AlarmManager arm = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+                if (arm != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        alarm = arm.getNextAlarmClock() != null;
+                    } else {
+                        String next = Settings.System.getString(getContentResolver(), Settings.System.NEXT_ALARM_FORMATTED);
+                        alarm = next != null && !next.isEmpty();
+                    }
+                }
+            } catch (Exception ignored) {}
+            boolean powerSave = false;
+            try {
+                android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+                if (pm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    powerSave = pm.isPowerSaveMode();
+                }
+            } catch (Exception ignored) {}
+            boolean location = false;
+            try {
+                android.location.LocationManager lm = (android.location.LocationManager) getSystemService(LOCATION_SERVICE);
+                if (lm != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        location = lm.isLocationEnabled();
+                    } else {
+                        int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+                        location = mode != Settings.Secure.LOCATION_MODE_OFF;
+                    }
+                }
+            } catch (Exception ignored) {}
+            return String.format(java.util.Locale.ROOT,
+                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"airplane\":%b,\"bluetooth\":%b,\"alarm\":%b,\"powerSave\":%b,\"location\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"safeTop\":%.1f}",
+                level, charging, wifi, cellular, airplane, bluetooth, alarm, powerSave, location, ringer, dnd, safeTopDp);
         }
 
         @JavascriptInterface
