@@ -44,16 +44,29 @@ public class MainActivity extends Activity {
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        // Status bar styling (light theme with dark icons)
+        // v1.1.1: 시스템 상태바를 숨기고 노치 영역까지 앱이 그립니다. 시간·배터리는 앱 전용 상태바(status-bar.js)가 표시합니다.
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        getWindow().setStatusBarColor(0xFFF8FAFC);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        getWindow().setStatusBarColor(0x00000000);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
         }
+        applyImmersive();
 
         FrameLayout rootLayout = new FrameLayout(this);
-        rootLayout.setFitsSystemWindows(true);
+        rootLayout.setFitsSystemWindows(false);
+        rootLayout.setOnApplyWindowInsetsListener((v, insets) -> {
+            float d = getResources().getDisplayMetrics().density;
+            int cutTop = 0;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && insets.getDisplayCutout() != null) cutTop = insets.getDisplayCutout().getSafeInsetTop();
+            safeTopDp = cutTop / d;
+            // 상단은 앱이 직접 처리하고, 내비게이션 바·키보드 영역만 비워 둡니다.
+            v.setPadding(insets.getSystemWindowInsetLeft(), 0, insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            if (webView != null) webView.post(() -> webView.evaluateJavascript("window.onAppSafeTop&&window.onAppSafeTop(" + safeTopDp + ")", null));
+            return insets;
+        });
         setContentView(rootLayout);
 
         webView = new WebView(this);
@@ -122,7 +135,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.0";
+            return "1.1.1";
         }
     }
 
@@ -205,7 +218,46 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    private volatile float safeTopDp = 0f;
+
+    @SuppressWarnings("deprecation")
+    private void applyImmersive() {
+        getWindow().getDecorView().setSystemUiVisibility(
+            android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+            | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) applyImmersive();
+    }
+
     private class AndroidBridgeInterface {
+        /** v1.1.1 앱 전용 상태바: {"level":0~100,"charging":bool,"safeTop":dp} */
+        @JavascriptInterface
+        public String getDeviceStatus() {
+            int level = -1; boolean charging = false;
+            try {
+                Intent b = registerReceiver(null, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                if (b != null) {
+                    int l = b.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1), sc = b.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100);
+                    if (l >= 0 && sc > 0) level = Math.round(l * 100f / sc);
+                    int st = b.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
+                    charging = st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL;
+                }
+            } catch (Exception ignored) {}
+            boolean wifi = false;
+            try {
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+                android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(cm.getActiveNetwork());
+                wifi = nc != null && nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
+            } catch (Exception ignored) {}
+            return String.format(java.util.Locale.ROOT, "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"safeTop\":%.1f}", level, charging, wifi, safeTopDp);
+        }
+
         @JavascriptInterface
         public String getLocalIpAddress() {
             return BattleServer.getLocalIpAddress();
