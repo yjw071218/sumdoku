@@ -24,9 +24,9 @@
             <div class="brand-logo"><img src="app-icon.svg" alt="Sumdoku 앱 아이콘" width="64" height="64"></div>
             <div class="pulse-ring"></div>
           </div>
-          <h1 class="brand-title">Sumdoku</h1>
-          <p class="brand-tagline">논리로 채우는 81칸, 킬러 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.42</div>
+          <h1 class="brand-title" data-i18n="brand_title">Sumdoku</h1>
+          <p class="brand-tagline" data-i18n="brand_tagline">논리로 채우는 81칸, 킬러 스도쿠</p>
+          <div class="version-chip" id="app-version-chip">v1.0.43</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -733,6 +733,23 @@
                 
                 <div class="settings-item">
                   <div class="settings-info">
+                    <span class="s-title" data-i18n="setting_language">언어 설정 (Language)</span>
+                    <span class="s-desc" data-i18n="setting_language_desc">게임 내 표시 언어를 선택합니다</span>
+                  </div>
+                  <select id="setting-language" class="settings-select">
+                    <option value="ko" selected>한국어 (Korean)</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語 (Japanese)</option>
+                    <option value="zh">简体中文 (Chinese Simplified)</option>
+                    <option value="zh-TW">繁體中文 (Chinese Traditional)</option>
+                    <option value="es">Español (Spanish)</option>
+                    <option value="fr">Français (French)</option>
+                    <option value="de">Deutsch (German)</option>
+                  </select>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-info">
                     <span class="s-title">사운드</span>
                   </div>
                   <label class="toggle-switch">
@@ -1205,6 +1222,21 @@
         <div class="modal-settings-body">
           <div class="settings-item">
             <div class="settings-info">
+              <span class="s-title" data-i18n="setting_language">언어 설정 (Language)</span>
+            </div>
+            <select id="modal-setting-language" class="settings-select">
+              <option value="ko" selected>한국어 (Korean)</option>
+              <option value="en">English</option>
+              <option value="ja">日本語 (Japanese)</option>
+              <option value="zh">简体中文 (Chinese Simplified)</option>
+              <option value="zh-TW">繁體中文 (Chinese Traditional)</option>
+              <option value="es">Español (Spanish)</option>
+              <option value="fr">Français (French)</option>
+              <option value="de">Deutsch (German)</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info">
               <span class="s-title">사운드</span>
             </div>
             <label class="toggle-switch">
@@ -1301,7 +1333,7 @@
       <div class="modal-card modal-rules-card">
         <h3>Sumdoku (썸도쿠) 플레이 가이드</h3>
         <div class="rules-body">
-          <p><strong>1. 기본 수도쿠 규칙</strong>: 모든 행, 열, 3×3 박스에 1부터 9까지의 숫자가 중복 없이 1개씩 들어갑니다.</p>
+          <p><strong>1. 기본 스도쿠 규칙</strong>: 모든 행, 열, 3×3 박스에 1부터 9까지의 숫자가 중복 없이 1개씩 들어갑니다.</p>
           <p><strong>2. 케이지(점선 영역) 규칙</strong>: 각 점선 구역 내부 숫자의 총합은 좌상단에 적힌 목표 합계와 같아야 하며, 같은 케이지 내부에서는 숫자가 중복될 수 없습니다.</p>
           <p><strong>3. 시작 앵커 힌트</strong>: 판은 처음에 완전히 비어있습니다. 단, 1칸짜리 케이지(예: 좌상단 7)는 그 칸의 숫자가 확정 7이므로, 이 칸들을 출발점으로 삼아 연역적 추론을 전개합니다.</p>
           <p><strong>4. 전문가 모드의 0~2개 앵커</strong>: 전문가 난이도는 단 0~2개의 1칸 확정 단서만 주어지지만, 결코 임의로 찍을 필요 없이 100% 논리만으로 완벽히 풀리도록 설계되었습니다.</p>
@@ -1522,7 +1554,7 @@
         <div id="battle-result-banner" class="battle-result-banner win">
           <div id="battle-result-icon" style="font-size: 3rem; margin-bottom: 4px;">🏆</div>
           <div id="battle-result-title" class="result-big-title">승리!</div>
-          <div id="battle-result-sub" class="result-sub-text">상대방보다 먼저 수도쿠를 완성했습니다!</div>
+          <div id="battle-result-sub" class="result-sub-text">상대방보다 먼저 스도쿠를 완성했습니다!</div>
         </div>
 
         <table class="battle-stats-table">
@@ -1635,7 +1667,7 @@
             </svg>
           </button>
           <div class="replay-title-wrap">
-            <div class="replay-title" id="replay-meta-title">수도쿠 리플레이</div>
+            <div class="replay-title" id="replay-meta-title">스도쿠 리플레이</div>
             <div class="replay-subtitle" id="replay-meta-sub">2026-10-13 · 전문가 · 2,400점</div>
           </div>
           <div class="replay-step-pill" id="replay-step-pill">0 / 0 수</div>
@@ -1718,8 +1750,8 @@
             <div class="gen-spinner-icon">🧩</div>
           </div>
           <div class="gen-header-text">
-            <h3 class="gen-title" id="gen-title">100% 연역 추론 맵 생성 중</h3>
-            <p class="gen-subtitle" id="gen-subtitle">찍지 않고 풀 수 있는 퍼즐을 생성하고 검증합니다</p>
+            <h3 class="gen-title" id="gen-title" data-i18n="gen_title">100% 연역 추론 맵 생성 중</h3>
+            <p class="gen-subtitle" id="gen-subtitle" data-i18n="gen_subtitle">찍지 않고 풀 수 있는 퍼즐을 생성하고 검증합니다</p>
           </div>
         </div>
 
@@ -1727,22 +1759,22 @@
         <div class="gen-pipeline-steps" id="gen-pipeline-steps">
           <div class="gen-step-badge pending" id="gen-step-1">
             <span class="gen-step-num">1</span>
-            <span class="gen-step-name">정답판</span>
+            <span class="gen-step-name" data-i18n="gen_step_1">정답판</span>
           </div>
           <div class="gen-step-arrow">➔</div>
           <div class="gen-step-badge pending" id="gen-step-2">
             <span class="gen-step-num">2</span>
-            <span class="gen-step-name">케이지</span>
+            <span class="gen-step-name" data-i18n="gen_step_2">케이지</span>
           </div>
           <div class="gen-step-arrow">➔</div>
           <div class="gen-step-badge pending" id="gen-step-25">
             <span class="gen-step-num">★2.5</span>
-            <span class="gen-step-name">초고속 유일해</span>
+            <span class="gen-step-name" data-i18n="gen_step_25">초고속 유일해</span>
           </div>
           <div class="gen-step-arrow">➔</div>
           <div class="gen-step-badge pending" id="gen-step-3">
             <span class="gen-step-num">3</span>
-            <span class="gen-step-name">인간 연역</span>
+            <span class="gen-step-name" data-i18n="gen_step_3">인간 연역</span>
           </div>
         </div>
 
@@ -1774,6 +1806,7 @@
 
   </div>
 
+  <script src="i18n.js"></script>
   <script src="deduction.js"></script>
   <script src="human-hint.js"></script>
   <script src="generator.js"></script>

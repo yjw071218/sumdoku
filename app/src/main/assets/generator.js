@@ -1,5 +1,5 @@
 // ============================================================================
-// SumdokuGenerator - 킬러 수도쿠 3단계 정밀 생성 엔진
+// SumdokuGenerator - 킬러 스도쿠 3단계 정밀 생성 엔진
 // [1단계: 9x9 정답판 생성]
 //       ↓
 // [2단계: 스마트 케이지 분할]
@@ -656,7 +656,7 @@ class SumdokuGenerator {
     return cages.every(cg=>new Set(cg.cells.map(([r,c])=>solution[r][c])).size===cg.cells.length)?cages:null;
   }
 
-  // 100% 비재귀 반복문 백트래킹 (기본 완성 수도쿠 판 생성)
+  // 100% 비재귀 반복문 백트래킹 (기본 완성 스도쿠 판 생성)
   createSolutionIterative(rng = Math.random) {
     const board = Array.from({ length: 9 }, () => Array(9).fill(0));
     

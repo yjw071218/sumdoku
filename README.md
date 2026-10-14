@@ -1,6 +1,6 @@
 # Sumdoku (썸도쿠)
 
-> **찍지 않고 100% 순수 논리 추론만으로 풀 수 있는 킬러 수도쿠 퍼즐 안드로이드 앱**
+> **찍지 않고 100% 순수 논리 추론만으로 풀 수 있는 킬러 스도쿠 퍼즐 안드로이드 앱**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/yjw071218/sumdoku)](https://github.com/yjw071218/sumdoku/releases)

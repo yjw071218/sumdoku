@@ -36,6 +36,7 @@ public class BattleServer {
     private volatile String difficulty = "medium";
     private volatile int timeLimit = 300;            // 타임어택 제한 시간(초)
     private volatile String puzzleJson = "{}";
+    private volatile String generationProgress = null;
 
     // 양 플레이어 실시간 진행 상태
     private final ConcurrentHashMap<String, String> p1State = new ConcurrentHashMap<>();
@@ -141,12 +142,14 @@ public class BattleServer {
         this.endedBy = 0;
         this.endReason = "";
         this.chatLog.clear();
+        this.generationProgress = null;
         String code = jsonString(this.puzzleJson, "roomCode");
         this.roomCode = code != null && code.matches("[0-9]{4}") ? code : "";
     }
 
     public synchronized void startMatch() {
         terminalProgress = null;
+        this.generationProgress = null;
         this.roomStatus = "playing";
         this.endedBy = 0;
         this.endReason = "";
@@ -154,6 +157,7 @@ public class BattleServer {
 
     private void resetRoom() {
         terminalProgress = null;
+        this.generationProgress = null;
         this.roomStatus = "waiting";
         this.guestJoined = false;
         this.p1Ready = false;
@@ -259,6 +263,7 @@ public class BattleServer {
                 p1State.clear();
                 p2State.clear();
                 puzzleJson = "{}";
+                generationProgress = null;
                 lastGuestActiveTime = 0;
                 chatLog.clear();
                 responseJson = "{\"ok\":true,\"status\":\"closed\"}";
@@ -279,16 +284,25 @@ public class BattleServer {
                 p1State.clear();
                 p2State.clear();
                 puzzleJson = "{}";
+                generationProgress = null;
                 endedBy = 0;
                 endReason = "";
                 lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = "{\"ok\":true,\"status\":\"waiting\"}";
+            } else if (path.startsWith("/api/generating")) {
+                if ("POST".equals(method)) {
+                    generationProgress = (body == null || body.trim().isEmpty() || "{}".equals(body.trim())) ? null : body;
+                    responseJson = "{\"ok\":true}";
+                } else {
+                    responseJson = String.format("{\"ok\":true,\"generation\":%s}", generationProgress == null ? "null" : generationProgress);
+                }
             } else if (path.startsWith("/api/start")) {
                 if (!"POST".equals(method) || !"waiting".equals(roomStatus) || !guestJoined || !p2Ready || !body.contains("\"solution\"") || !body.contains("\"cages\"")) {
                     statusCode = 409;
                     responseJson = "{\"ok\":false,\"error\":\"not_ready\"}";
                 } else {
                     puzzleJson = body;
+                    generationProgress = null;
                     roomStatus = "playing";
                     terminalProgress = null;
                     endedBy = 0;
@@ -298,8 +312,9 @@ public class BattleServer {
             } else if (path.startsWith("/api/room")) {
                 lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"puzzle\":%s}",
-                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, puzzleJson
+                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"puzzle\":%s,\"generation\":%s}",
+                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, puzzleJson,
+                    generationProgress == null ? "null" : generationProgress
                 );
             } else if (path.startsWith("/api/chat")) {
                 if ("POST".equals(method)) {

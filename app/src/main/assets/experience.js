@@ -361,9 +361,25 @@ SumdokuApp.prototype.startBattleAsHost = function() {
   this.showGeneratingOverlay(this.battleDiff || 'expert', '배틀 퍼즐 생성 중');
   if (this.dom.btnBattleStartMatch) this.dom.btnBattleStartMatch.disabled = true;
 
+  const sendProgress = (data) => {
+    this.battleFetch(`http://${this.battleHostIp}:8888/api/generating`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(() => {});
+  };
+
+  sendProgress({ generating: true, diff: this.battleDiff || 'expert', percent: 15, message: '1단계: 9×9 정답판 생성 중...' });
+
+  let lastSentTime = 0;
   this.generator.generateAsync(this.battleDiff || 'expert', null, (progress) => {
     if (token !== this.roomGeneration) return;
     this.updateGeneratingProgress(progress);
+    const now = Date.now();
+    if (now - lastSentTime > 120 || progress.percent === 100 || progress.stepStatus === 'completed') {
+      lastSentTime = now;
+      sendProgress({ generating: true, diff: this.battleDiff || 'expert', ...progress });
+    }
   }).then(async (puzzleData) => {
     if (token !== this.roomGeneration) return;
     if (!puzzleData) throw new Error('퍼즐 생성에 실패했습니다.');
@@ -374,14 +390,15 @@ SumdokuApp.prototype.startBattleAsHost = function() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(puzzle)
     });
-    if(token !== this.roomGeneration) return;
+    if (token !== this.roomGeneration) return;
     this.battleStarting = false;
     clearInterval(this.hostPollTimer);
     this.hideGeneratingOverlay();
     this.dom.modalBattleLobby.classList.add('hidden');
     this.startBattleMatch(1, puzzle, this.battleMode || 'race');
   }).catch((err) => {
-    if(token !== this.roomGeneration) return;
+    if (token !== this.roomGeneration) return;
+    sendProgress({ generating: false });
     this.battleStarting = false;
     this.hideGeneratingOverlay();
     this.showToast(err?.message || '배틀 시작 중 오류가 발생했습니다.');
@@ -535,6 +552,7 @@ SumdokuApp.prototype.startGuestPolling = function() {
       // 방장이 방을 나간 경우 (방 폭파됨)
       if (room && room.status === 'closed') {
         clearInterval(this.guestWaitTimer);
+        this.hideGeneratingOverlay();
         this.cancelRoomPreparation();
         this.dom.modalBattleLobby.classList.add('hidden');
         this.showToast('방장이 방을 나가 방이 폭파되었습니다.');
@@ -557,8 +575,19 @@ SumdokuApp.prototype.startGuestPolling = function() {
         }
       }
 
+      // 방장이 배틀 시작을 눌러 맵을 생성 중일 때 참가자 화면에도 동일하게 맵 생성 진행 오버레이 표시
+      if (room.generation && room.generation.generating) {
+        if (!this.dom.generatingOverlay || this.dom.generatingOverlay.classList.contains('hidden')) {
+          this.showGeneratingOverlay(room.generation.diff || room.diff || 'expert', '배틀 퍼즐 생성 중 (방장 생성 중)');
+        }
+        this.updateGeneratingProgress(room.generation);
+      } else if (this.dom.generatingOverlay && !this.dom.generatingOverlay.classList.contains('hidden') && room.status === 'waiting') {
+        this.hideGeneratingOverlay();
+      }
+
       if (room.status === 'playing' && room.puzzle && room.puzzle.solution) {
         clearInterval(this.guestWaitTimer);
+        this.hideGeneratingOverlay();
         this.dom.modalBattleLobby.classList.add('hidden');
         this.startBattleMatch(2, room.puzzle, room.mode);
       }
@@ -566,8 +595,9 @@ SumdokuApp.prototype.startGuestPolling = function() {
       if (token !== this.roomGeneration) return;
       failCount++;
       // 방장이 방을 나가 서버가 닫혔거나 연결이 끊긴 경우 폭파 처리
-      if (failCount >= 2) {
+      if (failCount >= 3) {
         clearInterval(this.guestWaitTimer);
+        this.hideGeneratingOverlay();
         this.cancelRoomPreparation();
         this.dom.modalBattleLobby.classList.add('hidden');
         this.showToast('방장이 방을 나가 방이 폭파되었습니다.');
@@ -575,7 +605,7 @@ SumdokuApp.prototype.startGuestPolling = function() {
       }
     }
     finally { busy = false; }
-  }, 700);
+  }, 300);
 };
 
 const baseStartGame = SumdokuApp.prototype.startNewGame;

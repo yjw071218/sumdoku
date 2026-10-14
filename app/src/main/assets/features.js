@@ -287,7 +287,7 @@
     { id: 'expert_pure', icon: '👑', name: '전문가의 품격', desc: '전문가를 힌트·실수 없이 완성', test: c => c.win && c.diff === 'expert' && c.hints === 0 && c.mistakes === 0 },
     { id: 'combo_9', icon: '🌟', name: '콤보 마스터', desc: '한 게임에서 9콤보 달성', test: c => c.maxCombo >= 9 },
     { id: 'wins_10', icon: '🏅', name: '꾸준함', desc: '누적 10회 완성', test: c => c.totalWins >= 10 },
-    { id: 'wins_50', icon: '🏆', name: '수도쿠 장인', desc: '누적 50회 완성', test: c => c.totalWins >= 50 },
+    { id: 'wins_50', icon: '🏆', name: '스도쿠 장인', desc: '누적 50회 완성', test: c => c.totalWins >= 50 },
     { id: 'daily_3', icon: '🔥', name: '3일 연속', desc: '오늘의 퍼즐 3일 연속 완료', test: c => c.dailyStreak >= 3 },
     { id: 'daily_7', icon: '📅', name: '일주일 개근', desc: '오늘의 퍼즐 7일 연속 완료', test: c => c.dailyStreak >= 7 },
     { id: 'battle_win', icon: '⚔️', name: '첫 배틀 승리', desc: '1:1 배틀에서 승리', test: c => c.battleWins >= 1 },

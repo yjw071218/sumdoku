@@ -1,5 +1,5 @@
 /**
- * Sumdoku (썸도쿠) v1.0.8 - 100% 연역 추론 보장 합계 수도쿠
+ * Sumdoku (썸도쿠) v1.0.8 - 100% 연역 추론 보장 합계 스도쿠
  * 
  * - 클리어 성공 및 실패(게임오버/타임아웃) 화면 프리미엄 네이티브 모달 UI 전면 개편
  * - 승리 축하 꽃가루(Confetti) 파티클 애니메이션 및 신기록 뱃지 탑재
@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.42";
+const APP_VERSION = "1.0.43";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -249,6 +249,7 @@ class SumdokuApp {
     this.hintsUsed = 0;
 
     this.initDOM();
+    if (window.I18N) window.I18N.init();
     this.confetti = new ConfettiEffect(this.dom.confettiCanvas);
     this.applySettings();
     this.applyTheme(this.settings.darkTheme ? 'theme-dark' : (localStorage.getItem('sumdoku_theme') || 'theme-light'));
@@ -367,11 +368,15 @@ class SumdokuApp {
     setChecked('modal-setting-same', this.settings.highlightSame);
     setChecked('modal-setting-notes', this.settings.autoNotes);
 
-    // 셀렉트 박스 동기화 (메모 크기, 목숨 수, 목숨 소진 액션, 힌트 수, 힌트 소진 액션)
+    // 셀렉트 박스 동기화 (메모 크기, 목숨 수, 목숨 소진 액션, 힌트 수, 힌트 소진 액션, 언어)
     const setSelectVal = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.value = val;
     };
+    if (window.I18N) {
+      setSelectVal('setting-language', window.I18N.currentLang);
+      setSelectVal('modal-setting-language', window.I18N.currentLang);
+    }
     setSelectVal('setting-notes-size', this.settings.notesSize || 'large');
     setSelectVal('modal-setting-notes-size', this.settings.notesSize || 'large');
 
@@ -830,8 +835,7 @@ class SumdokuApp {
         error: c.error
       })));
 
-      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty.toUpperCase();
-      this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
+      this.updateDifficultyDisplay();
       const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
       this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
       this.dom.gameScore.textContent = this.score;
@@ -1237,13 +1241,23 @@ class SumdokuApp {
   // ----------------- 맵 생성 진행 오버레이 및 실시간 스마트 케이지 시각화 -----------------
   showGeneratingOverlay(diff = 'expert', customTitle = null) {
     if (!this.dom.generatingOverlay) return;
-    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
-    const diffKr = diffNames[diff] || diff;
+    const getDiffName = (d) => {
+      if (window.I18N) {
+        if (d === 'easy') return window.I18N.t('diff_easy');
+        if (d === 'medium') return window.I18N.t('diff_medium');
+        if (d === 'hard') return window.I18N.t('diff_hard');
+        if (d === 'expert') return window.I18N.t('diff_expert');
+      }
+      const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+      return diffNames[d] || d;
+    };
+    const diffText = getDiffName(diff);
     if (this.dom.genTitle) {
-      this.dom.genTitle.textContent = customTitle || `${diffKr} 연역 추론 맵 생성 중`;
+      const suffix = window.I18N ? window.I18N.t('gen_title_prefix', '연역 추론 맵 생성 중') : '연역 추론 맵 생성 중';
+      this.dom.genTitle.textContent = customTitle || `${diffText} ${suffix}`;
     }
     if (this.dom.genSubtitle) {
-      this.dom.genSubtitle.textContent = '1 ➔ 2 ➔ ★2.5 ➔ 3단계 파이프라인으로 순수 연역 퍼즐을 생성합니다';
+      this.dom.genSubtitle.textContent = window.I18N ? window.I18N.t('gen_subtitle') : '1 ➔ 2 ➔ ★2.5 ➔ 3단계 파이프라인으로 순수 연역 퍼즐을 생성합니다';
     }
     if (this.dom.genProgressBar) {
       this.dom.genProgressBar.style.width = '15%';
@@ -1828,6 +1842,21 @@ class SumdokuApp {
     bindSelect('setting-initial-hints', 'modal-setting-initial-hints', 'initialHints');
     bindSelect('setting-hint-exhausted-action', 'modal-setting-hint-exhausted-action', 'hintExhaustedAction');
 
+    const bindLangSelect = (id1, id2) => {
+      const handler = (e) => {
+        this.sound.play('click');
+        const lang = e.target.value;
+        if (window.I18N) window.I18N.setLanguage(lang);
+        const otherEl = document.getElementById(e.target.id === id1 ? id2 : id1);
+        if (otherEl) otherEl.value = lang;
+      };
+      const el1 = document.getElementById(id1);
+      const el2 = document.getElementById(id2);
+      if (el1) el1.addEventListener('change', handler);
+      if (el2) el2.addEventListener('change', handler);
+    };
+    bindLangSelect('setting-language', 'modal-setting-language');
+
     // 툴바 액션
     this.dom.btnPencil.addEventListener('click', () => this.togglePencilMode());
     if (this.dom.btnScratchpad) {
@@ -2315,7 +2344,7 @@ class SumdokuApp {
       return true;
     }
     if (result.endReason === 'completed') {
-      this.handleBattleEnd(own, own ? '수도쿠를 먼저 완성했습니다!' : '상대방이 먼저 수도쿠를 완성했습니다!');
+      this.handleBattleEnd(own, own ? '스도쿠를 먼저 완성했습니다!' : '상대방이 먼저 스도쿠를 완성했습니다!');
       return true;
     }
     return false;
@@ -2365,7 +2394,7 @@ class SumdokuApp {
     if (this.battleMode === 'race') {
       if (opp.isWin) {
         this.closeForfeitModal();
-        this.handleBattleEnd(false, '상대방이 먼저 수도쿠를 완성했습니다!');
+        this.handleBattleEnd(false, '상대방이 먼저 스도쿠를 완성했습니다!');
       }
     }
   }
@@ -2682,7 +2711,7 @@ class SumdokuApp {
     }
     this.gameMode = mode;
     const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || diff.toUpperCase();
-    this.dom.gameDiffLabel.textContent = this.isDaily ? '일일 도전' : diffKr;
+    this.updateDifficultyDisplay();
     this.updateModeDisplay();
 
     this.mistakes = 0;
@@ -3655,6 +3684,7 @@ class SumdokuApp {
   }
 
   updateKeypadBadges() {
+    if (!this.board || !this.board.length || !this.board[0]) return;
     const counts = Array(10).fill(0);
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -3711,7 +3741,7 @@ class SumdokuApp {
     this.dom.gameScore.textContent = this.score;
 
     if (this.isBattle) {
-      this.handleBattleEnd(true, '상대방보다 먼저 수도쿠를 완벽하게 클리어했습니다!');
+      this.handleBattleEnd(true, '상대방보다 먼저 스도쿠를 완벽하게 클리어했습니다!');
       return true;
     }
 
@@ -3933,7 +3963,7 @@ class SumdokuApp {
   }
 
   // ============================================================================
-  // 7. 최근 20판 수도쿠 리플레이 엔진 (Replay Engine)
+  // 7. 최근 20판 스도쿠 리플레이 엔진 (Replay Engine)
   // ============================================================================
   loadReplays() {
     try {
@@ -4416,6 +4446,29 @@ class SumdokuApp {
         </div>
       </div>
     `).join('');
+  }
+
+  updateDifficultyDisplay() {
+    if (!this.dom || !this.dom.gameDiffLabel) return;
+    const getDiffLabel = (diff, isDaily) => {
+      if (isDaily) return window.I18N ? window.I18N.t('btn_daily', '일일 도전') : '일일 도전';
+      if (window.I18N) {
+        if (diff === 'easy') return window.I18N.t('diff_easy');
+        if (diff === 'medium') return window.I18N.t('diff_medium');
+        if (diff === 'hard') return window.I18N.t('diff_hard');
+        if (diff === 'expert') return window.I18N.t('diff_expert');
+      }
+      return { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || (diff ? diff.toUpperCase() : '');
+    };
+    this.dom.gameDiffLabel.textContent = getDiffLabel(this.difficulty, this.isDaily);
+  }
+
+  onLanguageChanged(lang) {
+    if (window.I18N) window.I18N.applyToDOM();
+    if (typeof this.updateDifficultyDisplay === 'function') this.updateDifficultyDisplay();
+    if (typeof this.renderStatsView === 'function') this.renderStatsView();
+    if (this.isDaily && typeof this.renderDailyCalendar === 'function') this.renderDailyCalendar();
+    if (typeof this.updateKeypadBadges === 'function') this.updateKeypadBadges();
   }
 }
 
