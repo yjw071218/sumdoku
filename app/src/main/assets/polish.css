@@ -19,8 +19,20 @@
   --ui-success:#486638;
   --ui-success-soft:#eaf0dc;
 }
-.home-container { max-width:600px; padding-left:22px; padding-right:22px; }
-.home-header { padding:12px 46px 14px; gap:4px; }
+.home-container {
+  width:100%; min-width:0; max-width:600px; flex:0 0 auto;
+  justify-content:flex-start; padding-left:22px; padding-right:22px;
+}
+.home-container > * { min-width:0; max-width:100%; flex-shrink:0; }
+.home-header { width:100%; padding:12px 46px 14px; gap:4px; }
+.home-header .brand-title, .home-header .brand-tagline { max-width:100%; overflow-wrap:anywhere; }
+.home-footer { width:100%; overflow-wrap:anywhere; }
+.home-update-banner { margin-left:0; margin-right:0; }
+.home-update-banner .update-banner-info, .daily-hero-info { min-width:0; }
+.home-update-banner .update-banner-title, .home-update-banner .update-banner-sub {
+  white-space:normal; overflow:visible; overflow-wrap:anywhere;
+}
+.home-update-banner .update-banner-btn, .daily-hero-btn { flex-shrink:0; }
 .brand-title { font-size:28px; letter-spacing:-1px; }
 .brand-tagline { color:var(--ui-muted); font-size:13px; line-height:1.5; }
 .version-chip { background:var(--ui-soft); color:var(--ui-muted); border:1px solid var(--ui-line); font-size:10px; }
@@ -95,6 +107,15 @@
 .hint-logic-text { text-align:left; padding:12px; border-radius:12px; background:var(--ui-soft); color:var(--ui-ink); font-size:13px; }
 .toast { pointer-events:none; font-size:12px; line-height:1.5; box-shadow:0 8px 24px #00000026; }
 .battle-active .toast { top:calc(env(safe-area-inset-top) + 52px); bottom:auto; }
+/* Keep the controls inside their allocated height; only the optional explanation
+   panel may scroll. The board, action buttons and keypad remain stationary. */
+body.battle-active .controls-column { max-height:100%; }
+body.battle-active .controls-column > .logic-assistant-card {
+  flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+}
+body.battle-active .action-toolbar, body.battle-active .keypad-container { flex-shrink:0; }
+.key-btn { height:auto; min-height:56px; padding:4px 2px; }
+body.battle-active .key-btn { height:auto; min-height:44px; padding:4px 2px; }
 button, [role="button"], input { touch-action:manipulation; }
 [role="button"]:focus-visible, [tabindex]:focus-visible { outline:3px solid var(--ui-accent); outline-offset:3px; }
 @media (hover:hover) {
@@ -109,4 +130,5 @@ button, [role="button"], input { touch-action:manipulation; }
 @media (max-height:400px) and (min-width:600px) {
   body.battle-active .controls-column { gap:4px; }
   body.battle-active .keypad { gap:2px; }
+  body.battle-active .key-btn { padding:2px; }
 }
