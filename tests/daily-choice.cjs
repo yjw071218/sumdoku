@@ -1,0 +1,61 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+(async()=>{
+const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.45'}}));
+ await page.goto('file:///'+path.resolve('app/src/main/assets/index.html').replace(/\\/g,'/'));
+ await page.waitForFunction(()=>window.app&&window.I18N);
+ await page.evaluate(()=>{localStorage.clear();app.switchView('stats');app.openHubPanel('panel-settings','게임 설정');});
+ await page.locator('[data-select-id="setting-language"]').click();
+ await page.locator('.choice-option').filter({hasText:'English'}).click();
+ await page.waitForFunction(()=>I18N.currentLang==='en');
+ assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
+ assert.equal(await page.locator('.hub-menu-item svg').count()>0,true,'translation preserves icons');
+ await page.locator('[data-select-id="setting-lives-exhausted-action"]').click();
+ await page.locator('.choice-option').nth(1).click();
+ assert.equal(await page.locator('#setting-lives-exhausted-action').inputValue(),'continue');
+ await page.locator('[data-select-id="setting-hint-exhausted-action"]').click();
+ await page.keyboard.press('Escape');
+ assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
+ const daily=await page.evaluate(async()=>{
+  I18N.setLanguage('ko');app.switchView('home');
+  let count=0;
+  app.generator.generateAsync=async()=>{count++;const solution=Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>(r*3+Math.floor(r/3)+c)%9+1));return {solution,cages:solution.flatMap((row,r)=>row.map((v,c)=>({sum:v,cells:[[r,c]]}))),anchorCount:81};};
+  const day=app.localDay();
+  await app.startDailyGame(day);
+  app.board[0][0].val=1;app.board[0][1].notes=new Set([2,3]);app.board[0][1].customMemo='memo';app.timerSeconds=73;app.score=123;app.mistakes=1;app.hintsRemaining=2;app.scratchpadText='private note';
+  app.switchView('home');
+  await app.startDailyGame(day);
+  const result={count,val:app.board[0][0].val,notes:[...app.board[0][1].notes],time:app.timerSeconds,score:app.score,hints:app.hintsRemaining,memo:app.scratchpadText};
+  app.switchView('home');
+  app.isDaily=false;await app.startNewGame('easy');app.switchView('home');
+  await app.startDailyGame(day);result.afterOrdinary=app.board[0][0].val;result.countAfterOrdinary=count;
+  app.switchView('home');return result;
+ });
+ assert.deepEqual(daily,{count:1,val:1,notes:[2,3],time:73,score:123,hints:2,memo:'private note',afterOrdinary:1,countAfterOrdinary:2});
+ await page.reload();await page.waitForFunction(()=>window.app);
+ const restored=await page.evaluate(async()=>{app.generator.generateAsync=()=>{throw Error('must not regenerate');};await app.startDailyGame(app.localDay());return {val:app.board[0][0].val,score:app.score,time:app.timerSeconds};});
+ assert.deepEqual(restored,{val:1,score:123,time:73});
+ const expired=await page.evaluate(()=>{app.dailySessionDay='2000-01-01';const s=JSON.parse(localStorage.getItem('sumdoku_daily_session'));s.day='2000-01-01';localStorage.setItem('sumdoku_daily_session',JSON.stringify(s));app.expireDailySession();return {saved:localStorage.getItem('sumdoku_daily_session'),isDaily:app.isDaily,view:app.currentView};});
+ assert.deepEqual(expired,{saved:null,isDaily:false,view:'daily'});
+ await page.clock.install({time:new Date('2026-10-14T23:59:58')});
+ await page.evaluate(async()=>{
+  const puzzle={solution:app.solution,cages:app.cages,anchorCount:81};
+  app.generator.generateAsync=async()=>puzzle;
+  await app.startDailyGame(app.localDay());
+  app.board[0][0].notes=new Set([2]);app.saveSnapshot();app.board[0][0].notes=new Set([3]);
+  app.switchView('home');await app.startDailyGame(app.localDay());app.undo();
+ });
+ assert.deepEqual(await page.evaluate(()=>[...app.board[0][0].notes]),[2]);
+ await page.clock.fastForward(3000);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('sumdoku_daily_session')),null);
+ assert.equal(await page.evaluate(()=>app.currentView),'daily');
+ const nextDay=await page.evaluate(async()=>{let generated=0;const puzzle={solution:app.solution,cages:app.cages,anchorCount:81};app.generator.generateAsync=async()=>{generated++;return puzzle;};await Promise.all([app.startDailyGame(app.localDay()),app.startDailyGame(app.localDay())]);return {generated,date:app.dailyDate,filled:app.board.flat().filter(c=>c.val).length};});
+ assert.deepEqual(nextDay,{generated:1,date:'2026-10-15',filled:0});
+ assert.deepEqual(errors,[]);
+ console.log('PASS: choice dialog, keyboard cancel, icon preservation, daily resume, separate ordinary save, reload, date expiry');
+}finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

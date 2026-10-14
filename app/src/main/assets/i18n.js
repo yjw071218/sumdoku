@@ -1099,6 +1099,7 @@
       let saved = null;
       try { saved = localStorage.getItem(STORAGE_KEY); } catch (_) {}
       this.currentLang = saved && translations[saved] ? saved : 'ko';
+      document.documentElement.lang = this.currentLang;
       this.applyToDOM();
     },
 
@@ -1126,14 +1127,20 @@
         const key = el.getAttribute('data-i18n');
         if (!key) return;
         const val = this.t(key);
-        if (val) el.textContent = val;
+        if (val) {
+          const label = el.classList.contains('hub-menu-item') ? el.querySelector('.hub-item-label') : el;
+          if (label) label.textContent = val;
+        }
       });
 
       document.querySelectorAll('[data-i18n-desc]').forEach(el => {
         const key = el.getAttribute('data-i18n-desc');
         if (!key) return;
         const val = this.t(key);
-        if (val) el.textContent = val;
+        if (val) {
+          const label = el.classList.contains('hub-menu-item') ? el.querySelector('.hub-item-label') : el;
+          if (label) label.textContent = val;
+        }
       });
 
       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
@@ -1180,5 +1187,6 @@
     }
   };
 
+  I18N.dictionaries = translations;
   window.I18N = I18N;
 })(window);

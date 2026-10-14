@@ -1,0 +1,15 @@
+/* Themed selection sheet, including keyboard and touch interaction. */
+select.app-choice-source { display:none!important; }
+.app-choice-trigger { cursor:pointer; text-align:start; white-space:normal!important; min-height:44px; line-height:1.4; border:1px solid var(--ui-line,#cbd5e1); border-radius:10px; padding:9px 12px; background:var(--ui-soft,#f1f5f9); color:var(--ui-ink,#172033); font:inherit; }
+.settings-info .s-title { white-space:normal!important; overflow-wrap:anywhere; }
+.choice-dialog { width:min(440px,calc(100vw - 32px)); max-height:80dvh; border:1px solid var(--ui-line,#cbd5e1); border-radius:22px; padding:20px; box-sizing:border-box; color:var(--ui-ink,#172033); background:var(--ui-soft,#f8fafc); box-shadow:0 20px 80px #0005; }
+.choice-dialog::backdrop { background:#0f172a88; backdrop-filter:blur(4px); }
+.choice-dialog header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.choice-dialog h2 { margin:0; font-size:19px; line-height:1.5; }
+.choice-close { border:0; border-radius:50%; width:44px; height:44px; flex-shrink:0; font-size:26px; background:transparent; color:inherit; cursor:pointer; }
+.choice-options { display:grid; gap:8px; }
+.choice-option { min-height:52px; text-align:start; border:1px solid var(--ui-line,#cbd5e1); border-radius:12px; background:transparent; color:inherit; font:inherit; padding:13px 42px 13px 15px; position:relative; cursor:pointer; overflow-wrap:anywhere; }
+.choice-option.selected { border-color:#6366f1; background:#6366f11a; font-weight:700; }
+.choice-option.selected::after { content:'✓'; position:absolute; right:16px; top:13px; color:#6366f1; }
+.choice-option:focus-visible,.choice-close:focus-visible,.app-choice-trigger:focus-visible { outline:3px solid #818cf8; outline-offset:2px; }
+@media(max-width:480px) { .choice-dialog { margin:auto auto 16px; } }

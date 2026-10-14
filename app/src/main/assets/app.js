@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.45";
+const APP_VERSION = "1.0.46";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -505,7 +505,16 @@ class SumdokuApp {
     this.selectedDailyDay = `${year}-${String(month + 1).padStart(2, '0')}-${String(todayDate).padStart(2, '0')}`;
   }
 
-  startDailyGame(dateStr) {
+  async startDailyGame(dateStr) {
+    if (this.dailyGenerating) return;
+    this.expireDailySession();
+    this.saveOngoingGame();
+    const saved = this.readDailySession(dateStr);
+    if (saved) {
+      this.restoreOngoingGame(saved);
+      return;
+    }
+    this.dailyGenerating = true;
     this.isDaily = true;
     this.dailyDate = dateStr;
     this.gameMode = 'standard';
@@ -522,8 +531,43 @@ class SumdokuApp {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
 
-    this.startNewGame('medium', seededRng);
-    this.showToast(`📅 일일 도전 (${dateStr})을 시작합니다!`);
+    try {
+      await this.startNewGame('medium', seededRng);
+      if (this.dailyDate === dateStr) this.saveOngoingGame();
+    } finally { this.dailyGenerating = false; }
+    this.expireDailySession();
+  }
+
+  localDay() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  readDailySession(dateStr) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('sumdoku_daily_session'));
+      const state = saved?.states?.[dateStr] || (saved?.state?.dailyDate === dateStr ? saved.state : null);
+      return saved?.day === this.localDay() && state?.board?.length === 9 ? state : null;
+    } catch (_) { return null; }
+  }
+
+  expireDailySession() {
+    const today = this.localDay();
+    try {
+      const saved = JSON.parse(localStorage.getItem('sumdoku_daily_session'));
+      if (saved && saved.day !== today) localStorage.removeItem('sumdoku_daily_session');
+    } catch (_) { localStorage.removeItem('sumdoku_daily_session'); }
+    if (this.isDaily && this.dailySessionDay && this.dailySessionDay !== today) {
+      this.stopTimer();
+      this.isDaily = false;
+      this.dailyDate = null;
+      this.dailySessionDay = today;
+      this.currentView = 'daily';
+      this.switchView('daily');
+      return true;
+    }
+    this.dailySessionDay = today;
+    return false;
   }
 
   // ----------------- 전적 관리 -----------------
@@ -726,7 +770,7 @@ class SumdokuApp {
 
   // ----------------- 이어하기 -----------------
   saveOngoingGame() {
-    if (this.currentView !== 'game' || this.isWin || this.isBattle) return;
+    if (this.currentView !== 'game' || this.isBattle || !this.board?.length || (this.isWin && !this.isDaily)) return;
     try {
       const state = {
         solution: this.solution,
@@ -745,14 +789,26 @@ class SumdokuApp {
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate,
+        isWin: this.isWin,
+        resultReason: this.resultReason,
+        undoStack: (this.undoStack || []).map(board => board.map(row => row.map(cell => ({...cell, notes: [...cell.notes]})))),
         gameRules: this.gameRules || null,
         currentGameReplay: this.currentGameReplay || null
       };
-      localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(state));
+      if (this.isDaily) {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem('sumdoku_daily_session')); } catch (_) {}
+        const states = saved?.day === this.localDay() ? (saved.states || {}) : {};
+        states[this.dailyDate] = state;
+        localStorage.setItem('sumdoku_daily_session', JSON.stringify({day: this.localDay(), states}));
+      } else {
+        localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(state));
+      }
     } catch (e) {}
   }
 
   clearOngoingGame() {
+    if (this.isDaily) { this.saveOngoingGame(); return; }
     try {
       localStorage.removeItem('sumdoku_ongoing_game');
       this.dom.btnHomeContinue.classList.add('hidden');
@@ -778,11 +834,16 @@ class SumdokuApp {
     return false;
   }
 
-  restoreOngoingGame() {
+  restoreOngoingGame(savedState = null) {
     try {
-      const state = JSON.parse(localStorage.getItem('sumdoku_ongoing_game'));
+      const state = savedState || JSON.parse(localStorage.getItem('sumdoku_ongoing_game'));
+      if (!savedState && state?.isDaily && state.dailyDate !== this.localDay()) return false;
       if (!state) return false;
 
+      this.isWin = !!state.isWin;
+      this.isPaused = false;
+      this.resultReason = state.resultReason || null;
+      this.undoStack = (state.undoStack || []).map(board => board.map(row => row.map(cell => ({...cell, notes: new Set(cell.notes || [])}))));
       this.solution = state.solution;
       this.cages = state.cages;
       this.difficulty = state.difficulty;
@@ -847,6 +908,8 @@ class SumdokuApp {
       this.updateKeypadBadges();
       this.startTimer();
       this.switchView('game');
+      if (this.isWin || this.resultReason) this.stopTimer();
+      this.dom.timer.textContent = `${String(Math.floor(this.timerSeconds / 60)).padStart(2, '0')}:${String(this.timerSeconds % 60).padStart(2, '0')}`;
       this.showToast('이전 게임을 이어서 시작합니다!');
       return true;
     } catch (e) {
@@ -856,6 +919,10 @@ class SumdokuApp {
 
   // ----------------- 화면 뷰 전환 & 뒤로가기 -----------------
   switchView(viewName) {
+    if (this.currentView === 'game' && viewName !== 'game') {
+      this.saveOngoingGame();
+      this.stopTimer();
+    }
     this.currentView = viewName;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById(`view-${viewName}`);
@@ -877,7 +944,7 @@ class SumdokuApp {
       this.saveOngoingGame();
       this.checkContinueGame();
     } else if (viewName === 'game') {
-      if (!this.isPaused) this.startTimer();
+      if (!this.isPaused && !this.isWin && !this.resultReason) this.startTimer();
     } else if (viewName === 'stats') {
       const settingsTitle = window.I18N ? window.I18N.t('hub_title_settings', '게임 설정') : '게임 설정';
       this.openHubPanel('panel-settings', settingsTitle);
@@ -1923,7 +1990,7 @@ class SumdokuApp {
 
     // 키보드 대응
     window.addEventListener('keydown', (e) => {
-      if (this.currentView !== 'game' || this.isPaused) return;
+      if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused) return;
 
       // 메모장 인풋 포커스 상태 처리 (ESC로 닫기, 키패드 숫자 간섭 방지)
       if (this.dom.scratchpadInput && document.activeElement === this.dom.scratchpadInput) {
@@ -2707,6 +2774,7 @@ class SumdokuApp {
   // 6. 게임 플레이 (신규 게임, 보드 렌더링, 타이머 & 점수)
   // ============================================================================
   async startNewGame(diff = 'expert', customRng = null, mode = 'standard', existingPuzzle = null) {
+    const dailyGenerationDay = this.isDaily ? this.localDay() : null;
     this.difficulty = diff;
     if (!this.isDaily && !this.isBattle) {
       this.selectedDifficulty = diff;
@@ -2757,6 +2825,10 @@ class SumdokuApp {
       }
     }
 
+    if (dailyGenerationDay && dailyGenerationDay !== this.localDay()) {
+      this.expireDailySession();
+      return;
+    }
     this.solution = generated.solution;
     this.cages = generated.cages;
     this.anchorCount = generated.anchorCount;
@@ -3219,7 +3291,7 @@ class SumdokuApp {
 
   // ----------------- 숫자 입력 & 고도화된 점수 시스템 -----------------
   handleNumberInput(num) {
-    if (this.currentView !== 'game' || this.isPaused) return;
+    if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused) return;
     const { r, c } = this.selected;
     const cellData = this.board[r][c];
 
@@ -3355,7 +3427,7 @@ class SumdokuApp {
   }
 
   erase() {
-    if (this.currentView !== 'game' || this.isPaused) return;
+    if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused) return;
     const { r, c } = this.selected;
     const cellData = this.board[r][c];
 
@@ -3389,7 +3461,7 @@ class SumdokuApp {
   }
 
   undo() {
-    if (this.currentView !== 'game' || this.isPaused || this.undoStack.length === 0) return;
+    if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused || this.undoStack.length === 0) return;
     this.sound.play('click');
     const prev = this.undoStack.pop();
     this.board = prev.map(row =>
@@ -3577,7 +3649,7 @@ class SumdokuApp {
   }
 
   useHint() {
-    if (this.currentView !== 'game' || this.isPaused) return;
+    if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused) return;
     if (this.hintsRemaining <= 0 && this.rules.initialHints !== 'unlimited' && this.rules.hintExhaustedAction === 'disallow') {
       this.sound.play('error');
       this.showToast('남은 힌트가 없습니다 (힌트 소진 시 추가 사용 금지 설정)');
@@ -3776,6 +3848,7 @@ class SumdokuApp {
   }
 
   handleGameOver() {
+    this.resultReason = 'mistakes';
     this.sound.play('error');
     this.stopTimer();
 
@@ -3828,6 +3901,7 @@ class SumdokuApp {
   }
 
   handleTimeOut() {
+    this.resultReason = 'timeout';
     this.sound.play('error');
     this.stopTimer();
 
@@ -3914,7 +3988,8 @@ class SumdokuApp {
   startTimer() {
     clearInterval(this.timerInterval);
     this.timerInterval = setInterval(() => {
-      if (!this.isPaused) {
+      if (this.expireDailySession()) return;
+      if (!this.isPaused && !this.isWin && !this.resultReason) {
         if (this.gameMode === 'timeattack' || (this.isBattle && this.battleMode === 'score')) {
           if (this.timeRemaining <= 0) {
             this.handleTimeOut();
