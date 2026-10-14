@@ -22,7 +22,7 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 
 - `node tests/cell-consistency.cjs`: 모든 칸의 입력 숫자 크기·위치가 같은지, 점수·보너스 안내가 뜨지 않는지 검사합니다.
 
-- `tests/RoomDiscoverySmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 `io.github.yjw071218.sumdoku.RoomDiscoverySmoke`로 실행합니다. 사설망 블록 내 4,096개 주소 탐색 범위 및 8888·8889 포트를 사용합니다.
+- `tests/RoomDiscoverySmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 `io.github.yjw071218.sumdoku.RoomDiscoverySmoke`로 실행합니다. 최근 접속 호스트 캐시 우선 확인(<100ms), 브로드캐스트+NIO 병렬 스캔, 4,096개 주소 고속 스캔(<4.5s)을 검사합니다.
 
 - `node tests/polish.cjs`: 세 가지 테마의 홈 화면, 키보드 선택, 참가 오류 표시, 대화상자 초점 순환·복귀와 코드 복사를 검사합니다.
 

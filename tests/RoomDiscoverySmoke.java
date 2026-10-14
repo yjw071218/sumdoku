@@ -26,12 +26,24 @@ public class RoomDiscoverySmoke {
             require(RoomDiscovery.probe("127.0.0.1", "4321"), "hello probe matches code");
             require(!RoomDiscovery.probe("127.0.0.1", "1111"), "hello probe rejects other code");
             require(server.answersTo("4321") && !server.answersTo("1111"), "answersTo");
+            long t0 = System.currentTimeMillis();
+            String cached = RoomDiscovery.findBlocking("4321", "127.0.0.1");
+            long cachedMs = System.currentTimeMillis() - t0;
+            System.out.println("find 4321 (cached) -> " + cached + " in " + cachedMs + "ms");
+            require(cached.contains("\"via\":\"cached\"") && cachedMs < 100, "cached host must be fast (<100ms): " + cachedMs + "ms");
+
+            long t1 = System.currentTimeMillis();
             String found = RoomDiscovery.findBlocking("4321");
-            System.out.println("find 4321 -> " + found);
+            long foundMs = System.currentTimeMillis() - t1;
+            System.out.println("find 4321 -> " + found + " in " + foundMs + "ms");
             require(found.contains("\"ok\":true"), "broadcast or scan finds the room: " + found);
+
+            long t2 = System.currentTimeMillis();
             String missing = RoomDiscovery.findBlocking("9999");
-            System.out.println("find 9999 -> " + missing);
+            long missingMs = System.currentTimeMillis() - t2;
+            System.out.println("find 9999 -> " + missing + " in " + missingMs + "ms");
             require(missing.contains("not_found"), "unknown code not found");
+            require(missingMs < 4500, "4096 address scan must complete within 4.5s: " + missingMs + "ms");
             System.out.println("local wifi ip: " + RoomDiscovery.localIp());
             System.out.println("PASS: room discovery");
         } finally { server.stop(); }

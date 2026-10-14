@@ -38,7 +38,8 @@ const RoomFinder = {
         else if (res && res.error === 'no_wifi') reject(new Error('Wi-Fi 주소를 확인할 수 없습니다. Wi-Fi에 연결해 주세요.'));
         else reject(new Error(RoomFinder.notFoundMessage(code) + (res && res.ip ? ` (내 IP ${res.ip} · 주변 ${res.scanned || 0}개 주소 확인)` : "")));
       };
-      window.AndroidBridge.findRoomAsync(code);
+      const last = localStorage.getItem(RoomFinder.lastHostKey) || '';
+      window.AndroidBridge.findRoomAsync(code, last);
     });
   },
   notFoundMessage(code) {

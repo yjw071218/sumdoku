@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.0.41";
+            return "1.0.42";
         }
     }
 
@@ -226,11 +226,16 @@ public class MainActivity extends Activity {
             return String.format("{\"ok\":%b,\"ip\":\"%s\",\"port\":8888,\"code\":\"%s\"}", ok, ip, code);
         }
 
-        /** v1.0.40: 4자리 코드로 방 찾기(비동기). 결과는 window.onRoomFound(json)으로 전달합니다. */
+        /** v1.0.42: 4자리 코드로 방 찾기(비동기). 최근 접속 IP가 있으면 우선 확인합니다. */
+        @JavascriptInterface
+        public void findRoomAsync(final String code, final String lastHost) {
+            RoomDiscovery.find(code, lastHost, json -> mainHandler.post(() ->
+                webView.evaluateJavascript("if (window.onRoomFound) { window.onRoomFound(" + json + "); }", null)));
+        }
+
         @JavascriptInterface
         public void findRoomAsync(final String code) {
-            RoomDiscovery.find(code, json -> mainHandler.post(() ->
-                webView.evaluateJavascript("if (window.onRoomFound) { window.onRoomFound(" + json + "); }", null)));
+            findRoomAsync(code, null);
         }
 
         @JavascriptInterface
