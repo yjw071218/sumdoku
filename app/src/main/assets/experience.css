@@ -147,7 +147,7 @@ body.battle-active .game-mode-tag { font-size:10px; padding:3px 5px; }
 body.battle-active .sub-bar-cage-btn { padding:4px 7px; font-size:11px; }
 body.battle-active .game-main-content { flex:1 1 0; min-height:0; padding:0; gap:6px; overflow:hidden; flex-direction:column; justify-content:center; align-items:center; }
 body.battle-active .board-column { flex:1 1 0; min-height:0; width:100%; align-items:center; }
-body.battle-active .board-frame-wrapper { padding-top:40px; max-height:100%; }
+body.battle-active .board-frame-wrapper { padding-top:var(--battle-banner-space, 0px); max-height:100%; }
 body.battle-active .board-frame {
   width:var(--battle-board-size,200px)!important; height:var(--battle-board-size,200px)!important;
   min-width:0!important; min-height:0!important; max-width:none!important; max-height:none!important;

@@ -233,7 +233,7 @@ body.hint-open #view-game .controls-column { min-height:0; }
 }
 @media not ((min-width:600px) and (orientation:landscape)) {
   @media (max-width:919px) {
-    body.battle-active .game-main-content { justify-content:center; }
+    body.battle-active .game-main-content { justify-content:flex-start; }
     @media (min-height:700px) {
       body.battle-active .key-btn { min-height:54px; }
       body.battle-active .controls-column { gap:10px; }

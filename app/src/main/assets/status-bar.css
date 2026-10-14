@@ -21,14 +21,15 @@ body.has-app-statusbar { --sb-h: max(30px, var(--sb-safe, 0px)); }
 #app-statusbar .sb-batt-body { position: relative; width: 24px; height: 12px; border: 1.6px solid currentColor; border-radius: 4px; padding: 1.5px; box-sizing: border-box; }
 #app-statusbar .sb-batt-body::after { content: ''; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; border-radius: 0 2px 2px 0; background: currentColor; }
 #app-statusbar .sb-batt-fill { display: block; height: 100%; border-radius: 2px; background: currentColor; transition: width .6s ease, background-color .3s; }
-#app-statusbar .sb-bolt { position: absolute; inset: -2px 0 0; display: none; text-align: center; font-size: 9px; line-height: 12px; }
+#app-statusbar .sb-bolt { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; line-height: 0; }
+#app-statusbar .sb-bolt svg { display: block; width: 7px; height: 9px; fill: #facc15; }
 #app-statusbar .sb-batt[data-charging="1"] .sb-batt-fill { background: #22c55e; }
-#app-statusbar .sb-batt[data-charging="1"] .sb-bolt { display: block; animation: sbBolt 1.6s ease-in-out infinite; }
+#app-statusbar .sb-batt[data-charging="1"] .sb-bolt { display: flex; animation: sbBolt 1.6s ease-in-out infinite; }
 #app-statusbar .sb-batt[data-low="1"] { color: #ef4444; }
 @keyframes sbBolt { 50% { opacity: .35; } }
 /* 화면 콘텐츠는 상태바 아래에서 시작합니다. */
 body.has-app-statusbar .view { top: var(--sb-h); padding-top: 8px; }
-body.has-app-statusbar.battle-active #view-game { top: var(--sb-h); padding-top: 4px; }
+body.has-app-statusbar.battle-active #view-game { top: var(--sb-h); height: calc(100% - var(--sb-h)); padding-top: 4px; }
 body.has-app-statusbar .modal-backdrop { padding-top: var(--sb-h); box-sizing: border-box; }
 body.has-app-statusbar .modal-card { max-height: calc(100dvh - var(--sb-h) - 24px); }
 body.has-app-statusbar .toast { margin-top: var(--sb-h); }

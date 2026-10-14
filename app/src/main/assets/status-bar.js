@@ -127,7 +127,7 @@
     document.body.classList.add('has-app-statusbar');
     bar = document.createElement('div');
     bar.id = 'app-statusbar'; bar.setAttribute('role', 'status'); bar.dataset.userContent = '';
-    bar.innerHTML = '<span class="sb-left"><span class="sb-time"></span></span><span class="sb-right"><span class="sb-modes"></span><span class="sb-net"><span class="sb-airplane"></span><span class="sb-cellular"></span><span class="sb-wifi"></span></span><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span><span class="sb-bolt">⚡</span></span><span class="sb-batt-text"></span></span></span>';
+    bar.innerHTML = '<span class="sb-left"><span class="sb-time"></span></span><span class="sb-right"><span class="sb-modes"></span><span class="sb-net"><span class="sb-airplane"></span><span class="sb-cellular"></span><span class="sb-wifi"></span></span><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span><span class="sb-bolt" aria-hidden="true"><svg viewBox="0 0 7 10" xmlns="http://www.w3.org/2000/svg"><path d="M4 0 0 6h3l-1 4 5-6H4z"/></svg></span></span><span class="sb-batt-text"></span></span></span>';
     (document.getElementById('app') || document.body).append(bar);
     render();
     const tick = () => { render(); setTimeout(tick, 60000 - Date.now() % 60000 + 50); };
