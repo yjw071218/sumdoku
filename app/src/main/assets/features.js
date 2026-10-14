@@ -386,17 +386,46 @@
     const list = document.getElementById('chat-list');
     if (!list) return;
     list.querySelector('.chat-empty')?.remove();
+    const emoji = isEmojiOnly(text), last = list.lastElementChild, now = Date.now();
+    // 같은 이모지를 연타하면 말풍선을 새로 쌓지 않고 콤보 숫자를 키우며 다시 튕깁니다.
+    if (emoji && last && last.dataset.text === text && last.classList.contains(mine ? 'mine' : 'theirs') && now - (+last.dataset.at || 0) < 2500) {
+      const n = (+last.dataset.count || 1) + 1;
+      last.dataset.count = n; last.dataset.at = now;
+      let badge = last.querySelector('.chat-combo');
+      if (!badge) { badge = document.createElement('span'); badge.className = 'chat-combo'; last.append(badge); }
+      badge.textContent = '×' + n;
+      last.style.setProperty('--boost', Math.min(1 + n * 0.06, 1.6));
+      for (const el of [last, badge]) { el.classList.remove('boing'); void el.offsetWidth; el.classList.add('boing'); }
+      list.scrollTop = list.scrollHeight;
+      return;
+    }
     const b = document.createElement('div');
-    b.className = `chat-msg ${mine ? 'mine' : 'theirs'}${isEmojiOnly(text) ? ' emoji' : ''}`;
+    b.className = `chat-msg ${mine ? 'mine' : 'theirs'}${emoji ? ' emoji boing' : ''}`;
+    b.dataset.text = text; b.dataset.at = now; b.dataset.count = 1;
     b.textContent = text;
     list.append(b);
     while (list.children.length > 60) list.firstChild.remove();
     list.scrollTop = list.scrollHeight;
   }
+  function burst(btn, text) {
+    if (!btn || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = btn.getBoundingClientRect();
+    for (let i = 0; i < 3; i++) {
+      const f = document.createElement('span'); f.className = 'emoji-fly'; f.textContent = text;
+      f.style.left = r.left + r.width / 2 + 'px'; f.style.top = r.top + 'px';
+      f.style.setProperty('--dx', (Math.random() * 90 - 45) + 'px');
+      f.style.setProperty('--rot', (Math.random() * 60 - 30) + 'deg');
+      f.style.animationDelay = i * 45 + 'ms';
+      document.body.append(f); f.addEventListener('animationend', () => f.remove());
+    }
+    btn.classList.remove('tap'); void btn.offsetWidth; btn.classList.add('tap');
+  }
   function popBubble(text) {
     const pop = document.getElementById('chat-pop');
     if (!pop) return;
-    pop.textContent = isEmojiOnly(text) ? text : `상대: ${text}`;
+    const same = isEmojiOnly(text) && pop.classList.contains('show') && pop.dataset.text === text;
+    pop._n = same ? (pop._n || 1) + 1 : 1; pop.dataset.text = text;
+    pop.textContent = isEmojiOnly(text) ? (pop._n > 1 ? `${text} ×${pop._n}` : text) : `상대: ${text}`;
     pop.classList.toggle('emoji', isEmojiOnly(text));
     pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
     clearTimeout(pop._t); pop._t = setTimeout(() => pop.classList.remove('show'), 2600);
@@ -438,20 +467,22 @@
     document.body.classList.remove('chat-enabled');
     this.closeBattleChat();
   };
-  P.sendBattleChat = async function (text) {
+  P.sendBattleChat = async function (text, btn) {
     text = String(text || '').trim().slice(0, 80);
     if (!text) return;
+    const emoji = isEmojiOnly(text);
     const now = Date.now();
-    if (now - chat.sentAt < 700) { this.showToast('조금 천천히 보내 주세요'); return; }
+    // 이모지는 연타 감각을 위해 짧은 간격(180ms)만 제한하고 화면에는 즉시 반영합니다.
+    if (now - chat.sentAt < (emoji ? 180 : 700)) { if (!emoji) this.showToast('조금 천천히 보내 주세요'); return; }
     chat.sentAt = now;
+    if (emoji) { burst(btn, text); addMessage(true, text); this.sound.play('click'); try { navigator.vibrate?.(12); } catch (_) {} }
     const base = chatUrl(this);
     try {
       const res = await this.battleFetch(`${base}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: this.battleRole, text }) });
       if (!res.ok) throw new Error('send');
       const data = await res.json();
       if (data.id && data.id === chat.last + 1) chat.last = data.id;
-      addMessage(true, text);
-      this.sound.play('click');
+      if (!emoji) { addMessage(true, text); this.sound.play('click'); }
     } catch (e) {
       this.showToast('메시지를 보내지 못했습니다. 연결을 확인해 주세요');
     }
@@ -470,6 +501,12 @@
   };
   const baseStartBattle = P.startBattleMatch;
   P.startBattleMatch = function () {
+    // 바로 재시작(재대결)이면 대화를 유지하고, 새로 만든/참가한 방이면 대화를 비웁니다.
+    if (!this.isRematchActive) {
+      chat.last = 0; setUnread(0);
+      const list = document.getElementById('chat-list');
+      if (list) list.innerHTML = '<p class="chat-empty">아직 대화가 없어요. 이모티콘으로 인사해 보세요!</p>';
+    }
     const result = baseStartBattle.apply(this, arguments);
     try { this.startBattleChat(); } catch (e) {}
     return result;
@@ -521,7 +558,7 @@
       <div class="chat-phrase-row">${PHRASES.map(t => `<button type="button" class="chat-phrase" data-text="${t}">${t}</button>`).join('')}</div>
       <form class="chat-form"><input id="chat-input" type="text" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="메시지 입력 (최대 80자)" aria-label="메시지"><button type="submit" class="btn btn-primary chat-send">보내기</button></form>`;
     sheet.querySelector('.chat-close').addEventListener('click', () => app.closeBattleChat());
-    sheet.querySelectorAll('[data-text]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(b.dataset.text)));
+    sheet.querySelectorAll('[data-text]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(b.dataset.text, b)));
     sheet.querySelector('.chat-form').addEventListener('submit', e => {
       e.preventDefault();
       const input = document.getElementById('chat-input');

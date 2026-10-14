@@ -76,3 +76,17 @@ select.app-choice-source { display:none!important; }
   #modal-difficulty .play-mode-options { flex-direction:column; }
   #modal-difficulty .quick-settings-grid { grid-template-columns:minmax(0,1fr); }
 }
+/* v1.0.48: 선택창은 모든 화면에서 화면 하단 가운데에 바텀시트로 표시합니다. */
+.choice-dialog[open] {
+  position: fixed; inset: auto 0 0 0; margin: 0 auto max(16px, env(safe-area-inset-bottom));
+  width: min(480px, calc(100vw - 32px)); max-height: 75dvh; overflow-y: auto;
+  animation: choiceUp .32s cubic-bezier(.16,1,.3,1);
+}
+.choice-dialog[open]::backdrop { animation: fadeBg .25s ease; }
+@keyframes choiceUp { from { transform: translateY(40px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fadeBg { from { opacity: 0; } to { opacity: 1; } }
+.choice-option { transition: transform .12s ease, background-color .15s ease, border-color .15s ease; animation: optIn .3s cubic-bezier(.16,1,.3,1) both; }
+.choice-option:nth-child(2){animation-delay:20ms}.choice-option:nth-child(3){animation-delay:40ms}.choice-option:nth-child(4){animation-delay:60ms}.choice-option:nth-child(5){animation-delay:80ms}.choice-option:nth-child(6){animation-delay:100ms}.choice-option:nth-child(7){animation-delay:120ms}.choice-option:nth-child(n+8){animation-delay:140ms}
+.choice-option:active { transform: scale(.97); }
+@keyframes optIn { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .choice-dialog[open], .choice-dialog[open]::backdrop, .choice-option { animation: none; } }

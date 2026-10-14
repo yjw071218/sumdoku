@@ -1,0 +1,20 @@
+/* v1.0.48 앱 전체 모션. 레이아웃을 바꾸지 않는 transform/opacity만 사용합니다. */
+.view.active { animation: viewIn .32s cubic-bezier(.16,1,.3,1); }
+@keyframes viewIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.modal-backdrop:not(.hidden) { animation: fadeIn .22s ease; }
+.modal-backdrop:not(.hidden) > .modal-card { animation: cardIn .34s cubic-bezier(.2,1.3,.4,1); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(.95); } to { opacity: 1; transform: none; } }
+.btn, .glass-icon-btn, .tool-btn, .hub-menu-item, .nav-tab, .cal-day-btn, .diff-card-btn, .mode-select-btn, .keypad-btn, .num-btn, .app-choice-trigger, button.main-action-btn {
+  transition: transform .14s cubic-bezier(.2,1.4,.4,1), background-color .2s ease, box-shadow .2s ease, color .2s ease;
+}
+.btn:active, .glass-icon-btn:active, .tool-btn:active, .hub-menu-item:active, .cal-day-btn:active, .diff-card-btn:active, .mode-select-btn:active, .keypad-btn:active, .num-btn:active, .app-choice-trigger:active { transform: scale(.95); }
+.nav-tab.active .tab-icon { animation: tabBounce .45s cubic-bezier(.3,1.8,.5,1); }
+@keyframes tabBounce { 0% { transform: scale(.8); } 60% { transform: scale(1.18) translateY(-2px); } 100% { transform: none; } }
+#view-home.active main > button, #view-home.active .daily-hero { animation: riseIn .45s cubic-bezier(.16,1,.3,1) both; }
+#view-home.active main > button:nth-child(1){animation-delay:40ms}#view-home.active main > button:nth-child(2){animation-delay:80ms}#view-home.active main > button:nth-child(3){animation-delay:120ms}#view-home.active main > button:nth-child(4){animation-delay:160ms}#view-home.active main > button:nth-child(5){animation-delay:200ms}#view-home.active main > button:nth-child(6){animation-delay:240ms}
+@keyframes riseIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.hub-panel.active { animation: panelIn .3s cubic-bezier(.16,1,.3,1); }
+@keyframes panelIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.toggle-switch .slider, .toggle-switch .slider::before { transition: all .25s cubic-bezier(.3,1.5,.5,1)!important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms!important; animation-delay: 0ms!important; transition-duration: .01ms!important; } }

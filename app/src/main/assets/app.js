@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.47";
+const APP_VERSION = "1.1.0";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -2233,7 +2233,10 @@ class SumdokuApp {
   }
 
   openBattleLobby() {
+    this.isRematchActive = false;
     this.dom.modalBattleLobby.classList.remove('hidden');
+    if (this.dom.battleInputTarget) { this.dom.battleInputTarget.value = ''; this.dom.battleInputTarget.removeAttribute('aria-invalid'); }
+    const connectErr = document.getElementById('battle-connect-error'); if (connectErr) connectErr.textContent = '';
     this.dom.tabBattleHost.classList.add('active');
     this.dom.tabBattleJoin.classList.remove('active');
     this.dom.battleHostView.classList.remove('hidden');
@@ -2273,7 +2276,7 @@ class SumdokuApp {
     if (viewGameEl) viewGameEl.classList.add('battle-active');
 
     // HUD 모드 라벨
-    const modeKr = { race: '⚡ 스피드 레이스', score: '⏱️ 타임어택 점수전', survival: '🛡️ 서바이벌' }[bMode] || bMode;
+    const modeKr = { race: '⚡ 스피드 레이스', score: '⏱️ 타임어택 점수전', survival: '🛡️ 서바이벌', turn: '♟️ 턴제 대결' }[bMode] || bMode;
     this.dom.battleHudMode.textContent = modeKr;
     this.dom.battleHud.classList.remove('hidden');
 
@@ -2316,7 +2319,8 @@ class SumdokuApp {
             filled: myFilled,
             score: this.score,
             mistakes: this.mistakes,
-            isWin: this.isWin
+            isWin: this.isWin,
+            board: this.board.map(row => row.map(c => (c && c.val && !c.error) ? c.val : 0).join('')).join('')
           })
         });
 
@@ -2433,7 +2437,11 @@ class SumdokuApp {
 
     // 상대방 타임라인 기록 (리플레이 실시간 상대 진행 동기화용)
     if (this.currentGameReplay && this.currentGameReplay.oppTimeline) {
-      this.currentGameReplay.oppTimeline.push({
+      const tl = this.currentGameReplay.oppTimeline;
+      const oppBoard = typeof opp.board === 'string' && /^[0-9]{81}$/.test(opp.board) ? opp.board : null;
+      const prevBoard = [...tl].reverse().find(x => x.board)?.board || null;
+      tl.push({
+        board: oppBoard && oppBoard !== prevBoard ? oppBoard : undefined,
         step: (this.currentGameReplay.moves ? this.currentGameReplay.moves.length : 0),
         sec: this.timerSeconds,
         filled: opp.filled || 0,
@@ -2472,7 +2480,7 @@ class SumdokuApp {
   handleBattleEnd(isVictory, reason) {
     if (!this.isBattle) return;
     this.resultReason = /기권/.test(reason) ? 'forfeit' : 'battle';
-    if (this.score < 0) { isVictory = false; reason = '점수가 음수여서 실패 처리되었습니다.'; }
+    if (this.score < 0 && isVictory) { isVictory = false; reason = '점수가 음수여서 실패 처리되었습니다.'; }
     this.closeForfeitModal();
     this.stopTimer();
     clearInterval(this.battlePollInterval);
@@ -2514,13 +2522,8 @@ class SumdokuApp {
 
     this.dom.modalBattleResult.classList.remove('hidden');
     if (this.dom.btnBattleRematch) {
-      if (this.battleRole === 1) {
-        this.dom.btnBattleRematch.classList.remove('hidden');
-        this.dom.btnBattleRematch.style.display = '';
-      } else {
-        this.dom.btnBattleRematch.classList.add('hidden');
-        this.dom.btnBattleRematch.style.display = 'none';
-      }
+      this.dom.btnBattleRematch.classList.remove('hidden');
+      this.dom.btnBattleRematch.style.display = '';
     }
     this.endBattleSession(false);
 
@@ -4127,7 +4130,7 @@ class SumdokuApp {
 
       let modeBadge = '';
       if (isBattle) {
-        const bModeKr = { race: '스피드 레이스', score: '점수전', survival: '서바이벌' }[rep.battleMode] || '배틀';
+        const bModeKr = { race: '스피드 레이스', score: '점수전', survival: '서바이벌', turn: '턴제' }[rep.battleMode] || '배틀';
         modeBadge = `<span class="replay-mode-badge battle">⚔️ 1:1 배틀 (${bModeKr})</span>`;
       } else if (rep.mode === 'timeattack') {
         modeBadge = `<span class="replay-mode-badge single">⚡ 타임어택</span>`;
@@ -4436,6 +4439,9 @@ class SumdokuApp {
         if (this.dom.replayOppScore) this.dom.replayOppScore.textContent = `${Number(curSnap.score || 0).toLocaleString()}점`;
         if (this.dom.replayOppMistakes) this.dom.replayOppMistakes.textContent = `${curSnap.mistakes || 0}회`;
         if (this.dom.replayOppStatus) this.dom.replayOppStatus.textContent = curSnap.status || '진행 중';
+        let oppBoard = null;
+        for (const snap of oppTimeline) { if (snap.step > targetStep) break; if (snap.board) oppBoard = snap.board; }
+        this.renderReplayOppBoard(replay, oppBoard);
         if (this.dom.replayOppBarFill) {
           const oppPct = Math.min(100, Math.round((curSnap.filled / 81) * 100));
           this.dom.replayOppBarFill.style.width = `${oppPct}%`;
@@ -4449,6 +4455,38 @@ class SumdokuApp {
           const oppPct = Math.min(100, Math.round(((replay.oppFinalFilled || 0) / 81) * 100));
           this.dom.replayOppBarFill.style.width = `${oppPct}%`;
         }
+      }
+    }
+  }
+
+  renderReplayOppBoard(replay, boardStr) {
+    const el = document.getElementById('replay-opp-board');
+    if (!el) return;
+    const hasAny = replay.oppTimeline?.some(x => x.board);
+    el.classList.toggle('hidden', !hasAny);
+    if (!hasAny) return;
+    if (el.children.length !== 81) {
+      el.innerHTML = '';
+      const cageOf = {};
+      (replay.cages || []).forEach((cg, i) => cg.cells.forEach(([r, c]) => { cageOf[r + ',' + c] = i; }));
+      for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+        const d = document.createElement('div');
+        d.className = 'rob-cell';
+        const k = cageOf[r + ',' + c];
+        if (c % 3 === 2 && c < 8) d.classList.add('box-r');
+        if (r % 3 === 2 && r < 8) d.classList.add('box-b');
+        if (k !== undefined && cageOf[r + ',' + (c + 1)] !== k && c < 8) d.classList.add('cage-r');
+        if (k !== undefined && cageOf[(r + 1) + ',' + c] !== k && r < 8) d.classList.add('cage-b');
+        el.appendChild(d);
+      }
+    }
+    const cells = el.children;
+    for (let i = 0; i < 81; i++) {
+      const v = boardStr ? boardStr[i] : '0';
+      const t = v === '0' ? '' : v;
+      if (cells[i].textContent !== t) {
+        cells[i].textContent = t;
+        if (t) { cells[i].classList.remove('pop'); void cells[i].offsetWidth; cells[i].classList.add('pop'); }
       }
     }
   }

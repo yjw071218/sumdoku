@@ -51,6 +51,50 @@ public class BattleServer {
     // 배틀 채팅: 최근 60개만 보관
     private final java.util.ArrayList<String> chatLog = new java.util.ArrayList<>();
     private int chatSeq = 0;
+
+    // v1.0.50 턴제 모드: 서버가 차례와 수순을 단일 기준으로 관리합니다.
+    private int turnPlayer = 1;
+    private int turnSeq = 0;
+    private long turnStartedAt = 0;
+    private final java.util.ArrayList<String> turnLog = new java.util.ArrayList<>();
+
+    private synchronized void resetTurns() {
+        turnPlayer = 1; turnSeq = 0; turnStartedAt = System.currentTimeMillis(); turnLog.clear();
+    }
+
+    private static int jsonInt(String body, String key, int def) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*\"?(-?\\d+)\"?").matcher(body == null ? "" : body);
+        return m.find() ? Integer.parseInt(m.group(1)) : def;
+    }
+
+    private synchronized String turnSnapshot(int after) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("{\"ok\":true,\"turn\":%d,\"seq\":%d,\"elapsed\":%d,\"status\":\"%s\",\"moves\":[",
+            turnPlayer, turnSeq, System.currentTimeMillis() - turnStartedAt, roomStatus));
+        boolean first = true;
+        for (int i = Math.max(0, after); i < turnLog.size(); i++) { if (!first) sb.append(','); sb.append(turnLog.get(i)); first = false; }
+        return sb.append("]}").toString();
+    }
+
+    /** 턴 수: 착수(r,c,v,ok) 또는 시간 초과 패스(pass). 상대는 제한 시간 + 4초 뒤에만 대신 패스를 걸 수 있습니다. */
+    synchronized String turnMove(String body, int limitSec) {
+        int player = playerNumber(body);
+        int seq = jsonInt(body, "seq", -1);
+        boolean pass = flag(body, "pass");
+        if (player == 0 || !"playing".equals(roomStatus)) return null;
+        if (seq != turnSeq) return null;
+        long elapsed = System.currentTimeMillis() - turnStartedAt;
+        if (player != turnPlayer && !(pass && elapsed > (limitSec + 4) * 1000L)) return null;
+        int mover = turnPlayer;
+        int r = jsonInt(body, "r", -1), c = jsonInt(body, "c", -1), v = jsonInt(body, "v", 0), score = jsonInt(body, "score", 0);
+        if (!pass && (r < 0 || r > 8 || c < 0 || c > 8 || v < 1 || v > 9)) return null;
+        turnLog.add(String.format("{\"seq\":%d,\"player\":%d,\"pass\":%b,\"r\":%d,\"c\":%d,\"v\":%d,\"ok\":%b,\"score\":%d}",
+            turnSeq, mover, pass, r, c, v, flag(body, "ok"), score));
+        turnSeq++;
+        turnPlayer = 3 - turnPlayer;
+        turnStartedAt = System.currentTimeMillis();
+        return turnSnapshot(turnLog.size() - 1);
+    }
     // v1.0.35: 같은 네트워크에 방이 여러 개 있어도 구분하는 4자리 방 코드
     private volatile String roomCode = "";
 
@@ -142,14 +186,14 @@ public class BattleServer {
         this.endedBy = 0;
         this.endReason = "";
         this.chatLog.clear();
-        this.generationProgress = null;
+        this.generationProgress = null; resetTurns();
         String code = jsonString(this.puzzleJson, "roomCode");
         this.roomCode = code != null && code.matches("[0-9]{4}") ? code : "";
     }
 
     public synchronized void startMatch() {
         terminalProgress = null;
-        this.generationProgress = null;
+        this.generationProgress = null; resetTurns();
         this.roomStatus = "playing";
         this.endedBy = 0;
         this.endReason = "";
@@ -157,7 +201,7 @@ public class BattleServer {
 
     private void resetRoom() {
         terminalProgress = null;
-        this.generationProgress = null;
+        this.generationProgress = null; resetTurns();
         this.roomStatus = "waiting";
         this.guestJoined = false;
         this.p1Ready = false;
@@ -263,7 +307,7 @@ public class BattleServer {
                 p1State.clear();
                 p2State.clear();
                 puzzleJson = "{}";
-                generationProgress = null;
+                generationProgress = null; resetTurns();
                 lastGuestActiveTime = 0;
                 chatLog.clear();
                 responseJson = "{\"ok\":true,\"status\":\"closed\"}";
@@ -284,7 +328,7 @@ public class BattleServer {
                 p1State.clear();
                 p2State.clear();
                 puzzleJson = "{}";
-                generationProgress = null;
+                generationProgress = null; resetTurns();
                 endedBy = 0;
                 endReason = "";
                 lastGuestActiveTime = System.currentTimeMillis();
@@ -302,7 +346,7 @@ public class BattleServer {
                     responseJson = "{\"ok\":false,\"error\":\"not_ready\"}";
                 } else {
                     puzzleJson = body;
-                    generationProgress = null;
+                    generationProgress = null; resetTurns();
                     roomStatus = "playing";
                     terminalProgress = null;
                     endedBy = 0;
@@ -343,6 +387,17 @@ public class BattleServer {
                         if (im.find() && Integer.parseInt(im.group(1)) > after) { if (!first) sb.append(','); sb.append(msg); first = false; }
                     }
                     responseJson = sb.append("]}").toString();
+                }
+            } else if (path.startsWith("/api/turn")) {
+                if ("POST".equals(method)) {
+                    String res = turnMove(body, Math.max(10, jsonInt(puzzleJson, "turnSeconds", 30)));
+                    if (res == null) { statusCode = 409; responseJson = turnSnapshot(Integer.MAX_VALUE).replace("\"ok\":true", "\"ok\":false"); }
+                    else responseJson = res;
+                } else {
+                    int after = 0;
+                    java.util.regex.Matcher am = java.util.regex.Pattern.compile("after=(\\d+)").matcher(path);
+                    if (am.find()) after = Integer.parseInt(am.group(1));
+                    responseJson = turnSnapshot(after);
                 }
             } else if (path.startsWith("/api/progress")) {
                 if ("POST".equals(method)) {

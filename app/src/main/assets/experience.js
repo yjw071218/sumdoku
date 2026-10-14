@@ -74,7 +74,7 @@ const RoomFinder = {
   }
 };
 
-const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction'];
+const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction', 'allowAutoNotes', 'turnSeconds'];
 function normalizedRules(settings) {
   let maxLives = String(settings.maxLives ?? '3');
   if (maxLives !== 'unlimited') {
@@ -91,7 +91,9 @@ function normalizedRules(settings) {
     maxLives,
     initialHints,
     livesExhaustedAction: settings.livesExhaustedAction === 'continue' ? 'continue' : 'game_over',
-    hintExhaustedAction: settings.hintExhaustedAction === 'disallow' ? 'disallow' : 'allow_penalty'
+    hintExhaustedAction: settings.hintExhaustedAction === 'disallow' ? 'disallow' : 'allow_penalty',
+    allowAutoNotes: settings.allowAutoNotes !== false && settings.allowAutoNotes !== 'false',
+    turnSeconds: String([15, 20, 30, 45, 60].includes(+settings.turnSeconds) ? +settings.turnSeconds : 30)
   };
 }
 Object.defineProperty(SumdokuApp.prototype, 'rules', {get() { return this.gameRules || this.settings; }});
@@ -139,6 +141,8 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
     {key:'initialHints', title:'힌트 (직접 입력)', type:'number', min:0, max:999, def:'3'},
     {key:'livesExhaustedAction', title:'목숨 소진', type:'select', options:[['game_over','게임 종료'],['continue','감점 후 계속']]},
     {key:'hintExhaustedAction', title:'힌트 소진', type:'select', options:[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 50점 감점']]},
+    {key:'allowAutoNotes', title:'자동 메모 기능', type:'select', options:[[true,'허용'],[false,'금지']]},
+    ...(battle ? [{key:'turnSeconds', title:'턴제 · 한 턴 제한 시간', type:'select', options:[['15','15초'],['20','20초'],['30','30초'],['45','45초'],['60','60초']]}] : []),
     {key:'autoNotes', title:'후보 메모 자동 정리', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
     {key:'autoCheck', title:'오답 알림', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
     {key:'sound', title:'효과음', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
@@ -571,7 +575,7 @@ SumdokuApp.prototype.startGuestPolling = function() {
         const summaryEl = document.getElementById('guest-rules-summary');
         if (summaryEl) {
           summaryEl.textContent =
-            `방장 규칙 · 목숨 ${lives} · 힌트 ${hints} · 목숨 소진: ${rules.livesExhaustedAction === 'continue' ? '계속' : '종료'} · 힌트 소진: ${rules.hintExhaustedAction === 'disallow' ? '사용 금지' : '추가 감점'}`;
+            `방장 규칙 · 목숨 ${lives} · 힌트 ${hints} · 목숨 소진: ${rules.livesExhaustedAction === 'continue' ? '계속' : '종료'} · 힌트 소진: ${rules.hintExhaustedAction === 'disallow' ? '사용 금지' : '추가 감점'} · 자동 메모: ${rules.allowAutoNotes ? '허용' : '금지'}${room.mode === 'turn' ? ` · 턴 제한 ${rules.turnSeconds}초` : ''}`;
         }
       }
 

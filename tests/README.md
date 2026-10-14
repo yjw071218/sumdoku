@@ -50,3 +50,7 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 
 - `node tests/daily-choice.cjs`: 앱 전용 선택창, 키보드 취소, 일일 진행/메모/실행 취소 복원, 일반 게임 저장 분리, 앱 재실행, 자정 초기화 및 중복 생성 방지를 검사합니다.
 - `node tests/i18n-coverage.cjs`: 7개 외국어 전환 후 전체 DOM의 한국어 잔여 문구와 브라우저 오류를 검사합니다. 언어 고유명칭과 사용자 입력은 검사에서 제외합니다. 번역 문장 자체의 자연스러움은 별도 검수가 필요합니다.
+- `node tests/chat-motion.cjs`: 태블릿 선택창 하단 가운데 배치, 대화창 이모지·문구 행 스크롤 없음, 이모지 연타 콤보를 검사합니다.
+- `node tests/battle-session.cjs`: 새 방/재시작 대화 처리, 참가 코드 초기화, 참가자 결과 버튼, 리플레이 상대 판을 검사합니다.
+- `node tests/battle-modes.cjs`: 턴제 동기화·상대 턴 메모·오답/시간 초과 패스·완성 시 점수 판정, 서바이벌 압박 타이머·탈락, 자동 메모 금지 규칙을 검사합니다.
+- `tests/TurnModeSmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 실행합니다. 턴 순서, 잘못된 차례/오래된 수 거부, 시간 초과 패스 보호, 재대결 초기화를 검사합니다.

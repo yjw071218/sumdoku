@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+(async()=>{const b=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});try{
+ const p=await b.newPage({viewport:{width:390,height:844}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.49'}}));
+ await p.route('http://10.0.0.1:8888/**',r=>r.fulfill({json:{ok:true,messages:[],last:0,p1:{},p2:{}}}));
+ await p.goto('file:///'+path.resolve('app/src/main/assets/index.html').split(path.sep).join('/'));await p.waitForFunction(()=>window.app);
+ const r=await p.evaluate(async()=>{try{
+  const puzzle={solution:Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>(r*3+Math.floor(r/3)+c)%9+1))};
+  puzzle.cages=puzzle.solution.flatMap((row,r)=>row.map((v,c)=>({sum:v,cells:[[r,c]]})));
+  app.battleHostIp='10.0.0.1';app.battleHostUrl='http://10.0.0.1:8888';app.battleFetch=(u,o)=>fetch(u,o);
+  const msgs=()=>document.querySelectorAll('#chat-list .chat-msg').length;
+  const out={};
+  app.isRematchActive=false;app.startBattleMatch(2,puzzle,'race');
+  await app.sendBattleChat('안녕');out.first=msgs();
+  app.isRematchActive=true;app.startBattleMatch(2,puzzle,'race');out.rematch=msgs();
+  app.endBattleSession();
+  app.dom.battleInputTarget.value='1234';app.openBattleLobby();out.input=app.dom.battleInputTarget.value;
+  app.isRematchActive=false;app.dom.modalBattleLobby.classList.add('hidden');app.startBattleMatch(2,puzzle,'race');out.newRoom=msgs();
+  app.updateOpponentProgress({filled:2,score:10,mistakes:0,board:'12'+'0'.repeat(79)});
+  app.handleBattleEnd(false,'test');
+  const btn=app.dom.btnBattleRematch;out.rematchBtn=!btn.classList.contains('hidden')&&btn.style.display!=='none';
+  out.closeBtn=!!app.dom.btnBattleResultClose&&app.dom.btnBattleResultClose.getClientRects().length>0;
+  const replay=app.replays[0];out.mode=replay.mode;
+  app.openReplayViewer(replay);app.applyReplayStep(replay.moves.length);
+  app.renderReplayOppBoard(replay,'12'+'0'.repeat(79));
+  const board=document.getElementById('replay-opp-board');out.cells=board.children.length;out.text=board.children[0].textContent+board.children[1].textContent;out.shown=!board.classList.contains('hidden');
+  return out;}catch(e){return e.stack}});
+ assert.deepEqual(r,{first:1,rematch:1,input:'',newRoom:0,rematchBtn:true,closeBtn:true,mode:'battle',cells:81,text:'12',shown:true});
+ assert.deepEqual(errors,[]);console.log('PASS: chat reset on new room / kept on rematch, join code cleared, guest result buttons, opponent replay board');
+}finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
