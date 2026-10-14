@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.43";
+const APP_VERSION = "1.0.44";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -879,7 +879,8 @@ class SumdokuApp {
     } else if (viewName === 'game') {
       if (!this.isPaused) this.startTimer();
     } else if (viewName === 'stats') {
-      this.openHubPanel('panel-stats', '통계');
+      const settingsTitle = window.I18N ? window.I18N.t('hub_title_settings', '게임 설정') : '게임 설정';
+      this.openHubPanel('panel-settings', settingsTitle);
     } else if (viewName === 'daily') {
       this.renderDailyCalendar();
     }
@@ -1478,6 +1479,7 @@ class SumdokuApp {
     this.dom.btnHomeStats.addEventListener('click', () => {
       this.sound.play('click');
       this.switchView('stats');
+      this.openHubPanel('panel-stats', window.I18N ? window.I18N.t('hub_title_stats', '통계') : '통계');
     });
     this.dom.btnHomeRules.addEventListener('click', () => {
       this.sound.play('click');
@@ -4469,6 +4471,15 @@ class SumdokuApp {
     if (typeof this.renderStatsView === 'function') this.renderStatsView();
     if (this.isDaily && typeof this.renderDailyCalendar === 'function') this.renderDailyCalendar();
     if (typeof this.updateKeypadBadges === 'function') this.updateKeypadBadges();
+
+    const activeItem = document.querySelector('.hub-menu-item.active');
+    if (activeItem) {
+      const title = activeItem.dataset.hubTitle || activeItem.textContent.trim();
+      const titleEl = document.getElementById('hub-active-title');
+      if (titleEl) titleEl.textContent = title;
+      const headerTitleEl = document.getElementById('hub-header-title');
+      if (headerTitleEl) headerTitleEl.textContent = title;
+    }
   }
 }
 

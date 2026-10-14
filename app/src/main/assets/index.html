@@ -26,7 +26,7 @@
           </div>
           <h1 class="brand-title" data-i18n="brand_title">Sumdoku</h1>
           <p class="brand-tagline" data-i18n="brand_tagline">논리로 채우는 81칸, 킬러 스도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.43</div>
+          <div class="version-chip" id="app-version-chip">v1.0.44</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -50,10 +50,10 @@
             </svg>
           </div>
           <div class="daily-hero-info">
-            <span class="daily-hero-badge">일일 도전</span>
-            <span class="daily-hero-date" id="daily-date-label">오늘의 퍼즐</span>
+            <span class="daily-hero-badge" data-i18n="daily_hero_badge">일일 도전</span>
+            <span class="daily-hero-date" id="daily-date-label" data-i18n="daily_hero_puzzle">오늘의 퍼즐</span>
           </div>
-          <button class="daily-hero-btn">플레이</button>
+          <button class="daily-hero-btn" data-i18n="daily_hero_play">플레이</button>
         </div>
 
         <!-- Main Action Buttons -->
@@ -65,8 +65,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">게임 이어하기</span>
-              <span class="btn-desc" id="continue-desc">진행 중인 퍼즐이 있습니다</span>
+              <span class="btn-title" data-i18n="home_continue">게임 이어하기</span>
+              <span class="btn-desc" id="continue-desc" data-i18n="home_continue_desc">진행 중인 퍼즐이 있습니다</span>
             </div>
           </button>
 
@@ -78,8 +78,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">새 게임 시작</span>
-              <span class="btn-desc">초급 · 중급 · 고급 · 전문가 (4단계)</span>
+              <span class="btn-title" data-i18n="home_new_game">새 게임 시작</span>
+              <span class="btn-desc" data-i18n="home_new_game_desc">초급 · 중급 · 고급 · 전문가 (4단계)</span>
             </div>
           </button>
 
@@ -92,8 +92,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">Wi-Fi 실시간 배틀</span>
-              <span class="btn-desc">같은 Wi-Fi에서 친구와 1:1 대전</span>
+              <span class="btn-title" data-i18n="home_battle">Wi-Fi 실시간 배틀</span>
+              <span class="btn-desc" data-i18n="home_battle_desc">같은 Wi-Fi에서 친구와 1:1 대전</span>
             </div>
           </button>
 
@@ -106,8 +106,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">전적 및 통계</span>
-              <span class="btn-desc">난이도별 최단 기록, 승률, 연승 분석</span>
+              <span class="btn-title" data-i18n="home_stats">전적 및 통계</span>
+              <span class="btn-desc" data-i18n="home_stats_desc">난이도별 최단 기록, 승률, 연승 분석</span>
             </div>
           </button>
 
@@ -119,8 +119,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">게임 방법 & 규칙</span>
-              <span class="btn-desc">케이지 합계 및 0-2개 앵커 추론 기법</span>
+              <span class="btn-title" data-i18n="home_rules">게임 방법 & 규칙</span>
+              <span class="btn-desc" data-i18n="home_rules_desc">케이지 합계 및 0-2개 앵커 추론 기법</span>
             </div>
           </button>
 
@@ -133,8 +133,8 @@
               </svg>
             </div>
             <div class="btn-content">
-              <span class="btn-title">업데이트 확인</span>
-              <span class="btn-desc" id="update-status-desc">GitHub Releases 실시간 체크</span>
+              <span class="btn-title" data-i18n="home_update">업데이트 확인</span>
+              <span class="btn-desc" id="update-status-desc" data-i18n="home_update_desc">GitHub Releases 실시간 체크</span>
             </div>
           </button>
         </main>
@@ -157,7 +157,7 @@
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </span>
-          <span class="tab-label">메인</span>
+          <span class="tab-label" data-i18n="nav_main">메인</span>
         </button>
         <button class="nav-tab" data-tab="daily">
           <span class="tab-icon">
@@ -168,7 +168,7 @@
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </span>
-          <span class="tab-label">일일 도전</span>
+          <span class="tab-label" data-i18n="nav_daily">일일 도전</span>
         </button>
         <button class="nav-tab" data-tab="stats">
           <span class="tab-icon">
@@ -177,7 +177,7 @@
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </span>
-          <span class="tab-label">나</span>
+          <span class="tab-label" data-i18n="nav_me">나</span>
         </button>
       </nav>
     </section>
@@ -225,7 +225,7 @@
 
         <!-- Play Selected Day Button -->
         <div class="daily-action-box">
-          <button id="btn-daily-start" class="btn btn-primary daily-play-main-btn">오늘의 도전 플레이</button>
+          <button id="btn-daily-start" class="btn btn-primary daily-play-main-btn" data-i18n="daily_btn_play">오늘의 도전 플레이</button>
         </div>
       </div>
 
@@ -238,7 +238,7 @@
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </span>
-          <span class="tab-label">메인</span>
+          <span class="tab-label" data-i18n="nav_main">메인</span>
         </button>
         <button class="nav-tab active" data-tab="daily">
           <span class="tab-icon">
@@ -249,7 +249,7 @@
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </span>
-          <span class="tab-label">일일 도전</span>
+          <span class="tab-label" data-i18n="nav_daily">일일 도전</span>
         </button>
         <button class="nav-tab" data-tab="stats">
           <span class="tab-icon">
@@ -258,7 +258,7 @@
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </span>
-          <span class="tab-label">나</span>
+          <span class="tab-label" data-i18n="nav_me">나</span>
         </button>
       </nav>
     </section>
@@ -271,7 +271,7 @@
 
         <!-- Top Header: Back Arrow, Score, Theme, Pause, Settings (Image 2, 8) -->
         <header class="game-header">
-          <button id="btn-nav-home" class="glass-icon-btn" title="홈으로">
+          <button id="btn-nav-home" class="glass-icon-btn" title="홈으로" data-i18n-title="btn_home">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -279,7 +279,7 @@
 
           <!-- Real-Time Score (Image 2, 8) & Dynamic Combo Gauge -->
           <div class="game-score-badge" id="game-score-box">
-            <span class="score-label">점수</span>
+            <span class="score-label" data-i18n="stat_score">점수</span>
             <span class="score-val" id="game-score">0</span>
             <div id="combo-badge" class="combo-badge hidden">
               <span id="combo-text" class="combo-text">⚡ 2 COMBO</span>
@@ -293,7 +293,7 @@
             <button id="btn-game-theme" class="glass-icon-btn" title="테마 변경">
               🎨
             </button>
-            <button id="btn-game-pause" class="glass-icon-btn" title="일시정지">
+            <button id="btn-game-pause" class="glass-icon-btn" title="일시정지" data-i18n-title="ctrl_pause">
               <svg id="icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16" rx="1.5"></rect>
                 <rect x="14" y="4" width="4" height="16" rx="1.5"></rect>
@@ -302,7 +302,7 @@
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
             </button>
-            <button id="btn-game-settings" class="glass-icon-btn" title="옵션 설정">
+            <button id="btn-game-settings" class="glass-icon-btn" title="옵션 설정" data-i18n-title="modal_settings_title">
               ⚙️
             </button>
           </div>
@@ -337,20 +337,20 @@
         <!-- Sub Status Bar (Image 2, 8): Difficulty, Mistakes, Timer -->
         <div class="game-sub-bar">
           <div class="sub-bar-item diff-item">
-            <span class="sub-label">난이도</span>
+            <span class="sub-label" data-i18n="game_sub_diff">난이도</span>
             <span id="game-diff-label" class="sub-val">전문가</span>
             <span id="game-mode-tag" class="game-mode-tag mode-standard">일반</span>
           </div>
           <button id="btn-cage-multi-calc" class="sub-bar-cage-btn" title="여러 케이지 영역의 합계를 계산합니다">
             <span class="cm-icon">➕</span>
-            <span class="cm-label">영역 합산</span>
+            <span class="cm-label" data-i18n="game_btn_cagesum">영역 합산</span>
           </button>
           <div class="sub-bar-item mistakes-item">
-            <span class="sub-label">실수</span>
+            <span class="sub-label" data-i18n="stat_mistakes">실수</span>
             <span id="mistakes-count" class="sub-val">0 / 3</span>
           </div>
           <div class="sub-bar-item timer-item" id="timer-box">
-            <span class="sub-label">시간</span>
+            <span class="sub-label" data-i18n="stat_time">시간</span>
             <span id="timer-display" class="sub-val">00:00</span>
           </div>
         </div>
@@ -437,37 +437,37 @@
 
             <!-- Action Toolbar (Image 2, 8) -->
             <nav class="action-toolbar">
-              <button id="btn-undo" class="tool-btn" title="실행 취소">
+              <button id="btn-undo" class="tool-btn" title="실행 취소" data-i18n-title="ctrl_undo">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 7v6h6"></path>
                     <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                   </svg>
                 </div>
-                <span class="tool-label">실행 취소</span>
+                <span class="tool-label" data-i18n="ctrl_undo">실행 취소</span>
               </button>
 
-              <button id="btn-erase" class="tool-btn" title="지우기">
+              <button id="btn-erase" class="tool-btn" title="지우기" data-i18n-title="ctrl_erase">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L18 15"></path>
                     <path d="M17 17L7 7"></path>
                   </svg>
                 </div>
-                <span class="tool-label">지우기</span>
+                <span class="tool-label" data-i18n="ctrl_erase">지우기</span>
               </button>
 
-              <button id="btn-pencil" class="tool-btn" title="메모 모드">
+              <button id="btn-pencil" class="tool-btn" title="메모 모드" data-i18n-title="ctrl_notes">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                   </svg>
                   <span id="pencil-badge" class="badge">OFF</span>
                 </div>
-                <span class="tool-label">메모</span>
+                <span class="tool-label" data-i18n="ctrl_notes">메모</span>
               </button>
 
-              <button id="btn-scratchpad" class="tool-btn" title="자유 메모장">
+              <button id="btn-scratchpad" class="tool-btn" title="자유 메모장" data-i18n-title="ctrl_scratchpad">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -478,10 +478,10 @@
                   </svg>
                   <span id="scratchpad-badge" class="badge">📝</span>
                 </div>
-                <span class="tool-label">메모장</span>
+                <span class="tool-label" data-i18n="ctrl_scratchpad">메모장</span>
               </button>
 
-              <button id="btn-hint" class="tool-btn" title="힌트">
+              <button id="btn-hint" class="tool-btn" title="힌트" data-i18n-title="ctrl_hint">
                 <div class="tool-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 18h6"></path>
@@ -490,7 +490,7 @@
                   </svg>
                   <span id="hint-badge" class="badge-hint">3</span>
                 </div>
-                <span class="tool-label">힌트</span>
+                <span class="tool-label" data-i18n="ctrl_hint">힌트</span>
               </button>
             </nav>
 
@@ -624,30 +624,30 @@
             
             <!-- Group 1: 어워드 -->
             <div class="hub-card-group">
-              <button class="hub-menu-item" data-hub-panel="panel-awards" data-hub-title="어워드">
+              <button class="hub-menu-item" data-hub-panel="panel-awards" data-hub-title="어워드" data-i18n="hub_title_awards">
                 <span class="hub-icon-box icon-trophy">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
                 </span>
-                <span class="hub-item-label">어워드</span>
+                <span class="hub-item-label" data-i18n="hub_title_awards">어워드</span>
                 <span class="hub-chevron">›</span>
               </button>
             </div>
 
             <!-- Group 2: 통계 & 리플레이 -->
             <div class="hub-card-group">
-              <button class="hub-menu-item" data-hub-panel="panel-stats" data-hub-title="통계">
+              <button class="hub-menu-item" data-hub-panel="panel-stats" data-hub-title="통계" data-i18n="hub_title_stats">
                 <span class="hub-icon-box icon-stats">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 </span>
-                <span class="hub-item-label">통계</span>
+                <span class="hub-item-label" data-i18n="hub_title_stats">통계</span>
                 <span class="hub-chevron">›</span>
               </button>
-              <button class="hub-menu-item" data-hub-panel="panel-replays" data-hub-title="최근 리플레이 (20판)">
+              <button class="hub-menu-item" data-hub-panel="panel-replays" data-hub-title="최근 리플레이" data-i18n="hub_title_replays">
                 <span class="hub-icon-box icon-replays">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 </span>
                 <div class="hub-item-content">
-                  <span class="hub-item-label">최근 리플레이</span>
+                  <span class="hub-item-label" data-i18n="hub_title_replays">최근 리플레이</span>
                   <span class="hub-item-badge">20판</span>
                 </div>
                 <span class="hub-chevron">›</span>
@@ -656,50 +656,50 @@
 
             <!-- Group 3: 설정 (Active) & 플레이 방법 -->
             <div class="hub-card-group">
-              <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="게임 설정">
+              <button class="hub-menu-item active" data-hub-panel="panel-settings" data-hub-title="게임 설정" data-i18n="hub_title_settings">
                 <span class="hub-icon-box icon-settings">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </span>
-                <span class="hub-item-label">게임 설정</span>
+                <span class="hub-item-label" data-i18n="hub_title_settings">게임 설정</span>
                 <span class="hub-chevron">›</span>
               </button>
-              <button class="hub-menu-item" data-hub-panel="panel-howtoplay" data-hub-title="플레이 방법">
+              <button class="hub-menu-item" data-hub-panel="panel-howtoplay" data-hub-title="플레이 방법" data-i18n="hub_title_howtoplay">
                 <span class="hub-icon-box icon-guide">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                 </span>
-                <span class="hub-item-label">플레이 방법</span>
+                <span class="hub-item-label" data-i18n="hub_title_howtoplay">플레이 방법</span>
                 <span class="hub-chevron">›</span>
               </button>
             </div>
 
             <!-- Group 4: 도움말, 게임 정보, 개인정보 -->
             <div class="hub-card-group">
-              <button class="hub-menu-item" data-hub-panel="panel-help" data-hub-title="도움말">
+              <button class="hub-menu-item" data-hub-panel="panel-help" data-hub-title="도움말" data-i18n="hub_title_help">
                 <span class="hub-icon-box icon-help">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </span>
-                <span class="hub-item-label">도움말</span>
+                <span class="hub-item-label" data-i18n="hub_title_help">도움말</span>
                 <span class="hub-chevron">›</span>
               </button>
-              <button class="hub-menu-item" data-hub-panel="panel-gameinfo" data-hub-title="게임 정보">
+              <button class="hub-menu-item" data-hub-panel="panel-gameinfo" data-hub-title="게임 정보" data-i18n="hub_title_gameinfo">
                 <span class="hub-icon-box icon-info">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 </span>
-                <span class="hub-item-label">게임 정보</span>
+                <span class="hub-item-label" data-i18n="hub_title_gameinfo">게임 정보</span>
                 <span class="hub-chevron">›</span>
               </button>
-              <button class="hub-menu-item" data-hub-panel="panel-privacy" data-hub-title="개인 정보 보호 권리">
+              <button class="hub-menu-item" data-hub-panel="panel-privacy" data-hub-title="개인 정보 보호 권리" data-i18n="hub_title_privacy">
                 <span class="hub-icon-box icon-privacy">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </span>
-                <span class="hub-item-label">개인 정보 보호 권리</span>
+                <span class="hub-item-label" data-i18n="hub_title_privacy">개인 정보 보호 권리</span>
                 <span class="hub-chevron">›</span>
               </button>
-              <button class="hub-menu-item" data-hub-panel="panel-privacy-opt" data-hub-title="개인정보 판매 거부">
+              <button class="hub-menu-item" data-hub-panel="panel-privacy-opt" data-hub-title="개인정보 판매 거부" data-i18n="hub_title_privacy_opt">
                 <span class="hub-icon-box icon-optout">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </span>
-                <span class="hub-item-label">내 개인정보 판매 및 공유하지 않기</span>
+                <span class="hub-item-label" data-i18n="hub_title_privacy_opt">내 개인정보 판매 및 공유하지 않기</span>
                 <span class="hub-chevron">›</span>
               </button>
             </div>
@@ -733,24 +733,24 @@
                 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title" data-i18n="setting_language">언어 설정 (Language)</span>
+                    <span class="s-title" data-i18n="setting_language">언어 설정</span>
                     <span class="s-desc" data-i18n="setting_language_desc">게임 내 표시 언어를 선택합니다</span>
                   </div>
                   <select id="setting-language" class="settings-select">
-                    <option value="ko" selected>한국어 (Korean)</option>
+                    <option value="ko" selected>한국어</option>
                     <option value="en">English</option>
-                    <option value="ja">日本語 (Japanese)</option>
-                    <option value="zh">简体中文 (Chinese Simplified)</option>
-                    <option value="zh-TW">繁體中文 (Chinese Traditional)</option>
-                    <option value="es">Español (Spanish)</option>
-                    <option value="fr">Français (French)</option>
-                    <option value="de">Deutsch (German)</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh">简体中文</option>
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
                   </select>
                 </div>
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">사운드</span>
+                    <span class="s-title" data-i18n="setting_sound">사운드</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-sound" checked>
@@ -760,7 +760,7 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">자동 잠금</span>
+                    <span class="s-title" data-i18n="setting_autolock">자동 잠금</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-auto-lock">
@@ -770,7 +770,7 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">타이머</span>
+                    <span class="s-title" data-i18n="setting_timer">타이머</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-show-timer" checked>
@@ -780,7 +780,7 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">점수</span>
+                    <span class="s-title" data-i18n="setting_score">점수</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-show-score" checked>
@@ -790,7 +790,7 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">점수 애니메이션</span>
+                    <span class="s-title" data-i18n="setting_score_anim">점수 애니메이션</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-score-anim" checked>
@@ -800,8 +800,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">통계 메시지</span>
-                    <span class="s-desc">레벨을 완료한 사람들의 수에 관한 메시지 표시</span>
+                    <span class="s-title" data-i18n="setting_stat_message">통계 메시지</span>
+                    <span class="s-desc" data-i18n-desc="setting_stat_message_desc">레벨을 완료한 사람들의 수에 관한 메시지 표시</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-stat-message" checked>
@@ -811,8 +811,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">숫자 우선 입력</span>
-                    <span class="s-desc">숫자를 길게 눌러서 잠그고 여러 셀에 사용합니다</span>
+                    <span class="s-title" data-i18n="setting_digit_first">숫자 우선 입력</span>
+                    <span class="s-desc" data-i18n-desc="setting_digit_first_desc">숫자를 길게 눌러서 잠그고 여러 셀에 사용합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-digit-first">
@@ -822,8 +822,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">실수 한도 (목숨 제한 활성화)</span>
-                    <span class="s-desc">목숨 수량을 적용하여 실수를 제한합니다</span>
+                    <span class="s-title" data-i18n="setting_mistake_limit">실수 한도 (목숨 제한 활성화)</span>
+                    <span class="s-desc" data-i18n-desc="setting_mistake_limit_desc">목숨 수량을 적용하여 실수를 제한합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-mistake-limit" checked>
@@ -833,18 +833,18 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">허용 목숨 (실수 횟수)</span>
-                    <span class="s-desc">게임에서 허용할 목숨 개수를 직접 입력합니다 (일반/배틀 공통, 1~999회)</span>
+                    <span class="s-title" data-i18n="setting_max_lives">허용 목숨 (실수 횟수)</span>
+                    <span class="s-desc" data-i18n-desc="setting_max_lives_desc">게임에서 허용할 목숨 개수를 직접 입력합니다 (일반/배틀 공통, 1~999회)</span>
                   </div>
                   <input type="number" id="setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">목숨 소진 시 동작</span>
-                    <span class="s-desc">허용된 목숨을 모두 썼을 때 게임 오버 여부를 결정합니다</span>
+                    <span class="s-title" data-i18n="setting_lives_exhausted">목숨 소진 시 동작</span>
+                    <span class="s-desc" data-i18n-desc="setting_lives_exhausted_desc">허용된 목숨을 모두 썼을 때 게임 오버 여부를 결정합니다</span>
                   </div>
-                  <select id="setting-lives-exhausted-action" class="settings-select">
+                  <select id="setting-lives-exhausted-action" class="settings-select" data-i18n-options>
                     <option value="game_over" selected>게임 오버 (종료)</option>
                     <option value="continue">계속 플레이 (감점만 진행)</option>
                   </select>
@@ -852,18 +852,18 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">기본 제공 힌트 개수</span>
-                    <span class="s-desc">게임 시작 시 주어지는 힌트 개수를 직접 입력합니다 (일반/배틀 공통, 0~999개)</span>
+                    <span class="s-title" data-i18n="setting_initial_hints">기본 제공 힌트 개수</span>
+                    <span class="s-desc" data-i18n-desc="setting_initial_hints_desc">게임 시작 시 주어지는 힌트 개수를 직접 입력합니다 (일반/배틀 공통, 0~999개)</span>
                   </div>
                   <input type="number" id="setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">힌트 소진 시 동작</span>
-                    <span class="s-desc">기본 힌트를 모두 소진했을 때 추가 힌트 허용 여부를 결정합니다</span>
+                    <span class="s-title" data-i18n="setting_hint_exhausted">힌트 소진 시 동작</span>
+                    <span class="s-desc" data-i18n-desc="setting_hint_exhausted_desc">기본 힌트를 모두 소진했을 때 추가 힌트 허용 여부를 결정합니다</span>
                   </div>
-                  <select id="setting-hint-exhausted-action" class="settings-select">
+                  <select id="setting-hint-exhausted-action" class="settings-select" data-i18n-options>
                     <option value="allow_penalty" selected>점수 감점 후 추가 사용 허용 (-50점)</option>
                     <option value="disallow">더 이상 사용 불가 (금지)</option>
                   </select>
@@ -871,8 +871,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">실수 자동 확인</span>
-                    <span class="s-desc">최종 스도쿠 해답과 일치하지 않는 숫자를 표시합니다</span>
+                    <span class="s-title" data-i18n="setting_auto_check">실수 자동 확인</span>
+                    <span class="s-desc" data-i18n-desc="setting_auto_check_desc">최종 스도쿠 해답과 일치하지 않는 숫자를 표시합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-auto-check" checked>
@@ -882,8 +882,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">중복 강조</span>
-                    <span class="s-desc">각 행, 열, 블록에서 중복되는 숫자를 강조 표시합니다</span>
+                    <span class="s-title" data-i18n="setting_highlight_dupes">중복 강조</span>
+                    <span class="s-desc" data-i18n-desc="setting_highlight_dupes_desc">각 행, 열, 블록에서 중복되는 숫자를 강조 표시합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-highlight-dup" checked>
@@ -893,8 +893,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">영역 강조 표시</span>
-                    <span class="s-desc">선택된 셀에 대한 블록, 열 및 행을 강조 표시합니다</span>
+                    <span class="s-title" data-i18n="setting_highlight_cages">영역 강조 표시</span>
+                    <span class="s-desc" data-i18n-desc="setting_highlight_cages_desc">선택된 셀에 대한 블록, 열 및 행을 강조 표시합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-highlight-cross" checked>
@@ -904,8 +904,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">같은 숫자 강조 표시</span>
-                    <span class="s-desc">선택한 숫자와 동일한 모든 숫자를 강조합니다</span>
+                    <span class="s-title" data-i18n="setting_highlight_same">같은 숫자 강조 표시</span>
+                    <span class="s-desc" data-i18n-desc="setting_highlight_same_desc">선택한 숫자와 동일한 모든 숫자를 강조합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-highlight-same" checked>
@@ -915,8 +915,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">메모 자동 제거</span>
-                    <span class="s-desc">셀이 채워지면 해당 숫자를 관련 메모에서 자동 삭제합니다</span>
+                    <span class="s-title" data-i18n="setting_auto_remove_notes">메모 자동 제거</span>
+                    <span class="s-desc" data-i18n-desc="setting_auto_remove_notes_desc">셀이 채워지면 해당 숫자를 관련 메모에서 자동 삭제합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-auto-notes" checked>
@@ -926,8 +926,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">사용한 숫자 숨기기</span>
-                    <span class="s-desc">9개의 셀에 모두 채워 넣은 숫자를 키패드에서 비활성화합니다</span>
+                    <span class="s-title" data-i18n="setting_hide_completed">사용한 숫자 숨기기</span>
+                    <span class="s-desc" data-i18n-desc="setting_hide_completed_desc">9개의 셀에 모두 채워 넣은 숫자를 키패드에서 비활성화합니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-hide-completed" checked>
@@ -937,8 +937,8 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">다크 모드</span>
-                    <span class="s-desc">어두운 화면 테마로 눈의 피로를 줄입니다</span>
+                    <span class="s-title" data-i18n="setting_dark_mode">다크 모드</span>
+                    <span class="s-desc" data-i18n-desc="setting_dark_mode_desc">어두운 화면 테마로 눈의 피로를 줄입니다</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="setting-dark-theme">
@@ -948,10 +948,10 @@
 
                 <div class="settings-item">
                   <div class="settings-info">
-                    <span class="s-title">메모(연필) 폰트 크기</span>
-                    <span class="s-desc">칸에 표시되는 후보수 메모 숫자의 크기를 조절합니다</span>
+                    <span class="s-title" data-i18n="setting_notes_size">메모(연필) 폰트 크기</span>
+                    <span class="s-desc" data-i18n-desc="setting_notes_size_desc">칸에 표시되는 후보수 메모 숫자의 크기를 조절합니다</span>
                   </div>
-                  <select id="setting-notes-size" class="settings-select">
+                  <select id="setting-notes-size" class="settings-select" data-i18n-options>
                     <option value="normal">보통</option>
                     <option value="large" selected>크게 (기본)</option>
                     <option value="xlarge">아주 크게</option>
@@ -1071,7 +1071,7 @@
               <div class="info-card">
                 <h3>ℹ️ 게임 정보 & 업데이트</h3>
                 <p>• 앱 이름: <strong>Sumdoku (썸도쿠)</strong></p>
-                <p>• 현재 버전: <strong id="info-current-version">v1.0.17</strong></p>
+                <p>• 현재 버전: <strong id="info-current-version">v1.0.44</strong></p>
                 <p>• GitHub 저장소: <code>yjw071218/sumdoku</code></p>
                 <div style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap;">
                   <button id="btn-info-check-update" class="btn btn-primary">최신 버전 확인 및 업데이트</button>
@@ -1128,7 +1128,7 @@
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </span>
-          <span class="tab-label">메인</span>
+          <span class="tab-label" data-i18n="nav_main">메인</span>
         </button>
         <button class="nav-tab" data-tab="daily">
           <span class="tab-icon">
@@ -1139,7 +1139,7 @@
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </span>
-          <span class="tab-label">일일 도전</span>
+          <span class="tab-label" data-i18n="nav_daily">일일 도전</span>
         </button>
         <button class="nav-tab active" data-tab="stats">
           <span class="tab-icon">
@@ -1148,7 +1148,7 @@
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </span>
-          <span class="tab-label">나</span>
+          <span class="tab-label" data-i18n="nav_me">나</span>
         </button>
       </nav>
     </section>
@@ -1160,8 +1160,8 @@
     <!-- Difficulty Select Modal (4단계 및 모드 선택) -->
     <div id="modal-difficulty" class="modal-backdrop hidden">
       <div class="modal-card">
-        <h3>게임 설정 & 난이도</h3>
-        <p>어떤 난이도든 찍지 않고 100% 논리 추론만으로 정답에 도달합니다.</p>
+        <h3 data-i18n="modal_diff_title">게임 설정 & 난이도</h3>
+        <p data-i18n="modal_diff_sub">어떤 난이도든 찍지 않고 100% 논리 추론만으로 정답에 도달합니다.</p>
         
         <!-- Game Mode Selection (일반 / 타임어택) -->
         <div style="margin: 10px 0 14px 0;">
@@ -1178,7 +1178,7 @@
               <span class="diff-tag easy">초급 (Easy)</span>
               <span class="diff-hint-count">8개 확정 앵커</span>
             </div>
-            <span class="diff-card-desc">직관적인 단서와 빠른 소거법 중심</span>
+            <span class="diff-card-desc" data-i18n="diff_easy_desc">직관적인 단서와 빠른 소거법 중심</span>
           </button>
 
           <button class="diff-card-btn" data-diff="medium">
@@ -1186,7 +1186,7 @@
               <span class="diff-tag medium">중급 (Medium)</span>
               <span class="diff-hint-count">6개 확정 앵커</span>
             </div>
-            <span class="diff-card-desc">케이지 합 조합과 균형 잡힌 연역 추론</span>
+            <span class="diff-card-desc" data-i18n="diff_medium_desc">케이지 합 조합과 균형 잡힌 연역 추론</span>
           </button>
 
           <button class="diff-card-btn" data-diff="hard">
@@ -1194,7 +1194,7 @@
               <span class="diff-tag hard">고급 (Hard)</span>
               <span class="diff-hint-count">4~5개 확정 앵커</span>
             </div>
-            <span class="diff-card-desc">후보군 소거와 숨은 단일 후보 활용</span>
+            <span class="diff-card-desc" data-i18n="diff_hard_desc">후보군 소거와 숨은 단일 후보 활용</span>
           </button>
 
           <button class="diff-card-btn active" data-diff="expert">
@@ -1202,12 +1202,12 @@
               <span class="diff-tag expert">전문가 (Expert)</span>
               <span class="diff-hint-count highlight-expert">★ 0~2개 확정</span>
             </div>
-            <span class="diff-card-desc">단 0~2개의 앵커만 주어지는 최고 난도 · 100% 순수 연역 논리</span>
+            <span class="diff-card-desc" data-i18n="diff_expert_desc">단 0~2개의 앵커만 주어지는 최고 난도 · 100% 순수 연역 논리</span>
           </button>
         </div>
         <div class="modal-footer">
-          <button id="btn-diff-cancel" class="btn btn-secondary">취소</button>
-          <button id="btn-diff-start" class="btn btn-primary">게임 시작</button>
+          <button id="btn-diff-cancel" class="btn btn-secondary" data-i18n="modal_cancel">취소</button>
+          <button id="btn-diff-start" class="btn btn-primary" data-i18n="btn_start">게임 시작</button>
         </div>
       </div>
     </div>
@@ -1216,28 +1216,28 @@
     <div id="modal-settings" class="modal-backdrop hidden">
       <div class="modal-card modal-settings-card">
         <div class="modal-settings-header">
-          <h3>옵션 설정</h3>
-          <button id="btn-settings-close" class="btn-text-action">완료</button>
+          <h3 data-i18n="modal_settings_title">옵션 설정</h3>
+          <button id="btn-settings-close" class="btn-text-action" data-i18n="modal_done">완료</button>
         </div>
         <div class="modal-settings-body">
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title" data-i18n="setting_language">언어 설정 (Language)</span>
+              <span class="s-title" data-i18n="setting_language">언어 설정</span>
             </div>
             <select id="modal-setting-language" class="settings-select">
-              <option value="ko" selected>한국어 (Korean)</option>
+              <option value="ko" selected>한국어</option>
               <option value="en">English</option>
-              <option value="ja">日本語 (Japanese)</option>
-              <option value="zh">简体中文 (Chinese Simplified)</option>
-              <option value="zh-TW">繁體中文 (Chinese Traditional)</option>
-              <option value="es">Español (Spanish)</option>
-              <option value="fr">Français (French)</option>
-              <option value="de">Deutsch (German)</option>
+              <option value="ja">日本語</option>
+              <option value="zh">简体中文</option>
+              <option value="zh-TW">繁體中文</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
             </select>
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">사운드</span>
+              <span class="s-title" data-i18n="setting_sound">사운드</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="modal-setting-sound" checked>
@@ -1246,7 +1246,7 @@
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">실수 한도 (목숨 제한)</span>
+              <span class="s-title" data-i18n="setting_mistake_limit">실수 한도 (목숨 제한)</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="modal-setting-mistake" checked>
@@ -1255,37 +1255,37 @@
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">허용 목숨 (실수 횟수)</span>
+              <span class="s-title" data-i18n="setting_max_lives">허용 목숨 (실수 횟수)</span>
             </div>
             <input type="number" id="modal-setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">목숨 소진 시 동작</span>
+              <span class="s-title" data-i18n="setting_lives_exhausted">목숨 소진 시 동작</span>
             </div>
-            <select id="modal-setting-lives-exhausted-action" class="settings-select">
+            <select id="modal-setting-lives-exhausted-action" class="settings-select" data-i18n-options>
               <option value="game_over" selected>게임 오버 (종료)</option>
               <option value="continue">계속 플레이 (감점만 진행)</option>
             </select>
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">기본 제공 힌트 개수</span>
+              <span class="s-title" data-i18n="setting_initial_hints">기본 제공 힌트 개수</span>
             </div>
             <input type="number" id="modal-setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">힌트 소진 시 동작</span>
+              <span class="s-title" data-i18n="setting_hint_exhausted">힌트 소진 시 동작</span>
             </div>
-            <select id="modal-setting-hint-exhausted-action" class="settings-select">
+            <select id="modal-setting-hint-exhausted-action" class="settings-select" data-i18n-options>
               <option value="allow_penalty" selected>점수 감점 후 추가 사용 (-50점)</option>
               <option value="disallow">더 이상 사용 불가 (금지)</option>
             </select>
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">영역 강조 표시</span>
+              <span class="s-title" data-i18n="setting_highlight_cages">영역 강조 표시</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="modal-setting-cross" checked>
@@ -1294,7 +1294,7 @@
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">같은 숫자 강조 표시</span>
+              <span class="s-title" data-i18n="setting_highlight_same">같은 숫자 강조 표시</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="modal-setting-same" checked>
@@ -1303,7 +1303,7 @@
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">메모 자동 제거</span>
+              <span class="s-title" data-i18n="setting_auto_remove_notes">메모 자동 제거</span>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="modal-setting-notes" checked>
@@ -1312,9 +1312,9 @@
           </div>
           <div class="settings-item">
             <div class="settings-info">
-              <span class="s-title">메모 폰트 크기</span>
+              <span class="s-title" data-i18n="setting_notes_size">메모 폰트 크기</span>
             </div>
-            <select id="modal-setting-notes-size" class="settings-select">
+            <select id="modal-setting-notes-size" class="settings-select" data-i18n-options>
               <option value="normal">보통</option>
               <option value="large" selected>크게 (기본)</option>
               <option value="xlarge">아주 크게</option>
@@ -1322,8 +1322,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button id="btn-settings-restart" class="btn btn-secondary">새 퍼즐 시작</button>
-          <button id="btn-settings-done" class="btn btn-primary">계속하기</button>
+          <button id="btn-settings-restart" class="btn btn-secondary" data-i18n="btn_retry">새 퍼즐 시작</button>
+          <button id="btn-settings-done" class="btn btn-primary" data-i18n="modal_done">계속하기</button>
         </div>
       </div>
     </div>
@@ -1339,7 +1339,7 @@
           <p><strong>4. 전문가 모드의 0~2개 앵커</strong>: 전문가 난이도는 단 0~2개의 1칸 확정 단서만 주어지지만, 결코 임의로 찍을 필요 없이 100% 논리만으로 완벽히 풀리도록 설계되었습니다.</p>
         </div>
         <div class="modal-footer">
-          <button id="btn-rules-close" class="btn btn-primary">확인</button>
+          <button id="btn-rules-close" class="btn btn-primary" data-i18n="modal_confirm">확인</button>
         </div>
       </div>
     </div>
@@ -1645,10 +1645,10 @@
 
         <!-- Action Buttons -->
         <div class="result-actions">
-          <button id="btn-result-restart" class="btn btn-primary btn-result-main">새 게임 시작</button>
+          <button id="btn-result-restart" class="btn btn-primary btn-result-main" data-i18n="home_new_game">새 게임 시작</button>
           <div class="result-sub-actions">
-            <button id="btn-result-stats" class="btn btn-secondary">전적 보기</button>
-            <button id="btn-result-home" class="btn btn-outline">홈으로</button>
+            <button id="btn-result-stats" class="btn btn-secondary" data-i18n="home_stats">전적 보기</button>
+            <button id="btn-result-home" class="btn btn-outline" data-i18n="btn_home">홈으로</button>
           </div>
         </div>
       </div>
