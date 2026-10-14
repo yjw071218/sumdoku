@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.0.39";
+            return "1.0.40";
         }
     }
 
@@ -177,12 +177,31 @@ public class MainActivity extends Activity {
     }
 
     private BattleServer battleServer;
+    // 일부 기기는 이 잠금이 없으면 방장 쪽에서 브로드캐스트 패킷을 버립니다.
+    private android.net.wifi.WifiManager.MulticastLock multicastLock;
+
+    private void setMulticast(boolean on) {
+        try {
+            if (on) {
+                if (multicastLock == null) {
+                    android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+                    if (wm == null) return;
+                    multicastLock = wm.createMulticastLock("sumdoku-discovery");
+                    multicastLock.setReferenceCounted(false);
+                }
+                multicastLock.acquire();
+            } else if (multicastLock != null && multicastLock.isHeld()) {
+                multicastLock.release();
+            }
+        } catch (Exception ignored) {}
+    }
 
     @Override
     protected void onDestroy() {
         if (battleServer != null) {
             battleServer.stop();
         }
+        setMulticast(false);
         super.onDestroy();
     }
 
@@ -199,6 +218,7 @@ public class MainActivity extends Activity {
             }
             battleServer.configureRoom(mode, diff, timeLimitSec, puzzleJson);
             boolean ok = battleServer.start(8888);
+            if (ok) setMulticast(true);
             String ip = BattleServer.getLocalIpAddress();
             long address = 0;
             for (String octet : ip.split("\\.")) address = address * 256 + Integer.parseInt(octet);
@@ -206,11 +226,19 @@ public class MainActivity extends Activity {
             return String.format("{\"ok\":%b,\"ip\":\"%s\",\"port\":8888,\"code\":\"%s\"}", ok, ip, code);
         }
 
+        /** v1.0.40: 4자리 코드로 방 찾기(비동기). 결과는 window.onRoomFound(json)으로 전달합니다. */
+        @JavascriptInterface
+        public void findRoomAsync(final String code) {
+            RoomDiscovery.find(code, json -> mainHandler.post(() ->
+                webView.evaluateJavascript("if (window.onRoomFound) { window.onRoomFound(" + json + "); }", null)));
+        }
+
         @JavascriptInterface
         public void stopBattleServer() {
             if (battleServer != null) {
                 battleServer.stop();
             }
+            setMulticast(false);
         }
 
         @JavascriptInterface

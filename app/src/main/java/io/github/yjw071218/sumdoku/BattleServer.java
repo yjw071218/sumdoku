@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
  */
 public class BattleServer {
     private ServerSocket serverSocket;
+    // v1.0.40: 4자리 코드 브로드캐스트 탐색 응답용 (TCP 포트 + 1)
+    private java.net.DatagramSocket discoverySocket;
     private Thread serverThread;
     private ExecutorService clientPool;
     private volatile boolean running = false;
@@ -75,6 +77,17 @@ public class BattleServer {
                 }
             });
             serverThread.start();
+            try {
+                discoverySocket = new java.net.DatagramSocket(null);
+                discoverySocket.setReuseAddress(true);
+                discoverySocket.setBroadcast(true);
+                discoverySocket.bind(new java.net.InetSocketAddress(port + 1));
+                RoomDiscovery.startResponder(discoverySocket, this);
+            } catch (Exception e) {
+                // 브로드캐스트 응답을 못 열어도 서브넷 확인·IP 직접 접속은 동작합니다.
+                if (discoverySocket != null) discoverySocket.close();
+                discoverySocket = null;
+            }
             return true;
         } catch (Exception e) {
             running = false;
@@ -88,10 +101,20 @@ public class BattleServer {
             if (serverSocket != null) serverSocket.close();
         } catch (Exception ignored) {}
         try {
+            if (discoverySocket != null) discoverySocket.close();
+        } catch (Exception ignored) {}
+        discoverySocket = null;
+        try {
             if (clientPool != null) clientPool.shutdownNow();
         } catch (Exception ignored) {}
         serverSocket = null;
         resetRoom();
+    }
+
+    /** 브로드캐스트 질문에 답할 방인지: 코드 일치, 닫히지 않음, 빈자리 있음 */
+    public boolean answersTo(String code) {
+        boolean full = guestJoined && lastGuestActiveTime > 0 && System.currentTimeMillis() - lastGuestActiveTime <= 3500;
+        return running && !roomCode.isEmpty() && roomCode.equals(code) && !"closed".equals(roomStatus) && !full;
     }
 
     public boolean isRunning() {
@@ -424,6 +447,8 @@ public class BattleServer {
     }
 
     public static String getLocalIpAddress() {
+        String wifi = RoomDiscovery.localIp();
+        if (!"127.0.0.1".equals(wifi)) return wifi;
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
                 NetworkInterface intf = en.nextElement();

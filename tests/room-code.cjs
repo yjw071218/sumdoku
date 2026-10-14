@@ -8,6 +8,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const joins=[];
   await page.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.35'}}));
+  // 학교 Wi-Fi처럼 IP 앞자리가 다른 방장 (네이티브 탐색이 찾아 준 주소)
+  await page.route(/http:\/\/10\.20\.99\.7:8888\/.*/,r=>{
+   const u=new URL(r.request().url()),h={'Access-Control-Allow-Origin':'*'};
+   if(u.pathname==='/api/join'){joins.push({host:'10.20.99.7',code:JSON.parse(r.request().postData()||'{}').code});return r.fulfill({headers:h,json:{ok:true,player:2}});}
+   return r.fulfill({headers:h,json:{ok:true,status:'waiting',puzzle:{}}});
+  });
   await page.route(/http:\/\/192\.168\.7\.\d+:8888\/.*/,r=>{
    const u=new URL(r.request().url()),host=u.hostname,h={'Access-Control-Allow-Origin':'*'};
    const rooms={'192.168.7.10':'1111','192.168.7.20':'2222','192.168.7.30':'4444'};
@@ -39,6 +45,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const missing=await join('3333');assert.ok(!missing.joined&&missing.error.includes('3333'),JSON.stringify(missing));
   const full=await join('4444');assert.ok(!full.joined&&full.error.includes('이미 다른 사람'),JSON.stringify(full));
   const short=await join('123');assert.ok(!short.joined&&short.error.includes('4자리'));
+  // v1.0.40: 앱(네이티브 탐색)에서는 IP 앞자리가 다른 방장도 찾고, 못 찾으면 IP·핫스팟 안내
+  const native=await page.evaluate(async()=>{
+   window.AndroidBridge.findRoomAsync=code=>setTimeout(()=>window.onRoomFound(code==='5555'?{ok:true,ip:'10.20.99.7',via:'broadcast'}:{ok:false,error:'not_found'}),30);
+   app.cancelRoomPreparation();app.dom.tabBattleJoin.click();app.dom.battleInputTarget.value='5555';await app.connectToHost();
+   const ok={url:app.battleHostUrl,joined:!app.dom.battleGuestRoomPanel.classList.contains('hidden')};
+   app.cancelRoomPreparation();app.dom.tabBattleJoin.click();app.dom.battleInputTarget.value='6666';await app.connectToHost();
+   return {ok,err:document.getElementById('battle-connect-error').textContent};
+  });
+  assert.equal(native.ok.url,'http://10.20.99.7:8888');assert.ok(native.ok.joined);
+  assert.deepEqual(joins.at(-1),{host:'10.20.99.7',code:'5555'});
+  assert.ok(native.err.includes('IP 주소')&&native.err.includes('핫스팟'),native.err);
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({passed:true,findMs:ms,checks:['host 4-digit code','two rooms same Wi-Fi','not found','room full','bad length']}));
  }finally{await browser.close()}

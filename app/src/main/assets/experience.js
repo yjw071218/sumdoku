@@ -27,6 +27,23 @@ const RoomFinder = {
     return String(1000 + buf[0] % 9000);
   },
   lastHostKey: 'sumdoku_last_host_ip',
+  // v1.0.40: 앱에서는 네이티브 탐색(브로드캐스트 → 실제 서브넷 최대 4096개)을 씁니다.
+  // 학교 Wi-Fi처럼 같은 Wi-Fi라도 IP 앞자리가 다른 큰 내부망을 지원합니다.
+  findNative(code) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { window.onRoomFound = null; reject(new Error(RoomFinder.notFoundMessage(code))); }, 35000);
+      window.onRoomFound = res => {
+        clearTimeout(timer); window.onRoomFound = null;
+        if (res && res.ok && res.ip) { try { localStorage.setItem(RoomFinder.lastHostKey, res.ip); } catch (_) {} resolve(res.ip); }
+        else if (res && res.error === 'no_wifi') reject(new Error('Wi-Fi 주소를 확인할 수 없습니다. Wi-Fi에 연결해 주세요.'));
+        else reject(new Error(RoomFinder.notFoundMessage(code)));
+      };
+      window.AndroidBridge.findRoomAsync(code);
+    });
+  },
+  notFoundMessage(code) {
+    return `코드 ${code}인 방을 찾지 못했습니다. 방장 화면에 보이는 IP 주소(예: 10.12.34.56)를 그대로 입력해 접속해 보세요. 학교·회사 Wi-Fi는 기기끼리 통신을 막는 경우가 있어, IP로도 안 되면 한 사람의 휴대폰 핫스팟에 함께 연결해 주세요.`;
+  },
   async find(code, ownIp, fetcher, { timeout = 1200, concurrency = 48, signal } = {}) {
     const parts = String(ownIp || '').split('.');
     if (parts.length !== 4) throw new Error('Wi-Fi 주소를 확인할 수 없습니다. 같은 Wi-Fi에 연결해 주세요.');
@@ -52,7 +69,7 @@ const RoomFinder = {
     await Promise.all(Array.from({ length: concurrency }, worker));
     if (found) { try { localStorage.setItem(this.lastHostKey, found); } catch (_) {} return found; }
     if (full) throw new Error('이미 다른 사람이 참가한 방입니다.');
-    throw new Error(`코드 ${code}인 방을 찾지 못했습니다. 같은 Wi-Fi인지, 방장이 방을 열어 두었는지 확인해 주세요.`);
+    throw new Error(RoomFinder.notFoundMessage(code));
   }
 };
 
@@ -252,7 +269,7 @@ SumdokuApp.prototype.createHostRoom = function() {
     this.battleHostIp = response.ip;
     this.battlePuzzleData = null;
     if (this.dom.battleMyCode) this.dom.battleMyCode.textContent = this.battleRoomCode;
-    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `같은 Wi-Fi에서 4자리 코드로 접속 · ${response.ip}`;
+    if (this.dom.battleMyIp) this.dom.battleMyIp.textContent = `4자리 코드로 접속 · 안 되면 IP ${response.ip} 입력`;
     this.hostP1Ready = true;
     this.hostP2Ready = false;
     this.guestJoined = false;
@@ -410,8 +427,9 @@ SumdokuApp.prototype.connectToHost = async function() {
       this.joinBusy = true;
       this.dom.btnBattleConnect.disabled = true;
       this.dom.btnBattleConnect.textContent = '방 찾는 중…';
-      const ownIp = window.AndroidBridge?.getLocalIpAddress?.();
-      target = await RoomFinder.find(roomCode, ownIp, (u, o) => fetch(u, o));
+      target = window.AndroidBridge?.findRoomAsync
+        ? await RoomFinder.findNative(roomCode)
+        : await RoomFinder.find(roomCode, window.AndroidBridge?.getLocalIpAddress?.(), (u, o) => fetch(u, o));
     } else if (/^[\d\s-]+$/.test(target) && digitsOnly.length === 12) target = RoomCode.decode(target);
     else if (/^\d+$/.test(digitsOnly)) throw new Error('방 코드는 4자리 숫자입니다.');
     const [ip, port = '8888'] = target.split(':');
@@ -441,7 +459,7 @@ SumdokuApp.prototype.connectToHost = async function() {
     this.updateGuestLobbyUI();
     this.startGuestPolling();
   } catch (error) {
-    const message = error.name === 'AbortError' ? '연결 시간이 초과되었습니다. 같은 Wi-Fi인지, 방이 열려 있는지 확인해 주세요.' : error.message;
+    const message = error.name === 'AbortError' ? '연결 시간이 초과되었습니다. 방이 열려 있는지 확인해 주세요. 학교·회사 Wi-Fi는 기기끼리 통신을 막는 경우가 있어, 그럴 때는 한 사람의 휴대폰 핫스팟에 함께 연결해 주세요.' : error.message;
     if (errorText) errorText.textContent = message;
     this.dom.battleInputTarget.setAttribute('aria-invalid', 'true');
     this.dom.battleInputTarget.focus();
