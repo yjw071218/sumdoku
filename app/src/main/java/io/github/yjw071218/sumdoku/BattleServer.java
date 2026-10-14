@@ -41,6 +41,10 @@ public class BattleServer {
     private volatile boolean guestJoined = false;
     private volatile boolean p1Ready = false;
     private volatile boolean p2Ready = false;
+    private volatile long lastGuestActiveTime = 0;
+    private volatile int endedBy = 0;
+    private volatile String endReason = "";
+    private String terminalProgress = null;
 
     public BattleServer() {
         resetRoom();
@@ -93,7 +97,8 @@ public class BattleServer {
         return port;
     }
 
-    public void configureRoom(String mode, String diff, int timeLimitSec, String puzzleData) {
+    public synchronized void configureRoom(String mode, String diff, int timeLimitSec, String puzzleData) {
+        terminalProgress = null;
         this.battleMode = mode;
         this.difficulty = diff;
         this.timeLimit = timeLimitSec;
@@ -104,13 +109,20 @@ public class BattleServer {
         this.p2Ready = false;
         this.p1State.clear();
         this.p2State.clear();
+        this.lastGuestActiveTime = 0;
+        this.endedBy = 0;
+        this.endReason = "";
     }
 
-    public void startMatch() {
+    public synchronized void startMatch() {
+        terminalProgress = null;
         this.roomStatus = "playing";
+        this.endedBy = 0;
+        this.endReason = "";
     }
 
     private void resetRoom() {
+        terminalProgress = null;
         this.roomStatus = "waiting";
         this.guestJoined = false;
         this.p1Ready = false;
@@ -118,6 +130,9 @@ public class BattleServer {
         this.p1State.clear();
         this.p2State.clear();
         this.puzzleJson = "{}";
+        this.lastGuestActiveTime = 0;
+        this.endedBy = 0;
+        this.endReason = "";
     }
 
     private void handleClient(Socket socket) {
@@ -165,21 +180,54 @@ public class BattleServer {
             String responseJson = "{\"error\":\"not_found\"}";
             int statusCode = 200;
 
+            // Serialize state transitions, but never hold this lock during socket I/O.
+            synchronized (this) {
             if (path.startsWith("/api/status")) {
+                if ("waiting".equals(roomStatus) && guestJoined) {
+                    if (lastGuestActiveTime > 0 && (System.currentTimeMillis() - lastGuestActiveTime) > 3500) {
+                        guestJoined = false;
+                        p2Ready = false;
+                        p2State.clear();
+                    }
+                }
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"guestJoined\":%b,\"p1Ready\":%b,\"p2Ready\":%b,\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d}",
-                    roomStatus, guestJoined, p1Ready, p2Ready, battleMode, difficulty, timeLimit
+                    "{\"ok\":true,\"status\":\"%s\",\"guestJoined\":%b,\"p1Ready\":%b,\"p2Ready\":%b,\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"endedBy\":%d,\"endReason\":\"%s\"}",
+                    roomStatus, guestJoined, p1Ready, p2Ready, battleMode, difficulty, timeLimit, endedBy, endReason
                 );
             } else if (path.startsWith("/api/join")) {
                 guestJoined = true;
                 p2Ready = false;
+                lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = "{\"ok\":true,\"message\":\"Joined room successfully\",\"player\":2}";
+            } else if (path.startsWith("/api/leave")) {
+                if ("playing".equals(roomStatus)) {
+                    finishMatch(2, "forfeit");
+                }
+                guestJoined = false;
+                p2Ready = false;
+                lastGuestActiveTime = 0;
+                responseJson = "{\"ok\":true,\"message\":\"Left room successfully\"}";
+            } else if (path.startsWith("/api/close")) {
+                if ("playing".equals(roomStatus)) {
+                    finishMatch(1, "forfeit");
+                } else {
+                    roomStatus = "closed";
+                }
+                guestJoined = false;
+                p1Ready = false;
+                p2Ready = false;
+                p1State.clear();
+                p2State.clear();
+                puzzleJson = "{}";
+                lastGuestActiveTime = 0;
+                responseJson = "{\"ok\":true,\"status\":\"closed\"}";
             } else if (path.startsWith("/api/ready")) {
                 if ("POST".equals(method)) {
                     if (body.contains("\"player\":1") || body.contains("\"player\":\"1\"")) {
                         p1Ready = body.contains("\"ready\":true");
                     } else if (body.contains("\"player\":2") || body.contains("\"player\":\"2\"")) {
                         p2Ready = body.contains("\"ready\":true");
+                        lastGuestActiveTime = System.currentTimeMillis();
                     }
                 }
                 responseJson = String.format("{\"ok\":true,\"p1Ready\":%b,\"p2Ready\":%b}", p1Ready, p2Ready);
@@ -190,6 +238,9 @@ public class BattleServer {
                 p1State.clear();
                 p2State.clear();
                 puzzleJson = "{}";
+                endedBy = 0;
+                endReason = "";
+                lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = "{\"ok\":true,\"status\":\"waiting\"}";
             } else if (path.startsWith("/api/start")) {
                 if (!"POST".equals(method) || !"waiting".equals(roomStatus) || !guestJoined || !p2Ready || !body.contains("\"solution\"") || !body.contains("\"cages\"")) {
@@ -198,36 +249,73 @@ public class BattleServer {
                 } else {
                     puzzleJson = body;
                     roomStatus = "playing";
+                    terminalProgress = null;
+                    endedBy = 0;
+                    endReason = "";
                     responseJson = "{\"ok\":true,\"status\":\"playing\"}";
                 }
             } else if (path.startsWith("/api/room")) {
+                lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"puzzle\":%s}",
-                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, puzzleJson
+                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"puzzle\":%s}",
+                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, puzzleJson
                 );
             } else if (path.startsWith("/api/progress")) {
                 if ("POST".equals(method)) {
-                    // Update progress
-                    String bodyStr = body.toString();
-                    if (bodyStr.contains("\"player\":1") || bodyStr.contains("\"player\":\"1\"")) {
-                        p1State.put("data", bodyStr);
-                    } else {
-                        p2State.put("data", bodyStr);
+                    int player = playerNumber(body);
+                    if (player == 0) {
+                        statusCode = 400;
+                    } else if ("playing".equals(roomStatus)) {
+                        (player == 1 ? p1State : p2State).put("data", body);
+                        if (player == 2) lastGuestActiveTime = System.currentTimeMillis();
+                        if (flag(body, "resigned") || flag(body, "forfeit")) finishMatch(player, "forfeit");
                     }
-                    responseJson = "{\"ok\":true}";
+                    responseJson = player == 0 ? "{\"ok\":false}" : progressSnapshot();
                 } else {
-                    // GET progress
-                    String p1 = p1State.getOrDefault("data", "{}");
-                    String p2 = p2State.getOrDefault("data", "{}");
-                    responseJson = String.format("{\"ok\":true,\"p1\":%s,\"p2\":%s,\"status\":\"%s\"}", p1, p2, roomStatus);
+                    responseJson = progressSnapshot();
                 }
             } else if (path.startsWith("/api/end")) {
-                roomStatus = "ended";
-                responseJson = "{\"ok\":true,\"status\":\"ended\"}";
+                int player = playerNumber(body);
+                if (!"POST".equals(method) || player == 0) {
+                    statusCode = 400;
+                    responseJson = "{\"ok\":false,\"error\":\"invalid_end\"}";
+                } else {
+                    if ("playing".equals(roomStatus)) {
+                        (player == 1 ? p1State : p2State).put("data", body);
+                        finishMatch(player, flag(body, "forfeit") || flag(body, "resigned") ? "forfeit" : "completed");
+                    }
+                    responseJson = progressSnapshot();
+                }
+            }
             }
 
             sendResponse(out, statusCode, responseJson);
         } catch (Exception ignored) {}
+    }
+
+    private static int playerNumber(String body) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"player\"\\s*:\\s*\"?([12])\"?\\s*[,}]").matcher(body);
+        return m.find() ? Integer.parseInt(m.group(1)) : 0;
+    }
+
+    private static boolean flag(String body, String key) {
+        return java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*true\\s*[,}]").matcher(body).find();
+    }
+
+    private void finishMatch(int player, String reason) {
+        if (!"playing".equals(roomStatus)) return;
+        endedBy = player;
+        endReason = reason;
+        roomStatus = "ended";
+        terminalProgress = progressSnapshot();
+    }
+
+    private String progressSnapshot() {
+        // Retain the previous result while a rematch is waiting, so a slow peer
+        // can still observe the terminal event before joining the new lobby.
+        if (terminalProgress != null) return terminalProgress;
+        return String.format("{\"ok\":true,\"p1\":%s,\"p2\":%s,\"status\":\"%s\",\"endedBy\":%d,\"endReason\":\"%s\"}",
+            p1State.getOrDefault("data", "{}"), p2State.getOrDefault("data", "{}"), roomStatus, endedBy, endReason);
     }
 
     private String readHeaderLine(InputStream in) throws Exception {

@@ -32,4 +32,13 @@
 
 ## 📦 설치 및 다운로드
 
-[GitHub Releases](https://github.com/yjw071218/sumdoku/releases/latest)에서 최신 `Sumdoku-v1.0.0.apk`를 다운로드하여 안드로이드 기기에 설치할 수 있습니다.
+[GitHub Releases](https://github.com/yjw071218/sumdoku/releases/latest)에서 최신 `Sumdoku-v*.apk`를 다운로드하여 안드로이드 기기에 설치할 수 있습니다.
+
+## v1.0.29
+
+- 홈 화면의 제목·설명 계층, 밝은/어두운/세피아 테마, 게임 버튼과 배틀 상태 표시를 정리했습니다.
+- 배틀 참가 오류를 입력란에 표시하고 키보드 선택, 코드 복사, 대화상자 초점 이동을 지원합니다.
+- 휴대폰·태블릿의 남은 화면 높이에 맞춰 배틀 보드를 배치합니다.
+- Naked/Hidden Pairs·Triples, 교차 후보 제거, 확장 45 법칙을 공유 연역 엔진에 통합했습니다. 힌트는 정답판을 참조하지 않고 확인한 증명 경로를 설명합니다.
+- 방장·참가자·동시 기권 시 최초 종료 결과를 서버가 보존합니다.
+- 검증 방법과 지원하는 추론 범위는 [tests/README.md](tests/README.md)를 참고하세요.

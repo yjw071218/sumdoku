@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.28";
+const APP_VERSION = "1.0.29";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -861,6 +861,12 @@ class SumdokuApp {
       tab.classList.toggle('active', tab.dataset.tab === viewName);
     });
 
+    if (viewName !== 'game' || !this.isBattle) {
+      document.body.classList.remove('battle-active');
+      const vg = document.getElementById('view-game');
+      if (vg) vg.classList.remove('battle-active');
+    }
+
     if (viewName === 'home') {
       this.stopTimer();
       if (this.isBattle) this.endBattleSession();
@@ -1093,6 +1099,7 @@ class SumdokuApp {
 
       modalBattleLobby: document.getElementById('modal-battle-lobby'),
       btnBattleClose: document.getElementById('btn-battle-close'),
+      battleLobbyTabs: document.querySelector('.battle-lobby-tabs'),
       tabBattleHost: document.getElementById('tab-battle-host'),
       tabBattleJoin: document.getElementById('tab-battle-join'),
       battleHostView: document.getElementById('battle-host-view'),
@@ -1947,9 +1954,16 @@ class SumdokuApp {
   bindBattleEvents() {
     this.dom.btnBattleClose.addEventListener('click', () => {
       this.sound.play('click');
+      const wasRematch = !!this.isRematchActive;
+      this.isRematchActive = false;
       this.dom.modalBattleLobby.classList.add('hidden');
-      if (window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
+      if (typeof this.cancelRoomPreparation === 'function') {
+        this.cancelRoomPreparation();
+      } else if (window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
         window.AndroidBridge.stopBattleServer();
+      }
+      if (wasRematch) {
+        this.switchView('home');
       }
     });
 
@@ -2002,23 +2016,24 @@ class SumdokuApp {
 
 
     // 숫자 접속 코드 복사 기능 (복사 버튼 및 코드 텍스트 터치)
-    const handleCopyCode = () => {
+    const handleCopyCode = async () => {
       const codeText = this.dom.battleMyCode ? this.dom.battleMyCode.textContent.trim() : '';
       const rawCode = codeText.replace(/\s+/g, '');
-      if (!rawCode || rawCode === '대기중...' || rawCode === '방준비전' || rawCode.includes('대기') || rawCode.includes('준비')) {
+      if (!/^\d{12}$/.test(rawCode)) {
         this.showToast('먼저 방 준비를 완료해 주세요.');
         return;
       }
       this.sound.play('click');
       let copied = false;
-      if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
-        window.AndroidBridge.copyToClipboard(rawCode);
-        copied = true;
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(rawCode).catch(() => {});
-        copied = true;
-      }
+      try {
+        if (window.AndroidBridge?.copyToClipboard) {
+          window.AndroidBridge.copyToClipboard(rawCode);
+          copied = true;
+        } else if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(rawCode);
+          copied = true;
+        }
+      } catch (_) { /* Try the legacy WebView clipboard below. */ }
       if (!copied) {
         try {
           const ta = document.createElement('textarea');
@@ -2027,12 +2042,11 @@ class SumdokuApp {
           ta.style.opacity = '0';
           document.body.appendChild(ta);
           ta.select();
-          document.execCommand('copy');
+          copied = document.execCommand('copy');
           document.body.removeChild(ta);
-          copied = true;
         } catch (e) {}
       }
-      this.showToast(`📋 접속 코드 복사 완료! (${codeText})`);
+      this.showToast(copied ? `접속 코드를 복사했습니다. (${codeText})` : '코드를 복사하지 못했습니다. 표시된 12자리 숫자를 친구에게 알려 주세요.');
     };
 
     if (this.dom.btnCopyBattleCode) {
@@ -2058,7 +2072,12 @@ class SumdokuApp {
       this.dom.btnBattleResultClose.addEventListener('click', () => {
         this.sound.play('click');
         this.dom.modalBattleResult.classList.add('hidden');
-        this.endBattleSession(true);
+        this.endBattleSession(false);
+        setTimeout(() => {
+          if (!this.isBattle && this.battleRole === 1 && window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
+            window.AndroidBridge.stopBattleServer();
+          }
+        }, 1200);
         this.switchView('home');
       });
     }
@@ -2118,6 +2137,8 @@ class SumdokuApp {
     this.dom.tabBattleJoin.classList.remove('active');
     this.dom.battleHostView.classList.remove('hidden');
     this.dom.battleJoinView.classList.add('hidden');
+    const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
+    if (tabs) tabs.classList.remove('hidden');
 
     const lastBattleMode = localStorage.getItem('sumdoku_last_battle_mode') || this.battleMode || 'race';
     this.battleMode = lastBattleMode;
@@ -2137,11 +2158,18 @@ class SumdokuApp {
     clearInterval(this.hostPollTimer);
     clearInterval(this.guestWaitTimer);
 
+    this.isRematchActive = false;
     this.isBattle = true;
+    this.forfeitPending = false;
+    const battleEpoch = this.battleEpoch = (this.battleEpoch || 0) + 1;
     this.battleRole = role;
     this.battleMode = bMode;
     this.gameMode = 'battle';
     this.oppState = { filled: 0, score: 0, mistakes: 0, isWin: false };
+
+    document.body.classList.add('battle-active');
+    const viewGameEl = document.getElementById('view-game');
+    if (viewGameEl) viewGameEl.classList.add('battle-active');
 
     // HUD 모드 라벨
     const modeKr = { race: '⚡ 스피드 레이스', score: '⏱️ 타임어택 점수전', survival: '🛡️ 서바이벌' }[bMode] || bMode;
@@ -2168,18 +2196,18 @@ class SumdokuApp {
 
     // 실시간 대전 데이터 동기화 루프 (500ms 간격)
     clearInterval(this.battlePollInterval);
-    const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+    const targetUrl = (role === 1) ? `http://${this.battleHostIp || '127.0.0.1'}:8888` : this.battleHostUrl;
 
     let consecutivePollErrors = 0;
     let pollBusy = false;
     this.battlePollInterval = setInterval(async () => {
-      if (!this.isBattle || this.isPaused || pollBusy) return;
+      if (!this.isBattle || this.battleEpoch !== battleEpoch || pollBusy) return;
       pollBusy = true;
 
       const myFilled = this.countFilledCells();
       try {
         // 내 상태 전송
-        await this.battleFetch(`${targetUrl}/api/progress`, {
+        if (!this.forfeitPending) await this.battleFetch(`${targetUrl}/api/progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2196,14 +2224,13 @@ class SumdokuApp {
         if (pResp.ok) {
           consecutivePollErrors = 0;
           const pData = await pResp.json();
+          if (!this.isBattle || this.battleEpoch !== battleEpoch) return;
           const oppData = (role === 1) ? pData.p2 : pData.p1;
-          if (pData.status === 'ended') {
-            if (oppData && (oppData.resigned || oppData.forfeit)) {
-              this.closeForfeitModal();
-              this.handleBattleEnd(true, '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
-              return;
-            }
-          }
+          const oppRole = (role === 1) ? 2 : 1;
+
+          // 1. 서버 경기 종료 상태 판정
+          if (this.applyBattleTerminal(pData)) return;
+
           if (oppData) {
             if (oppData.resigned || oppData.forfeit) {
               this.closeForfeitModal();
@@ -2219,7 +2246,7 @@ class SumdokuApp {
         }
       } catch (e) {
         consecutivePollErrors++;
-        if (consecutivePollErrors >= 3 && this.isBattle) {
+        if (consecutivePollErrors >= 2 && this.isBattle && !this.forfeitPending && this.battleEpoch === battleEpoch) {
           this.closeForfeitModal();
           this.handleBattleEnd(true, '상대방과의 연결이 끊어졌거나 방을 나갔습니다! 당신의 승리! 🏆');
         }
@@ -2234,7 +2261,7 @@ class SumdokuApp {
   }
 
   async forfeitBattle() {
-    if (!this.isBattle) return;
+    if (!this.isBattle || this.forfeitPending) return;
     this.closeForfeitModal();
 
     // 상대방이 이미 기권했거나 게임이 끝난 상태라면 패배 처리 방지!
@@ -2244,28 +2271,52 @@ class SumdokuApp {
     }
 
     const role = this.battleRole;
-    const targetUrl = (role === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
+    const epoch = this.battleEpoch;
+    this.forfeitPending = true;
+    const targetUrl = (role === 1) ? 'http://127.0.0.1:8888' : this.battleHostUrl;
+    const payload = JSON.stringify({
+      player: role,
+      filled: this.countFilledCells(),
+      score: this.score,
+      mistakes: this.mistakes,
+      resigned: true,
+      forfeit: true,
+      isWin: false
+    });
 
-    try {
-      await fetch(`${targetUrl}/api/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player: role,
-          filled: this.countFilledCells(),
-          score: this.score,
-          mistakes: this.mistakes,
-          resigned: true,
-          forfeit: true,
-          isWin: false
-        })
-      });
-      await fetch(`${targetUrl}/api/end`, { method: 'POST' }).catch(() => {});
-    } catch (e) {}
+    // A single authoritative, idempotent end request carries the final progress.
+    // Keep GET polling alive; ordinary progress must stop while this is pending.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (!this.isBattle || this.battleEpoch !== epoch) return;
+        const result = await this.battleRequest(`${targetUrl}/api/end`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload
+        });
+        if (!this.isBattle || this.battleEpoch !== epoch) return;
+        if (this.applyBattleTerminal(result)) return;
+      } catch (_) { /* Retry safely: the server preserves the first result. */ }
+    }
+    if (this.isBattle && this.battleEpoch === epoch) {
+      this.forfeitPending = false;
+      this.showToast('기권 요청을 서버에서 확인하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.');
+    }
+  }
 
-    setTimeout(() => {
-      this.handleBattleEnd(false, '게임을 기권했습니다. 상대방의 승리로 종료되었습니다.');
-    }, 100);
+  applyBattleTerminal(result) {
+    if (!this.isBattle || result.status !== 'ended') return false;
+    const actor = Number(result.endedBy);
+    if (actor !== 1 && actor !== 2) return false;
+    this.oppState = (this.battleRole === 1 ? result.p2 : result.p1) || this.oppState;
+    const own = actor === this.battleRole;
+    if (result.endReason === 'forfeit') {
+      this.handleBattleEnd(!own, own ? '게임을 기권했습니다. 상대방의 승리로 종료되었습니다.' : '상대방이 게임을 기권했습니다! 당신의 승리! 🏆');
+      return true;
+    }
+    if (result.endReason === 'completed') {
+      this.handleBattleEnd(own, own ? '수도쿠를 먼저 완성했습니다!' : '상대방이 먼저 수도쿠를 완성했습니다!');
+      return true;
+    }
+    return false;
   }
 
   updateOpponentProgress(opp) {
@@ -2361,6 +2412,15 @@ class SumdokuApp {
     document.getElementById('res-opp-time').textContent = this.dom.timer.textContent;
 
     this.dom.modalBattleResult.classList.remove('hidden');
+    if (this.dom.btnBattleRematch) {
+      if (this.battleRole === 1) {
+        this.dom.btnBattleRematch.classList.remove('hidden');
+        this.dom.btnBattleRematch.style.display = '';
+      } else {
+        this.dom.btnBattleRematch.classList.add('hidden');
+        this.dom.btnBattleRematch.style.display = 'none';
+      }
+    }
     this.endBattleSession(false);
 
     // 상대방의 재도전 신청 감지 폴링
@@ -2378,6 +2438,7 @@ class SumdokuApp {
             clearInterval(this.rematchCheckTimer);
             this.showToast('상대방이 재도전을 신청했습니다!');
             this.dom.modalBattleResult.classList.add('hidden');
+            this.isRematchActive = true;
             this.returnToBattleLobby();
           }
         } catch (_) {}
@@ -2387,6 +2448,9 @@ class SumdokuApp {
 
   endBattleSession(forceStop = false) {
     this.isBattle = false;
+    document.body.classList.remove('battle-active');
+    const viewGameEl = document.getElementById('view-game');
+    if (viewGameEl) viewGameEl.classList.remove('battle-active');
     clearInterval(this.battlePollInterval);
     this.dom.battleHud.classList.add('hidden');
     if (forceStop && this.battleRole === 1 && window.AndroidBridge && window.AndroidBridge.stopBattleServer) {
@@ -2397,6 +2461,7 @@ class SumdokuApp {
   async requestBattleRematch() {
     clearInterval(this.rematchCheckTimer);
     this.dom.modalBattleResult.classList.add('hidden');
+    this.isRematchActive = true;
     const targetUrl = (this.battleRole === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
     try {
       if (targetUrl) {
@@ -2435,6 +2500,8 @@ class SumdokuApp {
       this.dom.battleHostView.classList.add('hidden');
       if (this.dom.battleJoinInputSection) this.dom.battleJoinInputSection.classList.add('hidden');
       if (this.dom.battleGuestRoomPanel) this.dom.battleGuestRoomPanel.classList.remove('hidden');
+      const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
+      if (tabs) tabs.classList.add('hidden');
       this.guestP1Ready = false;
       this.guestP2Ready = false;
       if (typeof this.updateGuestLobbyUI === 'function') this.updateGuestLobbyUI();
@@ -3339,6 +3406,11 @@ class SumdokuApp {
   }
 
   findDeductiveHint(r, c) {
+    if (this.generator && typeof this.generator.findShortestDeduction === 'function') {
+      const best = this.generator.findShortestDeduction(this.board, this.cages, this.solution);
+      if (best) return best;
+    }
+
     const answer = this.solution[r][c];
     const myCageIdx = this.cellCageMap[`${r},${c}`];
     const cage = this.cages[myCageIdx];

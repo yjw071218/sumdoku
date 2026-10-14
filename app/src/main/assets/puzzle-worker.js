@@ -1,5 +1,5 @@
 'use strict';
-importScripts('generator.js');
+importScripts('deduction.js', 'generator.js');
 self.onmessage = async ({data}) => {
   try {
     const puzzle = await new SumdokuGenerator().generateAsync(data.difficulty, null,

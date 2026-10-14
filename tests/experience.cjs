@@ -4,6 +4,11 @@ const output=path.join(require('os').tmpdir(),'sumdoku-browser-results');fs.mkdi
 (async()=>{const server=http.createServer((q,r)=>{let p=path.join(root,q.url==='/'?'index.html':q.url.split('?')[0]);try{r.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':'text/html');r.end(fs.readFileSync(p));}catch{r.writeHead(404).end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});const page=await browser.newPage({viewport:{width:390,height:844}});let errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.route('https://api.github.com/**',r=>r.fulfill({status:200,body:'{"tag_name":"v1.0.17"}'}));
+await page.route('http://172.16.18.247:8888/**',async route=>{
+ const url=route.request().url();
+ if(url.endsWith('/api/start'))await page.evaluate(p=>window.publishedPuzzle=p,route.request().postDataJSON());
+ await route.fulfill({json:{ok:true,status:url.endsWith('/api/start')?'playing':'waiting',guestJoined:true,p1Ready:true,p2Ready:true}});
+});
 await page.addInitScript(()=>{window.nativeCalls=[];window.AndroidBridge={getLocalIpAddress:()=> '172.16.18.247',stopBattleServer(){},startBattleServer(mode,diff,time,puzzle){nativeCalls.push(JSON.parse(puzzle));return JSON.stringify({ok:true,ip:'172.16.18.247'});}}});
 await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.app);
 const timing=await page.evaluate(()=>{app.applyTheme('theme-dark');const t=performance.now();app.openBattleLobby();return performance.now()-t});
@@ -16,8 +21,18 @@ await page.screenshot({path:path.join(output,'lobby-dark.png'),fullPage:true});
 for(const width of [320,390,768]){await page.setViewportSize({width,height:844});const overflow=await page.evaluate(()=>{let el=document.querySelector('#modal-battle-lobby .modal-card');return el.scrollWidth>el.clientWidth+1});assert(!overflow,`overflow ${width}`)}
 await page.locator('[data-bdiff="easy"]').click();await page.locator('#btn-create-room').click();await page.waitForFunction(()=>nativeCalls.length>0,{},{timeout:120000});
 assert.equal(await page.evaluate(()=>nativeCalls[0].rules.maxLives),'5');assert.equal(await page.evaluate(()=>nativeCalls[0].rules.initialHints),'0');
-let solve=await page.evaluate(()=>app.generator.solveDeductivelyAdvanced(nativeCalls[0].solution,nativeCalls[0].cages));assert.equal(solve,81);
-await page.evaluate(()=>{app.cancelRoomPreparation();app.dom.modalBattleLobby.classList.add('hidden');const p=nativeCalls[0];app.startNewGame('easy',null,'standard',p);});
+assert.equal(await page.evaluate(()=>nativeCalls[0].cages),undefined,'creating a room does not generate a puzzle');
+await page.evaluate(()=>{app.guestJoined=true;app.hostP2Ready=true;app.updateHostLobbyUI();app.startBattleAsHost();});
+await page.waitForFunction(()=>window.publishedPuzzle&&app.isBattle,null,{timeout:120000});
+let solve=await page.evaluate(()=>app.generator.solveDeductivelyAdvanced(null,publishedPuzzle.cages));assert.equal(solve,81);
+const workerSolved=await page.evaluate(()=>new Promise((resolve,reject)=>{
+ const worker=new Worker('puzzle-worker.js');
+ const timeout=setTimeout(()=>{worker.terminate();reject(Error('worker timeout'))},30000);
+ worker.onerror=e=>{clearTimeout(timeout);worker.terminate();reject(Error(e.message))};
+ worker.onmessage=({data})=>{if(data.error||data.puzzle){clearTimeout(timeout);worker.terminate();if(data.error)reject(Error(data.error));else resolve(app.generator.solveDeductivelyAdvanced(null,data.puzzle.cages))}};
+ worker.postMessage({difficulty:'easy'});
+}));assert.equal(workerSolved,81,'worker loads the shared deduction engine');
+await page.evaluate(()=>{app.endBattleSession();app.cancelRoomPreparation();app.dom.modalBattleLobby.classList.add('hidden');app.startNewGame('easy',null,'standard',publishedPuzzle);});
 await page.waitForFunction(()=>app.board.length===9);assert.equal(await page.evaluate(()=>app.board.flat().filter(c=>c.val!==0).length),0);
 assert.equal(await page.evaluate(()=>app.hintsRemaining),0);
 await page.evaluate(()=>{app.settings.maxLives='1';app.applySettings()});assert.equal(await page.evaluate(()=>app.maxMistakes),5);
@@ -34,7 +49,7 @@ await page.evaluate(()=>{app.openBattleLobby();app.prepareBattleRoom();app.cance
 await page.waitForTimeout(250);assert.equal(await page.evaluate(()=>nativeCalls.length),1,'cancelled worker must not publish room');
 // A guest on another subnet resolves the same full address and receives host rules.
 await page.route('http://10.20.30.40:8888/**',async route=>{
- const puzzle=await page.evaluate(()=>nativeCalls[0]);
+ const puzzle=await page.evaluate(()=>publishedPuzzle);
  const url=route.request().url();
  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(url.endsWith('/api/room')?{status:'playing',mode:'race',puzzle}:{ok:true})});
 });

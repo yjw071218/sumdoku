@@ -109,3 +109,63 @@ body.notes-size-large .cell-notes .note-num { font-size:clamp(6px,2.2vw,11px)!im
 body.notes-size-xlarge .cell-notes .note-num { font-size:clamp(6px,2.4vw,12px)!important; }
 .hint-logic-text { max-height: min(35vh,260px);overflow-y:auto;line-height:1.65; }
 .hint-logic-text { white-space:pre-line; }
+.battle-lobby-tabs.hidden { display: none !important; }
+
+
+/* Battle: the board consumes the measured space left by visible controls. */
+body.battle-active { padding:0!important; overflow:hidden; }
+body.battle-active .app-root { height:100dvh; padding:0; }
+body.battle-active #view-game {
+  height:100%; overflow:hidden; touch-action:manipulation;
+  padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
+}
+body.battle-active .game-layout { height:100%; max-width:1180px; padding:2px 6px; gap:5px; justify-content:flex-start; overflow:hidden; }
+body.battle-active .game-header { height:40px; min-height:40px; flex-shrink:0; margin:0 auto; }
+body.battle-active .glass-icon-btn { width:36px; height:36px; }
+body.battle-active .battle-hud-box { flex-shrink:0; padding:6px 10px; margin:0; border-radius:12px; }
+body.battle-active .battle-hud-header { font-size:11px; margin-bottom:3px; }
+body.battle-active .battle-player-name { font-size:12px; }
+body.battle-active .battle-player-stat { font-size:11px; }
+body.battle-active .battle-players-row { gap:4px; margin-bottom:4px; }
+body.battle-active .game-sub-bar { flex-shrink:0; padding:2px 0; gap:4px 8px; margin:0 auto; width:100%; max-width:none; }
+body.battle-active .sub-label, body.battle-active .sub-val { font-size:12px; }
+body.battle-active .game-mode-tag { font-size:10px; padding:3px 5px; }
+body.battle-active .sub-bar-cage-btn { padding:4px 7px; font-size:11px; }
+body.battle-active .game-main-content { flex:1 1 0; min-height:0; padding:0; gap:6px; overflow:hidden; flex-direction:column; justify-content:center; align-items:center; }
+body.battle-active .board-column { flex:1 1 0; min-height:0; width:100%; align-items:center; }
+body.battle-active .board-frame-wrapper { padding-top:40px; max-height:100%; }
+body.battle-active .board-frame {
+  width:var(--battle-board-size,200px)!important; height:var(--battle-board-size,200px)!important;
+  min-width:0!important; min-height:0!important; max-width:none!important; max-height:none!important;
+  aspect-ratio:1; flex-shrink:0!important;
+}
+body.battle-active .sudoku-grid { width:100%; height:100%; }
+body.battle-active .cell { font-size:clamp(12px,calc(var(--battle-board-size,300px) / 18),30px); }
+body.battle-active .cell-cage-sum { font-size:clamp(7px,calc(var(--battle-board-size,300px) / 48),11px); top:2px; left:3px; }
+body.battle-active .multi-cage-banner { min-height:32px; padding:2px 8px; top:2px!important; }
+body.battle-active .controls-column { flex:0 0 auto; width:100%; max-width:620px; margin:0; gap:6px; min-height:0; }
+body.battle-active .logic-assistant-card { display:none; }
+body.battle-active .action-toolbar { padding:0; margin:0; flex-wrap:nowrap; gap:4px; }
+body.battle-active .tool-btn { min-width:40px; min-height:54px; gap:2px; }
+body.battle-active .tool-icon { width:38px; height:38px; }
+body.battle-active .tool-label { font-size:10px; }
+body.battle-active .keypad { grid-template-columns:repeat(9,minmax(0,1fr)); gap:4px; }
+body.battle-active .key-btn { min-width:0; min-height:44px; height:48px; border-radius:10px; }
+body.battle-active .key-main { font-size:22px; }
+@media (min-width:600px) and (orientation:landscape), (min-width:920px) {
+  body.battle-active .game-main-content { flex-direction:row; gap:18px; }
+  body.battle-active .board-column { flex:1 1 0; width:auto; height:100%; }
+  body.battle-active .controls-column { flex:0 0 38%; max-width:400px; width:auto; }
+  body.battle-active .logic-assistant-card { display:block; padding:10px; }
+  body.battle-active .assistant-header { margin-bottom:6px; }
+  body.battle-active .assistant-tip-box { padding:6px; font-size:12px; margin-top:6px; }
+  body.battle-active .metric-box { padding:5px; }
+  body.battle-active .keypad { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  body.battle-active .key-btn { height:44px; }
+}
+@media (max-height:540px) and (min-width:600px) {
+  body.battle-active .logic-assistant-card { display:none; }
+  body.battle-active .game-layout { gap:2px; }
+  body.battle-active .battle-hud-box { padding:3px 10px; }
+  body.battle-active .battle-player-info { flex-direction:row; align-items:center; gap:6px; }
+}

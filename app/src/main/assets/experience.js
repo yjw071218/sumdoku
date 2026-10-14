@@ -45,7 +45,15 @@ SumdokuApp.prototype.bindEvents = function() {
   baseBindEvents.call(this);
   this.installQuickSettings(document.querySelector('#modal-difficulty .modal-card'), false);
   this.installQuickSettings(this.dom.battleHostView, true);
-  this.dom.btnBattleClose.addEventListener('click', () => this.cancelRoomPreparation());
+  this.dom.btnBattleClose.addEventListener('click', () => {
+    const wasRematch = !!this.isRematchActive;
+    this.isRematchActive = false;
+    this.cancelRoomPreparation();
+    if (wasRematch) {
+      this.dom.modalBattleLobby.classList.add('hidden');
+      this.switchView('home');
+    }
+  });
   this.dom.tabBattleJoin.addEventListener('click', () => this.cancelRoomPreparation());
   this.dom.modalBattleLobby.addEventListener('keydown', e => {
     if (e.key === 'Escape') this.dom.btnBattleClose.click();
@@ -133,12 +141,32 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.hideGeneratingOverlay();
   this.hostRoomCreated = false;
   this.battleStarting = false;
-  this.hideGeneratingOverlay();
   this.roomGeneration = (this.roomGeneration || 0) + 1;
   if (this.roomWorker) this.roomWorker.terminate();
   this.roomWorker = null;
   clearInterval(this.hostPollTimer);
   clearInterval(this.guestWaitTimer);
+
+  // 게스트가 방을 나간 경우 서버에 즉시 /api/leave 전송
+  if (this.battleRole === 2 && this.battleHostUrl) {
+    try {
+      fetch(`${this.battleHostUrl}/api/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player: 2 })
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
+  // 방장이 방을 나간 경우 서버에 /api/close 전송 (방 폭파)
+  if (this.battleRole === 1 && this.battleHostIp) {
+    try {
+      fetch(`http://${this.battleHostIp}:8888/api/close`, {
+        method: 'POST'
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
   this.battlePuzzleData = null;
   this.hostP1Ready = false;
   this.hostP2Ready = false;
@@ -155,6 +183,10 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   const guestRules = document.getElementById('guest-rules-summary');
   if (guestRules) guestRules.textContent = '';
   if (window.AndroidBridge?.stopBattleServer) window.AndroidBridge.stopBattleServer();
+
+  // 상단 방 만들기/방 참가하기 탭 다시 보이기
+  const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
+  if (tabs) tabs.classList.remove('hidden');
 };
 
 SumdokuApp.prototype.createHostRoom = function() {
@@ -324,8 +356,12 @@ SumdokuApp.prototype.battleFetch = async function(url, options = {}) {
 
 SumdokuApp.prototype.connectToHost = async function() {
   if (this.joinBusy) return;
+  const errorText = document.getElementById('battle-connect-error');
+  if (errorText) errorText.textContent = '';
+  this.dom.battleInputTarget.removeAttribute('aria-invalid');
   let target = this.dom.battleInputTarget.value.trim();
   try {
+    if (!target) throw new Error('친구에게 받은 12자리 코드를 입력해 주세요.');
     if (/^[\d\s-]+$/.test(target) && target.replace(/[\s-]/g, '').length === 12) target = RoomCode.decode(target);
     else if (/^\d{1,3}$/.test(target)) {
       const ip = window.AndroidBridge?.getLocalIpAddress?.();
@@ -350,14 +386,19 @@ SumdokuApp.prototype.connectToHost = async function() {
 
     if (this.dom.battleJoinInputSection) this.dom.battleJoinInputSection.classList.add('hidden');
     if (this.dom.battleGuestRoomPanel) this.dom.battleGuestRoomPanel.classList.remove('hidden');
+    const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
+    if (tabs) tabs.classList.add('hidden');
     this.updateGuestLobbyUI();
     this.startGuestPolling();
   } catch (error) {
-    this.showToast(error.name === 'AbortError' ? '연결 시간이 초과되었습니다. Wi-Fi와 코드를 확인하세요.' : error.message);
-    this.dom.btnBattleConnect.textContent = '방 접속하기';
-    this.dom.btnBattleConnect.disabled = false;
+    const message = error.name === 'AbortError' ? '연결 시간이 초과되었습니다. 같은 Wi-Fi인지, 방이 열려 있는지 확인해 주세요.' : error.message;
+    if (errorText) errorText.textContent = message;
+    this.dom.battleInputTarget.setAttribute('aria-invalid', 'true');
+    this.dom.battleInputTarget.focus();
   } finally {
     this.joinBusy = false;
+    this.dom.btnBattleConnect.textContent = '방 접속하기';
+    this.dom.btnBattleConnect.disabled = false;
   }
 };
 
@@ -407,12 +448,25 @@ SumdokuApp.prototype.startGuestPolling = function() {
   if (!url) return;
   clearInterval(this.guestWaitTimer);
   let busy = false;
+  let failCount = 0;
   this.guestWaitTimer = setInterval(async () => {
     if (busy || token !== this.roomGeneration) return;
     busy = true;
     try {
       const room = await this.battleRequest(`${url}/api/room`);
       if (token !== this.roomGeneration) return;
+      failCount = 0;
+
+      // 방장이 방을 나간 경우 (방 폭파됨)
+      if (room && room.status === 'closed') {
+        clearInterval(this.guestWaitTimer);
+        this.cancelRoomPreparation();
+        this.dom.modalBattleLobby.classList.add('hidden');
+        this.showToast('방장이 방을 나가 방이 폭파되었습니다.');
+        this.switchView('home');
+        return;
+      }
+
       this.guestP1Ready = !!room.p1Ready;
       this.guestP2Ready = !!room.p2Ready;
       this.updateGuestLobbyUI();
@@ -433,7 +487,18 @@ SumdokuApp.prototype.startGuestPolling = function() {
         this.dom.modalBattleLobby.classList.add('hidden');
         this.startBattleMatch(2, room.puzzle, room.mode);
       }
-    } catch (_) {}
+    } catch (_) {
+      if (token !== this.roomGeneration) return;
+      failCount++;
+      // 방장이 방을 나가 서버가 닫혔거나 연결이 끊긴 경우 폭파 처리
+      if (failCount >= 2) {
+        clearInterval(this.guestWaitTimer);
+        this.cancelRoomPreparation();
+        this.dom.modalBattleLobby.classList.add('hidden');
+        this.showToast('방장이 방을 나가 방이 폭파되었습니다.');
+        this.switchView('home');
+      }
+    }
     finally { busy = false; }
   }, 700);
 };
@@ -495,6 +560,8 @@ SumdokuApp.prototype.showHostRoomStage = function(created) {
   }
   document.getElementById('host-config-stage').classList.toggle('hidden',created);
   document.getElementById('host-room-stage').classList.toggle('hidden',!created);
+  const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
+  if (tabs) tabs.classList.toggle('hidden', !!created);
 };
 SumdokuApp.prototype.setupHostRoom = function() {
   this.cancelRoomPreparation();this.syncQuickSettings();this.showHostRoomStage(false);

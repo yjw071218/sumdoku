@@ -2,15 +2,7 @@
 (() => {
  const p=SumdokuApp.prototype;
  p.findImmediateHint=function(){
-  // Replay the exact generation proof from public cage clues. This also works
-  // when user notes are incomplete or the board contains an incorrect entry.
-  const result=this.generator.solveDeductivelyAdvanced(null,this.cages,true,true);
-  const index=result.trace.findIndex(t=>t.after.length===1 && this.board[t.r][t.c].val!==t.after[0]);
-  if(index<0)return null;
-  const target=result.trace[index], {r,c}=target;
-  const steps=result.trace.slice(0,index+1).map((t,i)=>`${i+1}. ${t.reason} ${t.r+1}행 ${t.c+1}열: {${t.before.join(', ')}} → {${t.after.join(', ')}}`);
-  return {r,c,answer:target.after[0],badgeText:'맵 검증 솔버의 연역 과정',posName:`${r+1}행 ${c+1}열`,cageInfo:`케이지 합 ${this.cages[this.cellCageMap[`${r},${c}`]].sum}`,
-    explanation:`원래 케이지 단서에서 시작하는 검증 순서입니다. 이미 채운 칸의 추론도 근거로 포함됩니다.\n${steps.join('\n')}\n따라서 ${r+1}행 ${c+1}열은 ${target.after[0]}입니다.${this.board[r][c].val?' 현재 입력값과 다르므로 수정해야 합니다.':''}`};
+  return this.generator.findShortestDeduction(this.board, this.cages);
  };
  p.showImmediateHint=function(){
   const h=this.findImmediateHint();

@@ -6,6 +6,7 @@
   <title>Sumdoku (썸도쿠)</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="experience.css">
+  <link rel="stylesheet" href="polish.css">
 </head>
 <body>
   <div id="app" class="app-root theme-light">
@@ -23,8 +24,8 @@
             <div class="pulse-ring"></div>
           </div>
           <h1 class="brand-title">Sumdoku</h1>
-          <p class="brand-tagline">찍지 않고 100% 연역 추론으로 푸는 합계 수도쿠</p>
-          <div class="version-chip" id="app-version-chip">v1.0.28</div>
+          <p class="brand-tagline">논리로 채우는 81칸, 킬러 수도쿠</p>
+          <div class="version-chip" id="app-version-chip">v1.0.29</div>
         </header>
 
         <!-- Auto Update Alert Banner (Shown when newer version is detected) -->
@@ -91,7 +92,7 @@
             </div>
             <div class="btn-content">
               <span class="btn-title">Wi-Fi 실시간 배틀</span>
-              <span class="btn-desc">동일 Wi-Fi 기기 간 동일 맵 1:1 대전 (3가지 모드)</span>
+              <span class="btn-desc">같은 Wi-Fi에서 친구와 1:1 대전</span>
             </div>
           </button>
 
@@ -1360,12 +1361,13 @@
 
         <!-- Lobby Tabs: 방 만들기 (Host) / 방 참가하기 (Join) -->
         <div class="battle-lobby-tabs">
-          <button id="tab-battle-host" class="battle-tab-btn active">방 만들기 (Host)</button>
-          <button id="tab-battle-join" class="battle-tab-btn">방 참가하기 (Join)</button>
+          <button id="tab-battle-host" class="battle-tab-btn active">방 만들기</button>
+          <button id="tab-battle-join" class="battle-tab-btn">방 참가하기</button>
         </div>
 
         <!-- Host View Content -->
         <div id="battle-host-view" class="battle-view-section">
+          <p class="lobby-intro">모드와 난이도를 선택해 방을 만드세요. 친구가 접속해 준비하면 시작할 수 있습니다.</p>
           <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">배틀 모드 선택</div>
           <div class="battle-mode-options">
             <div class="battle-mode-card active" data-bmode="race">
@@ -1442,11 +1444,12 @@
         <!-- Join View Content -->
         <div id="battle-join-view" class="battle-view-section hidden">
           <div id="battle-join-input-section">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">호스트 IP 또는 방 코드 입력</div>
-            <input type="text" id="battle-input-target" class="battle-input" placeholder="숫자 코드 또는 192.168.0.15" />
+            <label for="battle-input-target" class="battle-input-label">친구에게 받은 12자리 접속 코드</label>
+            <input type="text" id="battle-input-target" class="battle-input" placeholder="0000 0000 0000" inputmode="decimal" enterkeyhint="go" autocomplete="off" spellcheck="false" aria-describedby="battle-connect-help battle-connect-error" />
+            <p id="battle-connect-error" class="field-error" role="alert"></p>
 
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
-              숫자 코드는 호스트 주소를 포함합니다. 서로 통신 가능한 Wi-Fi/LAN에서 사용하세요. 별도 인터넷 중계 연결은 지원하지 않습니다.
+            <p id="battle-connect-help" class="battle-join-help">
+              같은 Wi-Fi에 연결한 뒤 코드를 입력하거나 붙여 넣으세요. IP 주소(예: 192.168.0.15)로도 접속할 수 있습니다.
             </p>
 
             <div class="modal-footer">
@@ -1770,10 +1773,13 @@
 
   </div>
 
+  <script src="deduction.js"></script>
   <script src="generator.js"></script>
   <script src="app.js"></script>
   <script src="experience.js"></script>
   <script src="refinements.js"></script>
   <script src="immediate-hints.js"></script>
+  <script src="battle-layout.js"></script>
+  <script src="polish.js"></script>
 </body>
 </html>

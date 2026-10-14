@@ -5,44 +5,13 @@
 // [2단계: 스마트 케이지 분할]
 //       ↓
 // [★ 2.5단계: 초고속 비트마스크 컴퓨터 솔버 검증 (MRV Backtracking)]
-//   - 복수해(답이 2개 이상)이거나 해가 없는 불량 맵을 0.1ms 만에 컷트
+//   - 복수해(답이 2개 이상)이거나 해가 없는 맵을 먼저 제외
 //       ↓ (유일해 통과 시에만)
 // [3단계: 인간 모사 연역 솔버 검증 (Deductive Advanced)]
 //   - 45의 법칙, 조합 캐싱, Pointing Pairs, Naked Pairs, Singles로 100% 풀림 검증
 // ============================================================================
 
-// 1~5칸 케이지 합계별 숫자 조합 비트마스크 사전 계산 캐시 (O(1) 조회)
-const PRECOMPUTED_COMBOS = (() => {
-  const table = {};
-  for (let sz = 1; sz <= 5; sz++) {
-    table[sz] = {};
-    const build = (start, curSize, curSum, mask) => {
-      if (curSize === sz) {
-        if (!table[sz][curSum]) table[sz][curSum] = [];
-        table[sz][curSum].push(mask);
-        return;
-      }
-      for (let n = start; n <= 9; n++) {
-        build(n + 1, curSize + 1, curSum + n, mask | (1 << n));
-      }
-    };
-    build(1, 0, 0, 0);
-  }
-  return table;
-})();
-
-const PRECOMPUTED_OR_MASKS = (() => {
-  const table = {};
-  for (let sz = 1; sz <= 5; sz++) {
-    table[sz] = {};
-    for (const [sumStr, list] of Object.entries(PRECOMPUTED_COMBOS[sz])) {
-      let orM = 0;
-      for (const m of list) orM |= m;
-      table[sz][Number(sumStr)] = orM;
-    }
-  }
-  return table;
-})();
+// Shared candidate/combination caches and deduction rules live in deduction.js.
 
 class SumdokuGenerator {
   constructor(rng = Math.random) {
@@ -71,10 +40,11 @@ class SumdokuGenerator {
       }
 
       // [1단계: 정답판 생성]
+      const template = attempts % 3 === 1 ? this.createCageTemplate(currentAnchors, rng) : null;
       const solution = this.createSolutionIterative(rng);
 
       // [2단계: 스마트 케이지 분할]
-      let cages = this.createSmartCages(solution, currentAnchors, rng);
+      let cages = (template && this.mapCageTemplate(template, solution)) || this.createSmartCages(solution, currentAnchors, rng);
       let singles = cages.filter(c => c.cells.length === 1);
       if (singles.length !== currentAnchors) continue;
 
@@ -100,7 +70,7 @@ class SumdokuGenerator {
 
       // [3단계: 인간 모사 연역 솔버 검증]
       const solved = this.solveDeductivelyAdvanced(solution, cages);
-      const minRequired = diff === 'expert' ? 0 : (diff === 'hard' ? 40 : 81);
+      const minRequired = 81;
       if (solved >= minRequired) {
         return {
           solution,
@@ -153,10 +123,11 @@ class SumdokuGenerator {
       }
 
       // [1단계: 정답판 생성]
+      const template = attempts % 3 === 1 ? this.createCageTemplate(currentAnchors, rng) : null;
       const solution = this.createSolutionIterative(rng);
 
       // [2단계: 스마트 케이지 분할]
-      let cages = this.createSmartCages(solution, currentAnchors, rng);
+      let cages = (template && this.mapCageTemplate(template, solution)) || this.createSmartCages(solution, currentAnchors, rng);
       let singles = cages.filter(c => c.cells.length === 1);
       if (singles.length !== currentAnchors) continue;
 
@@ -224,7 +195,7 @@ class SumdokuGenerator {
             step: '2.5',
             stepStatus: 'rejected',
             stepName: '초고속 컷트',
-            message: `★ 2.5단계: 복수해 불량 맵 즉시 컷트 (0.1ms 컷트 #${rejectedCount}회)`,
+            message: `★ 2.5단계: 유일해 검증 미통과 맵 제외 (#${rejectedCount}회)`,
             percent: pct,
             attempt: attempts,
             rejectedCount,
@@ -259,7 +230,7 @@ class SumdokuGenerator {
       const detailed = this.solveDeductivelyAdvanced(solution, cages, true);
       const solvedCount = detailed.solvedCount;
       const solvedCells = detailed.solvedCells;
-      const minRequired = diff === 'expert' ? 0 : (diff === 'hard' ? 40 : 81);
+      const minRequired = 81;
 
       if (solvedCount >= minRequired) {
         if (onProgress) {
@@ -632,301 +603,46 @@ class SumdokuGenerator {
   // [3단계] 인간 모사 순수 연역 솔버 (Deductive Advanced Solver)
   // 찍기 없이 사람이 생각하는 논리 규칙만으로 81칸이 풀리는지 검증
   // ============================================================================
-  solveDeductivelyAdvanced(solution, cages, returnDetailed = false, traceEnabled = false) {
-    const trace = [];
-    let reason = '케이지 크기와 목표 합으로 가능한 숫자 조합을 제한합니다.';
-    const digits = mask => Array.from({length:9},(_,i)=>i+1).filter(n=>mask & (1<<n));
-    const cands = Array.from({ length: 9 }, (_, r) => traceEnabled ? new Proxy(Array(9).fill(0), {
-      set(row, key, value) {
-        const c = Number(key), before = row[key];
-        if (Number.isInteger(c) && c >= 0 && c < 9 && before && before !== value) {
-          trace.push({r,c,before:digits(before),after:digits(value),reason});
-        }
-        row[key] = value; return true;
-      }
-    }) : new Int32Array(9));
-    const ALL_CANDS = 0x3FE; // bits 1..9
+  // ============================================================================
+  // [3단계] 인간 모사 순수 연역 솔버 (Deductive Advanced Solver)
+  // 찍기 없이 사람이 생각하는 고급 논리 규칙만으로 81칸이 풀리는지 검증
+  // 확장 기법:
+  //   1. Naked Singles & 상호 피어 소거
+  //   2. 케이지 조합 필터링 (1~7칸 O(1) 비트마스크) & 중복 소거
+  //   3. Hidden Singles (행, 열, 3×3 박스, 케이지)
+  //   4. Pointing Pairs / Triples & Line-Box Reduction (교차 후보 제거: 박스 ↔ 행/열)
+  //   5. Naked Pairs & Triples (행, 열, 3×3 박스, 케이지 쌍둥이/삼둥이 소거법)
+  //   6. Hidden Pairs (행, 열, 3×3 박스 숨은 쌍둥이 소거법)
+  //   7. 45의 법칙 및 확장 45의 법칙 (Multiple 45 Rule: 1/2/3개 박스·행·열 Innie & Outie)
+  // ============================================================================
+  solveDeductivelyAdvanced(solution, cages, returnDetailed = false, traceEnabled = false, initialBoard = null) {
+    const result = KillerDeduction.solve(cages, initialBoard, traceEnabled);
+    return returnDetailed ? result : result.solvedCount;
+  }
 
-    // 초기화: 케이지 크기 및 합계 사전 캐시 마스크 적용
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        cands[r][c] = ALL_CANDS;
-      }
-    }
+  findShortestDeduction(currentBoard, cages) {
+    return KillerDeduction.hint(cages, currentBoard);
+  }
 
-    for (const cg of cages) {
-      const sz = cg.cells.length;
-      if(traceEnabled) reason = `합 ${cg.sum}, ${sz}칸 케이지에서 중복 없는 숫자 조합을 계산합니다.`;
-      if (sz === 1) {
-        const [r, c] = cg.cells[0];
-        cands[r][c] = 1 << cg.sum;
-      } else if (sz <= 5 && PRECOMPUTED_OR_MASKS[sz] && PRECOMPUTED_OR_MASKS[sz][cg.sum]) {
-        const allowedOr = PRECOMPUTED_OR_MASKS[sz][cg.sum];
-        for (const [r, c] of cg.cells) {
-          cands[r][c] &= allowedOr;
-        }
-      }
-    }
+  // Geometry is chosen before digits. Snake domino/triple templates provide
+  // small connected sum constraints; both uniqueness and deduction still gate acceptance.
+  createCageTemplate(anchors, rng) {
+    const path = Array.from({length:81}, (_,i)=>[Math.floor(i/9), Math.floor(i/9)%2 ? 8-i%9 : i%9]);
+    const transpose=rng()<0.5, flipR=rng()<0.5, flipC=rng()<0.5;
+    const sizes=Array(anchors).fill(1);
+    let remaining=81-anchors;
+    if(remaining%2){sizes.push(3);remaining-=3;}
+    while(remaining){sizes.push(2);remaining-=2;}
+    for(let i=sizes.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[sizes[i],sizes[j]]=[sizes[j],sizes[i]];}
+    let cursor=0;
+    return sizes.map(size=>path.slice(cursor,cursor+=size).map(([r,c])=>{
+      if(transpose)[r,c]=[c,r];return [flipR?8-r:r,flipC?8-c:c];
+    }));
+  }
 
-    const popcount = (m) => {
-      let count = 0;
-      while (m) { m &= m - 1; count++; }
-      return count;
-    };
-
-    let changed = true;
-    let loop = 0;
-
-    while (changed && loop++ < 80) {
-      changed = false;
-
-      // 1. Naked Singles & 상호 피어 소거
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          const m = cands[r][c];
-          if (popcount(m) === 1) {
-            const valBit = m;
-            if(traceEnabled) reason = `${r+1}행 ${c+1}열이 ${31-Math.clz32(m)}로 확정되어 같은 행·열·박스에서 이 숫자를 제외합니다.`;
-
-            // 행 소거
-            for (let i = 0; i < 9; i++) {
-              if (i !== c && (cands[r][i] & valBit)) {
-                cands[r][i] &= ~valBit;
-                changed = true;
-              }
-            }
-            // 열 소거
-            for (let i = 0; i < 9; i++) {
-              if (i !== r && (cands[i][c] & valBit)) {
-                cands[i][c] &= ~valBit;
-                changed = true;
-              }
-            }
-            // 3x3 박스 소거
-            const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
-            for (let i = 0; i < 3; i++) {
-              for (let j = 0; j < 3; j++) {
-                const tr = br + i, tc = bc + j;
-                if ((tr !== r || tc !== c) && (cands[tr][tc] & valBit)) {
-                  cands[tr][tc] &= ~valBit;
-                  changed = true;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // 2. 케이지 내부 동일 숫자 중복 소거 & 사전 조합 필터링
-      for (const cg of cages) {
-        const unsolved = [];
-        let solvedSum = 0;
-        let solvedMask = 0;
-
-        for (const [r, c] of cg.cells) {
-          const m = cands[r][c];
-          if (popcount(m) === 1) {
-            solvedSum += (31 - Math.clz32(m));
-            solvedMask |= m;
-          } else {
-            unsolved.push([r, c]);
-          }
-        }
-
-        // 이미 풀린 숫자는 케이지 내 다른 미완성 셀에서 소거
-        if (solvedMask > 0) {
-          if(traceEnabled) reason = `합 ${cg.sum} 케이지에서 이미 확정된 ${digits(solvedMask).join(", ")}은 다른 칸에 중복될 수 없습니다.`;
-          for (const [ur, uc] of unsolved) {
-            if (cands[ur][uc] & solvedMask) {
-              cands[ur][uc] &= ~solvedMask;
-              changed = true;
-            }
-          }
-        }
-
-        // 남은 셀들에 대한 케이지 조합 비트마스크 필터링
-        const remLen = unsolved.length;
-        const remTarget = cg.sum - solvedSum;
-        if(traceEnabled) reason = `케이지 합 ${cg.sum} - 확정된 숫자의 합 ${solvedSum} = ${remTarget}. 남은 ${remLen}칸의 중복 없는 조합과 각 칸 후보를 대조합니다.`;
-        if (remLen >= 1 && remLen <= 5 && PRECOMPUTED_COMBOS[remLen] && PRECOMPUTED_COMBOS[remLen][remTarget]) {
-          const comboList = PRECOMPUTED_COMBOS[remLen][remTarget];
-          let allowedUnion = 0;
-
-          for (const comboMask of comboList) {
-            // 이미 풀린 숫자와 겹치지 않는 조합인지 확인
-            if (comboMask & solvedMask) continue;
-
-            // unsolved 셀들의 후보와 이 조합의 각 숫자가 매칭 가능한지 확인
-            let canFitAll = true;
-            for (const [ur, uc] of unsolved) {
-              if ((cands[ur][uc] & comboMask) === 0) {
-                canFitAll = false;
-                break;
-              }
-            }
-            if (canFitAll) {
-              allowedUnion |= comboMask;
-            }
-          }
-
-          if (allowedUnion > 0) {
-            for (const [ur, uc] of unsolved) {
-              const before = cands[ur][uc];
-              cands[ur][uc] &= allowedUnion;
-              if (cands[ur][uc] !== before) changed = true;
-            }
-          }
-        }
-      }
-
-      // 3. Hidden Singles (행, 열, 3x3 박스, 케이지)
-      for (let r = 0; r < 9; r++) {
-        for (let num = 1; num <= 9; num++) {
-          const bit = 1 << num;
-          let count = 0, lastC = -1;
-          for (let c = 0; c < 9; c++) {
-            if (cands[r][c] & bit) { count++; lastC = c; }
-          }
-          if (count === 1 && popcount(cands[r][lastC]) > 1) {
-            if(traceEnabled) reason = `${r+1}행에서 ${num} 후보가 있는 유일한 자리는 ${lastC+1}열입니다.`;
-            cands[r][lastC] = bit;
-            changed = true;
-          }
-        }
-      }
-
-      for (let c = 0; c < 9; c++) {
-        for (let num = 1; num <= 9; num++) {
-          const bit = 1 << num;
-          let count = 0, lastR = -1;
-          for (let r = 0; r < 9; r++) {
-            if (cands[r][c] & bit) { count++; lastR = r; }
-          }
-          if (count === 1 && popcount(cands[lastR][c]) > 1) {
-            if(traceEnabled) reason = `${c+1}열에서 ${num} 후보가 있는 유일한 자리는 ${lastR+1}행입니다.`;
-            cands[lastR][c] = bit;
-            changed = true;
-          }
-        }
-      }
-
-      for (let br = 0; br < 9; br += 3) {
-        for (let bc = 0; bc < 9; bc += 3) {
-          for (let num = 1; num <= 9; num++) {
-            const bit = 1 << num;
-            let count = 0, lastR = -1, lastC = -1;
-            for (let i = 0; i < 3; i++) {
-              for (let j = 0; j < 3; j++) {
-                if (cands[br + i][bc + j] & bit) { count++; lastR = br + i; lastC = bc + j; }
-              }
-            }
-            if (count === 1 && popcount(cands[lastR][lastC]) > 1) {
-              if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스에서 ${num} 후보가 있는 유일한 자리는 ${lastR+1}행 ${lastC+1}열입니다.`;
-              cands[lastR][lastC] = bit;
-              changed = true;
-            }
-          }
-        }
-      }
-
-      // 4. Pointing Pairs / Box-Line Reduction (교차 후보 제거)
-      for (let b = 0; b < 9; b++) {
-        const br = Math.floor(b / 3) * 3, bc = (b % 3) * 3;
-        for (let num = 1; num <= 9; num++) {
-          const bit = 1 << num;
-          const rowsWithNum = new Set();
-          const colsWithNum = new Set();
-
-          for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-              if (cands[br + i][bc + j] & bit) {
-                rowsWithNum.add(br + i);
-                colsWithNum.add(bc + j);
-              }
-            }
-          }
-
-          // 박스 내에서 해당 숫자가 오직 한 행에만 존재할 때, 그 행의 박스 바깥에서 제거
-          if (rowsWithNum.size === 1) {
-            const row = [...rowsWithNum][0];
-            if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스의 ${num} 후보가 ${row+1}행에만 있어, 그 행의 박스 밖에서 ${num}을 제외합니다.`;
-            for (let c = 0; c < 9; c++) {
-              if (c < bc || c >= bc + 3) {
-                if (cands[row][c] & bit) {
-                  cands[row][c] &= ~bit;
-                  changed = true;
-                }
-              }
-            }
-          }
-
-          // 박스 내에서 해당 숫자가 오직 한 열에만 존재할 때, 그 열의 박스 바깥에서 제거
-          if (colsWithNum.size === 1) {
-            const col = [...colsWithNum][0];
-            if(traceEnabled) reason = `${br+1}~${br+3}행, ${bc+1}~${bc+3}열 박스의 ${num} 후보가 ${col+1}열에만 있어, 그 열의 박스 밖에서 ${num}을 제외합니다.`;
-            for (let r = 0; r < 9; r++) {
-              if (r < br || r >= br + 3) {
-                if (cands[r][col] & bit) {
-                  cands[r][col] &= ~bit;
-                  changed = true;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // 5. Naked Pairs (쌍둥이 소거법)
-      for (let r = 0; r < 9; r++) {
-        for (let c1 = 0; c1 < 8; c1++) {
-          if (popcount(cands[r][c1]) === 2) {
-            for (let c2 = c1 + 1; c2 < 9; c2++) {
-              if (cands[r][c1] === cands[r][c2]) {
-                const pairMask = cands[r][c1];
-                if(traceEnabled) reason = `${r+1}행의 ${c1+1}열과 ${c2+1}열이 후보 {${digits(pairMask).join(",")}}를 독점하므로 다른 칸에서 제외합니다.`;
-                for (let c3 = 0; c3 < 9; c3++) {
-                  if (c3 !== c1 && c3 !== c2 && (cands[r][c3] & pairMask)) {
-                    cands[r][c3] &= ~pairMask;
-                    changed = true;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      for (let c = 0; c < 9; c++) {
-        for (let r1 = 0; r1 < 8; r1++) {
-          if (popcount(cands[r1][c]) === 2) {
-            for (let r2 = r1 + 1; r2 < 9; r2++) {
-              if (cands[r1][c] === cands[r2][c]) {
-                const pairMask = cands[r1][c];
-                if(traceEnabled) reason = `${c+1}열의 ${r1+1}행과 ${r2+1}행이 후보 {${digits(pairMask).join(",")}}를 독점하므로 다른 칸에서 제외합니다.`;
-                for (let r3 = 0; r3 < 9; r3++) {
-                  if (r3 !== r1 && r3 !== r2 && (cands[r3][c] & pairMask)) {
-                    cands[r3][c] &= ~pairMask;
-                    changed = true;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    let solvedCount = 0;
-    const solvedCells = [];
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (popcount(cands[r][c]) === 1) {
-          solvedCount++;
-          solvedCells.push([r, c]);
-        }
-      }
-    }
-    return returnDetailed ? { solvedCount, solvedCells, trace, candidates: cands.map(row=>Array.from(row)) } : solvedCount;
+  mapCageTemplate(template, solution) {
+    const cages=template.map(cells=>({cells,sum:cells.reduce((s,[r,c])=>s+solution[r][c],0)}));
+    return cages.every(cg=>new Set(cg.cells.map(([r,c])=>solution[r][c])).size===cg.cells.length)?cages:null;
   }
 
   // 100% 비재귀 반복문 백트래킹 (기본 완성 수도쿠 판 생성)
