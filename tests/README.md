@@ -10,7 +10,7 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 - `node tests/room-recreate.cjs`: 방을 연속으로 다시 만들어도 늦은 /api/close가 새 방을 닫지 않는지 검사합니다.
 
 - `node tests/human-hint.cjs`: 퍼즐을 사람 수준 힌트만으로 진행하며 정답 일치, 문장 중복 없음, 설명 길이를 검사합니다. `DIFFS=easy,hard`로 난이도를 지정할 수 있습니다.
-- `node tests/room-code.cjs`: 같은 Wi-Fi에 방이 여러 개일 때 4자리 코드로 맞는 방을 찾는지, 없는 코드·정원 초과 안내를 검사합니다.
+- `node tests/room-code.cjs`: 같은 Wi-Fi에 방이 여러 개일 때 4자리 코드로 맞는 방을 찾는지, 없는 코드·정원 초과 안내 및 끝 두 자리 단축 IP 입력을 검사합니다.
 - `node tests/toast.cjs`: 안내 메시지가 보드·키패드·툴바를 가리지 않는지 검사합니다.
 
 - `node tests/tablet-layout.cjs`: 태블릿 영역 합산 캡슐 숨김, 배틀 보드 아래 여백, 일반·배틀 합계 숫자 동일, 한 칸 케이지 강조를 검사합니다.
@@ -22,7 +22,7 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 
 - `node tests/cell-consistency.cjs`: 모든 칸의 입력 숫자 크기·위치가 같은지, 점수·보너스 안내가 뜨지 않는지 검사합니다.
 
-- `tests/RoomDiscoverySmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 `io.github.yjw071218.sumdoku.RoomDiscoverySmoke`로 실행합니다. 8888·8889 포트를 사용합니다.
+- `tests/RoomDiscoverySmoke.java`: BattleServer·RoomDiscovery와 함께 컴파일해 `io.github.yjw071218.sumdoku.RoomDiscoverySmoke`로 실행합니다. 사설망 블록 내 4,096개 주소 탐색 범위 및 8888·8889 포트를 사용합니다.
 
 - `node tests/polish.cjs`: 세 가지 테마의 홈 화면, 키보드 선택, 참가 오류 표시, 대화상자 초점 순환·복귀와 코드 복사를 검사합니다.
 

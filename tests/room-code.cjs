@@ -20,7 +20,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
    if(!rooms[host])return r.abort();
    if(u.pathname==='/api/hello')return r.fulfill({headers:h,json:{ok:true,app:'sumdoku',code:rooms[host],status:'waiting',full:host==='192.168.7.30'}});
    if(u.pathname==='/api/join'){const b=JSON.parse(r.request().postData()||'{}');joins.push({host,code:b.code});
-    return b.code===rooms[host]?r.fulfill({headers:h,json:{ok:true,player:2}}):r.fulfill({status:403,headers:h,json:{ok:false,error:'wrong_code'}});}
+    return (!b.code||b.code===rooms[host])?r.fulfill({headers:h,json:{ok:true,player:2}}):r.fulfill({status:403,headers:h,json:{ok:false,error:'wrong_code'}});}
    return r.fulfill({headers:h,json:{ok:true,status:'waiting',p1Ready:true,p2Ready:false,puzzle:{}}});
   });
   await page.addInitScript(()=>localStorage.clear());
@@ -56,6 +56,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   assert.equal(native.ok.url,'http://10.20.99.7:8888');assert.ok(native.ok.joined);
   assert.deepEqual(joins.at(-1),{host:'10.20.99.7',code:'5555'});
   assert.ok(native.err.includes('IP 주소')&&native.err.includes('핫스팟'),native.err);
+  // v1.0.41: 끝 두 자리 입력 → 내 IP 앞 두 자리를 붙여 접속 (192.168.7.50 + '7.20' → 192.168.7.20)
+  const shortIp=await join('7.20');
+  assert.ok(shortIp.joined,JSON.stringify(shortIp));assert.equal(shortIp.url,'http://192.168.7.20:8888');
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({passed:true,findMs:ms,checks:['host 4-digit code','two rooms same Wi-Fi','not found','room full','bad length']}));
  }finally{await browser.close()}

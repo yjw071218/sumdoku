@@ -36,13 +36,13 @@ const RoomFinder = {
         clearTimeout(timer); window.onRoomFound = null;
         if (res && res.ok && res.ip) { try { localStorage.setItem(RoomFinder.lastHostKey, res.ip); } catch (_) {} resolve(res.ip); }
         else if (res && res.error === 'no_wifi') reject(new Error('Wi-Fi 주소를 확인할 수 없습니다. Wi-Fi에 연결해 주세요.'));
-        else reject(new Error(RoomFinder.notFoundMessage(code)));
+        else reject(new Error(RoomFinder.notFoundMessage(code) + (res && res.ip ? ` (내 IP ${res.ip} · 주변 ${res.scanned || 0}개 주소 확인)` : "")));
       };
       window.AndroidBridge.findRoomAsync(code);
     });
   },
   notFoundMessage(code) {
-    return `코드 ${code}인 방을 찾지 못했습니다. 방장 화면에 보이는 IP 주소(예: 10.12.34.56)를 그대로 입력해 접속해 보세요. 학교·회사 Wi-Fi는 기기끼리 통신을 막는 경우가 있어, IP로도 안 되면 한 사람의 휴대폰 핫스팟에 함께 연결해 주세요.`;
+    return `코드 ${code}인 방을 찾지 못했습니다. 방장 화면에 보이는 IP 주소를 그대로 입력하거나 끝 두 자리만(예: 18.247) 입력해 접속해 보세요. 학교·회사 Wi-Fi는 기기끼리 통신을 막는 경우가 있어, IP로도 안 되면 한 사람의 휴대폰 핫스팟에 함께 연결해 주세요.`;
   },
   async find(code, ownIp, fetcher, { timeout = 1200, concurrency = 48, signal } = {}) {
     const parts = String(ownIp || '').split('.');
@@ -432,6 +432,12 @@ SumdokuApp.prototype.connectToHost = async function() {
         : await RoomFinder.find(roomCode, window.AndroidBridge?.getLocalIpAddress?.(), (u, o) => fetch(u, o));
     } else if (/^[\d\s-]+$/.test(target) && digitsOnly.length === 12) target = RoomCode.decode(target);
     else if (/^\d+$/.test(digitsOnly)) throw new Error('방 코드는 4자리 숫자입니다.');
+    else if (/^\d{1,3}\.\d{1,3}$/.test(target)) {
+      // v1.0.41: '18.247'처럼 끝 두 자리만 입력하면 내 Wi-Fi IP 앞 두 자리를 붙입니다(학교망 172.16.x.x 등).
+      const own = window.AndroidBridge?.getLocalIpAddress?.() || '';
+      if (!/^\d+\.\d+\.\d+\.\d+$/.test(own)) throw new Error('내 Wi-Fi 주소를 알 수 없습니다. 방장 IP 전체를 입력해 주세요.');
+      target = own.split('.').slice(0, 2).concat(target.split('.')).join('.');
+    }
     const [ip, port = '8888'] = target.split(':');
     RoomCode.encode(ip);
     if (!/^\d{1,5}$/.test(port) || +port < 1 || +port > 65535 || target.split(':').length > 2) throw new Error('주소를 확인해 주세요.');

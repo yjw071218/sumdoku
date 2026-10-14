@@ -107,7 +107,7 @@ public final class RoomDiscovery {
         if (viaUdp != null) return "{\"ok\":true,\"ip\":\"" + viaUdp + "\",\"via\":\"broadcast\"}";
         if (ia == null) return "{\"ok\":false,\"error\":\"no_wifi\"}";
         int[] range = scanRange(ia);
-        String viaScan = findByScan(code, range[0], range[1]);
+        String viaScan = findByScan(code, range[0], range[1], ia.getAddress());
         if (viaScan != null) return "{\"ok\":true,\"ip\":\"" + viaScan + "\",\"via\":\"scan\",\"scanned\":" + range[1] + "}";
         return String.format(java.util.Locale.ROOT, "{\"ok\":false,\"error\":\"not_found\",\"ip\":\"%s\",\"prefix\":%d,\"scanned\":%d}",
             ia.getAddress().getHostAddress(), ia.getNetworkPrefixLength(), range[1]);
@@ -145,11 +145,22 @@ public final class RoomDiscovery {
     /** {시작 주소(int), 개수}. 서브넷이 4096개보다 크면 내 주소를 중심으로 4096개만. */
     static int[] scanRange(InterfaceAddress ia) { return scanRange(toInt(ia.getAddress()), ia.getNetworkPrefixLength()); }
 
+    /**
+     * v1.0.41: 학교망은 172.16.18.x 와 172.16.20.x 처럼 서로 다른 구역(서브넷)으로 나뉘어 있어도
+     * 라우팅으로 서로 닿는 경우가 많습니다. 그래서 휴대폰이 알려 준 구역 크기와 상관없이
+     * 사설망 블록(10/8, 172.16/12, 192.168/16) 안에서 내 주소를 중심으로 4096개를 확인합니다.
+     * (예: 172.16.20.107 → 172.16.12.107 ~ 172.16.28.106)
+     */
     static int[] scanRange(int ip, int prefixLength) {
-        int prefix = Math.max(0, Math.min(32, prefixLength));
-        if (prefix < 8 || prefix > 30) prefix = 24;
+        long u = ip & 0xFFFFFFFFL;
+        int first = (int) (u >>> 24), second = (int) ((u >>> 16) & 0xFF);
+        int prefix;
+        if (first == 10) prefix = 8;
+        else if (first == 172 && second >= 16 && second <= 31) prefix = 12;
+        else if (first == 192 && second == 168) prefix = 16;
+        else prefix = Math.max(16, Math.min(30, prefixLength <= 0 ? 24 : prefixLength));
         long size = 1L << (32 - prefix);
-        int mask = prefix == 0 ? 0 : (int) (0xFFFFFFFFL << (32 - prefix));
+        int mask = (int) (0xFFFFFFFFL << (32 - prefix));
         long net = (ip & mask) & 0xFFFFFFFFL;
         if (size <= MAX_SCAN) return new int[]{(int) (net + 1), (int) size - 2};
         long start = Math.max(net + 1, (ip & 0xFFFFFFFFL) - MAX_SCAN / 2);
@@ -158,12 +169,18 @@ public final class RoomDiscovery {
         return new int[]{(int) start, MAX_SCAN};
     }
 
-    private static String findByScan(final String code, final int start, final int count) throws Exception {
+    private static String findByScan(final String code, final int start, final int count, final InetAddress myIp) throws Exception {
         final AtomicReference<String> found = new AtomicReference<>();
         ExecutorService pool = Executors.newFixedThreadPool(192);
         try {
+            // 가까운 주소부터(같은 구역 → 이웃 구역) 확인해 빨리 찾습니다.
+            final long self = myIp == null ? (start & 0xFFFFFFFFL) + count / 2 : (toInt(myIp) & 0xFFFFFFFFL);
+            Long[] order = new Long[count];
+            for (int k = 0; k < count; k++) order[k] = (start & 0xFFFFFFFFL) + k;
+            java.util.Arrays.sort(order, (x, y) -> Long.compare(Math.abs(x - self), Math.abs(y - self)));
             for (int k = 0; k < count; k++) {
-                final String host = toIp(start + k);
+                if (order[k] == self) continue;
+                final String host = toIp((int) (long) order[k]);
                 pool.submit(() -> {
                     if (found.get() != null) return;
                     if (probe(host, code)) found.compareAndSet(null, host);

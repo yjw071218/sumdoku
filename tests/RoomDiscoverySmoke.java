@@ -8,12 +8,17 @@ public class RoomDiscoverySmoke {
     public static void main(String[] a) throws Exception {
         // 서브넷 범위: /24 → 254개, /20 → 4094개, /16 → 내 주소 중심 4096개
         int ip = RoomDiscovery.toInt(InetAddress.getByName("10.20.37.200"));
+        // 학교망 실제 사례: 휴대폰 172.16.20.107(/24 또는 /22) → 탭 172.16.18.247 이 확인 범위 안
+        for (int prefix : new int[]{24, 22, 20, 16}) {
+            int me = RoomDiscovery.toInt(InetAddress.getByName("172.16.20.107"));
+            int[] r = RoomDiscovery.scanRange(me, prefix);
+            long tab = RoomDiscovery.toInt(InetAddress.getByName("172.16.18.247")) & 0xFFFFFFFFL, s0 = r[0] & 0xFFFFFFFFL;
+            require(r[1] == 4096 && s0 <= tab && tab < s0 + r[1], "school case /" + prefix + " start " + RoomDiscovery.toIp(r[0]));
+        }
+        int[] home = RoomDiscovery.scanRange(RoomDiscovery.toInt(InetAddress.getByName("192.168.0.15")), 24);
+        long h0 = home[0] & 0xFFFFFFFFL, homeIp = RoomDiscovery.toInt(InetAddress.getByName("192.168.0.15")) & 0xFFFFFFFFL;
+        require(home[1] == 4096 && h0 <= homeIp && homeIp < h0 + 4096 && RoomDiscovery.toIp(home[0]).startsWith("192.168."), "home range stays in 192.168/16: " + RoomDiscovery.toIp(home[0]));
         require(RoomDiscovery.toIp(ip).equals("10.20.37.200"), "ip round trip");
-        int[] r24 = RoomDiscovery.scanRange(ip, 24), r20 = RoomDiscovery.scanRange(ip, 20), r16 = RoomDiscovery.scanRange(ip, 16);
-        require(RoomDiscovery.toIp(r24[0]).equals("10.20.37.1") && r24[1] == 254, "/24 range");
-        require(RoomDiscovery.toIp(r20[0]).equals("10.20.32.1") && r20[1] == 4094, "/20 range " + RoomDiscovery.toIp(r20[0]));
-        long first = r16[0] & 0xFFFFFFFFL, last = first + r16[1] - 1, me = ip & 0xFFFFFFFFL;
-        require(r16[1] == 4096 && first <= me && me <= last, "/16 range is centred on own address");
         BattleServer server = new BattleServer();
         try {
             server.configureRoom("race", "easy", 0, "{\"roomCode\":\"4321\",\"rules\":{}}");
