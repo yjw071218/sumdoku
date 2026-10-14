@@ -1,0 +1,139 @@
+/* v1.0.33 · 추가 기능 스타일 */
+
+/* ---------- 케이지 색상 구분 ---------- */
+body.cage-tint #sudoku-board .cell[data-tint="0"] { --tint: rgba(59,130,246,.11); }
+body.cage-tint #sudoku-board .cell[data-tint="1"] { --tint: rgba(16,185,129,.11); }
+body.cage-tint #sudoku-board .cell[data-tint="2"] { --tint: rgba(245,158,11,.12); }
+body.cage-tint #sudoku-board .cell[data-tint="3"] { --tint: rgba(236,72,153,.10); }
+body.cage-tint #sudoku-board .cell[data-tint="4"] { --tint: rgba(139,92,246,.11); }
+body.cage-tint #sudoku-board .cell[data-tint="5"] { --tint: rgba(20,184,166,.11); }
+.theme-dark body.cage-tint #sudoku-board .cell, body.cage-tint.theme-dark #sudoku-board .cell { --tint-boost: 1.6; }
+body.cage-tint #sudoku-board .cell[data-tint] { background-image: linear-gradient(var(--tint, transparent), var(--tint, transparent)); }
+
+/* ---------- 같은 숫자·행열 강조 (더 또렷하게) ---------- */
+#sudoku-board .cell.highlight-same-num { box-shadow: inset 0 0 0 2px rgba(59,130,246,.55); }
+#sudoku-board .cell.highlight-same-num .cell-value { font-weight: 900; }
+#sudoku-board .cell-notes .note-hit {
+  color: #fff !important; background: #3b82f6; border-radius: 4px; font-weight: 800;
+}
+
+/* ---------- 행·열·박스·케이지 완성 애니메이션 ---------- */
+#sudoku-board .cell.unit-done { animation: unitDone .75s ease-out both; animation-delay: var(--done-delay, 0ms); }
+#sudoku-board .cell.unit-done .cell-value { animation: unitDonePop .55s cubic-bezier(.2,1.6,.4,1) both; animation-delay: var(--done-delay, 0ms); }
+@keyframes unitDone {
+  0% { box-shadow: inset 0 0 0 0 rgba(16,185,129,0); }
+  30% { box-shadow: inset 0 0 0 40px rgba(16,185,129,.38); }
+  100% { box-shadow: inset 0 0 0 40px rgba(16,185,129,0); }
+}
+@keyframes unitDonePop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  #sudoku-board .cell.unit-done, #sudoku-board .cell.unit-done .cell-value { animation: none; }
+}
+
+/* ---------- 오늘의 퍼즐 연속 기록 ---------- */
+.streak-chip {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; width: fit-content;
+  padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 800;
+  color: var(--ui-muted, #64748b); background: var(--ui-panel, rgba(0,0,0,.05)); border: 1px solid var(--ui-line, rgba(0,0,0,.1));
+}
+.streak-chip.active { color: #c2410c; background: rgba(249,115,22,.14); border-color: rgba(249,115,22,.45); }
+.theme-dark .streak-chip.active { color: #fdba74; }
+.streak-chip.active.done-today::after { content: "✓"; margin-left: 2px; }
+.streak-chip-lg { display: flex; margin: 8px auto 0; font-size: 13px; padding: 5px 12px; }
+
+/* ---------- 업적 ---------- */
+.ach-section { margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--ui-panel, rgba(0,0,0,.03)); border: 1px solid var(--ui-line, rgba(0,0,0,.08)); }
+.ach-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.ach-head h3 { margin: 0; font-size: 16px; }
+.ach-count { font-weight: 800; color: var(--ui-accent, #3b82f6); font-variant-numeric: tabular-nums; }
+.ach-progress { height: 6px; border-radius: 999px; background: var(--ui-line, rgba(0,0,0,.08)); overflow: hidden; margin-bottom: 12px; }
+.ach-progress span { display: block; height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); border-radius: inherit; transition: width .4s; }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.ach-card {
+  display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 12px; min-width: 0;
+  border: 1px dashed var(--ui-line, rgba(0,0,0,.15)); opacity: .62;
+}
+.ach-card.got { opacity: 1; border-style: solid; border-color: rgba(245,158,11,.5); background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(16,185,129,.08)); }
+.ach-icon { font-size: 22px; line-height: 1.2; }
+.ach-card strong { font-size: 13px; overflow-wrap: anywhere; }
+.ach-card small { font-size: 11px; color: var(--ui-muted, #64748b); overflow-wrap: anywhere; line-height: 1.35; }
+
+/* ---------- 배틀 채팅 ---------- */
+.battle-chat-btn {
+  position: relative; display: none; align-items: center; justify-content: center;
+  min-width: 40px; min-height: 36px; padding: 4px 9px; margin-left: auto; margin-right: 6px;
+  border-radius: 10px; border: 1px solid var(--ui-line, rgba(255,255,255,.15));
+  background: var(--ui-panel, rgba(255,255,255,.06)); color: var(--ui-accent, #60a5fa); cursor: pointer;
+}
+body.chat-enabled .battle-chat-btn { display: inline-flex; }
+.battle-chat-btn svg { width: 19px; height: 19px; }
+.chat-unread {
+  position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
+  background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center;
+  animation: unreadPop .3s cubic-bezier(.2,1.6,.4,1);
+}
+.chat-unread.hidden { display: none; }
+@keyframes unreadPop { from { transform: scale(.3); } to { transform: scale(1); } }
+
+.chat-pop {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 150px); z-index: 300;
+  transform: translate(-50%, -8px); opacity: 0; pointer-events: none; max-width: min(86vw, 360px);
+  padding: 8px 14px; border-radius: 16px 16px 16px 4px; font-weight: 700; font-size: 14px;
+  background: #1e293b; color: #f8fafc; box-shadow: 0 10px 30px rgba(0,0,0,.3); overflow-wrap: anywhere;
+  transition: opacity .2s, transform .25s cubic-bezier(.16,1,.3,1);
+}
+.chat-pop.show { opacity: 1; transform: translate(-50%, 0); }
+.chat-pop.emoji { font-size: 40px; padding: 4px 12px; background: transparent; box-shadow: none; }
+
+.chat-sheet {
+  position: fixed; left: 50%; bottom: 0; z-index: 400; transform: translateX(-50%);
+  width: min(100%, 560px); max-height: min(70vh, 520px); display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px max(14px, calc(env(safe-area-inset-bottom) + 10px));
+  border-radius: 20px 20px 0 0; background: var(--bg-card, #fff); color: var(--text-main, #0f172a);
+  box-shadow: 0 -12px 40px rgba(0,0,0,.28); border: 1px solid var(--ui-line, rgba(0,0,0,.1)); border-bottom: 0;
+  animation: sheetUp .25s cubic-bezier(.16,1,.3,1);
+}
+.theme-dark .chat-sheet { background: #172033; color: #f1f5f9; }
+.chat-sheet.hidden { display: none; }
+@keyframes sheetUp { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+.chat-head { display: flex; align-items: center; gap: 8px; }
+.chat-head strong { font-size: 16px; }
+.chat-sub { font-size: 12px; color: var(--ui-muted, #64748b); flex: 1; }
+.chat-close { min-width: 40px; min-height: 40px; border: 0; border-radius: 10px; background: transparent; color: inherit; font-size: 16px; cursor: pointer; }
+.chat-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 6px; padding: 4px 2px; }
+.chat-empty { margin: auto; font-size: 13px; color: var(--ui-muted, #64748b); text-align: center; }
+.chat-msg { max-width: 78%; padding: 7px 11px; border-radius: 14px; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; animation: msgIn .18s ease-out; }
+.chat-msg.mine { align-self: flex-end; background: #3b82f6; color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg.theirs { align-self: flex-start; background: var(--ui-panel, rgba(127,127,127,.15)); border-bottom-left-radius: 4px; }
+.chat-msg.emoji { font-size: 30px; background: transparent; padding: 0 4px; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.chat-emoji-row, .chat-phrase-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chat-emoji-row::-webkit-scrollbar, .chat-phrase-row::-webkit-scrollbar { display: none; }
+.chat-emoji { flex: 0 0 auto; width: 44px; height: 44px; font-size: 24px; border-radius: 12px; border: 1px solid var(--ui-line, rgba(127,127,127,.25)); background: transparent; cursor: pointer; }
+.chat-phrase { flex: 0 0 auto; min-height: 36px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid var(--ui-line, rgba(127,127,127,.25)); background: transparent; color: inherit; cursor: pointer; white-space: nowrap; }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--ui-line, rgba(127,127,127,.3)); background: transparent; color: inherit; font-size: 15px; }
+.chat-send { min-height: 44px; padding: 0 16px; border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { .chat-sheet, .chat-msg, .chat-unread { animation: none; } .chat-pop { transition: none; } }
+
+/* ---------- 설정: 볼륨 슬라이더 ---------- */
+.volume-control { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.volume-control input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 120px; height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, var(--ui-accent, #3b82f6) var(--fill, 80%), var(--ui-line, rgba(127,127,127,.3)) var(--fill, 80%));
+}
+.volume-control input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid var(--ui-accent, #3b82f6); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.volume-control output { min-width: 40px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; }
+
+/* ---------- 툴바 6개 버튼 대응 ---------- */
+.action-toolbar { justify-content: space-between; }
+@media (max-width: 380px) { .action-toolbar .tool-label { font-size: 10px; letter-spacing: -.3px; } }
+/* 6버튼 툴바: 배틀·좁은 화면에서 폭을 균등 분배 */
+.action-toolbar .tool-btn { flex: 1 1 0; min-width: 0; }
+.action-toolbar .tool-label { white-space: normal; word-break: keep-all; text-align: center; line-height: 1.15; max-width: 100%; }
+body.battle-active .action-toolbar { gap: 2px; }
+@media (max-height: 420px) {
+  body.battle-active .tool-btn { min-height: 44px; }
+  body.battle-active .tool-icon { width: 32px; height: 32px; }
+  body.battle-active .tool-label { font-size: 9px; }
+}

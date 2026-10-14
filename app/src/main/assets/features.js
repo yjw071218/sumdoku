@@ -1,0 +1,543 @@
+/* v1.0.33 추가 기능
+ * - 효과음 볼륨(마스터 게인 + 리미터), 진동(햅틱)
+ * - 행·열·박스·케이지 완성 애니메이션
+ * - 케이지 색상 구분, 같은 숫자 메모 강조
+ * - 자동 메모(후보 숫자 채우기)
+ * - 오늘의 퍼즐 연속 기록
+ * - 업적·배지
+ * - 배틀 채팅·이모티콘
+ */
+(() => {
+  const P = SumdokuApp.prototype;
+  const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const prefs = Object.assign({ volume: 80, haptics: true, cageTint: true }, load('sumdoku_prefs_v2', {}));
+  const savePrefs = () => save('sumdoku_prefs_v2', prefs);
+  const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const appInstance = () => window.app;
+
+  /* ---------- 1. 효과음 볼륨 · 진동 ---------- */
+  const SC = SoundController.prototype;
+  const baseInit = SC.init;
+  SC.init = function () {
+    baseInit.call(this);
+    if (this.ctx && !this.master) {
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -12; comp.knee.value = 6; comp.ratio.value = 10;
+      comp.attack.value = 0.002; comp.release.value = 0.12;
+      this.master = this.ctx.createGain();
+      this.master.connect(comp); comp.connect(this.ctx.destination);
+      this.out = this.master;
+    }
+    // 기존 출력 대비 최대 약 3.2배. 리미터가 찢어지는 소리를 막습니다.
+    if (this.master) this.master.gain.value = (prefs.volume / 100) * 3.2;
+  };
+  const HAPTIC = { click: 8, correct: 18, error: [40, 50, 40], complete: [14, 30, 26], win: [30, 60, 30, 60, 80], chat: 12, badge: [20, 40, 20] };
+  const buzz = type => {
+    if (!prefs.haptics || !navigator.vibrate) return;
+    try { navigator.vibrate(HAPTIC[type] || 10); } catch (e) {}
+  };
+  const basePlay = SC.play;
+  SC.play = function (type) {
+    buzz(type);
+    if (!['complete', 'chat', 'badge'].includes(type)) return basePlay.call(this, type);
+    if (!this.enabled || prefs.volume <= 0) return;
+    try {
+      this.init(); if (!this.ctx) return;
+      const t = this.ctx.currentTime;
+      const notes = type === 'complete' ? [659.25, 880, 1318.5] : type === 'chat' ? [880, 1174.66] : [523.25, 783.99, 1046.5, 1567.98];
+      notes.forEach((f, i) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain(), s = t + i * 0.07;
+        o.type = type === 'chat' ? 'sine' : 'triangle';
+        o.frequency.setValueAtTime(f, s);
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.12, s + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.001, s + 0.22);
+        o.connect(g); g.connect(this.out || this.ctx.destination);
+        o.start(s); o.stop(s + 0.24);
+      });
+    } catch (e) {}
+  };
+
+  /* ---------- 2. 완성 애니메이션 ---------- */
+  function completedGroups(app, r, c) {
+    const S = app.solution, B = app.board, groups = [];
+    const ok = ([rr, cc]) => B[rr][cc].val === S[rr][cc];
+    const row = Array.from({ length: 9 }, (_, k) => [r, k]);
+    const col = Array.from({ length: 9 }, (_, k) => [k, c]);
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    const box = Array.from({ length: 9 }, (_, k) => [br + Math.floor(k / 3), bc + k % 3]);
+    const cageIdx = app.cellCageMap ? app.cellCageMap[`${r},${c}`] : undefined;
+    const cage = cageIdx !== undefined && app.cages[cageIdx] ? app.cages[cageIdx].cells : null;
+    for (const g of [row, col, box, cage]) if (g && g.length > 1 && g.every(ok)) groups.push(g);
+    return groups;
+  }
+  function celebrate(app, r, c) {
+    if (!app.solution || !app.board) return;
+    const groups = completedGroups(app, r, c);
+    if (!groups.length) return;
+    const seen = new Map();
+    groups.forEach(g => g.forEach(([rr, cc]) => {
+      const d = Math.abs(rr - r) + Math.abs(cc - c);
+      if (!seen.has(rr * 9 + cc) || seen.get(rr * 9 + cc) > d) seen.set(rr * 9 + cc, d);
+    }));
+    if (!reducedMotion()) {
+      seen.forEach((d, i) => {
+        const el = app.getCellElement(Math.floor(i / 9), i % 9);
+        if (!el) return;
+        el.classList.remove('unit-done'); void el.offsetWidth;
+        el.style.setProperty('--done-delay', `${d * 35}ms`);
+        el.classList.add('unit-done');
+        clearTimeout(el._doneTimer);
+        el._doneTimer = setTimeout(() => el.classList.remove('unit-done'), 900 + d * 35);
+      });
+    }
+    setTimeout(() => app.sound.play('complete'), 110);
+  }
+  const baseInput = P.handleNumberInput;
+  P.handleNumberInput = function (num) {
+    if (this._comboBoard !== this.board) { this._comboBoard = this.board; this._maxCombo = 0; }
+    const { r, c } = this.selected || {};
+    const before = this.board && this.board[r] ? this.board[r][c].val : null;
+    const result = baseInput.apply(this, arguments);
+    try {
+      this._maxCombo = Math.max(this._maxCombo || 0, this.combo || 0);
+      if (!this.isPencilMode && before !== num && this.board[r][c].val === num && this.solution && num === this.solution[r][c]) celebrate(this, r, c);
+    } catch (e) {}
+    return result;
+  };
+  const baseApplyHint = P.applyDeductiveHint;
+  P.applyDeductiveHint = function () {
+    const h = this.pendingHint;
+    const result = baseApplyHint.apply(this, arguments);
+    try { if (h && this.board[h.r][h.c].val === h.answer) celebrate(this, h.r, h.c); } catch (e) {}
+    return result;
+  };
+
+  /* ---------- 3. 케이지 색상 · 메모 강조 ---------- */
+  const tintCache = new WeakMap();
+  function cageColors(cages) {
+    if (tintCache.has(cages)) return tintCache.get(cages);
+    const owner = new Map();
+    cages.forEach((cg, i) => cg.cells.forEach(([r, c]) => owner.set(r * 9 + c, i)));
+    const adj = cages.map(() => new Set());
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+    cages.forEach((cg, i) => cg.cells.forEach(([r, c]) => dirs.forEach(([dr, dc]) => {
+      const rr = r + dr, cc = c + dc;
+      if (rr < 0 || rr > 8 || cc < 0 || cc > 8) return;
+      const j = owner.get(rr * 9 + cc);
+      if (j !== undefined && j !== i) adj[i].add(j);
+    })));
+    const order = cages.map((_, i) => i).sort((a, b) => adj[b].size - adj[a].size);
+    const color = new Array(cages.length).fill(-1);
+    for (const i of order) {
+      const used = new Set([...adj[i]].map(j => color[j]));
+      let k = 0; while (used.has(k)) k++;
+      color[i] = k % 6;
+    }
+    tintCache.set(cages, color);
+    return color;
+  }
+  function applyTint(app) {
+    document.body.classList.toggle('cage-tint', !!prefs.cageTint);
+    if (!app.cages || !app.cages.length || !app.dom || !app.dom.board) return;
+    const colors = cageColors(app.cages);
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+      const el = app.getCellElement(r, c), idx = app.cellCageMap ? app.cellCageMap[`${r},${c}`] : undefined;
+      if (el) { const t = idx === undefined ? '' : String(colors[idx]); if (el.dataset.tint !== t) el.dataset.tint = t; }
+    }
+  }
+  const baseRender = P.updateBoardDisplay;
+  P.updateBoardDisplay = function () {
+    const result = baseRender.apply(this, arguments);
+    try { applyTint(this); } catch (e) {}
+    return result;
+  };
+  const baseHighlights = P.updateHighlights;
+  P.updateHighlights = function () {
+    const result = baseHighlights.apply(this, arguments);
+    try {
+      document.querySelectorAll('#sudoku-board .note-hit').forEach(el => el.classList.remove('note-hit'));
+      const { r, c } = this.selected || {};
+      const v = this.board && this.board[r] ? this.board[r][c].val : 0;
+      if (v > 0 && this.settings.highlightSame) {
+        document.querySelectorAll(`#sudoku-board .cell-notes [data-note="${v}"]`).forEach(el => { if (el.textContent) el.classList.add('note-hit'); });
+      }
+    } catch (e) {}
+    return result;
+  };
+
+  /* ---------- 4. 자동 메모 ---------- */
+  function candidates(app) {
+    const B = app.board, out = Array.from({ length: 9 }, () => Array(9).fill(0));
+    const cageAllowed = new Map();
+    app.cages.forEach((cg, idx) => {
+      let placed = 0, placedSum = 0, empty = 0;
+      cg.cells.forEach(([r, c]) => { const v = B[r][c].val; if (v) { placed |= 1 << v; placedSum += v; } else empty++; });
+      const target = cg.sum - placedSum;
+      let union = 0;
+      for (let m = 0; m < 1024; m += 2) {
+        if (m & placed) continue;
+        let cnt = 0, s = 0;
+        for (let d = 1; d <= 9; d++) if (m & (1 << d)) { cnt++; s += d; }
+        if (cnt === empty && s === target) union |= m;
+      }
+      cageAllowed.set(idx, union);
+    });
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+      if (B[r][c].val) continue;
+      let used = 0;
+      for (let k = 0; k < 9; k++) {
+        used |= 1 << B[r][k].val; used |= 1 << B[k][c].val;
+        const br = Math.floor(r / 3) * 3 + Math.floor(k / 3), bc = Math.floor(c / 3) * 3 + k % 3;
+        used |= 1 << B[br][bc].val;
+      }
+      const idx = app.cellCageMap[`${r},${c}`];
+      const allow = idx === undefined ? 0x3FE : cageAllowed.get(idx);
+      out[r][c] = allow & ~used & 0x3FE;
+    }
+    return out;
+  }
+  P.fillAutoNotes = function () {
+    if (this.currentView !== 'game' || this.isPaused || this.isWin || !this.board || !this.cages) return;
+    const cand = candidates(this);
+    this.saveSnapshot();
+    let filled = 0;
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+      if (this.board[r][c].val) continue;
+      const s = new Set();
+      for (let d = 1; d <= 9; d++) if (cand[r][c] & (1 << d)) s.add(d);
+      this.board[r][c].notes = s; filled++;
+    }
+    this.updateBoardDisplay();
+    if (this.saveOngoingGame) this.saveOngoingGame();
+    this.sound.play('click');
+    this.showToast(filled ? `후보 숫자 ${filled}칸 채움 · 실행 취소 가능` : '채울 빈칸이 없습니다');
+  };
+
+  /* ---------- 5. 오늘의 퍼즐 연속 기록 ---------- */
+  const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  function dailyStreak(list) {
+    const set = new Set(list || []);
+    const d = new Date();
+    const today = set.has(dayKey(d));
+    if (!today) d.setDate(d.getDate() - 1);
+    let cur = 0;
+    while (set.has(dayKey(d))) { cur++; d.setDate(d.getDate() - 1); }
+    let best = 0, run = 0, prev = null;
+    [...set].sort().forEach(s => {
+      const t = new Date(s + 'T00:00:00');
+      run = prev && Math.round((t - prev) / 864e5) === 1 ? run + 1 : 1;
+      best = Math.max(best, run); prev = t;
+    });
+    return { cur, best, today };
+  }
+  P.renderDailyStreak = function () {
+    const s = dailyStreak(this.dailyCleared);
+    const text = s.cur ? `🔥 연속 ${s.cur}일 · 최고 ${s.best}일` : (s.best ? `오늘 풀면 새 연속 기록 시작 · 최고 ${s.best}일` : '오늘 풀면 연속 기록이 시작돼요');
+    const put = (id, parent, cls) => {
+      if (!parent) return;
+      let el = document.getElementById(id);
+      if (!el) { el = document.createElement('span'); el.id = id; el.className = cls; el.dataset.keepEmoji = ''; parent.append(el); }
+      el.textContent = text;
+      el.classList.toggle('active', s.cur > 0);
+      el.classList.toggle('done-today', s.today);
+    };
+    put('daily-streak-hero', document.querySelector('.daily-hero-info'), 'streak-chip');
+    const prog = document.getElementById('daily-trophy-progress');
+    put('daily-streak-cal', prog && prog.parentElement, 'streak-chip streak-chip-lg');
+    return s;
+  };
+  const baseCal = P.renderDailyCalendar;
+  if (baseCal) P.renderDailyCalendar = function () { const r = baseCal.apply(this, arguments); try { this.renderDailyStreak(); } catch (e) {} return r; };
+
+  /* ---------- 6. 업적 · 배지 ---------- */
+  const ACH = [
+    { id: 'first_win', icon: '🎉', name: '첫 완성', desc: '퍼즐을 처음으로 완성', test: c => c.win },
+    { id: 'no_hint', icon: '🧠', name: '순수 논리', desc: '힌트 없이 완성', test: c => c.win && c.hints === 0 },
+    { id: 'perfect', icon: '💎', name: '무결점', desc: '실수 없이 완성', test: c => c.win && c.mistakes === 0 },
+    { id: 'speed_easy', icon: '⚡', name: '번개손', desc: '초급을 5분 안에 완성', test: c => c.win && c.diff === 'easy' && c.time <= 300 },
+    { id: 'speed_medium', icon: '🚀', name: '쾌속 추론', desc: '중급을 10분 안에 완성', test: c => c.win && c.diff === 'medium' && c.time <= 600 },
+    { id: 'hard_clear', icon: '🏔️', name: '고급 정복', desc: '고급 이상 난이도 완성', test: c => c.win && (c.diff === 'hard' || c.diff === 'expert') },
+    { id: 'expert_pure', icon: '👑', name: '전문가의 품격', desc: '전문가를 힌트·실수 없이 완성', test: c => c.win && c.diff === 'expert' && c.hints === 0 && c.mistakes === 0 },
+    { id: 'combo_9', icon: '🌟', name: '콤보 마스터', desc: '한 게임에서 9콤보 달성', test: c => c.maxCombo >= 9 },
+    { id: 'wins_10', icon: '🏅', name: '꾸준함', desc: '누적 10회 완성', test: c => c.totalWins >= 10 },
+    { id: 'wins_50', icon: '🏆', name: '수도쿠 장인', desc: '누적 50회 완성', test: c => c.totalWins >= 50 },
+    { id: 'daily_3', icon: '🔥', name: '3일 연속', desc: '오늘의 퍼즐 3일 연속 완료', test: c => c.dailyStreak >= 3 },
+    { id: 'daily_7', icon: '📅', name: '일주일 개근', desc: '오늘의 퍼즐 7일 연속 완료', test: c => c.dailyStreak >= 7 },
+    { id: 'battle_win', icon: '⚔️', name: '첫 배틀 승리', desc: '1:1 배틀에서 승리', test: c => c.battleWins >= 1 },
+    { id: 'battle_5', icon: '🥇', name: '배틀 강자', desc: '배틀 누적 5승', test: c => c.battleWins >= 5 }
+  ];
+  const unlocked = load('sumdoku_achievements', {});
+  const counters = Object.assign({ battleWins: 0 }, load('sumdoku_ach_counters', {}));
+  function evaluate(app, ctx) {
+    const fresh = [];
+    ACH.forEach(a => {
+      if (unlocked[a.id]) return;
+      let pass = false; try { pass = !!a.test(ctx); } catch (e) {}
+      if (pass) { unlocked[a.id] = dayKey(new Date()); fresh.push(a); }
+    });
+    if (!fresh.length) return fresh;
+    save('sumdoku_achievements', unlocked);
+    fresh.forEach((a, i) => setTimeout(() => {
+      app.showToast(`${a.icon} 업적 달성 · ${a.name}`, 2600);
+      app.sound.play('badge');
+    }, 1300 + i * 2800));
+    return fresh;
+  }
+  P.evaluateAchievements = function (extra = {}) {
+    const ctx = Object.assign({
+      win: false, hints: this.hintsUsed || 0, mistakes: this.mistakes || 0, diff: this.difficulty,
+      time: this.timerSeconds || 0, maxCombo: this._maxCombo || 0,
+      totalWins: (this.stats && this.stats.totalWins) || 0,
+      dailyStreak: dailyStreak(this.dailyCleared).cur, battleWins: counters.battleWins
+    }, extra);
+    return evaluate(this, ctx);
+  };
+  const baseRecord = P.recordGameEnd;
+  P.recordGameEnd = function (isWin) {
+    const completed = this.board && this.solution && this.board.every((row, r) => row.every((cell, c) => cell.val === this.solution[r][c]));
+    const win = !!(isWin && this.score >= 0 && completed && this.resultReason !== 'forfeit');
+    const result = baseRecord.apply(this, arguments);
+    try { this.evaluateAchievements({ win }); this.renderDailyStreak(); } catch (e) {}
+    return result;
+  };
+  const baseBattleEnd = P.handleBattleEnd;
+  P.handleBattleEnd = function (isVictory) {
+    const epoch = this.battleEpoch;
+    const result = baseBattleEnd.apply(this, arguments);
+    try {
+      if (isVictory && this._battleWinEpoch !== epoch) {
+        this._battleWinEpoch = epoch;
+        counters.battleWins++; save('sumdoku_ach_counters', counters);
+        this.evaluateAchievements({ win: false });
+      }
+    } catch (e) {}
+    return result;
+  };
+  P.renderAchievements = function () {
+    const panel = document.getElementById('panel-stats');
+    if (!panel) return;
+    let sec = document.getElementById('achievements-section');
+    if (!sec) { sec = document.createElement('section'); sec.id = 'achievements-section'; sec.className = 'ach-section'; sec.dataset.keepEmoji = ''; panel.append(sec); }
+    const got = ACH.filter(a => unlocked[a.id]).length;
+    sec.innerHTML = `<div class="ach-head"><h3>업적</h3><span class="ach-count">${got} / ${ACH.length}</span></div>
+      <div class="ach-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${ACH.length}" aria-valuenow="${got}"><span style="width:${Math.round(got / ACH.length * 100)}%"></span></div>
+      <div class="ach-grid"></div>`;
+    const grid = sec.querySelector('.ach-grid');
+    ACH.forEach(a => {
+      const card = document.createElement('div');
+      card.className = 'ach-card' + (unlocked[a.id] ? ' got' : '');
+      const icon = document.createElement('span'); icon.className = 'ach-icon'; icon.textContent = unlocked[a.id] ? a.icon : '🔒';
+      const name = document.createElement('strong'); name.textContent = a.name;
+      const desc = document.createElement('small'); desc.textContent = unlocked[a.id] ? `${a.desc} · ${unlocked[a.id]}` : a.desc;
+      card.append(icon, name, desc);
+      grid.append(card);
+    });
+  };
+  const baseStats = P.renderStatsView;
+  P.renderStatsView = function () { const r = baseStats.apply(this, arguments); try { this.renderAchievements(); } catch (e) {} return r; };
+
+  /* ---------- 7. 배틀 채팅 · 이모티콘 ---------- */
+  const EMOJI = ['👍', '😂', '😮', '😭', '🔥', '👏', '🤝', '😎'];
+  const PHRASES = ['GG!', '잘하시네요', '빠르다!', '어렵다…', '한 판 더?'];
+  const chat = { timer: null, last: 0, busy: false, sentAt: 0, unread: 0, open: false };
+  const chatUrl = app => app.battleRole === 1 ? `http://${app.battleHostIp || '127.0.0.1'}:8888` : app.battleHostUrl;
+  const isEmojiOnly = t => t.length <= 8 && EMOJI.includes(t);
+  function addMessage(mine, text) {
+    const list = document.getElementById('chat-list');
+    if (!list) return;
+    list.querySelector('.chat-empty')?.remove();
+    const b = document.createElement('div');
+    b.className = `chat-msg ${mine ? 'mine' : 'theirs'}${isEmojiOnly(text) ? ' emoji' : ''}`;
+    b.textContent = text;
+    list.append(b);
+    while (list.children.length > 60) list.firstChild.remove();
+    list.scrollTop = list.scrollHeight;
+  }
+  function popBubble(text) {
+    const pop = document.getElementById('chat-pop');
+    if (!pop) return;
+    pop.textContent = isEmojiOnly(text) ? text : `상대: ${text}`;
+    pop.classList.toggle('emoji', isEmojiOnly(text));
+    pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
+    clearTimeout(pop._t); pop._t = setTimeout(() => pop.classList.remove('show'), 2600);
+  }
+  function setUnread(n) {
+    chat.unread = n;
+    const badge = document.getElementById('chat-unread');
+    if (badge) { badge.textContent = n > 9 ? '9+' : String(n); badge.classList.toggle('hidden', !n); }
+  }
+  async function pollChat(app) {
+    if (chat.busy || !app.isBattle && app.currentView !== 'game') return;
+    const base = chatUrl(app); if (!base) return;
+    chat.busy = true;
+    try {
+      const res = await app.battleFetch(`${base}/api/chat?after=${chat.last}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data.last === 'number' && data.last < chat.last) chat.last = 0; // 서버 재시작
+      (data.messages || []).forEach(m => {
+        if (m.id <= chat.last) return;
+        chat.last = m.id;
+        const mine = m.player === app.battleRole;
+        if (mine) return; // 내 메시지는 보낼 때 이미 표시
+        addMessage(false, m.text);
+        app.sound.play('chat');
+        if (!chat.open) { popBubble(m.text); setUnread(chat.unread + 1); }
+      });
+    } catch (e) {
+    } finally { chat.busy = false; }
+  }
+  P.startBattleChat = function () {
+    clearInterval(chat.timer);
+    document.body.classList.add('chat-enabled');
+    chat.timer = setInterval(() => pollChat(this), 1200);
+    pollChat(this);
+  };
+  P.stopBattleChat = function () {
+    clearInterval(chat.timer); chat.timer = null;
+    document.body.classList.remove('chat-enabled');
+    this.closeBattleChat();
+  };
+  P.sendBattleChat = async function (text) {
+    text = String(text || '').trim().slice(0, 80);
+    if (!text) return;
+    const now = Date.now();
+    if (now - chat.sentAt < 700) { this.showToast('조금 천천히 보내 주세요'); return; }
+    chat.sentAt = now;
+    const base = chatUrl(this);
+    try {
+      const res = await this.battleFetch(`${base}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: this.battleRole, text }) });
+      if (!res.ok) throw new Error('send');
+      const data = await res.json();
+      if (data.id && data.id === chat.last + 1) chat.last = data.id;
+      addMessage(true, text);
+      this.sound.play('click');
+    } catch (e) {
+      this.showToast('메시지를 보내지 못했습니다. 연결을 확인해 주세요');
+    }
+  };
+  P.openBattleChat = function () {
+    const sheet = document.getElementById('battle-chat-sheet');
+    if (!sheet) return;
+    sheet.classList.remove('hidden'); chat.open = true; setUnread(0);
+    const list = document.getElementById('chat-list'); if (list) list.scrollTop = list.scrollHeight;
+    document.getElementById('chat-input')?.focus({ preventScroll: true });
+  };
+  P.closeBattleChat = function () {
+    const sheet = document.getElementById('battle-chat-sheet');
+    if (sheet && !sheet.classList.contains('hidden')) { sheet.classList.add('hidden'); document.getElementById('btn-battle-chat')?.focus({ preventScroll: true }); }
+    chat.open = false;
+  };
+  const baseStartBattle = P.startBattleMatch;
+  P.startBattleMatch = function () {
+    const result = baseStartBattle.apply(this, arguments);
+    try { this.startBattleChat(); } catch (e) {}
+    return result;
+  };
+  const baseSwitch = P.switchView;
+  P.switchView = function (v) {
+    if (v !== 'game' && chat.timer) this.stopBattleChat();
+    return baseSwitch.apply(this, arguments);
+  };
+  const baseBack = P.handleBackKey;
+  P.handleBackKey = function () {
+    if (chat.open) { this.closeBattleChat(); return 'handled'; }
+    return baseBack.apply(this, arguments);
+  };
+
+  /* ---------- DOM 구성 ---------- */
+  const svg = path => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+  function buildToolbarButton(app) {
+    if (document.getElementById('btn-auto-notes')) return;
+    const pencil = document.getElementById('btn-pencil');
+    if (!pencil) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-auto-notes'; btn.className = 'tool-btn'; btn.type = 'button';
+    btn.title = '모든 빈칸에 후보 숫자 채우기'; btn.setAttribute('aria-label', '자동 메모: 모든 빈칸에 후보 숫자 채우기');
+    btn.innerHTML = `<div class="tool-icon">${svg('<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/>')}</div><span class="tool-label">자동 메모</span>`;
+    btn.addEventListener('click', () => app.fillAutoNotes());
+    pencil.after(btn);
+  }
+  function buildChat(app) {
+    if (document.getElementById('btn-battle-chat')) return;
+    const forfeit = document.getElementById('btn-battle-forfeit');
+    if (forfeit) {
+      const btn = document.createElement('button');
+      btn.id = 'btn-battle-chat'; btn.type = 'button'; btn.className = 'battle-chat-btn';
+      btn.setAttribute('aria-label', '상대와 대화하기');
+      btn.innerHTML = `${svg('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>')}<span id="chat-unread" class="chat-unread hidden">0</span>`;
+      btn.addEventListener('click', () => (chat.open ? app.closeBattleChat() : app.openBattleChat()));
+      forfeit.before(btn);
+    }
+    const view = document.getElementById('view-game');
+    const pop = document.createElement('div'); pop.id = 'chat-pop'; pop.className = 'chat-pop'; pop.dataset.keepEmoji = ''; pop.setAttribute('aria-live', 'polite');
+    const sheet = document.createElement('section');
+    sheet.id = 'battle-chat-sheet'; sheet.className = 'chat-sheet hidden'; sheet.dataset.keepEmoji = '';
+    sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', '배틀 대화');
+    sheet.innerHTML = `
+      <header class="chat-head"><strong>대화</strong><span class="chat-sub">상대에게 실시간으로 전달돼요</span><button type="button" class="chat-close" aria-label="대화 닫기">✕</button></header>
+      <div id="chat-list" class="chat-list" aria-live="polite"><p class="chat-empty">아직 대화가 없어요. 이모티콘으로 인사해 보세요!</p></div>
+      <div class="chat-emoji-row">${EMOJI.map(e => `<button type="button" class="chat-emoji" data-text="${e}" aria-label="${e} 보내기">${e}</button>`).join('')}</div>
+      <div class="chat-phrase-row">${PHRASES.map(t => `<button type="button" class="chat-phrase" data-text="${t}">${t}</button>`).join('')}</div>
+      <form class="chat-form"><input id="chat-input" type="text" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="메시지 입력 (최대 80자)" aria-label="메시지"><button type="submit" class="btn btn-primary chat-send">보내기</button></form>`;
+    sheet.querySelector('.chat-close').addEventListener('click', () => app.closeBattleChat());
+    sheet.querySelectorAll('[data-text]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(b.dataset.text)));
+    sheet.querySelector('.chat-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const t = input.value; input.value = '';
+      app.sendBattleChat(t);
+    });
+    // 채팅 입력 중 숫자 키가 보드 입력으로 넘어가지 않도록 차단
+    sheet.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') app.closeBattleChat(); });
+    view.append(pop, sheet);
+  }
+  function buildSettings(app) {
+    if (document.getElementById('setting-volume')) return;
+    const anchor = document.getElementById('setting-highlight-same')?.closest('.settings-item');
+    if (!anchor) return;
+    const item = (title, desc, control) => {
+      const d = document.createElement('div'); d.className = 'settings-item';
+      d.innerHTML = `<div class="settings-info"><span class="s-title">${title}</span><span class="s-desc">${desc}</span></div>`;
+      d.append(control); return d;
+    };
+    const toggle = (id, key, onChange) => {
+      const l = document.createElement('label'); l.className = 'toggle-switch';
+      l.innerHTML = `<input type="checkbox" id="${id}"><span class="slider"></span>`;
+      const input = l.querySelector('input'); input.checked = !!prefs[key];
+      input.addEventListener('change', () => { prefs[key] = input.checked; savePrefs(); onChange && onChange(); });
+      return l;
+    };
+    const vol = document.createElement('div'); vol.className = 'volume-control';
+    vol.innerHTML = `<input type="range" id="setting-volume" min="0" max="100" step="5" aria-label="효과음 볼륨"><output id="setting-volume-val"></output>`;
+    const range = vol.querySelector('input'), outEl = vol.querySelector('output');
+    const sync = () => { outEl.textContent = `${prefs.volume}%`; range.style.setProperty('--fill', `${prefs.volume}%`); };
+    range.value = prefs.volume; sync();
+    range.addEventListener('input', () => { prefs.volume = +range.value; sync(); app.sound.init(); });
+    range.addEventListener('change', () => { savePrefs(); app.sound.play('correct'); });
+    const frag = [
+      item('효과음 볼륨', '기본값이 이전보다 약 2.5배 큽니다', vol),
+      item('진동 피드백', '입력·오답·완성 시 짧게 진동합니다', toggle('setting-haptics', 'haptics', () => prefs.haptics && buzz('correct'))),
+      item('케이지 색상 구분', '케이지마다 옅은 색을 칠해 경계를 쉽게 읽습니다', toggle('setting-cage-tint', 'cageTint', () => applyTint(app)))
+    ];
+    anchor.after(...frag);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const app = appInstance();
+    if (!app) return;
+    try { buildToolbarButton(app); } catch (e) {}
+    try { buildChat(app); } catch (e) {}
+    try { buildSettings(app); } catch (e) {}
+    try { app.renderDailyStreak(); } catch (e) {}
+    try { applyTint(app); } catch (e) {}
+    try { if (app.sound.ctx) app.sound.init(); } catch (e) {}
+    // 키보드: A = 자동 메모
+    document.addEventListener('keydown', e => {
+      if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
+      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && app.currentView === 'game' && !document.querySelector('.modal-backdrop:not(.hidden)')) app.fillAutoNotes();
+    });
+  });
+})();

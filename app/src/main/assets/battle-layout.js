@@ -14,7 +14,8 @@
       const wide=getComputedStyle(main).flexDirection==='row';
       const gap=parseFloat(getComputedStyle(main).gap)||0;
       const reserve=parseFloat(getComputedStyle(wrapper).paddingTop)||0;
-      const height=main.clientHeight-(wide?0:controls.getBoundingClientRect().height+gap)-reserve;
+      const pad=parseFloat(getComputedStyle(main).paddingBottom)||0;
+      const height=main.clientHeight-pad-(wide?0:controls.getBoundingClientRect().height+gap)-reserve;
       const width=column.clientWidth;
       const size=Math.max(0,Math.floor(Math.min(width,height,620)));
       if(view.style.getPropertyValue('--battle-board-size')!==`${size}px`)view.style.setProperty('--battle-board-size',`${size}px`);

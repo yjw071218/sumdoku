@@ -221,3 +221,23 @@ body.hint-open #view-game .controls-column { min-height:0; }
   #floating-hint-card .hint-card-footer .btn { min-height:38px; }
   .hint-answer-val { min-width:30px; height:30px; }
 }
+
+/* ===== v1.0.33 · 세로 모바일: 보드·키패드를 위로, 하단 제스처 영역 여백 ===== */
+@media not ((min-width:600px) and (orientation:landscape)) {
+  @media (max-width:919px) {
+    body.battle-active .game-main-content { justify-content:flex-start; padding-bottom:max(18px, calc(env(safe-area-inset-bottom) + 12px)); }
+    body.battle-active .board-column { flex:0 1 auto; justify-content:flex-start; }
+    body.battle-active .board-frame-wrapper { justify-content:flex-start; }
+    #view-game .game-main-content { padding-bottom:max(18px, calc(env(safe-area-inset-bottom) + 12px)); }
+  }
+}
+@media not ((min-width:600px) and (orientation:landscape)) {
+  @media (max-width:919px) {
+    body.battle-active .game-main-content { justify-content:center; }
+    @media (min-height:700px) {
+      body.battle-active .key-btn { min-height:54px; }
+      body.battle-active .controls-column { gap:10px; }
+      body.battle-active .board-frame-wrapper { margin-bottom:4px; }
+    }
+  }
+}

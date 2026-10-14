@@ -38,6 +38,15 @@ public class BattleServerSmoke {
                 require(server.start(18888), "bind");
                 require(request("status", null).contains("\"guestJoined\":false"), "clean lobby");
                 request("join", "{\"name\":\"게스트\"}");
+                if (i == 0) {
+                    String sent = request("chat", "{\"player\":2,\"text\":\"안녕 \\\"GG\\\" <b>👍\"}");
+                    require(sent.contains("\"ok\":true"), "chat post");
+                    request("chat", "{\"player\":1,\"text\":\"한 판 더?\"}");
+                    String all = request("chat?after=0", null);
+                    require(all.contains("\\\"GG\\\" \\u003cb>") && all.contains("한 판 더?"), "chat escape/round-trip: " + all);
+                    String later = request("chat?after=1", null);
+                    require(!later.contains("안녕") && later.contains("한 판 더?"), "chat after filter");
+                }
                 require(request("status", null).contains("\"guestJoined\":true"), "join");
                 require(request("room", null).contains("\"maxLives\":\"5\""), "shared rules");
                 request("ready", "{\"player\":2,\"ready\":true}");

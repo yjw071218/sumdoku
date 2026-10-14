@@ -25,12 +25,12 @@
   const emoji = /(?:\p{Extended_Pictographic}|[★☆✓✔✕➕➖▶◀⏮⏭])(?:\uFE0F|\uFE0E)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*/gu;
   const names = {'🏆':'trophy','💔':'heart','❤️':'heart','♥':'heart','💡':'hint','🏳️':'flag','⏱️':'clock','⏳':'clock','⏰':'clock','📅':'calendar','📊':'chart','📋':'copy','🗑️':'trash','⚡':'bolt','★':'star','☆':'star','⭐':'star','✨':'star','✓':'check','✔':'check','✅':'check','➕':'plus','▶':'play','🎬':'play','🧩':'grid','🔄':'refresh','🛡️':'shield'};
   function replaceIcons(root) {
-    if (!root || root.nodeType !== 1 || root.closest('svg,script,style,textarea,input,select,option')) return;
+    if (!root || root.nodeType !== 1 || root.closest('svg,script,style,textarea,input,select,option,[data-keep-emoji]')) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
     while (walker.nextNode()) {
       const n = walker.currentNode;
-      if (!n.parentElement.closest('svg,script,style,textarea,input,select,option') && n.textContent.match(emoji)) nodes.push(n);
+      if (!n.parentElement.closest('svg,script,style,textarea,input,select,option,[data-keep-emoji]') && n.textContent.match(emoji)) nodes.push(n);
     }
     for (const n of nodes) {
       const fragment = document.createDocumentFragment(); let offset=0;

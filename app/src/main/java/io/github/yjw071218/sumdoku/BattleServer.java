@@ -45,6 +45,9 @@ public class BattleServer {
     private volatile int endedBy = 0;
     private volatile String endReason = "";
     private String terminalProgress = null;
+    // 배틀 채팅: 최근 60개만 보관
+    private final java.util.ArrayList<String> chatLog = new java.util.ArrayList<>();
+    private int chatSeq = 0;
 
     public BattleServer() {
         resetRoom();
@@ -220,6 +223,7 @@ public class BattleServer {
                 p2State.clear();
                 puzzleJson = "{}";
                 lastGuestActiveTime = 0;
+                chatLog.clear();
                 responseJson = "{\"ok\":true,\"status\":\"closed\"}";
             } else if (path.startsWith("/api/ready")) {
                 if ("POST".equals(method)) {
@@ -260,6 +264,34 @@ public class BattleServer {
                     "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"puzzle\":%s}",
                     roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, puzzleJson
                 );
+            } else if (path.startsWith("/api/chat")) {
+                if ("POST".equals(method)) {
+                    int player = playerNumber(body);
+                    String text = jsonString(body, "text");
+                    if (player == 0 || text == null || text.trim().isEmpty()) {
+                        statusCode = 400;
+                        responseJson = "{\"ok\":false,\"error\":\"invalid_chat\"}";
+                    } else {
+                        text = text.trim();
+                        if (text.codePointCount(0, text.length()) > 80) text = text.substring(0, text.offsetByCodePoints(0, 80));
+                        chatSeq++;
+                        chatLog.add(String.format("{\"id\":%d,\"player\":%d,\"text\":\"%s\",\"t\":%d}", chatSeq, player, escapeJson(text), System.currentTimeMillis()));
+                        while (chatLog.size() > 60) chatLog.remove(0);
+                        if (player == 2) lastGuestActiveTime = System.currentTimeMillis();
+                        responseJson = String.format("{\"ok\":true,\"id\":%d}", chatSeq);
+                    }
+                } else {
+                    int after = 0;
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("[?&]after=(\\d+)").matcher(path);
+                    if (m.find()) { try { after = Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {} }
+                    StringBuilder sb = new StringBuilder("{\"ok\":true,\"last\":").append(chatSeq).append(",\"messages\":[");
+                    boolean first = true;
+                    for (String msg : chatLog) {
+                        java.util.regex.Matcher im = java.util.regex.Pattern.compile("^\\{\"id\":(\\d+)").matcher(msg);
+                        if (im.find() && Integer.parseInt(im.group(1)) > after) { if (!first) sb.append(','); sb.append(msg); first = false; }
+                    }
+                    responseJson = sb.append("]}").toString();
+                }
             } else if (path.startsWith("/api/progress")) {
                 if ("POST".equals(method)) {
                     int player = playerNumber(body);
@@ -291,6 +323,40 @@ public class BattleServer {
 
             sendResponse(out, statusCode, responseJson);
         } catch (Exception ignored) {}
+    }
+
+    private static String jsonString(String body, String key) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(body);
+        if (!m.find()) return null;
+        String raw = m.group(1);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < raw.length(); i++) {
+            char ch = raw.charAt(i);
+            if (ch != '\\' || i + 1 >= raw.length()) { out.append(ch); continue; }
+            char n = raw.charAt(++i);
+            switch (n) {
+                case 'n': out.append(' '); break;
+                case 't': out.append(' '); break;
+                case 'r': break;
+                case 'u':
+                    if (i + 4 < raw.length()) { try { out.append((char) Integer.parseInt(raw.substring(i + 1, i + 5), 16)); i += 4; } catch (NumberFormatException e) { out.append('?'); } }
+                    break;
+                default: out.append(n);
+            }
+        }
+        return out.toString();
+    }
+
+    private static String escapeJson(String s) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (ch == '"' || ch == '\\') b.append('\\').append(ch);
+            else if (ch < 0x20) b.append(' ');
+            else if (ch == '<') b.append("\\u003c");
+            else b.append(ch);
+        }
+        return b.toString();
     }
 
     private static int playerNumber(String body) {

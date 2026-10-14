@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.32";
+const APP_VERSION = "1.0.33";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -47,7 +47,7 @@ class SoundController {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.out || this.ctx.destination);
 
       if (type === 'click') {
         osc.type = 'sine';
@@ -84,7 +84,7 @@ class SoundController {
           noteGain.gain.setValueAtTime(0.12, t + idx * 0.1);
           noteGain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.1 + 0.25);
           noteOsc.connect(noteGain);
-          noteGain.connect(this.ctx.destination);
+          noteGain.connect(this.out || this.ctx.destination);
           noteOsc.start(t + idx * 0.1);
           noteOsc.stop(t + idx * 0.1 + 0.25);
         });
@@ -3349,7 +3349,7 @@ class SumdokuApp {
       this.updateBoardDisplay();
       this.updateKeypadBadges();
       this.updateTabletCageHelper(r, c);
-      this.updateDirectTypingInput();
+      this.updateDirectTypingInput?.();
       this.saveOngoingGame();
     }
   }
@@ -3370,7 +3370,7 @@ class SumdokuApp {
     this.updateBoardDisplay();
     this.updateKeypadBadges();
     this.updateTabletCageHelper(this.selected.r, this.selected.c);
-    this.updateDirectTypingInput();
+    this.updateDirectTypingInput?.();
     this.showToast('실행 취소되었습니다.');
     this.saveOngoingGame();
   }
