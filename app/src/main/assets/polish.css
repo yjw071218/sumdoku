@@ -248,3 +248,23 @@ body.hint-open #view-game .controls-column { min-height:0; }
   max-width: min(92vw, 420px); z-index: 500;
 }
 .toast.hidden { transform: translate(-50%, -14px); }
+
+/* ===== v1.0.36 · 태블릿: 영역 합산은 추론 도우미에만 표시 ===== */
+body.assistant-visible #view-game #multi-cage-banner { display:none !important; }
+/* 배틀 태블릿: 캡슐 자리(40px)를 비워 두지 않고, 아래쪽 여백을 둬서 보드가 바닥에 붙지 않게 */
+body.battle-active.assistant-visible .board-frame-wrapper { padding-top:0 !important; }
+body.battle-active.assistant-visible .game-main-content { padding-top:8px; padding-bottom:max(24px, calc(env(safe-area-inset-bottom) + 16px)); align-items:center; }
+
+/* ===== v1.0.36 · 한 칸 케이지(시작 숫자 칸) 강조 ===== */
+#sudoku-board .cell.single-cage .cage-inset-border {
+  border:2px solid #2563eb; border-radius:6px;
+  background:rgba(37,99,235,.16);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);
+}
+#sudoku-board .cell.single-cage .cell-cage-sum {
+  color:#fff; background:#2563eb; border-radius:4px; padding:1px 3px; font-weight:900;
+}
+.theme-dark #sudoku-board .cell.single-cage .cage-inset-border,
+#app.theme-dark #sudoku-board .cell.single-cage .cage-inset-border { border-color:#60a5fa; background:rgba(96,165,250,.22); box-shadow:none; }
+.theme-dark #sudoku-board .cell.single-cage .cell-cage-sum,
+#app.theme-dark #sudoku-board .cell.single-cage .cell-cage-sum { background:#3b82f6; color:#fff; }

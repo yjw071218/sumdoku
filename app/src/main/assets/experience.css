@@ -141,7 +141,7 @@ body.battle-active .board-frame {
 }
 body.battle-active .sudoku-grid { width:100%; height:100%; }
 body.battle-active .cell { font-size:clamp(12px,calc(var(--battle-board-size,300px) / 18),30px); }
-body.battle-active .cell-cage-sum { font-size:clamp(7px,calc(var(--battle-board-size,300px) / 48),11px); top:2px; left:3px; }
+/* v1.0.36: 배틀 합계 숫자 크기·위치는 일반 모드와 동일 */
 body.battle-active .multi-cage-banner { min-height:32px; padding:2px 8px; top:2px!important; }
 body.battle-active .controls-column { flex:0 0 auto; width:100%; max-width:620px; margin:0; gap:6px; min-height:0; }
 body.battle-active .logic-assistant-card { display:none; }

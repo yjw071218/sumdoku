@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.0.35";
+const APP_VERSION = "1.0.36";
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -2772,7 +2772,7 @@ class SumdokuApp {
     this.switchView('game');
 
     const modeKr = (this.gameMode === 'timeattack') ? '타임어택' : (this.gameMode === 'battle' ? 'Wi-Fi 배틀' : '일반');
-    this.showToast(`100% 연역 추론 보장! (${diffKr} · 시작 앵커 ${this.anchorCount}개 · ${modeKr})`);
+    this.showToast(`100% 연역 추론 보장! (${diffKr} · 시작 앵커 ${(this.cages || []).filter(c => c.cells.length === 1).length}개 · ${modeKr})`);
   }
 
   updateModeDisplay() {

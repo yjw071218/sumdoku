@@ -28,3 +28,23 @@
     window.addEventListener('resize',schedule);
   });
 })();
+
+/* v1.0.36: 추론 도우미가 실제로 보이는 화면(태블릿)인지 표시 → 영역 합산 캡슐 숨김 */
+(() => {
+  window.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('tablet-assistant-card');
+    if (!card) return;
+    let raf = 0;
+    const sync = () => {
+      raf = 0;
+      if (document.body.classList.contains('hint-open')) return; // 힌트 중에는 카드가 숨겨지므로 판정 유지
+      const on = getComputedStyle(card).display !== 'none';
+      if (document.body.classList.contains('assistant-visible') !== on) document.body.classList.toggle('assistant-visible', on);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(sync); };
+    new ResizeObserver(schedule).observe(document.getElementById('view-game'));
+    new MutationObserver(schedule).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', schedule);
+    sync();
+  });
+})();
