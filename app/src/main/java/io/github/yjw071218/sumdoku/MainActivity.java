@@ -218,7 +218,7 @@ public class MainActivity extends Activity {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.13";
+            return "1.1.14";
         }
     }
 
@@ -359,19 +359,22 @@ public class MainActivity extends Activity {
     }
 
     private boolean isMobileDataOn() {
-        try {
-            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-            if (tm != null && tm.isDataEnabled()) return true;
-        } catch (Exception ignored) {}
-        try {
-            if (android.provider.Settings.Global.getInt(getContentResolver(), "mobile_data", 0) == 1) return true;
-        } catch (Exception ignored) {}
+        // 실제 셀룰러 네트워크가 연결돼 있으면 켜진 것으로 봅니다.
         try {
             android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
             if (cm != null) for (android.net.Network n : cm.getAllNetworks()) {
                 android.net.NetworkCapabilities c = cm.getNetworkCapabilities(n);
                 if (c != null && c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)) return true;
             }
+        } catch (Exception ignored) {}
+        // Wi-Fi 연결 중에는 셀룰러 망이 내려가 있으므로 설정값을 보되,
+        // 모바일 데이터를 쓸 수 없는 기기(태블릿·유심 없음)는 설정 기본값이 켜짐이라도 제외합니다.
+        try {
+            if (!getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_TELEPHONY)) return false;
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+            if (tm == null || tm.getSimState() != android.telephony.TelephonyManager.SIM_STATE_READY) return false;
+            if (Build.VERSION.SDK_INT >= 26 && tm.getPhoneType() == android.telephony.TelephonyManager.PHONE_TYPE_NONE) return false;
+            return tm.isDataEnabled();
         } catch (Exception ignored) {}
         return false;
     }

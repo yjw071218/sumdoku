@@ -10,8 +10,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 35
-        versionCode 123
-        versionName '1.1.13'
+        versionCode 124
+        versionName '1.1.14'
     }
 
     buildTypes {
