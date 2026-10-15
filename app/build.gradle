@@ -32,8 +32,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 35
-        versionCode 129
-        versionName '1.1.19'
+        versionCode 131
+        versionName '1.1.21'
     }
 
     buildFeatures {
@@ -61,6 +61,7 @@ android {
             signingConfig signingConfigs.debug
             buildConfigField 'boolean', 'SELF_UPDATE', 'true'
             buildConfigField 'String', 'DISTRIBUTION', '"github"'
+            buildConfigField 'String', 'WEB_UPDATE_BASE_URL', '"https://raw.githubusercontent.com/yjw071218/sumdoku/main/app/src/main/assets/"'
             buildConfigField 'String', 'ADMOB_BANNER_ID', '""'
             buildConfigField 'String', 'ADMOB_INTERSTITIAL_ID', '""'
             buildConfigField 'String', 'ADMOB_REWARDED_ID', '""'
@@ -74,6 +75,7 @@ android {
             signingConfig signingConfigs.findByName('upload') ?: signingConfigs.debug
             buildConfigField 'boolean', 'SELF_UPDATE', 'false'
             buildConfigField 'String', 'DISTRIBUTION', '"play"'
+            buildConfigField 'String', 'WEB_UPDATE_BASE_URL', '""'
             buildConfigField 'String', 'ADMOB_BANNER_ID', "\"${admobBannerId}\""
             buildConfigField 'String', 'ADMOB_INTERSTITIAL_ID', "\"${admobInterstitialId}\""
             buildConfigField 'String', 'ADMOB_REWARDED_ID', "\"${admobRewardedId}\""
@@ -102,6 +104,14 @@ android {
         }
     }
 
+    // 플레이판 전용 웹 자산: main/assets를 복사하면서 GitHub 관련 UI·문구·코드를 제거합니다.
+    // 같은 이름의 파일은 flavor 자산이 main 자산을 덮어씁니다.
+    sourceSets {
+        play {
+            assets.srcDirs += ["${buildDir}/generated/playAssets"]
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -114,3 +124,63 @@ dependencies {
     playImplementation 'com.google.android.ump:user-messaging-platform:4.0.0'
     playImplementation 'com.android.billingclient:billing:9.1.0'
 }
+
+// ---------------------------------------------------------------------------
+// 플레이판 자산 필터: GitHub 저장소 링크, GitHub Releases 업데이트 확인, 관련 번역 문구 제거
+// 남은 GitHub 문자열이 있으면 빌드를 실패시킵니다(개인정보처리방침 호스팅 주소만 허용).
+// ---------------------------------------------------------------------------
+def playAssetsOut = file("${buildDir}/generated/playAssets")
+def stripGithub = { String name, String t ->
+    t = t.replace('\r\n', '\n')  // 체크아웃 줄바꿈(CRLF)과 무관하게 동작
+    def rx = { String text, String pattern, String repl -> text.replaceAll(pattern, java.util.regex.Matcher.quoteReplacement(repl)) }
+    switch (name) {
+        case 'index.html':
+            t = rx(t, /(?s)\s*<button id="btn-home-update".*?<\/button>/, '')
+            t = rx(t, /(?s)\s*<footer class="home-footer">.*?<\/footer>/, '')
+            t = rx(t, /(?m)^.*GitHub 저장소.*\R/, '')
+            t = rx(t, /(?s)\s*<button id="btn-info-check-update".*?<\/button>/, '')
+            t = rx(t, /(?s)\s*<button id="btn-info-github".*?<\/button>/, '')
+            t = t.replace('게임 정보 &amp; 업데이트', '게임 정보').replace('게임 정보 & 업데이트', '게임 정보')
+            break
+        case 'app.js':
+            t = rx(t, /(?m)^const GITHUB_REPO = .*\R/, '')
+            t = rx(t, /(?s)    \/\/ Game Info & GitHub Buttons.*?(?=\n    \/\/ 메모 폰트)/, '')
+            t = rx(t, /(?s)  async checkForUpdates\(manual = false\) \{.*?\n  \}\n/,
+                "  async checkForUpdates(manual = false) {\n    if (manual) this.showToast('업데이트는 Google Play 스토어에서 받을 수 있습니다.');\n  }\n")
+            break
+        case 'i18n.js':
+            t = rx(t, /(?m)^\s*home_update_desc:.*\R/, '')
+            break
+        case 'translations-extra.js':
+            t = rx(t, /(?m)^.*GitHub.*\R/, '')
+            break
+        case 'style.css':
+            t = rx(t, /(?s)\.github-link \{.*?\}\s*/, '')
+            break
+    }
+    t = t.replace('GitHub판', '외부 배포판').replace("이 없거나 'github')", '이 없거나 외부 배포판)')
+    return t
+}
+
+def preparePlayAssets = tasks.register('preparePlayAssets') {
+    def src = file('src/main/assets')
+    inputs.dir(src)
+    outputs.dir(playAssetsOut)
+    doLast {
+        project.delete(playAssetsOut)
+        playAssetsOut.mkdirs()
+        def leftovers = []
+        src.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            if (!(f.name ==~ /.*\.(js|html|css|json|txt|md)$/)) return
+            String orig = f.getText('UTF-8')
+            if (!orig.toLowerCase().contains('github')) return
+            String t = stripGithub(f.name, orig)
+            def rel = src.toPath().relativize(f.toPath()).toString()
+            def out = new File(playAssetsOut, rel); out.parentFile.mkdirs(); out.setText(t, 'UTF-8')
+            def check = t.replace('yjw071218.github.io/sumdoku/privacy', '')
+            check.eachLine { line, n -> if (line.toLowerCase().contains('github')) leftovers << "${rel}:${n + 1}: ${line.trim().take(120)}" }
+        }
+        if (leftovers) throw new GradleException("플레이판 자산에 GitHub 문자열이 남았습니다: " + leftovers.join(" | "))
+    }
+}
+tasks.matching { it.name ==~ /.*Play(Debug|Release).*/ && it.name != "preparePlayAssets" }.configureEach { dependsOn preparePlayAssets }

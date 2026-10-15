@@ -76,7 +76,42 @@
 
   const center = (g, i) => { const b = g.cells[i]; return [b.x + b.w / 2, b.y + b.h / 2]; };
   // 후보 숫자 d 의 칸 안 위치(3×3 미니 격자)
-  const candPos = (g, i, d) => { const b = g.cells[i]; const k = d - 1; return [b.x + b.w * ((k % 3) + 0.5) / 3, b.y + b.h * (Math.floor(k / 3) + 0.5) / 3]; };
+  // 실제 메모 자리(.cell-notes [data-note]) 를 재서 씁니다. 합계 라벨이 있는 칸은 메모 격자가
+  // 아래로 밀려 있으므로, 같은 자리에 그려야 합계 숫자와 겹치지 않습니다.
+  const noteSlot = (g, i, d) => {
+    const f = frame(), cell = board()?.querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"]`);
+    const sp = cell && cell.querySelector(`.cell-notes [data-note="${d}"]`);
+    if (!f || !sp) return null;
+    const fr = f.getBoundingClientRect(), r = sp.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { x: r.left - fr.left - f.clientLeft + r.width / 2, y: r.top - fr.top - f.clientTop + r.height / 2, w: r.width, h: r.height };
+  };
+  const sumBox = (g, i) => {
+    const f = frame(), cell = board()?.querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"]`);
+    const lb = cell && cell.querySelector('.cell-cage-sum');
+    if (!f || !lb) return null;
+    const fr = f.getBoundingClientRect(), r = lb.getBoundingClientRect();
+    return { x0: r.left - fr.left - f.clientLeft, y0: r.top - fr.top - f.clientTop, x1: r.right - fr.left - f.clientLeft, y1: r.bottom - fr.top - f.clientTop };
+  };
+  const candPos = (g, i, d) => {
+    const s = noteSlot(g, i, d);
+    if (s) return [s.x, s.y];
+    const b = g.cells[i]; const k = d - 1;
+    const top = sumBox(g, i) ? Math.min(b.h * 0.2, 8) : 0, h = b.h - top;
+    return [b.x + b.w * ((k % 3) + 0.5) / 3, b.y + top + h * (Math.floor(k / 3) + 0.5) / 3];
+  };
+  // 후보 동그라미 반지름: 메모 칸 크기 안에 들어가고 합계 라벨에 닿지 않게 줄입니다.
+  const candR = (g, i, d, want) => {
+    const [x, y] = candPos(g, i, d), s = noteSlot(g, i, d);
+    let r = s ? Math.min(want, Math.min(s.w, s.h) * 0.55) : want;
+    const sb = sumBox(g, i);
+    if (sb) {
+      const dx = Math.max(sb.x0 - x, 0, x - sb.x1), dy = Math.max(sb.y0 - y, 0, y - sb.y1);
+      const dist = Math.hypot(dx, dy);
+      if (dist < r + 1) r = Math.max(want * 0.5, dist - 1);
+    }
+    return r;
+  };
   const tr = s => (window.I18N && typeof window.I18N.text === 'function' ? window.I18N.text(s) : s);
   const pos = i => tr(`${Math.floor(i / 9) + 1}행 ${i % 9 + 1}열`);
 
@@ -143,53 +178,88 @@
       if (k === 'cand' && isEmpty(i)) {
         if (note) {
           // 사용자의 메모가 이미 있음 → 그 자리를 강조
-          el('circle', { cx: x, cy: y, r: fs * 0.7, class: 'hv-note-have' }, root);
+          el('circle', { cx: x, cy: y, r: candR(g, i, d, fs * 0.7), class: 'hv-note-have' }, root);
           const t = el('text', { x, y, class: 'hv-cand hv-cand-have', 'font-size': fs }, root); t.textContent = d;
         } else {
           // 메모가 없음 → 굵은 글씨로 써 줌
-          el('circle', { cx: x, cy: y, r: fs * 0.72, class: 'hv-note-need-bg' }, root);
-          el('circle', { cx: x, cy: y, r: fs * 0.72, class: 'hv-note-need' }, root);
-          const t = el('text', { x, y, class: 'hv-cand-need', 'font-size': fs * 1.12 }, root); t.textContent = d;
+          const rr = candR(g, i, d, fs * 0.72);
+          el('circle', { cx: x, cy: y, r: rr, class: 'hv-note-need-bg' }, root);
+          el('circle', { cx: x, cy: y, r: rr, class: 'hv-note-need' }, root);
+          const t = el('text', { x, y, class: 'hv-cand-need', 'font-size': Math.min(fs * 1.12, rr * 1.5) }, root); t.textContent = d;
         }
         return;
       }
-      el('circle', { cx: x, cy: y, r: fs * 0.62, class: k === 'elim' ? 'hv-elim-bg' : 'hv-cand-bg' }, root);
-      if (k === 'elim' && note) el('circle', { cx: x, cy: y, r: fs * 0.72, class: 'hv-note-erase' }, root);
-      const t = el('text', { x, y, class: k === 'elim' ? 'hv-elim' : 'hv-cand', 'font-size': fs }, root); t.textContent = d;
-      if (k === 'elim') el('line', { x1: x - fs * 0.5, y1: y + fs * 0.42, x2: x + fs * 0.5, y2: y - fs * 0.42, class: 'hv-strike' }, root);
+      const cr = candR(g, i, d, fs * 0.62);
+      el('circle', { cx: x, cy: y, r: cr, class: k === 'elim' ? 'hv-elim-bg' : 'hv-cand-bg' }, root);
+      if (k === 'elim' && note) el('circle', { cx: x, cy: y, r: candR(g, i, d, fs * 0.72), class: 'hv-note-erase' }, root);
+      const t = el('text', { x, y, class: k === 'elim' ? 'hv-elim' : 'hv-cand', 'font-size': Math.min(fs, cr * 1.6) }, root); t.textContent = d;
+      if (k === 'elim') el('line', { x1: x - cr * 0.8, y1: y + cr * 0.68, x2: x + cr * 0.8, y2: y - cr * 0.68, class: 'hv-strike' }, root);
+    });
+    // 5-1) 합계 라벨 보호: 후보·정답 동그라미가 칸 왼쪽 위 합계 숫자를 덮지 않도록,
+    //      동그라미를 그린 칸의 합계 라벨을 같은 자리에 맨 위로 다시 그립니다.
+    const drawnCells = new Set((v.digits || []).map(d => d.i).filter(Number.isInteger));
+    drawnCells.forEach(i => {
+      const cell = board()?.querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"]`);
+      const lb = cell && cell.querySelector('.cell-cage-sum');
+      const sb = lb && sumBox(g, i);
+      if (!sb || !lb.textContent) return;
+      const cs = getComputedStyle(lb);
+      const bgc = cs.backgroundColor && !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) ? cs.backgroundColor : null;
+      const pad = 1.5;
+      el('rect', { x: sb.x0 - pad, y: sb.y0 - pad, width: sb.x1 - sb.x0 + pad * 2, height: sb.y1 - sb.y0 + pad * 2, rx: 3,
+        class: 'hv-sum-guard', style: bgc ? `fill:${bgc}` : '' }, root);
+      const t = el('text', { x: (sb.x0 + sb.x1) / 2, y: (sb.y0 + sb.y1) / 2, class: 'hv-sum-guard-t',
+        'font-size': parseFloat(cs.fontSize) || 9, style: `fill:${cs.color};font-weight:${cs.fontWeight}` }, root);
+      t.textContent = lb.textContent;
     });
     // 6) 라벨: 칸 위쪽(맨 윗줄이면 아래쪽)에 말풍선처럼 띄우고 보드 밖으로 나가지 않게 맞춥니다.
     const placed = [];
     // 해당 단계가 다루는 케이지의 합계를 옆에 Σ로 다시 표시합니다.
     // 기존 후보 위치·크기는 유지하며 합계가 가려져도 이 배지에서 읽을 수 있습니다.
-    const touched = new Set([...(v.area || []), ...(v.area2 || []), ...(v.src || []),
-      ...(v.digits || []).map(d => d.i), ...(v.arrows || []).flat(),
-      ...(v.labels || []).map(l => l.i), v.target, v.focus].filter(Number.isInteger));
+    // 작은 화면(칸 폭 44px 미만)에서는 Σ 라벨이 몰리지 않도록
+    //  - 핵심 영역(주 영역·대상·후보 칸)에 걸친 케이지만, 최대 4개까지 표시하고
+    //  - 여러 후보 자리(오른쪽·왼쪽·아래·위) 중 비어 있는 곳에 두며, 자리가 없으면 생략합니다.
+    //    (생략해도 보드의 원래 합계 숫자는 그대로 보입니다.)
+    const compact = cw < 44;
+    const keySet = new Set([...(v.area || []), ...(v.digits || []).map(d => d.i), v.target, v.focus,
+      ...(v.labels || []).map(l => l.i)].filter(Number.isInteger));
+    const touched = compact ? keySet : new Set([...keySet, ...(v.area2 || []), ...(v.src || []), ...(v.arrows || []).flat()].filter(Number.isInteger));
     const labels = (v.labels || []).map(l => ({ ...l }));
+    const sumLabels = [];
     (window.app?.cages || []).forEach(cage => {
       if (cage.noSum) return;
       const ids = cage.cells.map(([r, c]) => r * 9 + c);
-      if (!ids.some(i => touched.has(i))) return;
+      const hits = ids.filter(i => touched.has(i)).length;
+      if (!hits) return;
       const i = ids.find(i => board().querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"] .cell-cage-sum`));
       if (i === undefined) return;
       const existing = labels.find(l => l.i === i && l.t === `Σ${cage.sum}`);
-      if (existing) existing.cageSum = true;
-      else labels.push({ i, t: `Σ${cage.sum}`, cageSum: true });
+      if (existing) { existing.cageSum = true; return; }
+      const core = ids.includes(v.target) || ids.includes(v.focus) ? 2 : 0;
+      sumLabels.push({ i, t: `Σ${cage.sum}`, cageSum: true, prio: core + hits / ids.length });
     });
-    labels.forEach(({ i, t, cageSum }) => {
+    sumLabels.sort((p, q) => q.prio - p.prio);
+    const sums = compact ? sumLabels.slice(0, 4) : sumLabels;
+    const lfs = compact ? Math.max(9, cw * 0.27) : Math.max(10, cw * 0.3), h = lfs * 1.5;
+    const hitsAny = (x, y, w) => placed.some(q => x < q.x + q.w + 1 && q.x < x + w + 1 && y < q.y + q.h + 1 && q.y < y + h + 1);
+    const fits = (x, y, w) => x >= 2 && y >= 2 && x + w <= g.w - 2 && y + h <= g.h - 2;
+    [...labels, ...sums].forEach(({ i, t, cageSum }) => {
       const b = g.cells[i];
-      const lfs = Math.max(10, cw * 0.3), h = lfs * 1.55;
       const text = el('text', { class: 'hv-label' + (cageSum ? ' hv-cage-sum' : ''), 'font-size': lfs, 'data-cell': i }, root); text.textContent = t;
-      let w; try { w = text.getComputedTextLength() + lfs * 0.9; } catch (_) { w = t.length * lfs * 0.62 + lfs * 0.9; }
-      let x = b.x + b.w / 2 - w / 2, y = Math.floor(i / 9) === 0 ? b.y + b.h + 2 : b.y - h - 2;
-      if (cageSum) {
-        x = b.x + b.w + 2;
-        if (x + w > g.w - 2) x = b.x - w - 2;
-        y = b.y + 2;
+      let w; try { w = text.getComputedTextLength() + lfs * 0.8; } catch (_) { w = t.length * lfs * 0.62 + lfs * 0.8; }
+      const spots = cageSum
+        ? [[b.x + b.w + 2, b.y + 2], [b.x - w - 2, b.y + 2], [b.x + 2, b.y + b.h + 2], [b.x + 2, b.y - h - 2], [b.x + b.w + 2, b.y + b.h - h - 2], [b.x - w - 2, b.y + b.h - h - 2]]
+        : [[b.x + b.w / 2 - w / 2, b.y - h - 2], [b.x + b.w / 2 - w / 2, b.y + b.h + 2], [b.x + b.w + 2, b.y + b.h / 2 - h / 2], [b.x - w - 2, b.y + b.h / 2 - h / 2]];
+      let spot = spots.find(([x, y]) => fits(x, y, w) && !hitsAny(x, y, w));
+      if (!spot) {
+        if (cageSum) { text.remove(); return; }
+        // 단계 설명 라벨은 꼭 보여야 하므로 아래로 비켜 놓습니다.
+        let [x, y] = spots[0];
+        x = Math.max(2, Math.min(g.w - w - 2, x)); y = Math.max(2, Math.min(g.h - h - 2, y));
+        for (const q of placed) if (x < q.x + q.w && q.x < x + w && y < q.y + q.h && q.y < y + h) y = Math.min(g.h - h - 2, q.y + q.h + 2);
+        spot = [x, y];
       }
-      x = Math.max(2, Math.min(g.w - w - 2, x)); y = Math.max(2, Math.min(g.h - h - 2, y));
-      // 라벨끼리 겹치면 아래로 비켜 놓습니다.
-      for (const q of placed) if (x < q.x + q.w && q.x < x + w && y < q.y + q.h && q.y < y + h) y = Math.min(g.h - h - 2, q.y + q.h + 2);
+      const [x, y] = spot;
       placed.push({ x, y, w, h });
       if (cageSum) {
         const [cx, cy] = center(g, i);
@@ -216,7 +286,7 @@
       r.append(a, b, c); box.append(r);
     };
     needs.forEach(n => row(n.i, n.ds, n.miss.length ? 'miss' : 'have',
-      !n.miss.length ? tr('✓ 메모 있음') : !n.have.length ? tr('메모 없음 — 적어 두세요') : tr(`${n.miss.join('·')} 메모 추가 필요`)));
+      !n.miss.length ? tr('✓ 메모 있음') : tr(`${n.miss.join('·')} 메모 추가 필요`)));
     const by = new Map(); erase.forEach(({ i, d }) => { const a = by.get(i) || []; a.push(d); by.set(i, a); });
     by.forEach((ds, i) => row(i, ds, 'erase', tr('메모에서 지우기')));
     return box;

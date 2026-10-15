@@ -111,3 +111,7 @@ body.hint-visual-on #app.theme-dark #hint-logic-text .hv-active { background: rg
 #app.theme-dark #hint-logic-text .hv-detail li.ok { color: #86efac; }
 #hint-logic-text .hv-detail li:hover { background: none !important; }
 #sudoku-board .cell-cage-sum.no-sum,.cell-cage-sum.no-sum{opacity:.75;font-style:italic;}
+
+/* 힌트 동그라미 위에 다시 그리는 케이지 합계 라벨 */
+#hint-visual-layer .hv-sum-guard { fill: var(--hv-chip); }
+#hint-visual-layer .hv-sum-guard-t { text-anchor: middle; dominant-baseline: central; }

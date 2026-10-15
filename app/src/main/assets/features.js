@@ -180,7 +180,7 @@
         if (m & placed) continue;
         let cnt = 0, s = 0;
         for (let d = 1; d <= 9; d++) if (m & (1 << d)) { cnt++; s += d; }
-        if (cnt === empty && s === target) union |= m;
+        if (cnt === empty && (cg.noSum || s === target)) union |= m;
       }
       cageAllowed.set(idx, union);
     });

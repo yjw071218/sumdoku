@@ -1574,7 +1574,7 @@ class SumdokuApp {
       this.sound.play('click');
       this.dom.modalRules.classList.remove('hidden');
     });
-    this.dom.btnHomeUpdate.addEventListener('click', () => {
+    this.dom.btnHomeUpdate?.addEventListener('click', () => {
       this.sound.play('click');
       this.checkForUpdates(true);
     });
@@ -1637,7 +1637,7 @@ class SumdokuApp {
       this.sound.play('click');
       this.dom.modalRules.classList.add('hidden');
     });
-    this.dom.btnUpdateDismiss.addEventListener('click', () => {
+    this.dom.btnUpdateDismiss?.addEventListener('click', () => {
       this.sound.play('click');
       this.dom.modalUpdate.classList.add('hidden');
     });
@@ -3266,11 +3266,15 @@ class SumdokuApp {
     let totalCells = 0;
     const sumList = [];
 
+    let hasHidden = false;
     cageList.forEach(cg => {
-      totalSum += cg.sum;
       totalCells += cg.cells.length;
+      if (cg.noSum) { hasHidden = true; sumList.push('?'); return; }
+      totalSum += cg.sum;
       sumList.push(cg.sum);
     });
+    // 합계 비공개 케이지가 섞이면 총합을 숨깁니다.
+    if (hasHidden) totalSum = '?';
 
     const formulaStr = sumList.length > 0 ? `${sumList.join(' + ')} = ${totalSum}` : '선택 없음';
 
@@ -3278,8 +3282,8 @@ class SumdokuApp {
       if (count === 0) {
         this.dom.mcBannerText.textContent = '영역 터치 시 합산';
       } else {
-        const diff45 = totalSum - 45;
-        const diffText = (totalCells === 9 || totalCells === 18 || totalCells === 27)
+        const diff45 = hasHidden ? NaN : totalSum - 45;
+        const diffText = !hasHidden && (totalCells === 9 || totalCells === 18 || totalCells === 27)
           ? ` (45제약: ${diff45 >= 0 ? '+' : ''}${diff45})`
           : '';
         this.dom.mcBannerText.textContent = `합계: ${totalSum} (${totalCells}칸 · ${count}영역)${diffText}`;
@@ -3364,6 +3368,16 @@ class SumdokuApp {
     const astTip = document.getElementById('assistant-tip');
 
     if (astCells) astCells.textContent = `${cage.cells.length}칸`;
+    // 루나틱 합계 비공개 케이지: 목표 합·남은 합·완성 여부를 절대 노출하지 않습니다.
+    if (cage.noSum) {
+      const filled = cage.cells.filter(([cr, cc]) => this.board[cr][cc].val > 0).length;
+      if (astTarget) { astTarget.textContent = '?'; astTarget.classList.add('no-sum-metric'); }
+      if (astRem) { astRem.textContent = '?'; astRem.classList.add('no-sum-metric'); }
+      if (astTip) astTip.textContent = `？ 합계 비공개 케이지 · ${cage.cells.length}칸 중 ${filled}칸 입력. 합계는 주변 행·열·박스와 45의 법칙으로만 추론할 수 있습니다.`;
+      return;
+    }
+    if (astTarget) astTarget.classList.remove('no-sum-metric');
+    if (astRem) astRem.classList.remove('no-sum-metric');
     if (astTarget) astTarget.textContent = cage.sum;
     if (astRem) astRem.textContent = remaining;
 

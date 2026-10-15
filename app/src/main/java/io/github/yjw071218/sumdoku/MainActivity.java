@@ -605,7 +605,8 @@ public class MainActivity extends Activity {
             new Thread(() -> {
                 try {
                     sendProgress(10, "최신 리소스 다운로드 준비 중...");
-                    String baseUrl = "https://raw.githubusercontent.com/yjw071218/sumdoku/main/app/src/main/assets/";
+                    String baseUrl = BuildConfig.WEB_UPDATE_BASE_URL;
+                    if (baseUrl.isEmpty()) return;
 
                     byte[] indexBytes = downloadUrlBytes(baseUrl + "index.html");
                     sendProgress(40, "HTML/구조 파일 업데이트 중...");
@@ -660,7 +661,7 @@ public class MainActivity extends Activity {
                     conn.setConnectTimeout(15000);
                     conn.setReadTimeout(30000);
 
-                    // GitHub 리다이렉트 대응 (302/307)
+                    // 다운로드 서버 리다이렉트 대응 (302/307)
                     int status = conn.getResponseCode();
                     if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == 307 || status == 308) {
                         String redirectedUrl = conn.getHeaderField("Location");

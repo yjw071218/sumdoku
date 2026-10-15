@@ -63,7 +63,7 @@
       { name: boxName(r, c), cells: Array.from({ length: 9 }, (_, j) => [Math.floor(r / 3) * 3 + Math.floor(j / 3), Math.floor(c / 3) * 3 + j % 3]) }
     ];
     const cage = cages.find(cg => cg.cells.some(([rr, cc]) => rr === r && cc === c));
-    if (cage) units.push({ name: `합 ${cage.sum} 케이지`, cells: cage.cells });
+    if (cage) units.push({ name: cage.noSum ? '합계 비공개 케이지' : `합 ${cage.sum} 케이지`, cells: cage.cells });
     for (const u of units) {
       const dup = u.cells.filter(([rr, cc]) => !(rr === r && cc === c) && vals[rr][cc] === num);
       if (!dup.length) continue;
@@ -72,8 +72,8 @@
       out.reasons.push(`같은 ${u.name}에 이미 ${ga(num)} 있습니다 (${dup.map(([rr, cc]) => pos(rr, cc)).join(', ')}).` +
         (wrongOther.length ? ` (그 ${num}도 사실은 틀린 숫자였습니다.)` : ''));
     }
-    // 2) 케이지 합
-    if (cage) {
+    // 2) 케이지 합 (합계 비공개 케이지는 합을 설명에 쓰지 않습니다)
+    if (cage && !cage.noSum) {
       const others = cage.cells.filter(([rr, cc]) => !(rr === r && cc === c));
       const placed = others.filter(([rr, cc]) => vals[rr][cc]);
       const placedSum = placed.reduce((s, [rr, cc]) => s + vals[rr][cc], 0);
