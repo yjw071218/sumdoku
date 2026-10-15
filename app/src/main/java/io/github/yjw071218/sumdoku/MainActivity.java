@@ -34,6 +34,9 @@ import java.net.URL;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    /** 플레이판: 광고·광고 제거 구매 / GitHub판: 빈 동작 */
+    private Monetization monetization;
+    private CloudGames cloudGames;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final String PREFS_NAME = "sumdoku_app_prefs";
     private static final String KEY_HOT_VERSION = "hot_update_version";
@@ -51,6 +54,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (monetization != null) monetization.onResume();
         applyImmersive();
         if (deviceStatusReceiver == null) {
             deviceStatusReceiver = new android.content.BroadcastReceiver() {
@@ -90,6 +94,7 @@ public class MainActivity extends Activity {
         if (cm != null && deviceNetworkCallback != null) cm.unregisterNetworkCallback(deviceNetworkCallback);
         deviceNetworkCallback = null;
         mainHandler.removeCallbacks(statusRefresh);
+        if (monetization != null) monetization.onPause();
         super.onPause();
     }
 
@@ -172,6 +177,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (!BuildConfig.SELF_UPDATE) return super.shouldInterceptRequest(view, request);
                 File customDir = new File(getFilesDir(), "www");
                 if (customDir.exists()) {
                     String path = request.getUrl().getPath();
@@ -206,19 +212,31 @@ public class MainActivity extends Activity {
 
         webView.setWebChromeClient(new WebChromeClient());
 
-        rootLayout.addView(webView, new FrameLayout.LayoutParams(
+        // 세로 배치: 게임 화면(WebView) + 하단 배너 자리(플레이판에서 광고가 로드될 때만 표시)
+        android.widget.LinearLayout column = new android.widget.LinearLayout(this);
+        column.setOrientation(android.widget.LinearLayout.VERTICAL);
+        column.addView(webView, new android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        FrameLayout bannerHost = new FrameLayout(this);
+        bannerHost.setVisibility(android.view.View.GONE);
+        column.addView(bannerHost, new android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+        rootLayout.addView(column, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
+        cloudGames = new CloudGames(this, webView);
         loadApp();
+        monetization = new Monetization(this, webView, bannerHost);
+        monetization.start();
     }
 
     private String getApkVersionName() {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "1.1.15";
+            return "1.1.16";
         }
     }
 
@@ -252,6 +270,13 @@ public class MainActivity extends Activity {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String hotVersion = prefs.getString(KEY_HOT_VERSION, null);
         String apkVersion = getApkVersionName();
+
+        // 플레이판은 앱 밖에서 받은 화면 파일을 쓰지 않습니다(이전 캐시가 있으면 삭제).
+        if (!BuildConfig.SELF_UPDATE && hotVersion != null) {
+            deleteDir(customDir);
+            prefs.edit().remove(KEY_HOT_VERSION).apply();
+            hotVersion = null;
+        }
 
         // APK 버전이 기존 hot_update 버전과 같거나 더 높으면 불필요한 구버전 캐시 삭제 후 APK 에셋 로드
         if (hotVersion != null && isVersionGreaterOrEqual(apkVersion, hotVersion)) {
@@ -310,6 +335,7 @@ public class MainActivity extends Activity {
             battleServer.stop();
         }
         setMulticast(false);
+        if (monetization != null) monetization.onDestroy();
         super.onDestroy();
     }
 
@@ -396,7 +422,32 @@ public class MainActivity extends Activity {
     }
 
 
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (cloudGames != null) cloudGames.result(request, result, data);
+    }
     private class AndroidBridgeInterface {
+        @JavascriptInterface public boolean isCloudConfigured() { return BuildConfig.GAMES_CONFIGURED; }
+        @JavascriptInterface public void cloudSignIn() { if(cloudGames!=null) cloudGames.signIn(); }
+        @JavascriptInterface public void cloudSave(String data) { if(cloudGames!=null) cloudGames.save(data); }
+        @JavascriptInterface public void cloudLoad() { if(cloudGames!=null) cloudGames.load(); }
+
+        // ---------------- 배포판 · 광고 · 광고 제거 구매 ----------------
+        @JavascriptInterface public String getDistribution() { return BuildConfig.DISTRIBUTION; }
+        @JavascriptInterface public boolean isSelfUpdateAllowed() { return BuildConfig.SELF_UPDATE; }
+        @JavascriptInterface public boolean isMonetizationSupported() { return monetization != null && monetization.isSupported(); }
+        @JavascriptInterface public String getMonetizationState() { return monetization == null ? "{}" : monetization.getMonetizationState(); }
+        @JavascriptInterface public void purchaseAdProduct(String id) { if(monetization != null) monetization.purchaseAdProduct(id); }
+        @JavascriptInterface public boolean isAdFree() { return monetization == null || monetization.isAdFree(); }
+        @JavascriptInterface public String getRemoveAdsPrice() { return monetization == null ? "" : monetization.getRemoveAdsPrice(); }
+        @JavascriptInterface public void purchaseRemoveAds() { if (monetization != null) monetization.purchaseRemoveAds(); }
+        @JavascriptInterface public void restorePurchases() { if (monetization != null) monetization.restorePurchases(); }
+        @JavascriptInterface public void showInterstitial() { if (monetization != null) monetization.showInterstitial(); }
+        @JavascriptInterface public void showRewarded(String requestId) { if (monetization != null) monetization.showRewarded(requestId); }
+        @JavascriptInterface public boolean isRewardedReady() { return monetization != null && monetization.isRewardedReady(); }
+        @JavascriptInterface public boolean isPrivacyOptionsRequired() { return monetization != null && monetization.isPrivacyOptionsRequired(); }
+        @JavascriptInterface public void showPrivacyOptions() { if (monetization != null) monetization.showPrivacyOptions(); }
+
         @JavascriptInterface
         public boolean isMobileDataEnabled() { return isMobileDataOn(); }
 
@@ -545,6 +596,7 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public void downloadAndApplyWebUpdate(final String versionTag) {
+            if (!BuildConfig.SELF_UPDATE) return;
             new Thread(() -> {
                 try {
                     sendProgress(10, "최신 리소스 다운로드 준비 중...");
@@ -592,6 +644,7 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public void downloadAndInstallApk(final String apkUrl) {
+            if (!BuildConfig.SELF_UPDATE) return;
             new Thread(() -> {
                 try {
                     sendProgress(5, "APK 다운로드 연결 중...");

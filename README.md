@@ -195,18 +195,43 @@ sdk.dir=C:/Android/Sdk
 프로젝트 루트에서 실행합니다.
 
 ```powershell
-gradle assembleDebug
-gradle assembleRelease
+gradle assembleGithubRelease   # GitHub Releases용 APK
+gradle bundlePlayRelease       # Google Play 업로드용 AAB
 ```
 
 | 빌드 | 기본 출력 파일 |
 | --- | --- |
-| Debug | `app/build/outputs/apk/debug/app-debug.apk` |
-| Release | `app/build/outputs/apk/release/app-release.apk` |
+| GitHub판 | `app/build/outputs/apk/github/release/app-github-release.apk` |
+| Play판 | `app/build/outputs/bundle/playRelease/app-play-release.aab` |
 
 현재 빌드 설정은 release에도 debug 서명 구성을 사용합니다. 직접 빌드한 APK는 빌드 환경의 키에 따라 기존 배포본과 서명이 다를 수 있습니다. 지속적인 업데이트를 제공하려면 같은 서명 키를 유지해야 합니다.
 
 `local.properties`, 빌드 산출물과 APK는 Git 추적 대상에서 제외합니다. 사용자에게 제공할 APK는 GitHub Releases의 첨부 파일로 배포합니다.
+
+## Google Play 배포판
+
+배포판은 Gradle 빌드 구분으로 나뉩니다.
+
+| 구분 | github | play |
+| --- | --- | --- |
+| 배포 | GitHub Releases APK | Google Play AAB |
+| 자체 업데이트(APK 설치·화면 파일 교체) | 사용 | 사용 안 함, `REQUEST_INSTALL_PACKAGES` 제거 |
+| 광고 | 없음 | AdMob 하단 배너, 결과 화면 전면 광고(결과 2회마다·3분 간격) |
+| 광고 제거 구매 | 없음 | 일회성 상품 `remove_ads`, 구매 복원 |
+| 서명 | 기존 서명 유지 | 업로드 키 |
+
+**업로드 키**는 저장소 밖 `%USERPROFILE%\.sumdoku-keys\`의 `upload.jks`와 `keystore.properties`를 사용합니다. 키가 없으면 Play판 release 빌드는 중단됩니다. 키를 잃어버리면 Play Console에서 업로드 키 재설정을 요청해야 하므로 안전한 곳에 백업하세요.
+
+**AdMob ID**는 지정하지 않으면 Google 공식 테스트 ID로 빌드됩니다. 실제 ID는 `%USERPROFILE%\.gradle\gradle.properties`에 지정합니다.
+
+```properties
+sumdoku.admob.appId=ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY
+sumdoku.admob.bannerId=ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ
+sumdoku.admob.interstitialId=ca-app-pub-XXXXXXXXXXXXXXXX/WWWWWWWWWW
+```
+
+- 개인정보처리방침: https://yjw071218.github.io/sumdoku/privacy.html
+- app-ads.txt: https://yjw071218.github.io/app-ads.txt (저장소 `yjw071218/yjw071218.github.io`)
 
 ## 테스트 실행
 
@@ -250,3 +275,30 @@ Java 서버 검증용 `BattleServerSmoke.java`, `TurnModeSmoke.java`, `RoomDisco
 ## 문제 제보와 개선 제안
 
 [GitHub Issues](https://github.com/yjw071218/sumdoku/issues)에 사용한 앱 버전, 기기·Android 버전, 재현 순서, 기대한 동작과 실제 동작을 적어 주세요. 배틀 문제라면 방장·참가자 중 어느 쪽인지와 게임 모드도 함께 알려 주시면 원인을 좁히는 데 도움이 됩니다.
+
+### 보상형 광고 (Play판)
+
+일반 게임과 일일 도전에서 목숨 소진 시 광고를 보고 목숨 1개로 이어갈 수 있습니다. 부활은 한 게임에 최대 2회이며 포기도 가능합니다. 힌트 소진 시에는 광고로 힌트 1개를 얻을 수 있으며 게임당 최대 3회입니다. 배틀에서는 두 기능을 제공하지 않습니다. 광고 제거 구매자는 같은 횟수 내에서 광고 없이 보상을 받습니다. 보상 사용 횟수는 이어하기에도 유지됩니다.
+
+설정 가능한 목숨은 1~3개, 기본 힌트는 0~3개입니다. 보상형 광고 단위는 Gradle 속성 sumdoku.admob.rewardedId로 지정하며, 미설정 시 테스트 광고를 사용합니다.
+
+### 첫 실행 언어 및 Google Play 게임즈 저장
+- 언어를 선택한 적 없는 설치본은 첫 실행에서 8개 언어 중 하나를 선택합니다. 선택은 유지되고 설정에서 변경할 수 있습니다.
+- Play판 설정의 Google Play 게임즈에서 로그인 → 지금 저장으로 새 저장본을 만듭니다. 다른 기기에서 같은 게임즈 계정으로 로그인 → 불러오기 → 저장본 선택 → 교체 확인을 거쳐 복원합니다. 자동 동기화가 아닌 명시적 저장 방식입니다.
+- 진행 중 게임, 일일 도전, 통계, 리플레이, 업적, 메모, 게임 설정을 저장합니다. 언어와 구매 권한, 네트워크 접속 정보는 이전하지 않습니다. 구매는 Google Play의 구매 복원을 사용합니다.
+- 게임 진행 중에는 클라우드 작업을 막습니다. 복원 전 기기 기록을 sumdoku_cloud_restore_backup에 보존합니다. 기존 클라우드 저장본은 자동 덮어쓰지 않으며 선택 화면에서 관리할 수 있습니다.
+- Play Console에서 Play 게임즈 서비스를 생성하고 저장된 게임을 활성화합니다. Android 앱(io.github.yjw071218.sumdoku)과 Play 앱 서명 인증서 SHA-1로 OAuth 자격 증명을 연결하고 테스트 계정을 등록해야 합니다. 업로드 키와 Play 앱 서명 키는 다릅니다.
+- Gradle 사용자 속성에 sumdoku.games.appId=숫자형_게임즈_프로젝트_ID를 지정한 뒤 bundlePlayRelease로 다시 빌드합니다. 미설정 빌드는 게임즈 SDK 초기화를 생략하고 연결 미설정 안내를 표시합니다. 실제 ID는 임의 생성하지 않습니다.
+- 클라우드 저장은 Google이 처리하며, 계정 연동과 두 기기 간 실기기 검증 및 공개 개인정보처리방침 갱신 후 배포해야 합니다.
+- 공식 구현 안내: https://developer.android.com/games/pgs/android/saved-games
+
+### 단계별 광고 제거
+
+출시 가격안은 **부분 제거 3,300원 / 전체 제거 4,900원 / 부분→전체 업그레이드 1,900원**입니다. 실제 가격은 Play Console에 등록해야 하며 앱에서는 Google Play가 제공한 현지 가격만 표시합니다.
+
+- 부분 제거(`remove_ads_basic`): 배너·전면 광고 제거, 부활·힌트 보상형 광고는 유지.
+- 전체 제거(`remove_ads`): 모든 광고 제거, 게임당 부활 2회·추가 힌트 3회는 광고 없이 제공. 기존 `remove_ads` 구매자도 전체 혜택 유지.
+- 업그레이드(`remove_ads_upgrade`): 부분 제거 구매가 있을 때만 구매·적용. 전체 구매자에게 추가 상품을 판매하지 않습니다.
+- 배틀의 보상 기능 제외와 게임당 횟수 제한은 유지합니다. 구매 복원 시 전체 상품을 확인해 등급을 재계산합니다.
+
+가격 가정·보고서 계산 오류·상품 등록 및 테스트 절차는 [광고 제거 가격 문서](releases/monetization-pricing.md)를 참고하세요.

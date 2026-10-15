@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.15";
+const APP_VERSION = "1.1.16";
 const RACE_FINISH_BONUS = 3000; // 스피드 레이스 완주 가산점
 const GITHUB_REPO = "yjw071218/sumdoku";
 
@@ -787,6 +787,8 @@ class SumdokuApp {
         combo: this.combo,
         hintsRemaining: this.hintsRemaining !== undefined ? this.hintsRemaining : 3,
         hintsUsed: this.hintsUsed || 0,
+        revivesUsed: this.revivesUsed || 0,
+        adHintsUsed: this.adHintsUsed || 0,
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate,
@@ -857,13 +859,16 @@ class SumdokuApp {
       this.combo = state.combo || 0;
       this.hintsRemaining = state.hintsRemaining !== undefined ? state.hintsRemaining : 3;
       this.hintsUsed = state.hintsUsed || 0;
+      this.revivesUsed = Math.min(2, Math.max(0, Number(state.revivesUsed) || 0));
+      this.adHintsUsed = Math.min(3, Math.max(0, Number(state.adHintsUsed) || 0));
       this.scratchpadText = state.scratchpadText || this.scratchpadText || '';
       if (this.dom.scratchpadInput) this.dom.scratchpadInput.value = this.scratchpadText;
       this.isDaily = !!state.isDaily;
       this.dailyDate = state.dailyDate || null;
       this.isBattle = false;
 
-      this.gameRules = state.gameRules || normalizedRules(this.settings);
+      this.gameRules = normalizedRules(state.gameRules || this.settings, this.gameMode === 'timeattack' ? 'score' : null);
+      this.hintsRemaining = Math.min(3, Math.max(0, Number(this.hintsRemaining) || 0));
       this.maxMistakes = this.rules.maxLives === "unlimited" ? 999999 : Number(this.rules.maxLives);
       this.currentGameReplay = state.currentGameReplay || {
         id: Date.now(),

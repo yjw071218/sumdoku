@@ -838,9 +838,9 @@
                 <div class="settings-item">
                   <div class="settings-info">
                     <span class="s-title" data-i18n="setting_max_lives">허용 목숨 (실수 횟수)</span>
-                    <span class="s-desc" data-i18n-desc="setting_max_lives_desc">게임에서 허용할 목숨 개수를 직접 입력합니다 (일반/배틀 공통, 1~999회)</span>
+                    <span class="s-desc" data-i18n-desc="setting_max_lives_desc">게임에서 허용할 목숨 개수를 직접 입력합니다 (일반/배틀 공통, 1~3회)</span>
                   </div>
-                  <input type="number" id="setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
+                  <input type="number" id="setting-max-lives" class="settings-input" min="1" max="3" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
@@ -857,9 +857,9 @@
                 <div class="settings-item">
                   <div class="settings-info">
                     <span class="s-title" data-i18n="setting_initial_hints">기본 제공 힌트 개수</span>
-                    <span class="s-desc" data-i18n-desc="setting_initial_hints_desc">게임 시작 시 주어지는 힌트 개수를 직접 입력합니다 (일반/배틀 공통, 0~999개)</span>
+                    <span class="s-desc" data-i18n-desc="setting_initial_hints_desc">게임 시작 시 주어지는 힌트 개수를 직접 입력합니다 (일반/배틀 공통, 0~3개)</span>
                   </div>
-                  <input type="number" id="setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
+                  <input type="number" id="setting-initial-hints" class="settings-input" min="0" max="3" value="3" placeholder="3">
                 </div>
 
                 <div class="settings-item">
@@ -1261,7 +1261,7 @@
             <div class="settings-info">
               <span class="s-title" data-i18n="setting_max_lives">허용 목숨 (실수 횟수)</span>
             </div>
-            <input type="number" id="modal-setting-max-lives" class="settings-input" min="1" max="999" value="3" placeholder="3">
+            <input type="number" id="modal-setting-max-lives" class="settings-input" min="1" max="3" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
@@ -1276,7 +1276,7 @@
             <div class="settings-info">
               <span class="s-title" data-i18n="setting_initial_hints">기본 제공 힌트 개수</span>
             </div>
-            <input type="number" id="modal-setting-initial-hints" class="settings-input" min="0" max="999" value="3" placeholder="3">
+            <input type="number" id="modal-setting-initial-hints" class="settings-input" min="0" max="3" value="3" placeholder="3">
           </div>
           <div class="settings-item">
             <div class="settings-info">
@@ -1833,6 +1833,9 @@
   <script src="battle-modes.js"></script>
   <script src="translations-extra.js"></script>
   <script src="translations-modes.js"></script>
+  <script src="monetization.js"></script>
+  <script src="rewards.js"></script>
+  <script src="cloud-games.js"></script>
   <script src="localize-ui.js"></script>
   <script src="choice-ui.js"></script>
   <script src="status-bar.js"></script>

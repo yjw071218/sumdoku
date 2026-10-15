@@ -59,3 +59,8 @@ n- `node tests/generation-quality.cjs`: 2칸 케이지 비율 상한(60%)과 쉬
 - `node tests/status-bar-indicators.cjs`: 카메라섬(펀치홀/노치) 바운딩 경계 보호, 실제 스마트폰 표준 상태바(불필요한 날짜·알람·블루투스·위치·절전 아이콘 제거), 네트워크 우선순위(비행기 > Wi-Fi > 셀룰러) 및 8개 언어 접근성 라벨을 검사합니다.
 - `node tests/race-two-device.cjs`: `JAVA_TEST_BIN`, `JAVA_TEST_CLASSES`를 지정하면 실제 Java 서버와 브라우저 두 개로 스피드 레이스 종료(일반·완주 직전 역전·동시 완주)에서 두 기기 결과와 서버 점수가 일치하는지 검사합니다.
 - `node tests/race-score-win.cjs`: 서버 종료 요청이 실패할 때 스피드 레이스 예비 판정(완주 보너스, 점수 비교, 무승부, 번역)을 검사합니다.
+- `node tests/monetization.cjs`: Play판(광고 제거 구매·복원·개인정보 설정 항목, 업데이트 UI 숨김, 결과 화면 전면 광고 요청, 구매 결과 안내, 영어 번역)과 GitHub판(변화 없음)의 화면 동작을 검사합니다.
+- `node tests/daily-calendar-contrast.cjs`: 일일 도전 달력에서 선택한 날짜(일반·완료·오늘)의 숫자가 라이트·다크·세피아 테마에서 배경과 충분한 대비를 갖는지 검사합니다.
+- `node tests/rewards.cjs`: 목숨·힌트 상한, 광고 미완료, 부활 2회 제한, 이어하기 횟수 보존, 광고 힌트, 새 게임의 이전 응답 무시 및 배틀 제외를 검사합니다.
+- `node tests/cloud-games.cjs`: 최초 언어 선택·재실행 유지, 클라우드 저장 허용 키, 잘못된 형식 거부, 불러오기 취소·복원·로컬 백업과 언어 보존 검사.
+- `node tests/ad-tiers.cjs`, `node tests/ad-entitlement.cjs`: 단계별 상품·가격·번역·복원 UI, 구매 권한 조합 및 업그레이드 선행 구매·중복 구매 차단 검사.

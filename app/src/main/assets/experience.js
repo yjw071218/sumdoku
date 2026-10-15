@@ -77,15 +77,15 @@ const RoomFinder = {
 const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction', 'allowAutoNotes', 'turnSeconds'];
 function normalizedRules(settings, battleMode) {
   const isInfiniteLives = battleMode === 'race' || battleMode === 'score';
-  let maxLives = isInfiniteLives ? 'unlimited' : String(settings.maxLives ?? '3');
+  let maxLives = isInfiniteLives ? 'unlimited' : String(settings.maxLives === 'unlimited' ? '3' : (settings.maxLives ?? '3'));
   if (maxLives !== 'unlimited') {
     const num = parseInt(maxLives, 10);
-    maxLives = isNaN(num) || num < 1 ? '3' : String(Math.min(999, num));
+    maxLives = isNaN(num) || num < 1 ? '3' : String(Math.min(3, num));
   }
-  let initialHints = String(settings.initialHints ?? '3');
+  let initialHints = String(settings.initialHints === 'unlimited' ? '3' : (settings.initialHints ?? '3'));
   if (initialHints !== 'unlimited') {
     const num = parseInt(initialHints, 10);
-    initialHints = isNaN(num) || num < 0 ? '3' : String(Math.min(999, num));
+    initialHints = isNaN(num) || num < 0 ? '3' : String(Math.min(3, num));
   }
   return {
     mistakeLimit: isInfiniteLives ? false : settings.mistakeLimit !== false,
@@ -138,8 +138,8 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
   const summary = document.createElement('summary'); summary.textContent = battle ? '대전 규칙 · 두 플레이어 공통' : '시작 전 설정'; panel.append(summary);
   const grid = document.createElement('div'); grid.className = 'quick-settings-grid'; panel.append(grid);
   const fields = [
-    {key:'maxLives', title:'목숨 (직접 입력)', type:'number', min:1, max:999, def:'3'},
-    {key:'initialHints', title:'힌트 (직접 입력)', type:'number', min:0, max:999, def:'3'},
+    {key:'maxLives', title:'목숨 (최대 3)', type:'number', min:1, max:3, def:'3'},
+    {key:'initialHints', title:'힌트 (최대 3)', type:'number', min:0, max:3, def:'3'},
     {key:'livesExhaustedAction', title:'목숨 소진', type:'select', options:[['game_over','게임 종료'],['continue','감점 후 계속']]},
     {key:'hintExhaustedAction', title:'힌트 소진', type:'select', options:[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 50점 감점']]},
     {key:'allowAutoNotes', title:'자동 메모 기능', type:'select', options:[[true,'허용'],[false,'금지']]},

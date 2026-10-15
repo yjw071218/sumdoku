@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Google Play 배포판 전용: 자체 업데이트 권한 제거, AdMob 앱 ID 등록 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 플레이 앱은 플레이 밖에서 스스로 업데이트할 수 없습니다. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+
+    <application android:name=".GamesApplication">
+        <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
+        <meta-data android:name="com.google.android.gms.games.SUPPRESS_GAME_PROFILE_CREATION" android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+        <!-- APK 설치용 파일 제공자는 플레이판에서 쓰지 않습니다. -->
+        <provider
+            android:name=".AppFileProvider"
+            android:authorities="io.github.yjw071218.sumdoku.fileprovider"
+            tools:node="remove" />
+    </application>
+</manifest>
