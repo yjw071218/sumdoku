@@ -44,7 +44,7 @@
       const cell = board && board[r] ? board[r][c] : 0;
       val[r * 9 + c] = (typeof cell === 'number' ? cell : cell && cell.val) || 0;
     }
-    const cageUnits = cages.map(cg => ({ kind: 'cage', name: `합 ${cg.sum} 케이지`, sum: cg.sum, cells: cg.cells.map(([r, c]) => r * 9 + c) }));
+    const cageUnits = cages.map(cg => ({ kind: 'cage', name: cg.noSum ? '케이지' : `합 ${cg.sum} 케이지`, sum: cg.sum, noSum: !!cg.noSum, cells: cg.cells.map(([r, c]) => r * 9 + c) }));
     const cageOf = new Array(81);
     cageUnits.forEach(u => u.cells.forEach(i => { cageOf[i] = u; }));
     const unitsOf = i => cageOf[i] ? [...houseOf[i], cageOf[i]] : houseOf[i];
@@ -246,6 +246,7 @@
 
     /* ---------- 1단계 ---------- */
     for (const u of cageUnits) {
+      if (u.noSum) continue;
       const empty = u.cells.filter(i => !val[i]);
       if (empty.length !== 1) continue;
       const placed = u.cells.filter(i => val[i]);
@@ -270,6 +271,7 @@
     const runCombos = (units, step) => {
       let changed = false;
       for (const u of units) {
+        if (u.noSum) continue;
         const empty = u.cells.filter(i => !val[i]);
         if (empty.length < 2) continue;
         const target = u.sum - u.cells.reduce((s, i) => s + val[i], 0);
@@ -302,7 +304,7 @@
               const o = empty[1 - k];
               group = `cage|${u.name}|pair|${d}`;
               text = `${eul(d)} 넣으면 ${posGa(o)} ${target - d}${hasBatchim(target - d) ? '이어야' : '여야'} 하는데 그 칸에 ${target - d}${hasBatchim(target - d) ? '은' : '는'} 올 수 없음`;
-            } else { group = `cage|${u.name}|fit|${d}`; text = `${eul(d)} 넣으면 ${u.name}의 나머지 칸을 합 ${target - d}로 채울 수 없음`; }
+            } else { group = `cage|${u.name}|fit|${d}`; text = u.virtual ? `${eul(d)} 넣으면 나머지 칸을 합 ${target - d}로 채울 수 없음` : `${eul(d)} 넣으면 ${u.name}의 나머지 칸을 합 ${target - d}로 채울 수 없음`; }
             if (step) {
               // 조합 설명은 그룹을 처음 만들 때(소거 전 후보 기준) 한 번만 계산합니다.
               const sv = stepViz.get(group) || vizFor(group, { detail: comboDetail(u, masks), area: u.cells, src: u.cells.filter(j => j !== i && val[j]),
@@ -336,6 +338,8 @@
     const virtual = [];
     for (const h of houses) {
       const inside = new Set(h.cells);
+      const interacting = cageUnits.filter(u => u.cells.some(i => inside.has(i)));
+      if (interacting.some(u => u.noSum)) continue;
       const contained = cageUnits.filter(u => u.cells.every(i => inside.has(i)));
       const touching = cageUnits.filter(u => u.cells.some(i => inside.has(i)) && u.cells.some(i => !inside.has(i)));
       if (contained.length) {
@@ -470,7 +474,7 @@
     return {
       r, c, answer: h.v, level: h.level, stepsCount: lines.length, steps,
       proof: [{ technique: 'human', sources: [...new Set(h.src)].filter(j => j !== h.i) }],
-      badgeText: LEVEL_NAME[h.level], posName: pos(h.i), cageInfo: cage ? `케이지 합 ${cage.sum}` : '',
+      badgeText: LEVEL_NAME[h.level], posName: pos(h.i), cageInfo: cage ? (cage.noSum ? '케이지' : `케이지 합 ${cage.sum}`) : '',
       explanation: `${lines.map((l, k) => `${k + 1}. ${l}`).join('\n')}\n→ ${pos(h.i)}은 ${h.v}입니다.`
     };
   }

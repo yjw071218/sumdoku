@@ -42,17 +42,17 @@
     if (!wrong.length) return null;
     const sel = app.selected && app.selected.r >= 0 ? app.selected.r * 9 + app.selected.c : -1;
     const i = wrong.includes(sel) ? sel : wrong[0], r = Math.floor(i / 9), c = i % 9, bad = valOf(app.board, i), answer = S[r][c];
-    const cages = (app.cages || []).map(cg => ({ sum: cg.sum, cells: cg.cells.map(([rr, cc]) => rr * 9 + cc) }));
+    const cages = (app.cages || []).map(cg => ({ sum: cg.sum, noSum: !!cg.noSum, cells: cg.cells.map(([rr, cc]) => rr * 9 + cc) }));
     const cage = cages.find(cg => cg.cells.includes(i));
     const steps = [];
     // 눈에 보이는 충돌
-    const units = [...houses.filter(h => h.cells.includes(i)), ...(cage ? [{ name: `합 ${cage.sum} 케이지`, cells: cage.cells }] : [])];
+    const units = [...houses.filter(h => h.cells.includes(i)), ...(cage ? [{ name: cage.noSum ? '케이지' : `합 ${cage.sum} 케이지`, cells: cage.cells }] : [])];
     for (const u of units) {
       const dup = u.cells.filter(j => j !== i && valOf(app.board, j) === bad);
       if (dup.length) steps.push({ text: `${pos(i)}의 ${bad}${hasBatchim(bad) ? '은' : '는'} 같은 ${u.name}의 ${dup.map(pos).join(', ')}에 있는 ${bad}${hasBatchim(bad) ? '과' : '와'} 겹칩니다.`,
         viz: VZ({ area: u.cells, src: dup, target: i, digits: [{ i, d: bad, k: 'elim' }], arrows: dup.slice(0, 3).map(j => [j, i]), labels: [{ i, t: `${bad} ✕` }] }) });
     }
-    if (cage) {
+    if (cage && !cage.noSum) {
       const filled = cage.cells.filter(j => valOf(app.board, j)), sum = filled.reduce((s, j) => s + valOf(app.board, j), 0);
       const full = filled.length === cage.cells.length;
       if (sum > cage.sum || (full && sum !== cage.sum)) steps.push({
@@ -75,7 +75,7 @@
     steps.push({ text: `${pos(i)}의 ${bad}${hasBatchim(bad) ? '을' : '를'} 지우고 다시 생각해 봅니다.`, viz: VZ({ target: i, digits: [{ i, d: bad, k: 'elim' }] }) });
     if (reason && Array.isArray(reason.steps)) steps.push(...reason.steps);
     else steps.push({ text: `이 칸의 올바른 숫자는 ${answer}입니다.`, viz: VZ({ target: i, digits: [{ i, d: answer, k: 'ans' }], labels: [{ i, t: `= ${answer}` }] }) });
-    return finish({ r, c, answer, level: 0, proof: [], badgeText: '숫자 바로잡기', posName: pos(i), cageInfo: cage ? `케이지 합 ${cage.sum}` : '', correction: true },
+    return finish({ r, c, answer, level: 0, proof: [], badgeText: '숫자 바로잡기', posName: pos(i), cageInfo: cage ? (cage.noSum ? '케이지' : `케이지 합 ${cage.sum}`) : '', correction: true },
       { steps, extraWrong: wrong.length - 1 });
   }
 
@@ -123,7 +123,7 @@
       { text: `${pos(best)}의 정답은 ${answer}입니다. 이 숫자를 넣으면 다른 칸의 추론이 이어집니다.`, viz: VZ({ target: best, digits: [{ i: best, d: answer, k: 'ans' }], labels: [{ i: best, t: `= ${answer}` }] }) }
     ];
     const cage = (app.cages || []).find(cg => cg.cells.some(([rr, cc]) => rr === r && cc === c));
-    return finish({ r, c, answer, level: 5, proof: [], badgeText: '후보 좁히기', posName: pos(best), cageInfo: cage ? `케이지 합 ${cage.sum}` : '' }, { steps });
+    return finish({ r, c, answer, level: 5, proof: [], badgeText: '후보 좁히기', posName: pos(best), cageInfo: cage ? (cage.noSum ? '케이지' : `케이지 합 ${cage.sum}`) : '' }, { steps });
   }
 
   p.findImmediateHint = function () {

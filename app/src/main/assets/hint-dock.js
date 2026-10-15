@@ -7,8 +7,8 @@
   const cellEl = i => document.querySelector(`#sudoku-board .cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"]`);
 
   const show = p.showImmediateHint;
-  p.showImmediateHint = function () {
-    show.call(this);
+  p.showImmediateHint = function (...args) {
+    show.apply(this, args);
     const h = this.pendingHint, card = this.dom.floatingHintCard;
     if (!h || !card || card.classList.contains('hidden')) return;
     document.body.classList.add('hint-open');

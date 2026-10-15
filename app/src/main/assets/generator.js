@@ -26,7 +26,8 @@ class SumdokuGenerator {
       easy: 8,
       medium: 6,
       hard: [4, 5, 5][Math.floor(rng() * 3)],
-      expert: [0, 1, 1, 2][Math.floor(rng() * 4)]
+      expert: [0, 1, 1, 2][Math.floor(rng() * 4)],
+      lunatic: 0
     };
     const targetAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 1;
 
@@ -37,6 +38,9 @@ class SumdokuGenerator {
     while (attempts++ < maxAttempts) {
       if (diff === 'expert' && attempts % 60 === 0) {
         currentAnchors = [0, 1, 1, 2][Math.floor(rng() * 4)];
+      }
+      if (diff === 'lunatic') {
+        currentAnchors = 0;
       }
 
       // [1단계: 정답판 생성]
@@ -72,6 +76,10 @@ class SumdokuGenerator {
       const solved = this.solveDeductivelyAdvanced(solution, cages);
       const minRequired = 81;
       if (solved >= minRequired && this.hasBalancedCageSizes(cages)) {
+        if (diff === 'lunatic') {
+          const noSumCount = this.applyLunaticNoSumCages(solution, cages, rng, 2, 5);
+          if (noSumCount < 2) continue;
+        }
         return {
           solution,
           cages,
@@ -91,10 +99,11 @@ class SumdokuGenerator {
       easy: 8,
       medium: 6,
       hard: [4, 5, 5][Math.floor(rng() * 3)],
-      expert: [0, 1, 1, 2][Math.floor(rng() * 4)]
+      expert: [0, 1, 1, 2][Math.floor(rng() * 4)],
+      lunatic: 0
     };
     let currentAnchors = anchorMap[diff] !== undefined ? anchorMap[diff] : 1;
-    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' };
     const diffKr = diffNames[diff] || diff;
 
     let attempts = 0;
@@ -120,6 +129,9 @@ class SumdokuGenerator {
 
       if (diff === 'expert' && attempts % 60 === 0) {
         currentAnchors = [0, 1, 1, 2][Math.floor(rng() * 4)];
+      }
+      if (diff === 'lunatic') {
+        currentAnchors = 0;
       }
 
       // [1단계: 정답판 생성]
@@ -233,13 +245,37 @@ class SumdokuGenerator {
       const minRequired = 81;
 
       if (solvedCount >= minRequired && this.hasBalancedCageSizes(cages)) {
+        if (diff === 'lunatic') {
+          if (onProgress) {
+            onProgress({
+              diffKr,
+              step: '3',
+              stepStatus: 'active',
+              stepName: '루나틱 변환',
+              message: '★ 3.5단계: 100% 연역성 유지 조건 케이지 합계 생략(noSum) 적용 중...',
+              percent: 92,
+              attempt: attempts,
+              rejectedCount,
+              cages,
+              solvedCount,
+              solvedCells,
+              solution
+            });
+            await new Promise(r => setTimeout(r, 10));
+          }
+          const noSumCount = this.applyLunaticNoSumCages(solution, cages, rng, 2, 5);
+          if (noSumCount < 2) continue;
+        }
+
         if (onProgress) {
           onProgress({
             diffKr,
             step: '3',
             stepStatus: 'completed',
-            stepName: '연역 검증 완료',
-            message: `3단계: 인간 연역 추론 검증 완료! (${solvedCount}/81칸 확정)`,
+            stepName: diff === 'lunatic' ? '루나틱 검증 완료' : '연역 검증 완료',
+            message: diff === 'lunatic'
+              ? `3단계: 루나틱 연역 검증 완료! (합계 생략 케이지 ${cages.filter(c => c.noSum).length}개 · 81/81칸 확정)`
+              : `3단계: 인간 연역 추론 검증 완료! (${solvedCount}/81칸 확정)`,
             percent: 100,
             attempt: attempts,
             rejectedCount,
@@ -301,12 +337,12 @@ class SumdokuGenerator {
 
     for (let i = 0; i < numCages; i++) {
       const cg = cages[i];
-      cageTarget[i] = cg.sum;
+      cageTarget[i] = cg.noSum ? -1 : cg.sum;
       cageSize[i] = cg.cells.length;
       for (const [r, c] of cg.cells) {
         const idx = r * 9 + c;
         cellCage[idx] = i;
-        if (cg.cells.length === 1) {
+        if (cg.cells.length === 1 && !cg.noSum) {
           fixedGrid[idx] = cg.sum;
           const val = cg.sum;
           const b = Math.floor(r / 3) * 3 + Math.floor(c / 3);
@@ -353,17 +389,19 @@ class SumdokuGenerator {
         const cg = cellCage[cell];
 
         let avail = ALL_CANDS & ~(rowMask[r] | colMask[c] | boxMask[b] | cageMask[cg]);
-        const remCells = cageSize[cg] - cageFilled[cg];
-        const remSum = cageTarget[cg] - cageSum[cg];
+        if (cageTarget[cg] !== -1) {
+          const remCells = cageSize[cg] - cageFilled[cg];
+          const remSum = cageTarget[cg] - cageSum[cg];
 
-        if (remCells === 1) {
-          if (remSum >= 1 && remSum <= 9 && (avail & (1 << remSum))) {
-            avail = 1 << remSum;
+          if (remCells === 1) {
+            if (remSum >= 1 && remSum <= 9 && (avail & (1 << remSum))) {
+              avail = 1 << remSum;
+            } else {
+              return false;
+            }
           } else {
-            return false;
+            if (remSum < remCells || remSum > remCells * 9) return false;
           }
-        } else {
-          if (remSum < remCells || remSum > remCells * 9) return false;
         }
 
         let count = 0;
@@ -401,8 +439,10 @@ class SumdokuGenerator {
         mask ^= vBit;
         const num = 31 - Math.clz32(vBit);
 
-        if (cageSum[cg] + num > cageTarget[cg]) continue;
-        if (cageFilled[cg] + 1 === cageSize[cg] && cageSum[cg] + num !== cageTarget[cg]) continue;
+        if (cageTarget[cg] !== -1) {
+          if (cageSum[cg] + num > cageTarget[cg]) continue;
+          if (cageFilled[cg] + 1 === cageSize[cg] && cageSum[cg] + num !== cageTarget[cg]) continue;
+        }
 
         fixedGrid[bestIdx] = num;
         rowMask[r] |= vBit;
@@ -618,6 +658,41 @@ class SumdokuGenerator {
   solveDeductivelyAdvanced(solution, cages, returnDetailed = false, traceEnabled = false, initialBoard = null) {
     const result = KillerDeduction.solve(cages, initialBoard, traceEnabled);
     return returnDetailed ? result : result.solvedCount;
+  }
+
+  // 루나틱 난이도: 100% 연역성 및 유일해를 유지하는 조건에서 2~5개 다중 칸 케이지의 합계(sum)를 비공개 처리(noSum: true)
+  applyLunaticNoSumCages(solution, cages, rng, minNoSum = 2, maxNoSum = 5) {
+    const multiCages = cages.filter(c => c.cells.length >= 2).sort(() => rng() - 0.5);
+    let count = 0;
+    for (const c of multiCages) {
+      c.noSum = true;
+      if (typeof KillerDeduction !== 'undefined' && KillerDeduction.clearTopology) {
+        KillerDeduction.clearTopology(cages);
+      }
+      const u = this.checkUniquenessWithDiff(cages);
+      if (u.isUnique) {
+        const solved = this.solveDeductivelyAdvanced(solution, cages);
+        if (solved >= 81) {
+          count++;
+          if (count >= maxNoSum) break;
+          continue;
+        }
+      }
+      c.noSum = false;
+      if (typeof KillerDeduction !== 'undefined' && KillerDeduction.clearTopology) {
+        KillerDeduction.clearTopology(cages);
+      }
+    }
+    if (count < minNoSum) {
+      for (const c of cages) {
+        if (c.noSum) c.noSum = false;
+      }
+      if (typeof KillerDeduction !== 'undefined' && KillerDeduction.clearTopology) {
+        KillerDeduction.clearTopology(cages);
+      }
+      return 0;
+    }
+    return count;
   }
 
   findShortestDeduction(currentBoard, cages) {

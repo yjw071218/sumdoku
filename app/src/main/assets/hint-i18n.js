@@ -20,9 +20,17 @@
   const L7 = (en, ja, zh, tw, es, fr, de) => ({ en, ja, zh, 'zh-TW': tw, es, fr, de });
 
   /* ---------- 부품 번역 ---------- */
-  const pos = s => { const m = /^(\d)행 (\d)열$/.exec(s.trim()); return m ? `R${m[1]}C${m[2]}` : null; };
+  const pos = (s, lang) => {
+    const m = /^(\d)행 (\d)열$/.exec(s.trim());
+    if (!m) return null;
+    const r = m[1], c = m[2];
+    if (lang === 'ja') return `${r}行${c}列`;
+    if (lang === 'zh' || lang === 'zh-TW') return `第${r}行第${c}列`;
+    return `R${r}C${c}`;
+  };
   const DIFF = { '초급': L7('Easy', '初級', '初级', '初級', 'Fácil', 'Facile', 'Leicht'), '중급': L7('Medium', '中級', '中级', '中級', 'Medio', 'Moyen', 'Mittel'),
-    '고급': L7('Hard', '上級', '高级', '高級', 'Difícil', 'Difficile', 'Schwer'), '전문가': L7('Expert', 'エキスパート', '专家', '專家', 'Experto', 'Expert', 'Experte') };
+    '고급': L7('Hard', '上級', '高级', '高級', 'Difícil', 'Difficile', 'Schwer'), '전문가': L7('Expert', 'エキスパート', '专家', '專家', 'Experto', 'Expert', 'Experte'),
+    '루나틱': L7('Lunatic', 'ルナティック', '狂乱', '狂亂', 'Lunático', 'Lunatique', 'Wahnsinn') };
   const unit = (s, lang) => {
     s = s.trim(); let m;
     if ((m = /^(\d)행$/.exec(s))) return L7(`row ${m[1]}`, `${m[1]}行`, `第${m[1]}行`, `第${m[1]}行`, `la fila ${m[1]}`, `la ligne ${m[1]}`, `Zeile ${m[1]}`)[lang];
@@ -44,16 +52,16 @@
   const list = (s, sep, f) => { const parts = s.split(sep).map(f); return parts.some(x => x == null) ? null : parts; };
 
   const TYPES = {
-    P: { re: String.raw`\d행 \d열`, tr: (s) => pos(s) },
-    PS: { re: String.raw`\d행 \d열(?:, \d행 \d열)*`, tr: (s, l) => (list(s, ', ', pos) || []).join(SEP[l]) },
-    PP: { re: String.raw`\d행 \d열(?: \+ \d행 \d열)*`, tr: s => (list(s, ' + ', pos) || []).join(' + ') },
+    P: { re: String.raw`\d행 \d열`, tr: (s, l) => pos(s, l) },
+    PS: { re: String.raw`\d행 \d열(?:, \d행 \d열)*`, tr: (s, l) => (list(s, ', ', x => pos(x, l)) || []).join(SEP[l]) },
+    PP: { re: String.raw`\d행 \d열(?: \+ \d행 \d열)*`, tr: (s, l) => (list(s, ' + ', x => pos(x, l)) || []).join(' + ') },
     U: { re: String.raw`(?:45의 법칙\([^)]*\)|합 \d+ 케이지|\d+번 박스|(?:\d행|\d열|\d+번 박스)(?: \+ (?:\d행|\d열|\d+번 박스))+ \(합 \d+\)|\d행|\d열)`, tr: (s, l) => unit(s, l) },
     N: { re: String.raw`-?\d[\d,]*`, tr: s => s },
     L: { re: String.raw`\d+(?:[·+]\d+)*`, tr: s => s },
     LS: { re: String.raw`\d+(?:\+\d+)*(?:, \d+(?:\+\d+)*)*(?: 등)?`, tr: s => s.replace(/ 등$/, ' …') },
     E: { re: String.raw`-?\d+(?: [+−\-] \d+)*(?: = -?\d+)?`, tr: s => s },
     T: { re: String.raw`\d+:\d\d`, tr: s => s },
-    D: { re: String.raw`초급|중급|고급|전문가`, tr: (s, l) => DIFF[s]?.[l] || s },
+    D: { re: String.raw`초급|중급|고급|전문가|루나틱`, tr: (s, l) => DIFF[s]?.[l] || s },
     X: { re: String.raw`.+?`, tr: (s, l) => sub(s, l) },
     XS: { re: String.raw`.+?`, tr: (s, l) => s.split(' / ').map(x => sub(x, l)).join(' / ') },
     // "3행에 1·2, 2번 박스에 5" → 항목별
@@ -64,17 +72,17 @@
     } },
     // "3행 1열의 4, 7행 6열의 6"
     PL: { re: String.raw`.+?`, tr: (s, l) => {
-      const items = list(s, ', ', it => { const m = /^(\d행 \d열)의 (\d+)$/.exec(it); return m ? [pos(m[1]), m[2]] : null; });
+      const items = list(s, ', ', it => { const m = /^(\d행 \d열)의 (\d+)$/.exec(it); return m ? [pos(m[1], l), m[2]] : null; });
       if (!items) return null;
       return items.map(([p, d]) => L7(`${d} at ${p}`, `${p}の${d}`, `${p}的${d}`, `${p}的${d}`, `${d} en ${p}`, `${d} en ${p}`, `${d} in ${p}`)[l]).join(SEP[l]);
     } },
     // "3행 1열=4, 7행 6열=6"
-    PV: { re: String.raw`.+?`, tr: (s, l) => { const items = list(s, ', ', it => { const m = /^(\d행 \d열)=(\d+)$/.exec(it); return m ? `${pos(m[1])}=${m[2]}` : null; }); return items ? items.join(SEP[l]) : null; } },
+    PV: { re: String.raw`.+?`, tr: (s, l) => { const items = list(s, ', ', it => { const m = /^(\d행 \d열)=(\d+)$/.exec(it); return m ? `${pos(m[1], l)}=${m[2]}` : null; }); return items ? items.join(SEP[l]) : null; } },
     // "1행 3열: 1·2·3, 1행 4열: 3·5"
-    PC: { re: String.raw`.+?`, tr: (s, l) => { const items = list(s, ', ', it => { const m = /^(\d행 \d열): ([\d·]+)$/.exec(it); return m ? `${pos(m[1])}: ${m[2]}` : null; }); return items ? items.join(SEP[l]) : null; } },
+    PC: { re: String.raw`.+?`, tr: (s, l) => { const items = list(s, ', ', it => { const m = /^(\d행 \d열): ([\d·]+)$/.exec(it); return m ? `${pos(m[1], l)}: ${m[2]}` : null; }); return items ? items.join(SEP[l]) : null; } },
     // "1행 3열, 1행 4열(밖)"
     PO: { re: String.raw`\d행 \d열(?:\(밖\))?(?:, \d행 \d열(?:\(밖\))?)*`, tr: (s, l) => s.split(', ').map(it => {
-      const out = /\(밖\)$/.test(it); const p = pos(it.replace(/\(밖\)$/, ''));
+      const out = /\(밖\)$/.test(it); const p = pos(it.replace(/\(밖\)$/, ''), l);
       return out ? p + L7(' (outside)', '（外）', '（外）', '（外）', ' (fuera)', ' (hors)', ' (außen)')[l] : p;
     }).join(SEP[l]) },
     // 리플레이 결과 꼬리 "✓ 정답 확정)" 등
@@ -91,6 +99,9 @@
   TYPES.VER = { re: String.raw`[\d.]+`, tr: s => s };
   // 콜론 앞이 위치 목록이나 영역 이름인 일반 "X: 설명"
   TYPES.UX = { re: String.raw`(?:\d행 \d열(?:, \d행 \d열)*|45의 법칙\([^)]*\)|합 \d+ 케이지|\d+번 박스|\d행|\d열)`, tr: (s, l) => (/행 \d열/.test(s) ? TYPES.PS.tr(s, l) : unit(s, l)) };
+
+  const ALREADY = L7('[[(already has $1) ]]', '[[（すでに$1あり）]]', '[[（已有$1）]]', '[[（已有$1）]]', '[[(ya tiene $1) ]]', '[[(contient déjà $1) ]]', '[[(enthält bereits $1) ]]');
+  const withAlready = (fmt) => Object.fromEntries(LANGS.map(l => [l, fmt[l].replace('{A}', ALREADY[l])]));
 
   /* ---------- 규칙 ---------- */
   const rules = [];
@@ -113,11 +124,13 @@
 
   // 케이지 조합
   R(String.raw`{U}의 가능한 조합에 없는 숫자 {L} 제외`, L7('Eliminate $2: not in any possible combination of $1', '$1の可能な組み合わせにない数字$2を除外', '排除$2：不在$1的任何可能组合中', '排除$2：不在$1的任何可能組合中', 'Se descarta $2: no está en ninguna combinación posible de $1', 'On élimine $2 : absent de toutes les combinaisons possibles de $1', '$2 entfällt: in keiner möglichen Kombination von $1'));
+  R(String.raw`{U}이므로 가능한 조합은 {LS}뿐 → {L} 제외`, L7('In $1 the only possible combinations are now $2 → eliminate $3', '$1なので可能な組み合わせは$2だけ → $3を除外', '$1因此可能组合仅为$2 → 排除$3', '$1因此可能組合僅為$2 → 排除$3', 'En $1 las únicas combinaciones posibles son $2 → se descarta $3', 'Dans $1, les seules combinaisons possibles sont $2 → on élimine $3', 'In $1 sind nur noch die Kombinationen $2 möglich → $3 entfällt'));
   R(String.raw`{U}의 가능한 조합은 이제 {LS}뿐이므로 {L} 제외`, L7('$1 can now only be $2, so eliminate $3', '$1の可能な組み合わせは$2だけになったので$3を除外', '$1现在只能是$2，因此排除$3', '$1現在只能是$2，因此排除$3', '$1 ahora solo puede ser $2, así que se descarta $3', '$1 ne peut plus être que $2, on élimine donc $3', '$1 kann nur noch $2 sein, daher entfällt $3'));
   R(String.raw`45의 법칙: {U}에서 케이지 밖 빈칸 {PP} = {E}이므로 가능한 조합은 {LS}뿐 → {L} 제외`, L7('Rule of 45: in $1 the empty cells outside cages $2 = $3, so only $4 is possible → eliminate $5', '45の法則：$1でケージ外の空きマス$2 = $3なので、可能な組み合わせは$4だけ → $5を除外', '45法则：$1中笼外空格$2 = $3，因此只可能是$4 → 排除$5', '45法則：$1中籠外空格$2 = $3，因此只可能是$4 → 排除$5', 'Regla del 45: en $1 las celdas vacías fuera de jaulas $2 = $3, así que solo cabe $4 → se descarta $5', 'Règle du 45 : dans $1, les cases vides hors cages $2 = $3, donc seul $4 est possible → on élimine $5', '45er-Regel: In $1 gilt für die leeren Zellen außerhalb der Käfige $2 = $3, also nur $4 möglich → $5 entfällt'));
   R(String.raw`45의 법칙: {U}에서 케이지 밖 빈칸 {PP} = {E}`, L7('Rule of 45: in $1 the empty cells outside cages $2 = $3', '45の法則：$1でケージ外の空きマス$2 = $3', '45法则：$1中笼外空格$2 = $3', '45法則：$1中籠外空格$2 = $3', 'Regla del 45: en $1 las celdas vacías fuera de jaulas $2 = $3', 'Règle du 45 : dans $1, les cases vides hors cages $2 = $3', '45er-Regel: In $1 gilt für die leeren Zellen außerhalb der Käfige $2 = $3'));
   R(String.raw`{N}[을를] 넣으면 {P}이 {N}(?:이어야|여야) 하는데 그 칸에 {N}[은는] 올 수 없음`, L7('with $1 here, $2 would have to be $3, but $4 can\'t go there', '$1を入れると$2が$3でなければならないが、そのマスに$4は入らない', '若填$1，$2必须是$3，但该格不能填$4', '若填$1，$2必須是$3，但該格不能填$4', 'con $1 aquí, $2 tendría que ser $3, pero ahí no cabe $4', 'avec $1 ici, $2 devrait valoir $3, mais $4 n\'y est pas possible', 'mit $1 hier müsste $2 eine $3 sein, die dort nicht stehen kann'));
-  R(String.raw`{N}[을를] 넣으면 {U}의 나머지 칸을 합 {N}로 채울 수 없음`, L7('with $1 here, the rest of $2 can\'t add up to $3', '$1を入れると$2の残りのマスで合計$3を作れない', '若填$1，$2其余格无法凑出和$3', '若填$1，$2其餘格無法湊出和$3', 'con $1 aquí, el resto de $2 no puede sumar $3', 'avec $1 ici, le reste de $2 ne peut pas faire $3', 'mit $1 hier kann der Rest von $2 nicht $3 ergeben'));
+  R(String.raw`{N}[을를] 넣으면 나머지 칸을 합 {N}(?:으로|로) 채울 수 없음`, L7('with $1 here, the remaining cells can\'t sum to $2', '$1を入れると残りのマスで合計$2を作れない', '若填$1，其余格无法凑出和$2', '若填$1，其餘格無法湊出和$2', 'con $1 aquí, el resto no puede sumar $2', 'avec $1 ici, le reste ne peut pas faire $2', 'mit $1 hier kann der Rest nicht $2 ergeben'));
+  R(String.raw`{N}[을를] 넣으면 {U}의 나머지 칸을 합 {N}(?:으로|로) 채울 수 없음`, L7('with $1 here, the rest of $2 can\'t add up to $3', '$1を入れると$2の残りのマスで合計$3を作れない', '若填$1，$2其余格无法凑出和$3', '若填$1，$2其餘格無法湊出和$3', 'con $1 aquí, el resto de $2 no puede sumar $3', 'avec $1 ici, le reste de $2 ne peut pas faire $3', 'mit $1 hier kann der Rest von $2 nicht $3 ergeben'));
   R(String.raw`{U}의 가능한 조합에는 모두 {N}[이가] 들어갑니다\.`, L7('Every possible combination of $1 contains $2.', '$1の可能な組み合わせにはすべて$2が入ります。', '$1的所有可能组合都包含$2。', '$1的所有可能組合都包含$2。', 'Todas las combinaciones posibles de $1 contienen el $2.', 'Toutes les combinaisons possibles de $1 contiennent le $2.', 'Alle möglichen Kombinationen von $1 enthalten die $2.'));
   R(String.raw`{U}\(이미 {L} 있음\): 빈 {N}칸의 합 {N}, 가능한 조합 {LS}`, L7('$1 (already has $2): $3 empty cells sum to $4, possible combinations $5', '$1（すでに$2あり）：空き$3マスの合計$4、可能な組み合わせ$5', '$1（已有$2）：$3个空格之和为$4，可能组合$5', '$1（已有$2）：$3個空格之和為$4，可能組合$5', '$1 (ya tiene $2): $3 celdas vacías suman $4, combinaciones posibles $5', '$1 (contient déjà $2) : $3 cases vides font $4, combinaisons possibles $5', '$1 (enthält bereits $2): $3 leere Zellen ergeben $4, mögliche Kombinationen $5'));
   R(String.raw`{U}: 빈 {N}칸의 합 {N}, 가능한 조합 {LS}`, L7('$1: $2 empty cells sum to $3, possible combinations $4', '$1：空き$2マスの合計$3、可能な組み合わせ$4', '$1：$2个空格之和为$3，可能组合$4', '$1：$2個空格之和為$3，可能組合$4', '$1: $2 celdas vacías suman $3, combinaciones posibles $4', '$1 : $2 cases vides font $3, combinaisons possibles $4', '$1: $2 leere Zellen ergeben $3, mögliche Kombinationen $4'));
@@ -200,17 +213,15 @@
   R(String.raw`(기본 추론|쌍·교차 후보|45의 법칙|45의 법칙 조합|케이지 조합) · {N}단계`.replace(/^\(([^)]*)\)/, '{LV}'), L7('$1 · $2 steps', '$1 · $2手順', '$1 · $2步', '$1 · $2步', '$1 · $2 pasos', '$1 · $2 étapes', '$1 · $2 Schritte'));
 
   // 리플레이
-  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸에 숫자 {N} 입력 \({RT}`, L7('[$1] (R$2C$3) entered $4 ($5', '[$1] (R$2C$3) $4を入力 ($5', '[$1] (R$2C$3) 填入$4 ($5', '[$1] (R$2C$3) 填入$4 ($5', '[$1] (R$2C$3) se introdujo $4 ($5', '[$1] (R$2C$3) saisie de $4 ($5', '[$1] (R$2C$3) $4 eingegeben ($5'));
-  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸에 메모 {N} 조작`, L7('[$1] (R$2C$3) toggled memo $4', '[$1] (R$2C$3) メモ$4を操作', '[$1] (R$2C$3) 切换笔记$4', '[$1] (R$2C$3) 切換筆記$4', '[$1] (R$2C$3) nota $4 cambiada', '[$1] (R$2C$3) note $4 modifiée', '[$1] (R$2C$3) Notiz $4 geändert'));
-  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸 숫자 지움`, L7('[$1] (R$2C$3) erased', '[$1] (R$2C$3) 数字を消去', '[$1] (R$2C$3) 擦除数字', '[$1] (R$2C$3) 擦除數字', '[$1] (R$2C$3) borrado', '[$1] (R$2C$3) effacé', '[$1] (R$2C$3) gelöscht'));
-  R(String.raw`\[{T}\] \({N}행, {N}열\) \[힌트\]로 {N} 확정`, L7('[$1] (R$2C$3) $4 confirmed by [hint]', '[$1] (R$2C$3) [ヒント]で$4を確定', '[$1] (R$2C$3) 通过[提示]确定$4', '[$1] (R$2C$3) 透過[提示]確定$4', '[$1] (R$2C$3) $4 confirmado con [pista]', '[$1] (R$2C$3) $4 confirmé par [indice]', '[$1] (R$2C$3) $4 per [Tipp] bestätigt'));
+  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸에 숫자 {N} 입력 \({RT}`, L7('[$1] (R$2C$3) entered $4 ($5', '[$1] ($2行$3列) $4を入力 ($5', '[$1] (第$2行第$3列) 填入$4 ($5', '[$1] (第$2行第$3列) 填入$4 ($5', '[$1] (R$2C$3) se introdujo $4 ($5', '[$1] (R$2C$3) saisie de $4 ($5', '[$1] (R$2C$3) $4 eingegeben ($5'));
+  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸에 메모 {N} 조작`, L7('[$1] (R$2C$3) toggled memo $4', '[$1] ($2行$3列) メモ$4を操作', '[$1] (第$2行第$3列) 切换笔记$4', '[$1] (第$2行第$3列) 切換筆記$4', '[$1] (R$2C$3) nota $4 cambiada', '[$1] (R$2C$3) note $4 modifiée', '[$1] (R$2C$3) Notiz $4 geändert'));
+  R(String.raw`\[{T}\] \({N}행, {N}열\) 칸 숫자 지움`, L7('[$1] (R$2C$3) erased', '[$1] ($2行$3列) 数字を消去', '[$1] (第$2行第$3列) 擦除数字', '[$1] (第$2行第$3列) 擦除數字', '[$1] (R$2C$3) borrado', '[$1] (R$2C$3) effacé', '[$1] (R$2C$3) gelöscht'));
+  R(String.raw`\[{T}\] \({N}행, {N}열\) \[힌트\]로 {N} 확정`, L7('[$1] (R$2C$3) $4 confirmed by [hint]', '[$1] ($2行$3列) [ヒント]で$4を確定', '[$1] (第$2行第$3列) 通过[提示]确定$4', '[$1] (第$2行第$3列) 透過[提示]確定$4', '[$1] (R$2C$3) $4 confirmado con [pista]', '[$1] (R$2C$3) $4 confirmé par [indice]', '[$1] (R$2C$3) $4 per [Tipp] bestätigt'));
   R(String.raw`정답 확정\)`, L7('correct)', '正解)', '正确)', '正確)', 'correcto)', 'correct)', 'richtig)'));
   R(String.raw`{N} / {N} 수`, L7('$1 / $2 moves', '$1 / $2 手', '$1 / $2 步', '$1 / $2 步', '$1 / $2 jugadas', '$1 / $2 coups', '$1 / $2 Züge'));
   R(String.raw`틀린 원인 · {P}에 {N}`, L7('Why it was wrong · $2 at $1', 'ミスの原因 · $1に$2', '错误原因 · $1填$2', '錯誤原因 · $1填$2', 'Por qué fue un error · $2 en $1', 'Pourquoi c\'était faux · $2 en $1', 'Warum es falsch war · $2 in $1'));
   R(String.raw`같은 {U}에 이미 {N}[이가] 있습니다 \({PS}\)\. \(그 {N}도 사실은 틀린 숫자였습니다\.\)`, L7('$1 already has a $2 ($3). (That $4 was itself a wrong digit.)', '同じ$1にすでに$2があります（$3）。（その$4も実は間違った数字でした。）', '同一$1中已有$2（$3）。（那个$4其实也是错的。）', '同一$1中已有$2（$3）。（那個$4其實也是錯的。）', 'Ya hay un $2 en $1 ($3). (Ese $4 también era incorrecto.)', 'Il y a déjà un $2 dans $1 ($3). (Ce $4 était lui-même faux.)', '$1 enthält bereits eine $2 ($3). (Diese $4 war selbst falsch.)'));
   R(String.raw`같은 {U}에 이미 {N}[이가] 있습니다 \({PS}\)\.`, L7('$1 already has a $2 ($3).', '同じ$1にすでに$2があります（$3）。', '同一$1中已有$2（$3）。', '同一$1中已有$2（$3）。', 'Ya hay un $2 en $1 ($3).', 'Il y a déjà un $2 dans $1 ($3).', '$1 enthält bereits eine $2 ($3).'));
-  const ALREADY = L7('[[(already has $1) ]]', '[[（すでに$1あり）]]', '[[（已有$1）]]', '[[（已有$1）]]', '[[(ya tiene $1) ]]', '[[(contient déjà $1) ]]', '[[(enthält bereits $1) ]]');
-  const withAlready = (fmt) => Object.fromEntries(LANGS.map(l => [l, fmt[l].replace('{A}', ALREADY[l])]));
   R(String.raw`(?:이미 {E}이 있는 )?합 {N} 케이지에 {N}[을를] 넣으면 {N}이 되어 합을 넘습니다\.`, withAlready(L7('Putting $3 in the $2-cage {A}makes $4, over the sum.', '合計$2のケージ{A}に$3を入れると$4になり、合計を超えます。', '在和为$2的笼子{A}里填$3会得到$4，超过总和。', '在和為$2的籠子{A}裡填$3會得到$4，超過總和。', 'Poner $3 en la jaula de $2 {A}da $4, más que la suma.', 'Mettre $3 dans la cage de $2 {A}donne $4, au-delà de la somme.', '$3 im Käfig (Summe $2) {A}ergibt $4 und überschreitet die Summe.')));
   R(String.raw`합 {N} 케이지의 마지막 칸인데, {N}[을를] 넣으면 합이 {N}이 되어 {N}과 맞지 않습니다\.`, L7('It\'s the last cell of the $1-cage, and $2 makes the total $3, not $4.', '合計$1のケージの最後のマスで、$2を入れると合計が$3になり$4と合いません。', '这是和为$1的笼子的最后一格，填$2后和为$3，不等于$4。', '這是和為$1的籠子的最後一格，填$2後和為$3，不等於$4。', 'Es la última celda de la jaula de $1, y con $2 el total es $3, no $4.', 'C\'est la dernière case de la cage de $1 : avec $2 le total fait $3, pas $4.', 'Das ist die letzte Zelle des Käfigs (Summe $1); mit $2 wird die Summe $3 statt $4.'));
   R(String.raw`(?:이미 {E}이 있는 )?합 {N} 케이지에 {N}[을를] 넣으면 합이 벌써 {N}이 되어, 남은 빈칸 {N}개에 넣을 숫자가 없습니다\.`, withAlready(L7('Putting $3 in the $2-cage {A}already makes $4, leaving nothing for the $5 empty cells.', '合計$2のケージ{A}に$3を入れると合計がもう$4になり、残り$5マスに入れる数字がありません。', '在和为$2的笼子{A}里填$3后和已是$4，剩下$5个空格无数可填。', '在和為$2的籠子{A}裡填$3後和已是$4，剩下$5個空格無數可填。', 'Poner $3 en la jaula de $2 {A}ya da $4, y no queda nada para las $5 celdas vacías.', 'Mettre $3 dans la cage de $2 {A}fait déjà $4 : il ne reste rien pour les $5 cases vides.', '$3 im Käfig (Summe $2) {A}ergibt schon $4, für die $5 leeren Zellen bleibt nichts.')));

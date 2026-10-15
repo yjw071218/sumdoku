@@ -24,7 +24,7 @@ const KillerDeduction = (() => {
   const topologyCache = new WeakMap();
   function topology(cages) {
     if (topologyCache.has(cages)) return topologyCache.get(cages);
-    const cageUnits = cages.map(c=>({cells:c.cells.map(([r,c])=>r*9+c),sum:c.sum,name:`합 ${c.sum} 케이지`}));
+    const cageUnits = cages.map(c=>({cells:c.cells.map(([r,c])=>r*9+c),sum:c.sum,noSum:!!c.noSum,name:c.noSum?`케이지`:`합 ${c.sum} 케이지`}));
     const units = houses.map(h=>({...h,full:true})).concat(cageUnits);
     const peers = Array.from({length:81},()=>new Set());
     for (const u of units) for (const i of u.cells) for (const j of u.cells) if(i!==j) peers[i].add(j);
@@ -44,8 +44,8 @@ const KillerDeduction = (() => {
         const touching=cageUnits.filter(c=>c.cells.some(i=>inside.has(i)));
         const covered=new Set(contained.flatMap(c=>c.cells));
         const label=`${group.map(h=>h.name).join(' + ')} (합 ${45*size})`;
-        add([...inside].filter(i=>!covered.has(i)),45*size-contained.reduce((s,c)=>s+c.sum,0),`45의 법칙(${group.map(h=>h.name).join('+')})`);
-        add(touching.flatMap(c=>c.cells.filter(i=>!inside.has(i))),touching.reduce((s,c)=>s+c.sum,0)-45*size,`45의 법칙(${group.map(h=>h.name).join('+')} 바깥)`);
+        if (!contained.some(c=>c.noSum)) add([...inside].filter(i=>!covered.has(i)),45*size-contained.reduce((s,c)=>s+c.sum,0),`45의 법칙(${group.map(h=>h.name).join('+')})`);
+        if (!touching.some(c=>c.noSum)) add(touching.flatMap(c=>c.cells.filter(i=>!inside.has(i))),touching.reduce((s,c)=>s+c.sum,0)-45*size,`45의 법칙(${group.map(h=>h.name).join('+')} 바깥)`);
       });
     }
     const constraints=units.map(u=>({...u,type:'unit'})).concat(boundaries.map(u=>({...u,type:'boundary'})));
@@ -124,7 +124,7 @@ const KillerDeduction = (() => {
         reduce(u.cells.filter(j=>j!==i).map(j=>[j,ALL^bit]),`${pos(i)} = ${digits(bit)[0]} → ${u.name}의 다른 칸에서 ${digits(bit)[0]} 제외`,[i],'single');
       }
       if(contradiction)return;
-      const mandatory=u.full?ALL:cageFilter(u);
+      const mandatory=u.full?ALL:(u.noSum?0:cageFilter(u));
       if(contradiction)return;
       for(const n of digits(mandatory)) {
         const cells=u.cells.filter(i=>masks[i]&(1<<n));
@@ -226,10 +226,10 @@ const KillerDeduction = (() => {
       }
       if(key.length>shown.length)lines.push(`(앞선 ${key.length-shown.length}단계 생략)`);
       shown.forEach(s=>lines.push(s.reason));
-      return {r,c,answer,level,stepsCount:steps.length,proof:steps,badgeText:`${LEVEL_NAME[level]} · ${key.length||1}단계`,posName:pos(i),cageInfo:`케이지 합 ${cage.sum}`,
+      return {r,c,answer,level,stepsCount:steps.length,proof:steps,badgeText:`${LEVEL_NAME[level]} · ${key.length||1}단계`,posName:pos(i),cageInfo:cage?(cage.noSum?'케이지':`케이지 합 ${cage.sum}`):'',
         explanation:`${lines.map((l,k)=>`${k+1}. ${l}`).join('\n')}\n→ ${pos(i)}은 ${answer}입니다.`};
     }
     return null;
   }
-  return {solve,hint,count,combos,topology};
+  return {solve,hint,count,combos,topology,clearTopology:(c)=>topologyCache.delete(c)};
 })();

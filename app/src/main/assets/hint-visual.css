@@ -34,6 +34,7 @@
 #hint-visual-layer .hv-ans { fill: var(--hv-ans); }
 #hint-visual-layer .hv-label-bg { fill: var(--hv-label-bg); opacity: .94; }
 #hint-visual-layer .hv-label { fill: var(--hv-label-fg); font-weight: 700; }
+#hint-visual-layer .hv-sum-link { stroke: var(--hv-area); stroke-width: 1; stroke-dasharray: 2 2; }
 
 /* 단계 전환 시 부드럽게 나타남 (모션 감소 설정이면 생략) */
 #hint-visual-layer .hv-animate { animation: hvIn .22s ease-out; }
@@ -109,3 +110,4 @@ body.hint-visual-on #app.theme-dark #hint-logic-text .hv-active { background: rg
 #hint-logic-text .hv-detail li.no { color: #94a3b8; list-style: none; margin-left: -12px; }
 #app.theme-dark #hint-logic-text .hv-detail li.ok { color: #86efac; }
 #hint-logic-text .hv-detail li:hover { background: none !important; }
+#sudoku-board .cell-cage-sum.no-sum,.cell-cage-sum.no-sum{opacity:.75;font-style:italic;}

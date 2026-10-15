@@ -4,14 +4,20 @@
  p.findImmediateHint=function(){
   return this.generator.findShortestDeduction(this.board, this.cages);
  };
- p.showImmediateHint=function(){
-  const h=this.findImmediateHint();
-  if(!h){this.showToast('지금 판에서는 사람이 한두 단계로 확정할 수 있는 칸이 없습니다. 자동 메모로 후보를 정리하거나 다른 곳을 먼저 채워 보세요. 힌트는 차감하지 않았습니다.',4500);return;}
-  const unlimited=this.rules.initialHints==='unlimited';
-  const penalty=unlimited||this.hintsRemaining>0?30:50;
-  if(!unlimited&&this.hintsRemaining>0)this.hintsRemaining--;
-  this.hintsUsed=(this.hintsUsed||0)+1;this.score-=penalty;this.resetCombo('힌트 확인으로 콤보 리셋');this.updateHintBadge();this.dom.gameScore.textContent=this.score;
+ p.showImmediateHint=function(isRecall=false){
+  let h;
+  if(isRecall&&this.unsolvedHint&&this.board&&this.board[this.unsolvedHint.r]&&this.board[this.unsolvedHint.r][this.unsolvedHint.c].val===0){
+   h=this.unsolvedHint;
+  }else{
+   h=this.findImmediateHint();
+   if(!h){this.showToast('지금 판에서는 사람이 한두 단계로 확정할 수 있는 칸이 없습니다. 자동 메모로 후보를 정리하거나 다른 곳을 먼저 채워 보세요. 힌트는 차감하지 않았습니다.',4500);return;}
+   const unlimited=this.rules.initialHints==='unlimited';
+   const penalty=unlimited||this.hintsRemaining>0?30:50;
+   if(!unlimited&&this.hintsRemaining>0)this.hintsRemaining--;
+   this.hintsUsed=(this.hintsUsed||0)+1;this.score-=penalty;this.resetCombo('힌트 확인으로 콤보 리셋');this.updateHintBadge();this.dom.gameScore.textContent=this.score;
+  }
   this.selectCell(h.r,h.c);this.pendingHint={...h,board:this.board};
+  this.unsolvedHint=this.pendingHint;this.hideHintRecallFab?.();
   this.dom.hintCardBadge.textContent=h.badgeText;this.dom.hintTargetPos.textContent=h.posName;this.dom.hintCageInfo.textContent=h.cageInfo;this.dom.hintLogicText.textContent=h.explanation;this.dom.hintAnswerVal.textContent=h.answer;
   this.dom.floatingHintCard.classList.remove('hidden');
   document.querySelector(`#sudoku-board .cell[data-r="${h.r}"][data-c="${h.c}"]`)?.classList.add('hint-target-highlight');

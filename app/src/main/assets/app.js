@@ -593,7 +593,8 @@ class SumdokuApp {
         easy: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
         medium: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
         hard: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
-        expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
+        expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
+        lunatic: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
       }
     };
   }
@@ -615,7 +616,8 @@ class SumdokuApp {
         easy: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
         medium: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
         hard: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
-        expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
+        expert: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 },
+        lunatic: { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 }
       }
     };
     this.saveStats();
@@ -633,6 +635,7 @@ class SumdokuApp {
     isWin = isWin && this.score >= 0;
     const completed = this.board && this.solution && this.board.every((row,r) => row.every((cell,c) => cell.val === this.solution[r][c]));
     const eligible = !!(isWin && completed && this.resultReason !== 'forfeit');
+    if (this.stats.byDiff && !this.stats.byDiff.lunatic) this.stats.byDiff.lunatic = { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 };
     const detail = this.stats.byDiff[this.difficulty];
     if (detail) {
       detail.trackedGames = (detail.trackedGames || 0) + 1;
@@ -767,6 +770,9 @@ class SumdokuApp {
 
     setTxt('stat-expert-wins', `${this.stats.byDiff.expert.wins}승`);
     setHtml('stat-expert-best', formatTime(this.stats.byDiff.expert.bestTime));
+    if (!this.stats.byDiff.lunatic) this.stats.byDiff.lunatic = { wins: 0, bestTime: null, totalTime: 0, bestScore: 0 };
+    setTxt('stat-lunatic-wins', this.stats.byDiff.lunatic.wins + '승');
+    setHtml('stat-lunatic-best', formatTime(this.stats.byDiff.lunatic.bestTime));
   }
 
   // ----------------- 이어하기 -----------------
@@ -1330,8 +1336,9 @@ class SumdokuApp {
         if (d === 'medium') return window.I18N.t('diff_medium');
         if (d === 'hard') return window.I18N.t('diff_hard');
         if (d === 'expert') return window.I18N.t('diff_expert');
+        if (d === 'lunatic') return window.I18N.t('diff_lunatic');
       }
-      const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+      const diffNames = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' };
       return diffNames[d] || d;
     };
     const diffText = getDiffName(diff);
@@ -2870,7 +2877,7 @@ class SumdokuApp {
       localStorage.setItem('sumdoku_selected_diff', diff);
     }
     this.gameMode = mode;
-    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || diff.toUpperCase();
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[diff] || diff.toUpperCase();
     this.updateDifficultyDisplay();
     this.updateModeDisplay();
 
@@ -2898,7 +2905,7 @@ class SumdokuApp {
 
     // 타임어택 제한 시간 설정
     if (this.gameMode === 'timeattack') {
-      const limitMap = { easy: 600, medium: 720, hard: 900, expert: 1200 };
+      const limitMap = { easy: 600, medium: 720, hard: 900, expert: 1200, lunatic: 1500 };
       this.timeLimitTotal = limitMap[diff] || 600;
       this.timeRemaining = this.timeLimitTotal;
     } else if (this.gameMode === 'battle' && this.battleMode === 'score') {
@@ -3051,7 +3058,7 @@ class SumdokuApp {
         if (cage.labelCell[0] === r && cage.labelCell[1] === c) {
           const sumEl = document.createElement('span');
           sumEl.className = 'cell-cage-sum';
-          sumEl.textContent = cage.sum;
+          sumEl.textContent = cage.noSum ? '?' : cage.sum; if (cage.noSum) sumEl.classList.add('no-sum');
           cellEl.appendChild(sumEl);
           cellEl.classList.add('has-cage-sum');
         }
@@ -3949,7 +3956,7 @@ class SumdokuApp {
       const sub = this.isDaily
         ? '오늘의 데일리 퍼즐을 성공적으로 정복하셨습니다!'
         : '모든 케이지 합계와 스도쿠 제약을 완벽한 논리로 해결했습니다!';
-      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[this.difficulty] || this.difficulty;
 
       this.showGameResultModal({
         status: 'win',
@@ -3997,7 +4004,7 @@ class SumdokuApp {
     this.clearOngoingGame();
 
     setTimeout(() => {
-      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[this.difficulty] || this.difficulty;
       const isUnlimited = this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit;
       const maxDisplay = isUnlimited ? '∞' : this.maxMistakes;
       const mistakeTitle = isUnlimited ? '실수' : `${this.maxMistakes}회 실수`;
@@ -4044,7 +4051,7 @@ class SumdokuApp {
     this.recordGameEnd(false);
     this.clearOngoingGame();
     setTimeout(() => {
-      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[this.difficulty] || this.difficulty;
+      const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[this.difficulty] || this.difficulty;
       this.showGameResultModal({
         status: 'fail',
         title: '시간 초과!',
@@ -4236,7 +4243,7 @@ class SumdokuApp {
       return;
     }
 
-    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' };
 
     list.forEach(rep => {
       const card = document.createElement('div');
@@ -4310,7 +4317,7 @@ class SumdokuApp {
     });
     this.pauseReplayPlay();
 
-    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' };
+    const diffKr = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' };
     const dLabel = diffKr[replay.difficulty] || replay.difficulty || '일반';
     const isBattle = replay.mode === 'battle';
 
@@ -4422,7 +4429,7 @@ class SumdokuApp {
           if (cage.labelCell && cage.labelCell[0] === r && cage.labelCell[1] === c) {
             const sumEl = document.createElement('span');
             sumEl.className = 'cell-cage-sum';
-            sumEl.textContent = cage.sum;
+            sumEl.textContent = cage.noSum ? '?' : cage.sum; if (cage.noSum) sumEl.classList.add('no-sum');
             cell.appendChild(sumEl);
             cell.classList.add('has-cage-sum');
           }
@@ -4622,7 +4629,7 @@ class SumdokuApp {
             if (cage.labelCell && cage.labelCell[0] === r && cage.labelCell[1] === c) {
               const sumEl = document.createElement('span');
               sumEl.className = 'cell-cage-sum';
-              sumEl.textContent = cage.sum;
+              sumEl.textContent = cage.noSum ? '?' : cage.sum; if (cage.noSum) sumEl.classList.add('no-sum');
               cell.appendChild(sumEl);
               cell.classList.add('has-cage-sum');
             }
@@ -4769,8 +4776,9 @@ class SumdokuApp {
         if (diff === 'medium') return window.I18N.t('diff_medium');
         if (diff === 'hard') return window.I18N.t('diff_hard');
         if (diff === 'expert') return window.I18N.t('diff_expert');
+        if (diff === 'lunatic') return window.I18N.t('diff_lunatic');
       }
-      return { easy: '초급', medium: '중급', hard: '고급', expert: '전문가' }[diff] || (diff ? diff.toUpperCase() : '');
+      return { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[diff] || (diff ? diff.toUpperCase() : '');
     };
     this.dom.gameDiffLabel.textContent = getDiffLabel(this.difficulty, this.isDaily);
   }

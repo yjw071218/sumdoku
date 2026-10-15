@@ -1,6 +1,6 @@
 /* First launch language selection and explicit Google Play Games backups. */
 (() => {
- const keys = ['settings','stats','daily_cleared','daily_session','ongoing_game','replays','achievements','ach_counters','prefs_v2','scratchpad','selected_diff','last_diff','last_mode','theme'].map(k=>'sumdoku_'+k);
+ const keys = ['settings','stats','daily_cleared','daily_session','ongoing_game','replays','achievements','ach_counters','prefs_v2','scratchpad','selected_diff','last_diff','last_mode','theme','rating'].map(k=>'sumdoku_'+k);
  const bridge=()=>window.AndroidBridge;
  let busy=false;
  const tr=(ko,en)=>window.I18N?.currentLang==='ko'?ko:en;
@@ -44,7 +44,7 @@
  };
  function initialize(){
   if(!localStorage.getItem('sumdoku_language')) {
-   const el=document.createElement('div');el.className='modal-backdrop';el.id='first-language';
+   const el=document.createElement('div');el.className='modal-backdrop';el.id='first-language';el.dataset.selectId='first-language';
    el.innerHTML='<section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="first-language-title"><h3 id="first-language-title">언어 선택 · Choose your language</h3><div class="language-options"></div></section>';
    for(const lang of I18N.languages){const b=document.createElement('button');b.className='btn btn-secondary';b.textContent=lang.name;b.lang=lang.code;b.onclick=()=>{I18N.setLanguage(lang.code);window.app?.syncPersistentBackup();el.remove();};el.querySelector('.language-options').append(b);}
    document.getElementById('app').append(el);el.querySelector('button').focus();

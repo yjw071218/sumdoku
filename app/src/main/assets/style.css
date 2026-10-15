@@ -1102,7 +1102,7 @@ body.notes-size-xlarge .note-num {
 }
 
 .key-btn:active {
-  transform: scale(0.92);
+  transform: translateY(1px);
   background: #eff6ff;
 }
 
@@ -1463,6 +1463,7 @@ body.notes-size-xlarge .note-num {
 .diff-tag.medium { background: #fef3c7; color: #b45309; }
 .diff-tag.hard { background: #fee2e2; color: #b91c1c; }
 .diff-tag.expert { background: #ede9fe; color: #6d28d9; }
+.diff-tag.lunatic { background: #fdf2f8; color: #be185d; }
 
 .diff-wins {
   font-size: 0.85rem;
@@ -1783,6 +1784,15 @@ input:checked + .slider::before {
 .highlight-expert {
   color: #7c3aed;
   background: #ede9fe;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.highlight-lunatic {
+  color: #db2777;
+  background: #fdf2f8;
   padding: 2px 7px;
   border-radius: 6px;
   font-weight: 800;
@@ -3383,6 +3393,7 @@ input:checked + .slider:before {
 .replay-diff-badge.medium { background: #e0f2fe; color: #0369a1; }
 .replay-diff-badge.hard { background: #ffedd5; color: #c2410c; }
 .replay-diff-badge.expert { background: #f3e8ff; color: #7e22ce; }
+.replay-diff-badge.lunatic { background: #fce7f3; color: #9d174d; }
 
 .replay-result-tag {
   font-size: 0.78rem;
@@ -3993,10 +4004,13 @@ input:checked + .slider:before {
 .theme-dark .replay-card-footer {
   border-top-color: #334155 !important;
 }
+.theme-dark .replay-diff-badge.lunatic { background: #700733; color: #fbcfe8; }
 .theme-dark .replay-diff-badge.expert { background: #581c87; color: #e9d5ff; }
 .theme-dark .replay-diff-badge.hard { background: #7c2d12; color: #fed7aa; }
 .theme-dark .replay-diff-badge.medium { background: #075985; color: #bae6fd; }
 .theme-dark .replay-diff-badge.easy { background: #14532d; color: #bbf7d0; }
+.theme-dark .diff-tag.lunatic { background: #831843; color: #fbcfe8; }
+.theme-dark .highlight-lunatic { color: #f472b6; background: rgba(219, 39, 119, 0.2); }
 .theme-dark .replay-result-tag.win { background: #1e3a8a; color: #93c5fd; }
 .theme-dark .replay-result-tag.fail { background: #7f1d1d; color: #fca5a5; }
 

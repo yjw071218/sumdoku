@@ -22,7 +22,8 @@
  '이미 놓인 숫자를 같은 행·열·박스·케이지의 다른 칸 후보에서 지웁니다.':['Eliminate placed digits from other cells in the same row, column, box and cage.','配置済みの数字を同じ行・列・ボックス・ケージの他のマスの候補から除きます。','从同行、列、宫和笼子的其他格候选数中排除已填数字。','從同行、列、宮和籠子的其他格候選數中排除已填數字。','Descarta los dígitos colocados de las otras celdas de la misma fila, columna, caja y jaula.','Éliminez les chiffres placés des autres cases de la même ligne, colonne, bloc et cage.','Gesetzte Ziffern aus anderen Zellen derselben Zeile, Spalte, desselben Blocks und Käfigs streichen.'],
  '킬러 스도쿠의 정답은 하나뿐입니다. 이 칸에 다른 숫자를 넣어야만 모든 행·열·박스·케이지 조건을 동시에 만족할 수 있습니다.':['This puzzle has one solution. A different digit is needed here to satisfy all row, column, box and cage constraints.','このパズルの解は一つです。行・列・ボックス・ケージの条件をすべて満たすには、このマスに別の数字が必要です。','此题只有一个解。此格需填其他数字才能满足所有行、列、宫和笼子的条件。','此題只有一個解。此格需填其他數字才能滿足所有行、列、宮和籠子的條件。','Este puzle tiene una solución. Hace falta otro dígito aquí para cumplir todas las restricciones.','Cette grille a une seule solution. Un autre chiffre est nécessaire ici pour respecter toutes les contraintes.','Dieses Rätsel hat eine Lösung. Hier ist eine andere Ziffer nötig, um alle Bedingungen zu erfüllen.'],
  'Previous step':['Previous step','前の手順','上一步','上一步','Paso anterior','Étape précédente','Vorheriger Schritt'],
- 'Next step':['Next step','次の手順','下一步','下一步','Paso siguiente','Étape suivante','Nächster Schritt']
+ 'Next step':['Next step','次の手順','下一步','下一步','Paso siguiente','Étape suivante','Nächster Schritt'],
+ '힌트 다시 보기':['Reopen hint','ヒントを再表示','重新查看提示','重新查看提示','Reabrir pista','Rouvrir l’indice','Tipp erneut anzeigen']
  };
  const t=window.UI_TRANSLATIONS=window.UI_TRANSLATIONS||{};
  for(const [key,values] of Object.entries(rows)) langs.forEach((lang,i)=>{(t[lang] ||= {})[key]=values[i];});

@@ -19,6 +19,9 @@ def admobInterstitialId = findProperty('sumdoku.admob.interstitialId') ?: 'ca-ap
 def admobRewardedId = findProperty('sumdoku.admob.rewardedId') ?: 'ca-app-pub-3940256099942544/5224354917'
 
 def gamesId = (findProperty('sumdoku.games.appId') ?: '').toString()
+// v1.1.19 Play 게임즈 리더보드 ID (Play Console에서 생성 후 gradle.properties 또는 -P 로 지정)
+def lbKeys = ['rating','easy','medium','hard','expert','lunatic','daily']
+def leaderboards = lbKeys.collect { k -> def v = (findProperty("sumdoku.games.lb." + k) ?: '').toString(); if (v && !(v ==~ /[A-Za-z0-9_-]+/)) throw new GradleException('Invalid leaderboard ID: ' + k); v ? k + '=' + v : null }.findAll { it }.join(';')
 if (gamesId && !(gamesId ==~ /[0-9]+/)) throw new GradleException('Invalid Games app ID')
 
 android {
@@ -29,8 +32,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 35
-        versionCode 128
-        versionName '1.1.18'
+        versionCode 129
+        versionName '1.1.19'
     }
 
     buildFeatures {
@@ -54,6 +57,7 @@ android {
         github {
             dimension 'store'
             buildConfigField 'boolean', 'GAMES_CONFIGURED', 'false'
+            buildConfigField 'String', 'LEADERBOARDS', '""'
             signingConfig signingConfigs.debug
             buildConfigField 'boolean', 'SELF_UPDATE', 'true'
             buildConfigField 'String', 'DISTRIBUTION', '"github"'
@@ -64,6 +68,7 @@ android {
         // Google Play 배포판: 자체 업데이트 제거, 광고·광고 제거 구매 포함
         play {
             buildConfigField 'boolean', 'GAMES_CONFIGURED', gamesId ? 'true' : 'false'
+            buildConfigField 'String', 'LEADERBOARDS', "\"${leaderboards}\""
             resValue 'string', 'game_services_project_id', gamesId ?: '0'
             dimension 'store'
             signingConfig signingConfigs.findByName('upload') ?: signingConfigs.debug

@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="motion.css">
   <link rel="stylesheet" href="hint-visual.css">
   <link rel="stylesheet" href="replay-polish.css">
+  <link rel="stylesheet" href="hint-recall.css">
+  <link rel="stylesheet" href="rating.css">
   <link rel="stylesheet" href="battle-modes.css">
   <link rel="stylesheet" href="status-bar.css">
 </head>
@@ -998,11 +1000,11 @@
                 </div>
               </div>
 
-              <h3 class="section-title">난이도별 최단 기록 (4단계)</h3>
+              <h3 class="section-title" data-i18n="stats_diff_records_title">난이도별 최단 기록 (5단계)</h3>
               <div class="diff-records">
                 <div class="diff-record-item">
                   <div class="diff-info">
-                    <span class="diff-tag easy">초급</span>
+                    <span class="diff-tag easy" data-i18n="diff_easy">초급</span>
                     <span class="diff-wins" id="stat-easy-wins">0승</span>
                   </div>
                   <div class="best-time" id="stat-easy-best">기록 없음</div>
@@ -1010,7 +1012,7 @@
 
                 <div class="diff-record-item">
                   <div class="diff-info">
-                    <span class="diff-tag medium">중급</span>
+                    <span class="diff-tag medium" data-i18n="diff_medium">중급</span>
                     <span class="diff-wins" id="stat-medium-wins">0승</span>
                   </div>
                   <div class="best-time" id="stat-medium-best">기록 없음</div>
@@ -1018,7 +1020,7 @@
 
                 <div class="diff-record-item">
                   <div class="diff-info">
-                    <span class="diff-tag hard">고급</span>
+                    <span class="diff-tag hard" data-i18n="diff_hard">고급</span>
                     <span class="diff-wins" id="stat-hard-wins">0승</span>
                   </div>
                   <div class="best-time" id="stat-hard-best">기록 없음</div>
@@ -1026,10 +1028,18 @@
 
                 <div class="diff-record-item">
                   <div class="diff-info">
-                    <span class="diff-tag expert">전문가</span>
+                    <span class="diff-tag expert" data-i18n="diff_expert">전문가</span>
                     <span class="diff-wins" id="stat-expert-wins">0승</span>
                   </div>
                   <div class="best-time" id="stat-expert-best">기록 없음</div>
+                </div>
+
+                <div class="diff-record-item">
+                  <div class="diff-info">
+                    <span class="diff-tag lunatic" data-i18n="diff_lunatic">루나틱</span>
+                    <span class="diff-wins" id="stat-lunatic-wins">0승</span>
+                  </div>
+                  <div class="best-time" id="stat-lunatic-best">기록 없음</div>
                 </div>
               </div>
 
@@ -1181,34 +1191,42 @@
         <div class="difficulty-options">
           <button class="diff-card-btn" data-diff="easy">
             <div class="diff-card-header">
-              <span class="diff-tag easy">초급 (Easy)</span>
-              <span class="diff-hint-count">8개 확정 앵커</span>
+              <span class="diff-tag easy" data-i18n="diff_easy_title">초급 (Easy)</span>
+              <span class="diff-hint-count" data-i18n="diff_easy_hint">8개 확정 앵커</span>
             </div>
             <span class="diff-card-desc" data-i18n="diff_easy_desc">직관적인 단서와 빠른 소거법 중심</span>
           </button>
 
           <button class="diff-card-btn" data-diff="medium">
             <div class="diff-card-header">
-              <span class="diff-tag medium">중급 (Medium)</span>
-              <span class="diff-hint-count">6개 확정 앵커</span>
+              <span class="diff-tag medium" data-i18n="diff_medium_title">중급 (Medium)</span>
+              <span class="diff-hint-count" data-i18n="diff_medium_hint">6개 확정 앵커</span>
             </div>
             <span class="diff-card-desc" data-i18n="diff_medium_desc">케이지 합 조합과 균형 잡힌 연역 추론</span>
           </button>
 
           <button class="diff-card-btn" data-diff="hard">
             <div class="diff-card-header">
-              <span class="diff-tag hard">고급 (Hard)</span>
-              <span class="diff-hint-count">4~5개 확정 앵커</span>
+              <span class="diff-tag hard" data-i18n="diff_hard_title">고급 (Hard)</span>
+              <span class="diff-hint-count" data-i18n="diff_hard_hint">4~5개 확정 앵커</span>
             </div>
             <span class="diff-card-desc" data-i18n="diff_hard_desc">후보군 소거와 숨은 단일 후보 활용</span>
           </button>
 
           <button class="diff-card-btn active" data-diff="expert">
             <div class="diff-card-header">
-              <span class="diff-tag expert">전문가 (Expert)</span>
-              <span class="diff-hint-count highlight-expert">★ 0~2개 확정</span>
+              <span class="diff-tag expert" data-i18n="diff_expert_title">전문가 (Expert)</span>
+              <span class="diff-hint-count highlight-expert" data-i18n="diff_expert_hint">★ 0~2개 확정</span>
             </div>
             <span class="diff-card-desc" data-i18n="diff_expert_desc">단 0~2개의 앵커만 주어지는 최고 난도 · 100% 순수 연역 논리</span>
+          </button>
+
+          <button class="diff-card-btn" data-diff="lunatic">
+            <div class="diff-card-header">
+              <span class="diff-tag lunatic" data-i18n="diff_lunatic_title">루나틱 (Lunatic)</span>
+              <span class="diff-hint-count highlight-lunatic" data-i18n="diff_lunatic_hint">★ 0개 앵커 + 합계 비공개</span>
+            </div>
+            <span class="diff-card-desc" data-i18n="diff_lunatic_desc">0개 앵커 + 일부 케이지 합계 생략 · 극상의 100% 순수 연역 논리</span>
           </button>
         </div>
         <div class="modal-footer">
@@ -1437,10 +1455,11 @@
 
           <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-top: 10px; margin-bottom: 6px;">배틀 난이도 선택</div>
           <div class="battle-diff-pills" id="battle-diff-selector">
-            <button class="battle-diff-btn" data-bdiff="easy">초급</button>
-            <button class="battle-diff-btn" data-bdiff="medium">중급</button>
-            <button class="battle-diff-btn" data-bdiff="hard">고급</button>
-            <button class="battle-diff-btn active" data-bdiff="expert">전문가</button>
+            <button class="battle-diff-btn" data-bdiff="easy" data-i18n="diff_easy">초급</button>
+            <button class="battle-diff-btn" data-bdiff="medium" data-i18n="diff_medium">중급</button>
+            <button class="battle-diff-btn" data-bdiff="hard" data-i18n="diff_hard">고급</button>
+            <button class="battle-diff-btn active" data-bdiff="expert" data-i18n="diff_expert">전문가</button>
+            <button class="battle-diff-btn" data-bdiff="lunatic" data-i18n="diff_lunatic">루나틱</button>
           </div>
 
           <div class="battle-ip-box">
@@ -1842,11 +1861,15 @@
   <script src="cloud-games.js"></script>
   <script src="translations-hint-ui.js"></script>
   <script src="hint-i18n.js"></script>
+  <script src="translations-rating.js"></script>
+  <script src="diff-names.js"></script>
   <script src="localize-ui.js"></script>
   <script src="choice-ui.js"></script>
   <script src="status-bar.js"></script>
   <script src="cage-sum-select.js"></script>
   <script src="game-state-guard.js"></script>
   <script src="replay-polish.js"></script>
+  <script src="hint-recall.js"></script>
+  <script src="rating.js"></script>
 </body>
 </html>

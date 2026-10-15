@@ -1,0 +1,90 @@
+/* v1.1.18 힌트 재호출 플로팅 버튼 (Recall FAB)
+ * 힌트 창을 닫은 뒤 아직 해당 칸을 채우지 않았을 때 우측에 동그랗게 떠서 클릭 시 힌트를 다시 볼 수 있게 합니다. */
+.hint-recall-fab {
+  position: fixed;
+  right: 14px;
+  bottom: 230px;
+  z-index: 45;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.18s ease;
+  animation: fabPopIn 0.26s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hint-recall-fab.hidden {
+  display: none !important;
+}
+
+.hint-recall-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.55);
+}
+
+.hint-recall-fab:active {
+  transform: scale(0.94);
+}
+
+.hint-recall-fab .fab-icon {
+  width: 22px;
+  height: 22px;
+  stroke: #ffffff;
+  stroke-width: 2.2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.hint-recall-fab .fab-pos-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1;
+  color: #78350f;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1px 3px;
+  border-radius: 4px;
+  margin-top: 1px;
+  max-width: 38px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes fabPopIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 테마 대응 */
+.theme-dark .hint-recall-fab,
+#app.theme-dark .hint-recall-fab {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border-color: #334155;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.theme-dark .hint-recall-fab .fab-pos-badge,
+#app.theme-dark .hint-recall-fab .fab-pos-badge {
+  background: rgba(15, 23, 42, 0.9);
+  color: #fde68a;
+}
+
+.theme-sepia .hint-recall-fab,
+#app.theme-sepia .hint-recall-fab {
+  background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+  border-color: #fef3c7;
+}

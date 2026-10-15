@@ -77,7 +77,8 @@
   const center = (g, i) => { const b = g.cells[i]; return [b.x + b.w / 2, b.y + b.h / 2]; };
   // 후보 숫자 d 의 칸 안 위치(3×3 미니 격자)
   const candPos = (g, i, d) => { const b = g.cells[i]; const k = d - 1; return [b.x + b.w * ((k % 3) + 0.5) / 3, b.y + b.h * (Math.floor(k / 3) + 0.5) / 3]; };
-  const pos = i => `${Math.floor(i / 9) + 1}행 ${i % 9 + 1}열`;
+  const tr = s => (window.I18N && typeof window.I18N.text === 'function' ? window.I18N.text(s) : s);
+  const pos = i => tr(`${Math.floor(i / 9) + 1}행 ${i % 9 + 1}열`);
 
   /* v1.1.18 · 메모(후보 표시) 연동
      후보 숫자가 필요한 단계에서 사용자의 메모를 확인합니다.
@@ -159,16 +160,41 @@
     });
     // 6) 라벨: 칸 위쪽(맨 윗줄이면 아래쪽)에 말풍선처럼 띄우고 보드 밖으로 나가지 않게 맞춥니다.
     const placed = [];
-    (v.labels || []).forEach(({ i, t }) => {
+    // 해당 단계가 다루는 케이지의 합계를 옆에 Σ로 다시 표시합니다.
+    // 기존 후보 위치·크기는 유지하며 합계가 가려져도 이 배지에서 읽을 수 있습니다.
+    const touched = new Set([...(v.area || []), ...(v.area2 || []), ...(v.src || []),
+      ...(v.digits || []).map(d => d.i), ...(v.arrows || []).flat(),
+      ...(v.labels || []).map(l => l.i), v.target, v.focus].filter(Number.isInteger));
+    const labels = (v.labels || []).map(l => ({ ...l }));
+    (window.app?.cages || []).forEach(cage => {
+      if (cage.noSum) return;
+      const ids = cage.cells.map(([r, c]) => r * 9 + c);
+      if (!ids.some(i => touched.has(i))) return;
+      const i = ids.find(i => board().querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"] .cell-cage-sum`));
+      if (i === undefined) return;
+      const existing = labels.find(l => l.i === i && l.t === `Σ${cage.sum}`);
+      if (existing) existing.cageSum = true;
+      else labels.push({ i, t: `Σ${cage.sum}`, cageSum: true });
+    });
+    labels.forEach(({ i, t, cageSum }) => {
       const b = g.cells[i];
       const lfs = Math.max(10, cw * 0.3), h = lfs * 1.55;
-      const text = el('text', { class: 'hv-label', 'font-size': lfs }, root); text.textContent = t;
+      const text = el('text', { class: 'hv-label' + (cageSum ? ' hv-cage-sum' : ''), 'font-size': lfs, 'data-cell': i }, root); text.textContent = t;
       let w; try { w = text.getComputedTextLength() + lfs * 0.9; } catch (_) { w = t.length * lfs * 0.62 + lfs * 0.9; }
       let x = b.x + b.w / 2 - w / 2, y = Math.floor(i / 9) === 0 ? b.y + b.h + 2 : b.y - h - 2;
+      if (cageSum) {
+        x = b.x + b.w + 2;
+        if (x + w > g.w - 2) x = b.x - w - 2;
+        y = b.y + 2;
+      }
       x = Math.max(2, Math.min(g.w - w - 2, x)); y = Math.max(2, Math.min(g.h - h - 2, y));
       // 라벨끼리 겹치면 아래로 비켜 놓습니다.
       for (const q of placed) if (x < q.x + q.w && q.x < x + w && y < q.y + q.h && q.y < y + h) y = Math.min(g.h - h - 2, q.y + q.h + 2);
       placed.push({ x, y, w, h });
+      if (cageSum) {
+        const [cx, cy] = center(g, i);
+        el('line', { x1: cx, y1: cy, x2: x + w / 2, y2: y + h / 2, class: 'hv-sum-link' }, root);
+      }
       const pill = el('rect', { x, y, width: w, height: h, rx: h / 2, class: 'hv-label-bg' }, root);
       root.insertBefore(pill, text);
       text.setAttribute('x', x + w / 2); text.setAttribute('y', y + h / 2);
@@ -181,7 +207,7 @@
     if (!needs.length && !erase.length) return null;
     const box = document.createElement('div');
     box.className = 'hv-memo';
-    const head = document.createElement('div'); head.className = 'hv-memo-head'; head.textContent = '✎ 메모 확인'; box.append(head);
+    const head = document.createElement('div'); head.className = 'hv-memo-head'; head.textContent = tr('✎ 메모 확인'); box.append(head);
     const row = (i, ds, cls, text) => {
       const r = document.createElement('div'); r.className = 'hv-memo-row ' + cls;
       const a = document.createElement('span'); a.className = 'hv-memo-pos'; a.textContent = pos(i);
@@ -190,9 +216,9 @@
       r.append(a, b, c); box.append(r);
     };
     needs.forEach(n => row(n.i, n.ds, n.miss.length ? 'miss' : 'have',
-      !n.miss.length ? '✓ 메모 있음' : !n.have.length ? '메모 없음 — 적어 두세요' : `${n.miss.join('·')} 메모 추가 필요`));
+      !n.miss.length ? tr('✓ 메모 있음') : !n.have.length ? tr('메모 없음 — 적어 두세요') : tr(`${n.miss.join('·')} 메모 추가 필요`)));
     const by = new Map(); erase.forEach(({ i, d }) => { const a = by.get(i) || []; a.push(d); by.set(i, a); });
-    by.forEach((ds, i) => row(i, ds, 'erase', '메모에서 지우기'));
+    by.forEach((ds, i) => row(i, ds, 'erase', tr('메모에서 지우기')));
     return box;
   };
 
@@ -200,19 +226,19 @@
   const attachDetail = (li, k, detail) => {
     if (!detail || !detail.length || li.querySelector('.hv-more')) return;
     const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'hv-more'; btn.textContent = '자세히';
+    btn.type = 'button'; btn.className = 'hv-more'; btn.textContent = tr('자세히');
     btn.setAttribute('aria-expanded', 'false');
     const list = document.createElement('ul'); list.className = 'hv-detail'; list.hidden = true;
     detail.forEach(t => {
       const item = document.createElement('li');
-      item.textContent = t;
+      item.textContent = tr(t);
       if (/^✓/.test(t)) item.className = 'ok'; else if (/^✗/.test(t)) item.className = 'no';
       list.append(item);
     });
     btn.onclick = e => {
       e.stopPropagation();
       const open = list.hidden;
-      list.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? '접기' : '자세히';
+      list.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? tr('접기') : tr('자세히');
       if (state && state.index !== k) go(k, true);
       if (open) requestAnimationFrame(() => {
         const box = document.getElementById('hint-logic-text');
@@ -297,9 +323,9 @@
   };
 
   const show = p.showImmediateHint;
-  p.showImmediateHint = function () {
+  p.showImmediateHint = function (...args) {
     clear();
-    show.call(this);
+    show.apply(this, args);
     const h = this.pendingHint, card = this.dom.floatingHintCard;
     if (!h || !card || card.classList.contains('hidden') || !Array.isArray(h.steps) || !h.steps.length) return;
     const box = this.dom.hintLogicText;

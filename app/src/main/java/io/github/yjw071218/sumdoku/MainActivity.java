@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     /** 플레이판: 광고·광고 제거 구매 / GitHub판: 빈 동작 */
     private Monetization monetization;
     private CloudGames cloudGames;
+    private Leaderboards leaderboards;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final String PREFS_NAME = "sumdoku_app_prefs";
     private static final String KEY_HOT_VERSION = "hot_update_version";
@@ -227,6 +228,7 @@ public class MainActivity extends Activity {
         ));
 
         cloudGames = new CloudGames(this, webView);
+        leaderboards = new Leaderboards(this, webView);
         loadApp();
         monetization = new Monetization(this, webView, bannerHost);
         monetization.start();
@@ -431,6 +433,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void cloudSignIn() { if(cloudGames!=null) cloudGames.signIn(); }
         @JavascriptInterface public void cloudSave(String data) { if(cloudGames!=null) cloudGames.save(data); }
         @JavascriptInterface public void cloudLoad() { if(cloudGames!=null) cloudGames.load(); }
+        @JavascriptInterface public boolean isLeaderboardConfigured(String key) { return leaderboards != null && leaderboards.isConfigured(key); }
+        @JavascriptInterface public void submitLeaderboardScore(String key, String score) { try { if (leaderboards != null) leaderboards.submit(key, Long.parseLong(score)); } catch (NumberFormatException ignored) {} }
+        @JavascriptInterface public void showLeaderboard(String key) { if (leaderboards != null) leaderboards.show(key); }
 
         // ---------------- 배포판 · 광고 · 광고 제거 구매 ----------------
         @JavascriptInterface public String getDistribution() { return BuildConfig.DISTRIBUTION; }

@@ -200,9 +200,14 @@ body.hint-open #view-game .controls-column { min-height:0; }
 /* ===== v1.0.32 · 전반적 UI/UX 다듬기 ===== */
 :focus-visible { outline:2px solid var(--ui-accent, #3b82f6); outline-offset:2px; }
 .btn, .tool-btn, .key-btn, .icon-btn { -webkit-tap-highlight-color:transparent; transition:transform .12s ease, background-color .15s, box-shadow .15s; }
-.btn:active, .tool-btn:active, .key-btn:active, .icon-btn:active { transform:scale(.96); }
+.btn:active, .tool-btn:active, .icon-btn:active { transform:scale(.96); }
 .btn:disabled, .key-btn:disabled { opacity:.45; transform:none; }
 .key-btn { border-radius:12px; font-variant-numeric:tabular-nums; }
+/* v1.1.18 · 터치 반응성 & 씹힘 방지: 제스처 지연 제거, 자식 요소 이벤트 전파 방지, 히트박스 축소(scale) 제거 */
+.cell, #sudoku-board, #board-frame, .keypad, .keypad-grid, .key-btn, .tool-btn { touch-action: manipulation; }
+.cell > * { pointer-events: none !important; }
+.key-btn > * { pointer-events: none !important; }
+.key-btn:active { transform: translateY(1px) !important; }
 .toast { max-width:min(92vw, 420px); text-align:center; line-height:1.4; border-radius:12px; }
 .modal-card { border-radius:20px; }
 .modal-card h3 { line-height:1.3; }
