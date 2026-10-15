@@ -24,6 +24,8 @@
   if(lang==='ko')return raw;
   const s=normalize(raw),cacheKey=lang+'\0'+s;
   if(cache.has(cacheKey))return cache.get(cacheKey);
+  const dynamic=window.SumdokuDynI18n?.(s,lang);
+  if(dynamic!=null){cache.set(cacheKey,dynamic);return dynamic;}
   const key=known.get(s);
   let out=key?I18N.dictionaries[lang]?.[key]:null;
   out=out||dictionaries[lang]?.[s];

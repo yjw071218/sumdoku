@@ -1,0 +1,111 @@
+/* v1.1.18 · 힌트 과정 보드 오버레이 (hint-visual.js)
+   색 역할: 파랑 = 근거, 주황 테두리 = 확정할 칸, 빨강 = 지워지는 후보, 초록 = 확정 숫자,
+            보라 점선 = 지금 보는 영역, 주황 점선 = 함께 보는 보조 영역(예: 숨은 싱글의 박스) */
+#hint-visual-layer {
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;            /* 칸 선택·입력을 막지 않음 */
+  z-index: 6; overflow: visible;
+  --hv-area: #7c3aed; --hv-area2: rgba(234, 88, 12, .8);
+  --hv-src: rgba(37, 99, 235, .3); --hv-target: #f59e0b;
+  --hv-elim: #dc2626; --hv-cand: #2563eb; --hv-ans: #16a34a;
+  --hv-label-bg: #1e293b; --hv-label-fg: #ffffff; --hv-chip: rgba(255, 255, 255, .92);
+}
+#app.theme-dark #hint-visual-layer {
+  --hv-area: #c4b5fd; --hv-area2: rgba(251, 146, 60, .85);
+  --hv-src: rgba(96, 165, 250, .34); --hv-target: #fbbf24;
+  --hv-elim: #f87171; --hv-cand: #93c5fd; --hv-ans: #4ade80;
+  --hv-label-bg: #f1f5f9; --hv-label-fg: #0f172a; --hv-chip: rgba(15, 23, 42, .9);
+}
+#app.theme-sepia #hint-visual-layer { --hv-chip: rgba(253, 246, 227, .95); --hv-src: rgba(59, 130, 246, .18); }
+
+#hint-visual-layer .hv-src { fill: var(--hv-src); stroke: var(--hv-cand); stroke-width: 1.2; stroke-opacity: .55; }
+#hint-visual-layer .hv-area { fill: none; stroke: var(--hv-area); stroke-width: 2.6; stroke-dasharray: 7 4; stroke-linecap: round; }
+#hint-visual-layer .hv-area2 { fill: none; stroke: var(--hv-area2); stroke-width: 2.2; stroke-dasharray: 2 4; stroke-linecap: round; }
+#hint-visual-layer .hv-target { fill: none; stroke: var(--hv-target); stroke-width: 3; }
+#hint-visual-layer .hv-focus { fill: none; stroke: var(--hv-target); stroke-width: 1.5; stroke-dasharray: 3 3; opacity: .7; }
+#hint-visual-layer .hv-arrow { stroke: var(--hv-cand); stroke-width: 2; opacity: .8; stroke-linecap: round; }
+#hint-visual-layer .hv-arrow-head { fill: var(--hv-cand); }
+#hint-visual-layer text { text-anchor: middle; dominant-baseline: central; font-weight: 800; font-family: inherit; paint-order: stroke; }
+#hint-visual-layer .hv-elim-bg, #hint-visual-layer .hv-cand-bg { fill: var(--hv-chip); }
+#hint-visual-layer .hv-elim { fill: var(--hv-elim); }
+#hint-visual-layer .hv-strike { stroke: var(--hv-elim); stroke-width: 1.8; stroke-linecap: round; }
+#hint-visual-layer .hv-cand { fill: var(--hv-cand); }
+#hint-visual-layer .hv-ans-bg { fill: var(--hv-chip); stroke: var(--hv-ans); stroke-width: 2.2; }
+#hint-visual-layer .hv-ans { fill: var(--hv-ans); }
+#hint-visual-layer .hv-label-bg { fill: var(--hv-label-bg); opacity: .94; }
+#hint-visual-layer .hv-label { fill: var(--hv-label-fg); font-weight: 700; }
+
+/* 단계 전환 시 부드럽게 나타남 (모션 감소 설정이면 생략) */
+#hint-visual-layer .hv-animate { animation: hvIn .22s ease-out; }
+@keyframes hvIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* 힌트 카드: 단계 목록을 눌러서 볼 수 있게 */
+body.hint-visual-on #hint-logic-text .hint-steps li,
+body.hint-visual-on #hint-logic-text .hint-conclusion[role="button"] {
+  cursor: pointer; border-radius: 8px; padding: 3px 6px; margin-left: -6px;
+  transition: background-color .15s, box-shadow .15s;
+}
+body.hint-visual-on #hint-logic-text .hint-steps li:hover { background: rgba(124, 58, 237, .07); }
+body.hint-visual-on #hint-logic-text .hv-active {
+  background: rgba(124, 58, 237, .12); box-shadow: inset 3px 0 0 #7c3aed; font-weight: 600;
+}
+#app.theme-dark body.hint-visual-on #hint-logic-text .hv-active,
+body.hint-visual-on #app.theme-dark #hint-logic-text .hv-active { background: rgba(196, 181, 253, .16); box-shadow: inset 3px 0 0 #c4b5fd; }
+
+.hv-nav { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 0 0 auto; flex-shrink: 0; }
+.hint-target-row:has(.hv-nav) { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0; }
+.hint-target-row:has(.hv-nav) .hint-cage-info { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.hv-btn {
+  width: 30px; height: 26px; border-radius: 8px; border: 1px solid var(--ui-line, #e2e8f0);
+  background: var(--bg-surface, #fff); color: inherit; font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer;
+}
+.hv-btn:disabled { opacity: .35; cursor: default; }
+.hv-counter { min-width: 40px; text-align: center; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) { #hint-visual-layer .hv-animate { animation: none; } }
+
+/* v1.1.18 · 메모 연동
+   있는 메모 = 초록 고리, 없는 메모 = 굵은 주황 숫자 + 점선 고리, 지울 메모 = 빨간 고리 */
+#hint-visual-layer { --hv-note-have: #16a34a; --hv-note-need: #ea580c; }
+#app.theme-dark #hint-visual-layer { --hv-note-have: #4ade80; --hv-note-need: #fb923c; }
+#hint-visual-layer .hv-note-have { fill: rgba(22, 163, 74, .14); stroke: var(--hv-note-have); stroke-width: 2; }
+#hint-visual-layer .hv-cand-have { fill: var(--hv-note-have); }
+#hint-visual-layer .hv-note-need-bg { fill: var(--hv-chip); }
+#hint-visual-layer .hv-note-need { fill: none; stroke: var(--hv-note-need); stroke-width: 1.8; stroke-dasharray: 2.5 2; }
+#hint-visual-layer .hv-cand-need { fill: var(--hv-note-need); font-weight: 900; }
+#hint-visual-layer .hv-note-erase { fill: none; stroke: var(--hv-elim); stroke-width: 2; }
+
+#hint-logic-text .hv-memo {
+  margin: 6px 0 2px; padding: 6px 8px; border-radius: 8px;
+  background: rgba(234, 88, 12, .07); border: 1px solid rgba(234, 88, 12, .28); font-weight: 500;
+}
+#hint-logic-text .hv-memo-head { font-size: 12px; font-weight: 800; color: #c2410c; margin-bottom: 2px; }
+#hint-logic-text .hv-memo-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 12.5px; line-height: 1.5; }
+#hint-logic-text .hv-memo-pos { font-weight: 700; }
+#hint-logic-text .hv-memo-ds { font-size: 14px; font-weight: 900; letter-spacing: .5px; }
+#hint-logic-text .hv-memo-row.have .hv-memo-ds, #hint-logic-text .hv-memo-row.have .hv-memo-st { color: #15803d; }
+#hint-logic-text .hv-memo-row.miss .hv-memo-ds, #hint-logic-text .hv-memo-row.miss .hv-memo-st { color: #c2410c; font-weight: 800; }
+#hint-logic-text .hv-memo-row.erase .hv-memo-ds { color: #dc2626; text-decoration: line-through; }
+#hint-logic-text .hv-memo-row.erase .hv-memo-st { color: #dc2626; }
+#app.theme-dark #hint-logic-text .hv-memo { background: rgba(251, 146, 60, .1); border-color: rgba(251, 146, 60, .35); }
+#app.theme-dark #hint-logic-text .hv-memo-head,
+#app.theme-dark #hint-logic-text .hv-memo-row.miss .hv-memo-ds, #app.theme-dark #hint-logic-text .hv-memo-row.miss .hv-memo-st { color: #fdba74; }
+#app.theme-dark #hint-logic-text .hv-memo-row.have .hv-memo-ds, #app.theme-dark #hint-logic-text .hv-memo-row.have .hv-memo-st { color: #86efac; }
+
+/* "자세히" */
+#hint-logic-text .hv-more {
+  display: inline-block; margin: 3px 0 0; padding: 1px 9px; border-radius: 999px;
+  border: 1px solid rgba(124, 58, 237, .45); background: transparent; color: #6d28d9;
+  font-size: 11.5px; font-weight: 800; cursor: pointer; line-height: 1.6;
+}
+#hint-logic-text .hv-more[aria-expanded="true"] { background: rgba(124, 58, 237, .12); }
+#app.theme-dark #hint-logic-text .hv-more { color: #c4b5fd; border-color: rgba(196, 181, 253, .5); }
+#hint-logic-text .hv-detail {
+  margin: 4px 0 2px; padding: 6px 8px 6px 22px; border-radius: 8px; list-style: disc;
+  background: rgba(100, 116, 139, .08); font-size: 12px; font-weight: 500; line-height: 1.55;
+}
+#hint-logic-text .hv-detail li { margin: 1px 0; padding: 0; box-shadow: none; background: none; cursor: default; }
+#hint-logic-text .hv-detail li.ok { color: #15803d; font-weight: 700; list-style: none; margin-left: -12px; }
+#hint-logic-text .hv-detail li.no { color: #94a3b8; list-style: none; margin-left: -12px; }
+#app.theme-dark #hint-logic-text .hv-detail li.ok { color: #86efac; }
+#hint-logic-text .hv-detail li:hover { background: none !important; }

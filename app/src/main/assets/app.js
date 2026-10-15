@@ -3079,7 +3079,7 @@ class SumdokuApp {
           this.sound.play('click');
           const now = Date.now();
           if (this.lastCellClick && this.lastCellClick.r === r && this.lastCellClick.c === c && (now - this.lastCellClick.time < 350)) {
-            this.openDirectTyping();
+            this.openDirectTyping?.(); // v1.1.18: 정의되지 않은 함수 호출로 오류가 나며 그 탭의 칸 선택이 건너뛰어지던 문제 수정
           }
           this.lastCellClick = { r, c, time: now };
           this.selectCell(r, c);

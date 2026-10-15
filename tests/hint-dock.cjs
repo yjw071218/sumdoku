@@ -8,6 +8,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   for(const [width,height] of [[320,568],[360,640],[390,844],[412,915],[768,1024],[1024,600],[740,360],[1280,800]]){
    const page=await browser.newPage({viewport:{width,height}});
    await page.route('https://api.github.com/**',r=>r.fulfill({json:{tag_name:'v1.0.32'}}));
+   await page.addInitScript(()=>localStorage.setItem('sumdoku_language','ko'));
    await page.goto('file:///'+path.resolve('app/src/main/assets/index.html').split(path.sep).join('/'));
    await page.waitForFunction(()=>window.app);
    const r=await page.evaluate(async()=>{

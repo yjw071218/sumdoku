@@ -1,0 +1,57 @@
+/* v1.1.18 · 리플레이 설명 줄 · 원인 보기 (replay-polish.js) */
+
+/* 설명 상자: 한 문장으로 흐르게(flex 로 쪼개지지 않게) 하고, 높이는 두 줄 기준으로 고정해 떨림을 막습니다. */
+.replay-desc-box {
+  display: flex !important; align-items: center; justify-content: center;
+  text-align: center;
+  line-height: 1.45;
+  /* 높이를 두 줄로 고정합니다(넘치는 문장은 JS 가 글자를 줄여 맞춤). 수순마다 상자가 커졌다 작아지지 않음 */
+  height: calc(2 * 1.45em + 24px); min-height: 0; box-sizing: border-box; overflow: hidden;
+  word-break: keep-all;            /* 한글 단어 중간에서 끊지 않음("확/정" 방지) */
+  overflow-wrap: break-word;       /* experience.css 의 anywhere 를 덮어씀 */
+}
+.replay-desc-box > .replay-desc-text { display: block; min-width: 0; max-width: 100%; line-height: 1.45; max-height: 100%; }
+/* 아이콘·버튼이 줄 높이를 키우지 않도록 */
+.replay-desc-box .inline-icon, .replay-desc-box .replay-cause-btn { line-height: 1; }
+.replay-desc-box .inline-icon { display: inline-flex; vertical-align: -0.15em; margin: 0 .1em; }
+.replay-desc-box .inline-icon svg { width: 1em; height: 1em; }
+
+/* 상단 정보: 단어 단위 줄바꿈, 수순 칸 폭 고정(0/57 ↔ 14/57 에서 제목 줄바꿈이 바뀌지 않게) */
+.replay-title, .replay-subtitle { word-break: keep-all; overflow-wrap: break-word; }
+.replay-step-pill { font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; flex-shrink: 0; box-sizing: border-box; }
+
+/* 원인 보기 버튼 */
+.replay-cause-btn {
+  display: inline-block; margin-left: 4px; padding: 1px 10px; border-radius: 999px;
+  border: 1px solid #dc2626; background: #fff1f2; color: #b91c1c;
+  font-size: .82em; font-weight: 800; line-height: 1.3; cursor: pointer; white-space: nowrap; vertical-align: 1px;
+}
+.replay-cause-btn:active { transform: scale(.97); }
+
+/* 원인 패널 */
+.replay-cause-panel {
+  margin-top: 8px; padding: 10px 12px; border-radius: 10px; text-align: left;
+  background: #fff7ed; border: 1px solid #fdba74; color: var(--text-primary, #1e293b);
+  font-size: .86rem; line-height: 1.5; max-height: 38vh; overflow-y: auto; word-break: keep-all; overflow-wrap: break-word;
+}
+.replay-cause-panel .rc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.replay-cause-panel .rc-head strong { color: #b91c1c; font-size: .92rem; }
+.replay-cause-panel .rc-close { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 2px 10px; font-weight: 700; font-size: .8rem; cursor: pointer; color: inherit; }
+.replay-cause-panel .rc-reasons { margin: 0; padding-left: 18px; }
+.replay-cause-panel .rc-reasons li { margin: 2px 0; font-weight: 600; }
+.replay-cause-panel .rc-answer { margin: 6px 0 0; font-weight: 800; color: #15803d; }
+.replay-cause-panel .rc-chain { margin-top: 6px; }
+.replay-cause-panel .rc-chain summary { cursor: pointer; font-weight: 700; color: #6d28d9; }
+.replay-cause-panel .rc-chain ol { margin: 4px 0 0; padding-left: 20px; font-size: .82rem; }
+
+/* 보드 표시: 겹친 숫자(빨강), 틀린 수를 둔 칸(주황 테두리) */
+#replay-board .cell.replay-cause-conflict { background: rgba(220, 38, 38, .18) !important; box-shadow: inset 0 0 0 2px #dc2626; }
+#replay-board .cell.replay-cause-target { box-shadow: inset 0 0 0 3px #f59e0b !important; }
+
+/* 다크 테마 */
+.theme-dark .replay-cause-btn { background: rgba(220, 38, 38, .15); color: #fca5a5; border-color: #f87171; }
+.theme-dark .replay-cause-panel { background: rgba(251, 146, 60, .1); border-color: rgba(251, 146, 60, .45); }
+.theme-dark .replay-cause-panel .rc-head strong { color: #fca5a5; }
+.theme-dark .replay-cause-panel .rc-answer { color: #86efac; }
+.theme-dark .replay-cause-panel .rc-chain summary { color: #c4b5fd; }
+.theme-dark .replay-cause-panel .rc-close { background: transparent; border-color: rgba(148, 163, 184, .4); }

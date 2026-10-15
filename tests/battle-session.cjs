@@ -24,7 +24,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const replay=app.replays[0];out.mode=replay.mode;
   app.openReplayViewer(replay);app.applyReplayStep(replay.moves.length);
   app.renderReplayOppBoard(replay,'12'+'0'.repeat(79));
-  const board=document.getElementById('replay-opp-board');out.cells=board.children.length;out.text=board.children[0].textContent+board.children[1].textContent;out.shown=!board.classList.contains('hidden');
+  const board=document.getElementById('replay-opp-board');out.cells=board.children.length;/* 칸에는 케이지 합 라벨(.cell-cage-sum)도 있으므로 입력 숫자(.cell-value)만 읽습니다. */out.text=board.children[0].querySelector('.cell-value').textContent+board.children[1].querySelector('.cell-value').textContent;out.shown=!board.classList.contains('hidden');
   return out;}catch(e){return e.stack}});
  assert.deepEqual(r,{first:1,rematch:1,input:'',newRoom:0,rematchBtn:true,closeBtn:true,mode:'battle',cells:81,text:'12',shown:true});
  assert.deepEqual(errors,[]);console.log('PASS: chat reset on new room / kept on rematch, join code cleared, guest result buttons, opponent replay board');
