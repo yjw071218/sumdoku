@@ -1,5 +1,7 @@
 /* v1.0.48 앱 전체 모션. 레이아웃을 바꾸지 않는 transform/opacity만 사용합니다. */
-.view.active { animation: viewIn .32s cubic-bezier(.16,1,.3,1); }
+/* v1.1.17: .view 자체에 transform을 주면 그 안의 position:fixed 하단바가 함께 밀려 올라왔다 내려옵니다.
+   화면 전환 모션은 하단바를 제외한 자식에만 적용해 하단바를 고정합니다. */
+.view.active > :not(.bottom-nav) { animation: viewIn .32s cubic-bezier(.16,1,.3,1); }
 @keyframes viewIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .modal-backdrop:not(.hidden) { animation: fadeIn .22s ease; }
 .modal-backdrop:not(.hidden) > .modal-card { animation: cardIn .34s cubic-bezier(.2,1.3,.4,1); }

@@ -48,7 +48,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
     app.applyBattleTerminal(data);app.applyBattleTerminal(data);app.recordGameEnd=original;clearInterval(app.rematchCheckTimer);
     return {count,active:app.isBattle,visible:!app.dom.modalBattleResult.classList.contains('hidden'),title:document.getElementById('battle-result-title').textContent,rematch:!app.dom.btnBattleRematch.classList.contains('hidden')};
    },endedBy);
-   assert.equal(result.count,1);assert(!result.active&&result.visible);assert.equal(result.rematch,role===1);
+   assert.equal(result.count,1);assert(!result.active&&result.visible);assert.equal(result.rematch,true); // v1.1.0부터 게스트도 재대결 신청 가능
    assert(result.title.includes(role===endedBy?'패배':'승리'));
   }
   await begin(2);
