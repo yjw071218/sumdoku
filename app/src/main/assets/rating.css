@@ -19,3 +19,82 @@
 .theme-dark .rating-card { background: rgba(30,41,59,.6); }
 .theme-dark .rating-card .rc-chip.up { color: #86efac; }
 .theme-dark .rating-card .rc-chip.down { color: #fca5a5; }
+
+/* v1.1.25 · 난이도별 랭크 탭 */
+.rating-card .rc-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 0 0 12px; }
+.rating-card .rc-tab { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; padding: 6px 2px 5px; border-radius: 10px;
+  border: 1px solid rgba(100,116,139,.22); background: transparent; color: inherit; cursor: pointer; box-shadow: inset 0 -3px 0 var(--tab-tier); }
+.rating-card .rc-tab.on { background: color-mix(in srgb, var(--tab-tier) 14%, transparent); border-color: var(--tab-tier); }
+.rating-card .rc-tab-name { font-size: 12px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rating-card .rc-tab-tier { font-size: 10px; font-weight: 700; opacity: .75; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* v1.1.25 · 일반 / 타임어택 모드 전환 */
+.rating-card .rc-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; margin: 0 0 8px; border-radius: 12px; background: rgba(100,116,139,.12); }
+.rating-card .rc-mode { border: 0; border-radius: 9px; padding: 7px 4px; background: transparent; color: inherit; font-size: 13px; font-weight: 800; cursor: pointer; opacity: .7; }
+.rating-card .rc-mode.on { background: var(--bg-surface, #fff); opacity: 1; box-shadow: 0 1px 4px rgba(0,0,0,.12); color: var(--tier); }
+.theme-dark .rating-card .rc-mode.on { background: rgba(51,65,85,.9); }
+
+/* v1.1.25 · 하단 랭킹 탭 화면 */
+.ranking-container { display: flex; flex-direction: column; max-width: 560px; width: 100%; margin: 0 auto;
+  padding: 10px 18px calc(90px + env(safe-area-inset-bottom, 24px)) 18px; box-sizing: border-box; }
+.ranking-header { display: flex; align-items: center; min-height: 40px; margin-bottom: 12px; }
+.ranking-header h2 { font-size: 1.2rem; font-weight: 800; margin: 0; }
+.ranking-summary { margin: 0 0 16px; padding: 14px; border-radius: 16px; background: var(--bg-surface, #fff); border: 1px solid rgba(100,116,139,.18); }
+.ranking-summary .section-title { margin: 0 0 10px; }
+.ranking-grid { display: grid; grid-template-columns: minmax(56px, .8fr) 1fr 1fr; gap: 6px; align-items: stretch; }
+.ranking-grid .rk-h { font-size: 11.5px; font-weight: 800; opacity: .6; text-align: center; padding-bottom: 2px; }
+.ranking-grid .rk-h:first-child { text-align: left; }
+.ranking-grid .rk-diff { display: flex; align-items: center; font-size: 13px; font-weight: 800; min-width: 0; word-break: keep-all; }
+.ranking-grid .rk-cell { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  padding: 7px 4px; border-radius: 11px; cursor: pointer; color: inherit; font: inherit;
+  background: color-mix(in srgb, var(--tier) 10%, transparent); border: 1px solid color-mix(in srgb, var(--tier) 35%, transparent); }
+.ranking-grid .rk-cell.on { border-color: var(--tier); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tier) 35%, transparent); }
+.ranking-grid .rk-cell.empty { opacity: .6; }
+.ranking-grid .rk-tier { font-size: 12.5px; font-weight: 900; color: var(--tier); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-grid .rk-rp { font-size: 11px; font-weight: 700; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ranking-hint { margin: 8px 0 0; font-size: 11.5px; opacity: .6; }
+#ranking-detail .rating-card { margin: 0; }
+.theme-dark .ranking-summary { background: rgba(30,41,59,.6); border-color: rgba(148,163,184,.2); }
+.bottom-nav .nav-tab { min-width: 0; }
+
+/* v1.1.25 · 연속 클리어 표시 */
+.rating-card .rc-streak { margin-top: 8px; font-size: 12.5px; font-weight: 800; color: #ea580c; }
+.theme-dark .rating-card .rc-streak { color: #fdba74; }
+
+/* v1.1.25 · 랭크 단계 시각화 */
+.ranking-ladder { margin: 16px 0 0; padding: 14px; border-radius: 16px; background: var(--bg-surface, #fff); border: 1px solid rgba(100,116,139,.18); }
+.ranking-ladder .section-title { margin: 0 0 4px; }
+.ranking-ladder .ranking-hint { margin: 0 0 10px; }
+.rl-list { display: flex; flex-direction: column; gap: 6px; }
+.rl-row { display: grid; grid-template-columns: 34px minmax(74px, 1fr) 2.2fr; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; opacity: .72; }
+.rl-row.passed { opacity: .9; }
+.rl-row.on { opacity: 1; background: color-mix(in srgb, var(--tier) 12%, transparent); box-shadow: inset 0 0 0 1.5px var(--tier); }
+.rl-badge { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 14px;
+  background: linear-gradient(135deg, var(--tier), color-mix(in srgb, var(--tier) 60%, #000)); }
+.rl-info { min-width: 0; }
+.rl-name { font-size: 13px; font-weight: 900; color: var(--tier); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rl-range { font-size: 10.5px; font-weight: 700; opacity: .65; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rl-bar { display: flex; gap: 3px; min-width: 0; }
+.rl-seg { position: relative; flex: 1; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 10px; font-weight: 800;
+  color: color-mix(in srgb, var(--tier) 80%, #000); background: color-mix(in srgb, var(--tier) 12%, transparent); overflow: visible; }
+.rl-seg.full { background: color-mix(in srgb, var(--tier) 55%, transparent); color: #fff; }
+.rl-seg.cur { background: color-mix(in srgb, var(--tier) 18%, transparent); box-shadow: inset 0 0 0 1.5px var(--tier); }
+.rl-seg .rl-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: color-mix(in srgb, var(--tier) 45%, transparent); z-index: 0; }
+.rl-seg .rl-pin { position: absolute; top: -9px; z-index: 2; transform: translateX(-50%); font-size: 9px; line-height: 1; padding: 2px 4px; border-radius: 5px;
+  background: var(--tier); color: #fff; white-space: nowrap; }
+.rl-seg { isolation: isolate; }
+.theme-dark .ranking-ladder { background: rgba(30,41,59,.6); border-color: rgba(148,163,184,.2); }
+.theme-dark .rl-seg { color: #e2e8f0; }
+
+.rs-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.rs-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border-radius: 11px; border: 1px solid rgba(234,88,12,.25);
+  background: rgba(234,88,12,.06); min-width: 0; }
+.rs-chip span { font-size: 10.5px; font-weight: 700; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rs-chip b { font-size: 14px; font-weight: 900; color: #ea580c; }
+.rs-chip.reached { background: rgba(234,88,12,.16); }
+.rs-chip.on { border-color: #ea580c; box-shadow: 0 0 0 2px rgba(234,88,12,.25); }
+.theme-dark .rs-chip b { color: #fdba74; }
+.ranking-ladder + .ranking-ladder .ranking-hint { margin: 8px 0 0; }
+.rl-seg .rl-lbl { position: relative; z-index: 1; }
+.rl-name { white-space: normal; word-break: keep-all; overflow: visible; line-height: 1.15; }
+.rl-row { grid-template-columns: 34px minmax(84px, 1.1fr) 2fr; }

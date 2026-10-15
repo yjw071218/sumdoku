@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.24";
+const APP_VERSION = "1.1.25";
 const RACE_FINISH_BONUS = 3000; // 스피드 레이스 완주 가산점
 const GITHUB_REPO = "yjw071218/sumdoku";
 
@@ -248,6 +248,7 @@ class SumdokuApp {
     this.comboTimeLeftMs = 0;
     this.COMBO_DURATION_MS = 8000;
     this.hintsUsed = 0;
+    this.lastScorePenalty = null;
 
     this.initDOM();
     if (window.I18N) window.I18N.init();
@@ -2902,6 +2903,7 @@ class SumdokuApp {
     this.score = 0;
     this.combo = 0;
     this.hintsUsed = 0;
+    this.lastScorePenalty = null;
     this.resetCombo();
     this.dom.gameScore.textContent = '0';
     if ((this.isBattle && (this.battleMode === 'race' || this.battleMode === 'score')) || this.gameMode === 'timeattack') {
@@ -3488,7 +3490,7 @@ class SumdokuApp {
           this.resetCombo('오답 입력으로 콤보 리셋');
           // 목숨이 무한인 스피드 레이스·타임어택은 찍기 방지를 위해 큰 감점, 실수할수록 증가(200→300→…최대 600)
           const unlimitedMode = (this.isBattle && (this.battleMode === 'race' || this.battleMode === 'score')) || this.gameMode === 'timeattack';
-          const penalty = unlimitedMode ? Math.min(600, 200 + this.mistakes * 100) : 50;
+          const penalty = this.scaled(unlimitedMode ? Math.min(600, 200 + this.mistakes * 100) : 50);
           this.score -= penalty;
           this.showScoreDelta(-penalty, r, c);
           this.dom.gameScore.textContent = this.score;
@@ -3529,7 +3531,7 @@ class SumdokuApp {
           else if (this.combo <= 8) comboMultiplier = 3.6;
           else comboMultiplier = 5.0; // 9콤보 이상 최대 5.0배
 
-          const basePoints = Math.round(100 * comboMultiplier);
+          const basePoints = this.scaled(100 * comboMultiplier);
           this.score += basePoints;
           this.showScoreDelta(basePoints, r, c, this.combo > 1 ? `(콤보 x${comboMultiplier})` : '');
 
@@ -3538,7 +3540,7 @@ class SumdokuApp {
           const cage = this.cages[myCageIdx];
           const isCageComplete = cage && cage.cells.every(([cr, cc]) => this.board[cr][cc].val === this.solution[cr][cc]);
           if (isCageComplete) {
-            const cageBonus = Math.round(cage.sum * 15 * (1 + (this.combo > 3 ? 0.25 : 0)));
+            const cageBonus = this.scaled(cage.sum * 15 * (1 + (this.combo > 3 ? 0.25 : 0)));
             this.score += cageBonus;
             setTimeout(() => this.showScoreDelta(cageBonus, r, c, '케이지 완성!'), 200);
             this.showToast(`케이지 완성 보너스! (+${cageBonus}점)`);
@@ -3880,17 +3882,17 @@ class SumdokuApp {
 
     let hintMsg = '';
     if (this.rules.initialHints === 'unlimited') {
-      this.score -= 30;
-      this.showScoreDelta(-30, r, c, '힌트');
+      this.score -= this.scaled(30);
+      this.showScoreDelta(-this.scaled(30), r, c, '힌트');
       hintMsg = `[힌트] ${answer} 확정! (무제한 힌트, -30점)`;
     } else if (this.hintsRemaining > 0) {
       this.hintsRemaining--;
-      this.score -= 30;
-      this.showScoreDelta(-30, r, c, '힌트');
+      this.score -= this.scaled(30);
+      this.showScoreDelta(-this.scaled(30), r, c, '힌트');
       hintMsg = `[힌트] ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
     } else {
-      this.score -= 50;
-      this.showScoreDelta(-50, r, c, '추가 힌트');
+      this.score -= this.scaled(50);
+      this.showScoreDelta(-this.scaled(50), r, c, '추가 힌트');
       hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -50점)`;
     }
     this.updateHintBadge();
@@ -3902,7 +3904,10 @@ class SumdokuApp {
     this.updateBoardDisplay();
     this.updateKeypadBadges();
     this.updateTabletCageHelper(r, c);
-    this.showToast(hintMsg);
+    {
+      const loc = (window.I18N && typeof I18N.text === 'function') ? I18N.text(hintMsg) : hintMsg;
+      this.showToast(this.scoreMult() === 1 ? loc : loc.replace(/-(30|50)(?=\D)/, (m, n) => '-' + this.scaled(+n)));
+    }
     this.checkWinCondition();
     this.saveOngoingGame();
   }
@@ -3941,26 +3946,29 @@ class SumdokuApp {
 
     // 타임어택 보너스 또는 정밀 스피드런 보너스 계산
     if (this.gameMode === 'timeattack') {
-      const timeBonus = this.timeRemaining * 10;
+      const timeBonus = this.scaled(this.timeRemaining * 10);
       this.score += timeBonus;
     } else {
       // 15분(900초) 기준 초 단위 스피드런 보너스 + 5분 이내 보너스
-      const speedBonus = Math.max(0, Math.floor((900 - this.timerSeconds) * 4));
+      const speedBonus = this.scaled(Math.max(0, Math.floor((900 - this.timerSeconds) * 4)));
       this.score += speedBonus;
-      if (this.timerSeconds < 300) this.score += 500;
+      if (this.timerSeconds < 300) this.score += this.scaled(500);
     }
 
     // 실수 0회 퍼펙트 보너스
     if (this.mistakes === 0) {
-      this.score += 1500;
+      this.score += this.scaled(1500);
       this.showToast('🏆 실수 0회! 퍼펙트 클리어 (+1,500점)');
     }
 
     // 노힌트 보너스
     if (this.hintsUsed === 0) {
-      this.score += 1000;
+      this.score += this.scaled(1000);
       this.showToast('🧠 노힌트 연역 마스터 (+1,000점)');
     }
+
+    // 힌트·목숨 사용 감점: 최종 점수에서 사용 횟수만큼 일정 비율을 뺍니다(배틀 제외).
+    this.lastScorePenalty = this.isBattle ? null : this.applyAssistPenalty();
 
     this.dom.gameScore.textContent = this.score;
 
@@ -4097,6 +4105,50 @@ class SumdokuApp {
     }, 250);
   }
 
+  /* 난이도별 점수 배율(v1.1.25): 칸 점수·케이지 보너스·실수/힌트 감점·클리어 보너스에 모두 곱합니다.
+   *   초급 ×1 · 중급 ×1.25 · 고급 ×1.5 · 전문가 ×2 · 루나틱 ×2.5   (1:1 배틀은 ×1) */
+  scoreMult() {
+    if (this.isBattle) return 1;
+    return ({ easy: 1, medium: 1.25, hard: 1.5, expert: 2, lunatic: 2.5 })[this.difficulty] || 1;
+  }
+  scaled(points) { return Math.round(points * this.scoreMult()); }
+
+  /* 힌트·목숨 사용 감점
+   *   힌트 1회 −8% · 목숨 1개(실수) −6% · 광고 부활 1회 −12%, 합계 최대 −50%
+   *   클리어 보너스까지 더한 최종 점수(양수일 때)에 적용합니다. */
+  applyAssistPenalty() {
+    const hints = Math.max(0, this.hintsUsed || 0);
+    const lives = Math.max(0, this.mistakes || 0);
+    const revives = Math.max(0, this.revivesUsed || 0);
+    const rate = Math.min(0.5, hints * 0.08 + lives * 0.06 + revives * 0.12);
+    if (rate <= 0 || this.score <= 0) return null;
+    const penalty = Math.round(this.score * rate);
+    if (!penalty) return null;
+    this.score -= penalty;
+    const info = { penalty, rate, hints, lives, revives };
+    this.showToast(this.formatAssistPenalty(info), 3200);
+    return info;
+  }
+
+  formatAssistPenalty(info) {
+    const L = {
+      ko: ['힌트 {0}회', '목숨 {0}개', '부활 {0}회', '사용 감점'],
+      en: ['{0} hint(s)', '{0} life/lives', '{0} revive(s)', 'assist penalty'],
+      ja: ['ヒント{0}回', 'ライフ{0}個', '復活{0}回', '使用ペナルティ'],
+      zh: ['提示{0}次', '生命{0}条', '复活{0}次', '使用扣分'],
+      'zh-TW': ['提示{0}次', '生命{0}條', '復活{0}次', '使用扣分'],
+      es: ['{0} pista(s)', '{0} vida(s)', '{0} resurrección(es)', 'penalización'],
+      fr: ['{0} indice(s)', '{0} vie(s)', '{0} résurrection(s)', 'pénalité'],
+      de: ['{0} Hinweis(e)', '{0} Leben', '{0} Wiederbelebung(en)', 'Abzug']
+    };
+    const t = L[(window.I18N && I18N.currentLang) || 'ko'] || L.en;
+    const parts = [];
+    if (info.hints) parts.push(t[0].replace('{0}', info.hints));
+    if (info.lives) parts.push(t[1].replace('{0}', info.lives));
+    if (info.revives) parts.push(t[2].replace('{0}', info.revives));
+    return `${parts.join(' · ')} ${t[3]} −${info.penalty.toLocaleString()} (−${Math.round(info.rate * 100)}%)`;
+  }
+
   showGameResultModal(data) {
     if (!this.dom.modalGameResult) return;
 
@@ -4115,6 +4167,18 @@ class SumdokuApp {
     }
     if (this.dom.resScore) {
       this.dom.resScore.textContent = `${data.score.toLocaleString()}점`;
+      let pen = document.getElementById('res-score-penalty');
+      const info = isSuccess ? this.lastScorePenalty : null;
+      if (info) {
+        if (!pen) {
+          pen = document.createElement('div');
+          pen.id = 'res-score-penalty';
+          pen.className = 'res-score-penalty';
+          this.dom.resScore.insertAdjacentElement('afterend', pen);
+        }
+        pen.textContent = this.formatAssistPenalty(info);
+        pen.classList.remove('hidden');
+      } else if (pen) pen.classList.add('hidden');
     }
     if (this.dom.resScoreBadge) {
       this.dom.resScoreBadge.classList.toggle('hidden', !data.isNewBestScore);
