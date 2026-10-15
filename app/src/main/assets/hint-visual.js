@@ -252,6 +252,15 @@
       const cell = lb.closest('.cell'); const sb = sumBox(g, +cell.dataset.r * 9 + +cell.dataset.c);
       if (sb) placed.push({ x: sb.x0 - 1, y: sb.y0 - 1, w: sb.x1 - sb.x0 + 2, h: sb.y1 - sb.y0 + 2, fixed: true });
     });
+    // 후보·정답·지울 숫자 동그라미도 Σ 라벨이 덮을 수 없는 자리로 등록합니다.
+    root.querySelectorAll('circle').forEach(c => {
+      const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy'), r = +c.getAttribute('r');
+      if (Number.isFinite(cx) && Number.isFinite(cy) && r > 0) placed.push({ x: cx - r, y: cy - r, w: r * 2, h: r * 2, fixed: true });
+    });
+    // 숫자를 그려 둔 칸 전체도 피합니다(동그라미 사이 빈틈에 라벨이 끼지 않도록).
+    new Set((v.digits || []).map(d => d.i).filter(Number.isInteger)).forEach(i => {
+      const b = g.cells[i]; if (b) placed.push({ x: b.x, y: b.y, w: b.w, h: b.h, fixed: true });
+    });
     const hitsAny = (x, y, w) => placed.some(q => x < q.x + q.w + 1 && q.x < x + w + 1 && y < q.y + q.h + 1 && q.y < y + h + 1);
     const fits = (x, y, w) => x >= 2 && y >= 2 && x + w <= g.w - 2 && y + h <= g.h - 2;
     [...labels, ...sums].forEach(({ i, t, cageSum }) => {

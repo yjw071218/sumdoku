@@ -273,3 +273,15 @@ body.hint-visual-on #view-game.lunatic-mode #hint-logic-text .hv-active,
   transform-origin: center;
   animation: lh-question-pulse var(--lh-beat) ease-in-out infinite;
 }
+
+/* 상단 점수·난이도 줄: 네모 배경 없이 화면 배경과 자연스럽게 이어지게 */
+#view-game.lunatic-mode .game-header,
+#view-game.lunatic-mode .game-sub-bar {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#view-game.lunatic-mode .game-header::before, #view-game.lunatic-mode .game-header::after,
+#view-game.lunatic-mode .game-sub-bar::before, #view-game.lunatic-mode .game-sub-bar::after { display: none !important; }

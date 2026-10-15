@@ -374,3 +374,6 @@ body.dist-play #btn-home-update, body.dist-play #home-update-banner, body.dist-p
 #panel-howtoplay img, #panel-howtoplay table, #panel-help table, #panel-math table { max-width: 100%; height: auto; }
 #modal-rules pre, #modal-rules code, #panel-help code, #panel-math code { white-space: pre-wrap; }
 html, body { overflow-x: clip; }
+
+/* 배경 음악 음량 슬라이더 */
+#setting-bgm-volume { width: 46%; max-width: 180px; accent-color: var(--ui-accent, #6366f1); }
