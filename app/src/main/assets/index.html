@@ -1410,7 +1410,7 @@
             <div class="battle-mode-card active" data-bmode="race">
               <div class="battle-mode-text">
                 <span class="battle-mode-title">⚡ 스피드 레이스</span>
-                <span class="battle-mode-desc">동일한 맵을 먼저 완성한 플레이어 승리</span>
+                <span class="battle-mode-desc">먼저 완성하면 +3,000점 완주 보너스, 점수가 높은 플레이어 승리</span>
               </div>
             </div>
             <div class="battle-mode-card" data-bmode="score">
@@ -1693,33 +1693,7 @@
           <!-- Replay Controls & Timeline -->
           <div class="replay-controls-panel">
             
-            <!-- Battle Opponent Simultaneous Comparison HUD (Only in battle replays) -->
-            <div id="replay-battle-opp-panel" class="replay-battle-opp-panel hidden">
-              <div class="replay-opp-header">
-                <span class="replay-opp-title" id="replay-opp-title">⚔️ 1:1 대전 상대 실시간 진행 동기화</span>
-                <span class="replay-opp-status" id="replay-opp-status">진행 중</span>
-              </div>
-              <div class="replay-opp-body">
-                <div class="replay-opp-stat-col">
-                  <span class="opp-stat-label">상대 채운 칸</span>
-                  <span class="opp-stat-val" id="replay-opp-cells">0 / 81</span>
-                </div>
-                <div class="replay-opp-stat-col">
-                  <span class="opp-stat-label">상대 점수</span>
-                  <span class="opp-stat-val" id="replay-opp-score">0점</span>
-                </div>
-                <div class="replay-opp-stat-col">
-                  <span class="opp-stat-label">실수 횟수</span>
-                  <span class="opp-stat-val" id="replay-opp-mistakes">0회</span>
-                </div>
-              </div>
-              <div class="replay-opp-bar-track">
-                <div id="replay-opp-bar-fill" class="replay-opp-bar-fill" style="width: 0%;"></div>
-              </div>
-              <div id="replay-opp-board" class="replay-opp-board hidden" aria-label="상대방 스도쿠 판"></div>
-            </div>
-
-            <!-- Move Description -->
+<!-- Move Description -->
             <div class="replay-desc-box" id="replay-desc-box">
               재생 버튼을 누르거나 슬라이더를 움직여 수순을 확인하세요.
             </div>
@@ -1745,6 +1719,33 @@
               <button class="btn-speed" data-speed="2">2x</button>
               <button class="btn-speed" data-speed="4">4x</button>
             </div>
+
+<!-- Battle Opponent Simultaneous Comparison HUD (Only in battle replays) -->
+            <div id="replay-battle-opp-panel" class="replay-battle-opp-panel hidden">
+              <div class="replay-opp-header">
+                <span class="replay-opp-title" id="replay-opp-title">⚔️ 1:1 대전 상대 실시간 진행 동기화</span>
+                <span class="replay-opp-status" id="replay-opp-status">진행 중</span>
+              </div>
+              <div class="replay-opp-body">
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">상대 채운 칸</span>
+                  <span class="opp-stat-val" id="replay-opp-cells">0 / 81</span>
+                </div>
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">상대 점수</span>
+                  <span class="opp-stat-val" id="replay-opp-score">0점</span>
+                </div>
+                <div class="replay-opp-stat-col">
+                  <span class="opp-stat-label">실수 횟수</span>
+                  <span class="opp-stat-val" id="replay-opp-mistakes">0회</span>
+                </div>
+              </div>
+              <div class="replay-opp-bar-track">
+                <div id="replay-opp-bar-fill" class="replay-opp-bar-fill" style="width: 0%;"></div>
+              </div>
+              <div id="replay-opp-board" class="replay-opp-board hidden" aria-label="상대방 스도쿠 판"></div>
+            </div>
+
 
           </div>
         </div>

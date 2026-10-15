@@ -288,3 +288,30 @@ body.battle-active.assistant-visible .game-main-content { padding-top:8px; paddi
   #sudoku-board .cell .cell-value { translate: 0.24em 0.26em; font-size: 0.78em; }
   #sudoku-board .cell-cage-sum { font-size: 8px; }
 }
+
+/* v1.1.15 다크 모드 가독성 보정 (자동 대비 측정 기준 4.5:1 이상) */
+.theme-dark .daily-header h2 { color: var(--ui-ink); }
+.theme-dark .nav-tab { color: #b8c7dc !important; }
+.theme-dark .nav-tab.active, .theme-dark .nav-tab.active .tab-label { color: #93c5fd !important; }
+.theme-dark .nav-tab .tab-label { color: inherit !important; }
+.theme-dark .hub-menu-item.active { background: #1d4ed8 !important; }
+.theme-dark .hub-menu-item .hub-chevron { color: #94a3b8 !important; }
+.theme-dark .mode-select-btn.active { background: #1d4ed8 !important; color: #fff !important; }
+.theme-dark .menu-btn.btn-battle .btn-desc { color: #b8c7dc !important; }
+.theme-dark .daily-hero-badge { color: #fff; }
+
+/* 일일 도전 카드 연속 기록 칩: 파란 카드 위에서 한 줄로 */
+.daily-hero-info .streak-chip {
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+  color: #fff; background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35);
+}
+.daily-hero-info .streak-chip.active { color: #fff; background: rgba(249,115,22,.35); border-color: rgba(253,186,116,.7); }
+.theme-dark .daily-hero-info .streak-chip.active { color: #fff; }
+#app.theme-dark .bottom-nav .nav-tab .tab-label { color: #b8c7dc !important; }
+#app.theme-dark .bottom-nav .nav-tab.active .tab-label { color: #93c5fd !important; }
+#app.theme-dark #sudoku-board .cell.single-cage .cell-cage-sum { color: #fff !important; text-shadow: none; }
+#app.theme-dark .hub-menu-item .hub-chevron { color: #b8c7dc !important; }
+.daily-hero-info .streak-chip { background: rgba(15,23,42,.35); border-color: rgba(255,255,255,.4); }
+/* 좁은 화면은 말줄임 대신 단어 단위로 줄바꿈하고 모서리를 둥근 사각형으로 */
+.daily-hero-info .streak-chip { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; line-height: 1.35; border-radius: 10px; width: fit-content; }
+@media (max-width:360px) { .daily-hero-info .streak-chip { font-size: 11px; padding: 3px 8px; } }

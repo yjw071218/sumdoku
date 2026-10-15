@@ -2,6 +2,15 @@
 (() => {
   const T = window.UI_TRANSLATIONS = window.UI_TRANSLATIONS || {};
   const rows = {
+    "먼저 완성하면 +3,000점 완주 보너스, 점수가 높은 플레이어 승리": ["First to finish gets a +3,000 finish bonus; highest score wins","先に完成すると+3,000点の完走ボーナス、得点の高い方が勝利","先完成获得+3,000分完成奖励，得分高者获胜","先完成獲得+3,000分完成獎勵，得分高者獲勝","Quien termine primero recibe +3.000 pts; gana la puntuación más alta","Le premier à finir gagne +3 000 pts ; le meilleur score l’emporte","Wer zuerst fertig ist, erhält +3.000 Pkt.; die höchste Punktzahl gewinnt"],
+    "🏁 완주 보너스 (+{0}점)": ["🏁 Finish bonus (+{0} pts)","🏁 完走ボーナス（+{0}点）","🏁 完成奖励（+{0}分）","🏁 完成獎勵（+{0}分）","🏁 Bonus de meta (+{0} pts)","🏁 Bonus d’arrivée (+{0} pts)","🏁 Zielbonus (+{0} Pkt.)"],
+    "완주했습니다! 점수 대결 승리 ({0} vs {1}) 🏆": ["You finished! You win on points ({0} vs {1}) 🏆","完走しました！得点で勝利（{0} vs {1}）🏆","你完成了！分数获胜（{0} vs {1}）🏆","你完成了！分數獲勝（{0} vs {1}）🏆","¡Terminaste! Ganas por puntos ({0} vs {1}) 🏆","Terminé ! Victoire aux points ({0} vs {1}) 🏆","Fertig! Punktsieg ({0} vs {1}) 🏆"],
+    "완주했습니다! 점수 대결 패배 ({0} vs {1})": ["You finished! You lose on points ({0} vs {1})","完走しました！得点で敗北（{0} vs {1}）","你完成了！分数落败（{0} vs {1}）","你完成了！分數落敗（{0} vs {1}）","¡Terminaste! Pierdes por puntos ({0} vs {1})","Terminé ! Défaite aux points ({0} vs {1})","Fertig! Punktniederlage ({0} vs {1})"],
+    "상대방이 완주했습니다! 점수 대결 승리 ({0} vs {1}) 🏆": ["Opponent finished! You win on points ({0} vs {1}) 🏆","相手が完走！得点で勝利（{0} vs {1}）🏆","对手完成了！分数获胜（{0} vs {1}）🏆","對手完成了！分數獲勝（{0} vs {1}）🏆","¡El rival terminó! Ganas por puntos ({0} vs {1}) 🏆","L’adversaire a terminé ! Victoire aux points ({0} vs {1}) 🏆","Gegner fertig! Punktsieg ({0} vs {1}) 🏆"],
+    "상대방이 완주했습니다! 점수 대결 패배 ({0} vs {1})": ["Opponent finished! You lose on points ({0} vs {1})","相手が完走！得点で敗北（{0} vs {1}）","对手完成了！分数落败（{0} vs {1}）","對手完成了！分數落敗（{0} vs {1}）","¡El rival terminó! Pierdes por puntos ({0} vs {1})","L’adversaire a terminé ! Défaite aux points ({0} vs {1})","Gegner fertig! Punktniederlage ({0} vs {1})"],
+    "레이스 종료! 무승부입니다 ({0}점 동점)": ["Race over! It’s a draw ({0} pts each)","レース終了！引き分け（{0}点で同点）","比赛结束！平局（同为{0}分）","比賽結束！平手（同為{0}分）","¡Carrera terminada! Empate ({0} pts)","Course terminée ! Égalité ({0} pts)","Rennen vorbei! Unentschieden ({0} Pkt.)"],
+    '잘못된 숫자입니다! (-{0}점)': ['Wrong number! (-{0} pts)','間違った数字です！（-{0}点）','数字错误！（-{0}分）','數字錯誤！（-{0}分）','¡Número incorrecto! (-{0} pts)','Mauvais chiffre ! (-{0} pts)','Falsche Zahl! (-{0} Pkt.)'],
+    '최고 연속 {0}일 · 다시 도전': ['Best streak {0} days · Try again','最高連続{0}日・再挑戦','最高连续{0}天 · 再次挑战','最高連續{0}天 · 再次挑戰','Mejor racha: {0} días · Inténtalo de nuevo','Meilleure série : {0} jours · Réessayez','Beste Serie: {0} Tage · Neu starten'],
     '모바일 데이터가 켜져 있습니다. 연결이 끊기거나 방을 찾지 못할 수 있으니 배틀 중에는 모바일 데이터를 꺼 주세요.': ['Mobile data is on. The connection may drop or the room may not be found, so please turn off mobile data during battles.','モバイルデータがオンです。接続が切れたりルームが見つからない場合があるため、対戦中はモバイルデータをオフにしてください。','移动数据已开启。可能导致断线或找不到房间，对战时请关闭移动数据。','行動數據已開啟。可能導致斷線或找不到房間，對戰時請關閉行動數據。','Los datos móviles están activados. La conexión puede fallar o no encontrar la sala; desactívalos durante la partida.','Les données mobiles sont activées. La connexion peut échouer ou la salle rester introuvable ; désactivez-les pendant le duel.','Mobile Daten sind aktiv. Die Verbindung kann abbrechen oder der Raum nicht gefunden werden – bitte während des Duells deaktivieren.'],
     '⚠️ 모바일 데이터가 켜져 있습니다. 연결이 끊기거나 방을 찾지 못할 수 있으니 배틀 중에는 모바일 데이터를 꺼 주세요.': ['⚠️ Mobile data is on. The connection may drop or the room may not be found, so please turn off mobile data during battles.','⚠️ モバイルデータがオンです。接続が切れたりルームが見つからない場合があるため、対戦中はモバイルデータをオフにしてください。','⚠️ 移动数据已开启。可能导致断线或找不到房间，对战时请关闭移动数据。','⚠️ 行動數據已開啟。可能導致斷線或找不到房間，對戰時請關閉行動數據。','⚠️ Los datos móviles están activados. La conexión puede fallar o no encontrar la sala; desactívalos durante la partida.','⚠️ Les données mobiles sont activées. La connexion peut échouer ou la salle rester introuvable ; désactivez-les pendant le duel.','⚠️ Mobile Daten sind aktiv. Die Verbindung kann abbrechen oder der Raum nicht gefunden werden – bitte während des Duells deaktivieren.'],
     '배틀을 하려면 Wi-Fi를 켜고 같은 Wi-Fi에 연결해 주세요.': ['To battle, turn on Wi-Fi and connect to the same Wi-Fi network.','対戦するにはWi-Fiをオンにして、同じWi-Fiに接続してください。','要对战，请开启Wi-Fi并连接到同一个Wi-Fi网络。','若要對戰，請開啟Wi-Fi並連線到同一個Wi-Fi網路。','Para jugar, activa el Wi-Fi y conecta ambos dispositivos a la misma red.','Pour jouer, activez le Wi-Fi et connectez les appareils au même réseau.','Aktiviere für ein Duell WLAN und verbinde beide Geräte mit demselben WLAN.'],
@@ -57,7 +66,121 @@
     '상대방이 목숨을 모두 잃어 탈락했습니다! 당신의 승리! 🏆': ['Your opponent lost all lives! You win! 🏆','相手がライフをすべて失い脱落！あなたの勝利！🏆','对手生命耗尽被淘汰！你赢了！🏆','對手生命耗盡被淘汰！你贏了！🏆','¡El rival perdió todas sus vidas! ¡Ganas! 🏆','L’adversaire a perdu toutes ses vies ! Victoire ! 🏆','Gegner hat alle Leben verloren! Du gewinnst! 🏆'],
     '판 완성! 점수 대결 승리 ({0} vs {1}) 🏆': ['Board complete! You win on points ({0} vs {1}) 🏆','盤面完成！得点で勝利（{0} vs {1}）🏆','棋盘完成！分数获胜（{0} vs {1}）🏆','盤面完成！分數獲勝（{0} vs {1}）🏆','¡Tablero completo! Ganas por puntos ({0} vs {1}) 🏆','Grille complète ! Victoire aux points ({0} vs {1}) 🏆','Brett voll! Punktsieg ({0} vs {1}) 🏆'],
     '판 완성! 점수 대결 패배 ({0} vs {1})': ['Board complete! You lose on points ({0} vs {1})','盤面完成！得点で敗北（{0} vs {1}）','棋盘完成！分数落败（{0} vs {1}）','盤面完成！分數落敗（{0} vs {1}）','¡Tablero completo! Pierdes por puntos ({0} vs {1})','Grille complète ! Défaite aux points ({0} vs {1})','Brett voll! Punktniederlage ({0} vs {1})'],
-    '판 완성! 무승부입니다 ({0}점 동점)': ['Board complete! Draw ({0} pts each)','盤面完成！引き分け（{0}点で同点）','棋盘完成！平局（同为{0}分）','盤面完成！平手（同為{0}分）','¡Tablero completo! Empate ({0} pts)','Grille complète ! Égalité ({0} pts)','Brett voll! Unentschieden ({0} Pkt.)']
+    '판 완성! 무승부입니다 ({0}점 동점)': ['Board complete! Draw ({0} pts each)','盤面完成！引き分け（{0}点で同点）','棋盘完成！平局（同为{0}分）','盤面完成！平手（同為{0}分）','¡Tablero completo! Empate ({0} pts)','Grille complète ! Égalité ({0} pts)','Brett voll! Unentschieden ({0} Pkt.)'],
+
+    // 리플레이 / 게임 모드
+    '1:1 배틀 ({0})': ['1:1 Battle ({0})','1:1 バトル ({0})','1:1 战斗 ({0})','1:1 戰鬥 ({0})','Batalla 1:1 ({0})','Bataille 1:1 ({0})','1:1-Kampf ({0})'],
+    '턴제': ['Turn mode','ターン制','回合制','回合制','Por turnos','Tour par tour','Rundenmodus'],
+    '패배/실패': ['Defeat / Fail','敗北 / 失敗','失败','失敗','Derrota / Fallo','Défaite / Échec','Niederlage / Fehlgeschlagen'],
+    'vs 상대: {0}/81칸 ({1}점, 실수 {2}회)': ['vs Opponent: {0}/81 cells ({1} pts, {2} mistakes)','vs 相手: {0}/81マス ({1}点, ミス{2}回)','vs 对手: {0}/81格 ({1}分, 失误{2}次)','vs 對手: {0}/81格 ({1}分, 失誤{2}次)','vs Rival: {0}/81 casillas ({1} pts, {2} errores)','vs Adversaire : {0}/81 cases ({1} pts, {2} erreurs)','vs. Gegner: {0}/81 Felder ({1} Pkt., {2} Fehler)'],
+    '⚔️ vs 상대: {0}/81칸 ({1}점, 실수 {2}회)': ['⚔️ vs Opponent: {0}/81 cells ({1} pts, {2} mistakes)','⚔️ vs 相手: {0}/81マス ({1}点, ミス{2}回)','⚔️ vs 对手: {0}/81格 ({1}分, 失误{2}次)','⚔️ vs 對手: {0}/81格 ({1}分, 失誤{2}次)','⚔️ vs Rival: {0}/81 casillas ({1} pts, {2} errores)','⚔️ vs Adversaire : {0}/81 cases ({1} pts, {2} erreurs)','⚔️ vs. Gegner: {0}/81 Felder ({1} Pkt., {2} Fehler)'],
+    '{0}점 · ⏱️ {1}': ['{0} pts · ⏱️ {1}','{0}点 · ⏱️ {1}','{0}分 · ⏱️ {1}','{0}分 · ⏱️ {1}','{0} pts · ⏱️ {1}','{0} pts · ⏱️ {1}','{0} Pkt. · ⏱️ {1}'],
+    '{0}점 ·': ['{0} pts ·','{0}点 ·','{0}分 ·','{0}分 ·','{0} pts ·','{0} pts ·','{0} Pkt. ·'],
+    '턴제 대결 · 내가 먼저 둡니다': ['Turn battle · you go first','ターン制 · 先手です','回合制 · 你先手','回合制 · 你先手','Por turnos · empiezas tú','Tour par tour · vous commencez','Rundenduell · du beginnst'],
+    '리플레이 보기': ['Watch Replay','リプレイ再生','查看回放','觀看重播','Ver repetición','Voir le replay','Wiederholung ansehen'],
+    '⚡ 타임어택': ['⚡ Time Attack','⚡ タイムアタック','⚡ 计时赛','⚡ 計時賽','⚡ Contrarreloj','⚡ Contre-la-montre','⚡ Zeitangriff'],
+    '🧩 싱글': ['🧩 Single','🧩 シングル','🧩 单人','🧩 單人','🧩 Individual','🧩 Solo','🧩 Einzelspieler'],
+    '기록 없음': ['No records','記録なし','无记录','無記錄','Sin registros','Aucun record','Keine Einträge'],
+    '일반 모드': ['Standard mode','通常モード','普通模式','普通模式','Modo estándar','Mode standard','Standardmodus'],
+    '타임어택 모드': ['Time attack mode','タイムアタックモード','计时模式','計時模式','Modo contrarreloj','Mode contre-la-montre','Zeitangriffsmodus'],
+    '서바이벌 모드': ['Survival mode','サバイバルモード','生存模式','生存模式','Modo supervivencia','Mode survie','Überlebensmodus'],
+    '턴제 모드': ['Turn mode','ターン制モード','回合制模式','回合制模式','Modo por turnos','Mode tour par tour','Rundenmodus'],
+
+    // 배틀 HUD 및 타이머 라벨 (이모지 없는 버전 포함)
+    '내 턴': ['Your turn','自分のターン','我的回合','我的回合','Tu turno','Votre tour','Dein Zug'],
+    '상대 턴': ['Opponent’s turn','相手のターン','对手回合','對手回合','Turno rival','Tour adverse','Gegnerzug'],
+    '생존 시간': ['Survival time','生存時間','生存时间','生存時間','Tiempo de vida','Temps de survie','Überlebenszeit'],
+    '상대방 스도쿠 판': ['Opponent Sudoku Board','相手の数独盤面','对手数独棋盘','對手數獨盤面','Tablero de Sudoku rival','Grille de Sudoku adverse','Gegnerisches Sudoku-Brett'],
+    '시간 초과로 콤보 리셋': ['Combo reset due to timeout','時間切れでコンボリセット','超时连击重置','超時連擊重設','Combo reiniciado por tiempo','Combo réinitialisé pour temps dépassé','Combo wegen Zeitüberschreitung zurückgesetzt'],
+
+    // 케이지 & 앵커 & 도우미 & 메모장
+    '1칸 확정 앵커: 이 칸은 확정 {0}입니다. 추론의 출발점으로 활용하세요!': ['1-space confirmed anchor: This cell is confirmed {0}. Use it as your starting point!','1マス確定アンカー: このマスは確定{0}です。推論の出発点として活用してください！','1格确定锚点：此格确定为{0}。作为推理的起点吧！','1格確定錨點：此格確定為{0}。作為推理的起點吧！','Ancla confirmada de 1 casilla: Esta casilla es {0}. ¡Úsala como punto de partida!','Ancrage confirmé à 1 case : Cette case est {0}. Utilisez-la comme point de départ !','Bestätigter 1-Feld-Anker: Dieses Feld ist sicher {0}. Als Ausgangspunkt nutzen!'],
+    '✓ 케이지 합계 완성 ({0}/{0})': ['✓ Cage sum complete ({0}/{0})','✓ ケージ合計完成 ({0}/{0})','✓ 笼总和完成 ({0}/{0})','✓ 籠總和完成 ({0}/{0})','✓ Suma de jaula completa ({0}/{0})','✓ Somme de cage complétée ({0}/{0})','✓ Käfigsumme vollständig ({0}/{0})'],
+    '현재 판 상태': ['Current Board State','現在の盤面状態','当前棋盘状态','當前盤面狀態','Estado actual del tablero','État actuel de la grille','Aktueller Brettzustand'],
+    '여기에 자유롭게 계산이나 풀이 메모를 작성하세요...\n예: 1행+2행 합계 90\n17케이지 = {8, 9}\n4열에 1, 5, 7 필요': [
+      'Write notes and calculations here...\nEx: Row 1+2 sum 90\nCage 17 = {8, 9}\nCol 4 needs 1, 5, 7',
+      'ここに自由に計算やメモを記入してください...\n例: 1行+2行の合計 90\n17ケージ = {8, 9}\n4列に 1, 5, 7 が必要',
+      '在此随意记录计算与笔记...\n例：第1行+第2行总和90\n17笼 = {8, 9}\n第4列需要 1, 5, 7',
+      '在此隨意記錄計算與筆記...\n例：第1行+第2行總和90\n17籠 = {8, 9}\n第4列需要 1, 5, 7',
+      'Escribe notas y cálculos aquí...\nEj: Fila 1+2 suma 90\nJaula 17 = {8, 9}\nColumna 4 necesita 1, 5, 7',
+      'Écrivez vos notes et calculs ici...\nEx : Ligne 1+2 somme 90\nCage 17 = {8, 9}\nColonne 4 a besoin de 1, 5, 7',
+      'Hier Notizen und Berechnungen eintragen...\nBsp.: Zeile 1+2 Summe 90\nKäfig 17 = {8, 9}\nSpalte 4 benötigt 1, 5, 7'
+    ],
+
+    // 배틀 종료 메시지
+    '무승부입니다 ({0}점 동점)': ['It’s a draw ({0} pts tie)','引き分けです（{0}点で同点）','平局（同为{0}分）','平手（同為{0}分）','Empate ({0} pts)','Égalité ({0} pts)','Unentschieden ({0} Pkt.)'],
+    '상대방의 점수가 음수가 되어 당신의 승리! 🏆': ['Opponent’s score went negative! You win! 🏆','相手の得点がマイナスになり、あなたの勝利！🏆','对手得分为负数，你赢了！🏆','對手得分為負數，你贏了！🏆','¡La puntuación del rival es negativa! ¡Ganas! 🏆','Le score adverse est négatif ! Victoire ! 🏆','Gegner hat Minuspunkte! Du gewinnst! 🏆'],
+    '목숨을 모두 잃어 탈락했습니다!': ['You lost all lives and are eliminated!','ライフをすべて失い脱落しました！','生命耗尽，已被淘汰！','生命耗盡，已被淘汰！','¡Perdiste todas las vidas y quedas eliminado!','Toutes les vies perdues : éliminé !','Alle Leben verloren – ausgeschieden!'],
+    '제한 시간 종료! 점수 대결에서 승리했습니다! ({0} vs {1})': ['Time’s up! You win on points! ({0} vs {1})','制限時間終了！得点対決で勝利しました！（{0} vs {1}）','时间到！在点数对决中获胜！（{0} vs {1}）','時間到！在點數對決中獲勝！（{0} vs {1}）','¡Tiempo agotado! ¡Ganas por puntos! ({0} vs {1})','Temps écoulé ! Victoire aux points ! ({0} vs {1})','Zeit abgelaufen! Punktsieg! ({0} vs {1})'],
+    '제한 시간 종료! 점수 대결에서 패배했습니다. ({0} vs {1})': ['Time’s up! You lost on points. ({0} vs {1})','制限時間終了！得点対決で敗北しました。（{0} vs {1}）','时间到！在点数对决中落败。（{0} vs {1}）','時間到！在點數對決中落敗。（{0} vs {1}）','¡Tiempo agotado! Pierdes por puntos. ({0} vs {1})','Temps écoulé ! Défaite aux points. ({0} vs {1})','Zeit abgelaufen! Punktniederlage. ({0} vs {1})'],
+    '제한 시간 종료! 무승부입니다! ({0}점 동점)': ['Time’s up! It’s a draw! ({0} pts tie)','制限時間終了！引き分けです！（{0}点で同点）','时间到！平局！（同为{0}分）','時間到！平手！（同為{0}分）','¡Tiempo agotado! ¡Empate! ({0} pts)','Temps écoulé ! Égalité ! ({0} pts)','Zeit abgelaufen! Unentschieden! ({0} Pkt.)'],
+    '상대방보다 먼저 스도쿠를 완벽하게 클리어했습니다!': ['You cleared the Sudoku perfectly before your opponent!','相手よりも先に数独を完璧にクリアしました！','你比对手更快完美完成了数独！','你比對手更快完美完成了數獨！','¡Completaste el Sudoku perfectamente antes que tu rival!','Vous avez terminé le Sudoku avant votre adversaire !','Du hast das Sudoku vor deinem Gegner perfekt gelöst!'],
+
+    // 상태바 / 시스템 툴팁 & 배틀 채팅
+    '모바일 데이터': ['Cellular data','モバイルデータ','移动数据','行動數據','Datos móviles','Données mobiles','Mobile Daten'],
+    '무음': ['Silent','サイレント','静音','靜音','Silencio','Silencieux','Lautlos'],
+    '진동': ['Vibrate','バイブ','振动','震動','Vibración','Vibreur','Vibration'],
+    '방해 금지': ['Do not disturb','マナーモード','请勿打扰','請勿打擾','No molestar','Ne pas déranger','Nicht stören'],
+    '비행기 탑승 모드': ['Airplane mode','機内モード','飞行模式','飛航模式','Modo avión','Mode avion','Flugmodus'],
+    '충전 중': ['Charging','充電中','充电中','充電中','Cargando','En charge','Laden'],
+    '효과음 볼륨': ['Sound effects volume','効果音の音量','音效音量','音效音量','Volumen de efectos','Volume des effets sonores','Soundeffekt-Lautstärke'],
+    '아직 대화가 없어요. 이모티콘으로 인사해 보세요!': ['No messages yet. Say hello with an emoji!','まだメッセージがありません。絵文字で挨拶してみましょう！','还没有消息。用表情打个招呼吧！','還沒有訊息。用表情打個招呼吧！','Aún no hay mensajes. ¡Saluda con un emoji!','Pas encore de message. Dites bonjour avec un emoji !','Noch keine Nachrichten. Sag Hallo mit einem Emoji!'],
+    '배틀 대화': ['Battle Chat','対戦チャット','对战聊天','對戰聊天','Chat de batalla','Discussion de duel','Duell-Chat'],
+    '상대와 대화하기': ['Chat with opponent','相手とチャットする','与对手聊天','與對手聊天','Chatear con el rival','Discuter avec l’adversaire','Mit Gegner chatten'],
+    '메시지를 보내지 못했습니다. 연결을 확인해 주세요': ['Failed to send message. Please check connection.','メッセージを送信できませんでした。接続を確認してください。','发送消息失败。请检查连接。','發送訊息失敗。請檢查連線。','No se pudo enviar el mensaje. Comprueba la conexión.','Échec de l’envoi du message. Vérifiez la connexion.','Nachricht konnte nicht gesendet werden. Verbindung prüfen.'],
+
+    // 배틀 대기실 & 참가 & 시작
+    '접속 · 준비 중': ['Connected · Preparing','接続済み · 準備中','已连接 · 准备中','已連線 · 準備中','Conectado · Preparando','Connecté · En préparation','Verbunden · Bereitmachen'],
+    '미접속': ['Not connected','未接続','未连接','未連線','No conectado','Non connecté','Nicht verbunden'],
+    '방장 준비 완료': ['Host Ready','ホスト準備完了','房主准备完毕','房主準備完畢','Anfitrión listo','Hôte prêt','Host bereit'],
+    '상대방 접속을 기다리는 중… (4자리 코드 공유)': ['Waiting for opponent to connect… (share 4-digit code)','相手の接続を待機中…（4桁のコードを共有）','等待对手连接…（分享4位代码）','等待對手連線…（分享4位代碼）','Esperando al rival… (comparte el código de 4 dígitos)','En attente de l’adversaire… (partagez le code à 4 chiffres)','Warte auf Gegner… (4-stelligen Code teilen)'],
+    '상대방 접속 완료 · 참가자가 준비하면 시작할 수 있습니다.': ['Opponent connected · You can start once they are ready.','相手が接続しました · 参加者が準備完了したら開始できます。','对手已连接 · 待参加者准备完毕即可开始。','對手已連線 · 待參加者準備完畢即可開始。','Rival conectado · Puedes empezar cuando esté listo.','Adversaire connecté · Vous pouvez lancer dès qu’il est prêt.','Gegner verbunden · Starten sobald der Gast bereit ist.'],
+    '모든 플레이어 준비 완료! 배틀을 시작하세요! ⚔️': ['All players ready! Start the battle! ⚔️','全プレイヤー準備完了！バトルを開始してください！⚔️','所有玩家准备完毕！开始对战吧！⚔️','所有玩家準備完畢！開始對戰吧！⚔️','¡Todos los jugadores listos! ¡Que empiece la batalla! ⚔️','Tous les joueurs sont prêts ! Lancez le duel ! ⚔️','Alle Spieler bereit! Starte das Duell! ⚔️'],
+    "아래 '준비 완료' 버튼을 눌러주세요.": ['Please tap the ‘Ready’ button below.','下の「準備完了」ボタンを押してください。','请点击下方的“准备完毕”按钮。','請點擊下方的「準備完畢」按鈕。','Por favor, pulsa el botón ‘Listo’ abajo.','Veuillez appuyer sur le bouton « Prêt » ci-dessous.','Bitte unten auf «Bereit» tippen.'],
+    '양쪽 모두 준비 완료! 방장의 시작을 기다리는 중… ⚔️': ['Both ready! Waiting for the host to start… ⚔️','両者準備完了！ホストの開始を待機中… ⚔️','双方均已准备！等待房主开始… ⚔️','雙方均已準備！等待房主開始… ⚔️','¡Ambos listos! Esperando a que el anfitrión comience… ⚔️','Les deux sont prêts ! En attente du lancement par l’hôte… ⚔️','Beide bereit! Warte auf Start durch den Host… ⚔️'],
+    '준비 상태 변경에 실패했습니다.': ['Failed to change ready status.','準備状態の変更に失敗しました。','更改准备状态失败。','更改準備狀態失敗。','Error al cambiar el estado de preparación.','Échec du changement de statut prêt.','Bereitschaftsstatus konnte nicht geändert werden.'],
+    '참가자가 준비를 완료해야 시작할 수 있습니다.': ['Guest must be ready before starting.','参加者が準備完了しないと開始できません。','参加者必须准备完毕方可开始。','參加者必須準備完畢方可開始。','El invitado debe estar listo para empezar.','L’invité doit être prêt avant de commencer.','Der Gast muss bereit sein, um zu starten.'],
+    '방 코드는 4자리 숫자입니다.': ['Room code must be a 4-digit number.','ルームコードは4桁の数字です。','房间代码为4位数字。','房間代碼為4位數字。','El código de la sala debe ser de 4 dígitos.','Le code de la salle est composé de 4 chiffres.','Der Raumcode ist eine 4-stellige Zahl.'],
+    '방 찾는 중…': ['Searching room…','ルーム検索中…','正在查找房间…','正在尋找房間…','Buscando sala…','Recherche de la salle…','Raum wird gesucht…'],
+    '연결 중…': ['Connecting…','接続中…','正在连接…','正在連線…','Conectando…','Connexion…','Verbinde…'],
+    '방 코드가 맞지 않습니다.': ['Room code does not match.','ルームコードが一致しません。','房间代码不匹配。','房間代碼不相符。','El código de la sala no coincide.','Le code de salle ne correspond pas.','Raumcode stimmt nicht überein.'],
+    '이미 다른 사람이 참가한 방입니다.': ['This room is already full.','すでに他の人が参加しているルームです。','已有其他玩家加入该房间。','已有其他玩家加入該房間。','Esta sala ya está ocupada por otro jugador.','Cette salle est déjà occupée par un autre joueur.','Dieser Raum ist bereits voll.'],
+    '방장이 방을 나가 방이 폭파되었습니다.': ['Host left the room. Room has been closed.','ホストが退室したためルームが解散されました。','房主已退出，房间已解散。','房主已退出，房間已解散。','El anfitrión salió de la sala. La sala se ha cerrado.','L’hôte a quitté la salle. La salle a été fermée.','Host hat den Raum verlassen. Der Raum wurde geschlossen.'],
+    '배틀 시작 ({0}/2)': ['Start Battle ({0}/2)','バトル開始 ({0}/2)','开始对战 ({0}/2)','開始對戰 ({0}/2)','Iniciar batalla ({0}/2)','Lancer le duel ({0}/2)','Duell starten ({0}/2)'],
+
+    // 설정 & 퀵 세팅
+    '시작 전 설정': ['Pre-game Settings','開始前設定','开局前设置','開局前設定','Ajustes previos','Réglages avant partie','Voreinstellungen'],
+    '대전 규칙 · 두 플레이어 공통': ['Battle Rules · Shared by both players','対戦ルール · 両プレイヤー共通','对战规则 · 双方通用','對戰規則 · 雙方通用','Reglas del duelo · Comunes para ambos','Règles du duel · Communes aux deux','Duellregeln · Gemeinsam für beide'],
+    '목숨 (직접 입력)': ['Lives (enter directly)','ライフ（直接入力）','生命（直接输入）','生命（直接輸入）','Vidas (entrada directa)','Vies (saisie directe)','Leben (direkt eingeben)'],
+    '힌트 (직접 입력)': ['Hints (enter directly)','ヒント（直接入力）','提示（直接输入）','提示（直接輸入）','Pistas (entrada directa)','Indices (saisie directe)','Hinweise (direkt eingeben)'],
+    '목숨 소진': ['Lives exhausted','ライフ消耗時','生命用尽','生命用盡','Vidas agotadas','Vies épuisées','Leben aufgebraucht'],
+    '힌트 소진': ['Hints exhausted','ヒント消耗時','提示用尽','提示用盡','Pistas agotadas','Indices épuisés','Hinweise aufgebraucht'],
+    '후보 메모 자동 정리': ['Auto remove notes','候補メモの自動整理','自动清理候选笔记','自動清理候選筆記','Limpiar notas automáticamente','Nettoyage auto des notes','Notizen automatisch entfernen'],
+    '오답 알림': ['Error check','誤答通知','错误提示','錯誤提示','Aviso de errores','Vérification d’erreurs','Fehlerprüfung'],
+    '행·열 강조': ['Row & column highlight','行・列の強調','行·列高亮','行·列醒目提示','Resaltar filas y columnas','Mise en surbrillance lignes/colonnes','Zeilen & Spalten hervorheben'],
+    '감점 후 계속': ['Continue with penalty','減点して続行','扣分后继续','扣分後繼續','Continuar con penalización','Continuer avec pénalité','Mit Punktabzug weiterspielen'],
+    '추가 사용 금지': ['No further use','追加使用禁止','禁止继续使用','禁止繼續使用','Sin uso adicional','Aucune utilisation supplémentaire','Keine weitere Nutzung'],
+    '추가 사용 · 최대 50점 감점': ['Allow with penalty (up to -50 pts)','追加使用 · 最大50点減点','继续使用 · 最多扣除50分','繼續使用 · 最多扣除50分','Uso adicional · hasta -50 pts','Autoriser avec pénalité (jusqu’à -50 pts)','Erlauben mit Abzug (bis zu -50 Pkt.)'],
+    '닫힘': ['Closed','閉じる','已关闭','已關閉','Cerrado','Fermé','Geschlossen'],
+    '방을 준비한 뒤 코드를 공유하세요. 규칙 변경 시 방을 다시 준비합니다. 기본 힌트는 최대 30점 감점됩니다.': [
+      'Prepare the room then share the code. Modifying rules resets the room. Default hints deduct up to 30 pts.',
+      'ルーム準備後にコードを共有してください。ルール変更時は再準備されます。基本ヒントは最大30点減点。',
+      '准备房间后请分享代码。更改规则时需重新准备房间。基础提示最多扣除30分。',
+      '準備房間後請分享代碼。更改規則時需重新準備房間。基礎提示最多扣除30分。',
+      'Prepara la sala y comparte el código. Cambiar reglas reinicia la sala. Las pistas descuentan hasta 30 pts.',
+      'Préparez la salle et partagez le code. Changer les règles réinitialise la salle. Indices jusqu’à -30 pts.',
+      'Raum vorbereiten und Code teilen. Regeländerungen setzen den Raum zurück. Hinweise kosten bis zu 30 Pkt.'
+    ],
+    '규칙은 새 게임부터 적용됩니다. 기본 힌트는 최대 30점 감점됩니다.': [
+      'Rules apply from the next new game. Default hints deduct up to 30 pts.',
+      'ルールは新しいゲームから適用されます。基本ヒントは最大30点減点されます。',
+      '规则从新一局开始生效。基础提示最多扣除30分。',
+      '規則從新一局開始生效。基礎提示最多扣除30分。',
+      'Las reglas se aplican en la nueva partida. Las pistas descuentan hasta 30 pts.',
+      'Les règles s’appliquent à la prochaine partie. Indices jusqu’à -30 pts.',
+      'Regeln gelten ab dem nächsten Spiel. Hinweise kosten bis zu 30 Pkt.'
+    ]
+
   };
   const langs = ['en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
   for (const [ko, list] of Object.entries(rows)) langs.forEach((l, i) => { (T[l] = T[l] || {})[ko] = list[i]; });

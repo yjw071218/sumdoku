@@ -19,32 +19,47 @@
     copy:'M9 9h12v12H9ZM5 15H3V3h12v2',
     calendar:'M3 5h18v16H3ZM3 10h18M8 2v6m8-6v6',
     refresh:'M20 7a9 9 0 1 0 1 9M20 2v6h-6',
-    shield:'m12 2 9 4v6c0 6-9 10-9 10S3 18 3 12V6Z'
+    shield:'m12 2 9 4v6c0 6-9 10-9 10S3 18 3 12V6Z',
+    prev:'M19 20 L9 12 L19 4 Z',
+    next:'M5 4 L15 12 L5 20 Z',
+    first:'M19 20 L9 12 L19 4 Z M5 4 v16',
+    last:'M5 4 L15 12 L5 20 Z M19 4 v16',
+    pause:'M6 4h4v16H6z M14 4h4v16h-4z',
+    cross:'M18 6 6 18 M6 6 18 18'
   };
   const icon = (name) => `<svg class="line-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.info}"/></svg>`;
   const emoji = /(?:\p{Extended_Pictographic}|[★☆✓✔✕➕➖▶◀⏮⏭])(?:\uFE0F|\uFE0E)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*/gu;
-  const names = {'🏆':'trophy','💔':'heart','❤️':'heart','♥':'heart','💡':'hint','🏳️':'flag','⏱️':'clock','⏳':'clock','⏰':'clock','📅':'calendar','📊':'chart','📋':'copy','🗑️':'trash','⚡':'bolt','★':'star','☆':'star','⭐':'star','✨':'star','✓':'check','✔':'check','✅':'check','➕':'plus','▶':'play','🎬':'play','🧩':'grid','🔄':'refresh','🛡️':'shield'};
+  const names = {'🏆':'trophy','💔':'heart','❤️':'heart','♥':'heart','💡':'hint','🏳️':'flag','⏱️':'clock','⏳':'clock','⏰':'clock','📅':'calendar','📊':'chart','📋':'copy','🗑️':'trash','⚡':'bolt','★':'star','☆':'star','⭐':'star','✨':'star','✓':'check','✔':'check','✅':'check','➕':'plus','▶':'play','🎬':'play','🧩':'grid','🔄':'refresh','🛡️':'shield','⏮':'first','⏭':'last','◀':'prev','⏸':'pause','✕':'cross','✖':'cross'};
   function replaceIcons(root) {
     if (!root || root.nodeType !== 1 || root.closest('svg,script,style,textarea,input,select,option,[data-keep-emoji]')) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
     while (walker.nextNode()) {
       const n = walker.currentNode;
-      if (!n.parentElement.closest('svg,script,style,textarea,input,select,option,[data-keep-emoji]') && n.textContent.match(emoji)) nodes.push(n);
+      if (!n.parentElement.closest('svg,script,style,textarea,input,select,option,[data-keep-emoji]') && [...n.textContent.matchAll(emoji)].some(m => paths[names[m[0]]])) nodes.push(n); // 매핑 없는 이모지만 있으면 건드리지 않음(재처리 무한 루프 방지)
     }
     for (const n of nodes) {
       const fragment = document.createDocumentFragment(); let offset=0;
       for (const m of n.textContent.matchAll(emoji)) {
         fragment.append(document.createTextNode(n.textContent.slice(offset,m.index)));
-        const span=document.createElement('span'); span.className='inline-icon';
-        span.innerHTML=icon(names[m[0]] || 'info'); fragment.append(span); offset=m.index+m[0].length;
+        const iconName = names[m[0]];
+        if (iconName && paths[iconName]) {
+          const span = document.createElement('span'); span.className = 'inline-icon';
+          span.innerHTML = icon(iconName); fragment.append(span);
+        } else {
+          fragment.append(document.createTextNode(m[0]));
+        }
+        offset = m.index + m[0].length;
       }
       fragment.append(document.createTextNode(n.textContent.slice(offset))); n.replaceWith(fragment);
     }
   }
   proto.finishNegativeScore = function() {
     this.stopTimer(); this.resetCombo(); this.dismissDeductiveHint();
-    if (this.isBattle) { this.handleBattleEnd(false,'점수가 음수여서 실패 처리되었습니다.'); return; }
+    if (this.isBattle) {
+      if (this.battleMode === 'race' || this.battleMode === 'score') return;
+      this.handleBattleEnd(false,'점수가 음수여서 실패 처리되었습니다.'); return;
+    }
     this.resultReason='negative_score'; this.isWin=false;
     this.recordGameEnd(false); this.clearOngoingGame(); this.isPaused=true;
     this.showGameResultModal({status:'fail',title:'게임 종료 · 점수 미달',sub:'완성 직전 점수가 음수여서 보너스를 적용하지 않고 실패 처리했습니다.',score:this.score,time:this.dom.timer.textContent,mistakes:String(this.mistakes),difficulty:({easy:'초급',medium:'중급',hard:'고급',expert:'전문가'})[this.difficulty],isNewBestScore:false,isNewBestTime:false});

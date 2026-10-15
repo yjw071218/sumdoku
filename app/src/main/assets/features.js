@@ -259,7 +259,7 @@
   }
   P.renderDailyStreak = function () {
     const s = dailyStreak(this.dailyCleared);
-    const text = s.cur ? `🔥 연속 ${s.cur}일 · 최고 ${s.best}일` : (s.best ? `오늘 풀면 새 연속 기록 시작 · 최고 ${s.best}일` : '오늘 풀면 연속 기록이 시작돼요');
+    const text = s.cur ? `🔥 연속 ${s.cur}일 · 최고 ${s.best}일` : (s.best ? `최고 연속 ${s.best}일 · 다시 도전` : '오늘 풀면 연속 기록이 시작돼요');
     const put = (id, parent, cls) => {
       if (!parent) return;
       let el = document.getElementById(id);
@@ -626,6 +626,8 @@
   P.isQuietToast = msg => QUIET.some(re => re.test(String(msg)));
   P.showToast = function (msg, ...rest) {
     if (P.isQuietToast(msg)) return;
-    return base.call(this, msg, ...rest);
+    const localized = (window.I18N && typeof window.I18N.text === 'function') ? window.I18N.text(String(msg)) : msg;
+    return base.call(this, localized, ...rest);
   };
+
 })();

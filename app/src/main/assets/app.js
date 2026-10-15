@@ -16,7 +16,8 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.14";
+const APP_VERSION = "1.1.15";
+const RACE_FINISH_BONUS = 3000; // 스피드 레이스 완주 가산점
 const GITHUB_REPO = "yjw071218/sumdoku";
 
 // ============================================================================
@@ -2296,6 +2297,19 @@ class SumdokuApp {
     this.dom.battleP1Bar.style.width = '0%';
     this.dom.battleP2Bar.style.width = '0%';
 
+    // 스피드 레이스와 타임어택에서는 목숨 무제한
+    if (bMode === 'race' || bMode === 'score') {
+      if (puzzleData && puzzleData.rules) {
+        puzzleData.rules.maxLives = 'unlimited';
+        puzzleData.rules.mistakeLimit = false;
+        puzzleData.rules.livesExhaustedAction = 'continue';
+      }
+      this.rules.maxLives = 'unlimited';
+      this.rules.mistakeLimit = false;
+      this.rules.livesExhaustedAction = 'continue';
+      this.maxMistakes = 999999;
+    }
+
     // 배틀 퍼즐은 둘 다 100% 동일한 맵으로 시작
     const matchDiff = (puzzleData && puzzleData.difficulty) || this.battleDiff || 'expert';
     this.startNewGame(matchDiff, null, 'battle', puzzleData);
@@ -2329,7 +2343,8 @@ class SumdokuApp {
             score: this.score,
             mistakes: this.mistakes,
             isWin: this.isWin,
-            board: this.board.map(row => row.map(c => (c && c.val && !c.error) ? c.val : 0).join('')).join('')
+            board: this.board.map(row => row.map(c => (c && c.val && !c.error) ? c.val : 0).join('')).join(''),
+            notes: this.board.map(row => row.map(c => c && c.notes && c.notes.size ? [...c.notes].sort().join('') : '').join(';')).join('|')
           })
         });
 
@@ -2428,16 +2443,26 @@ class SumdokuApp {
     }
     const winner = typeof result.winner === 'number' && result.winner >= 0 ? result.winner : (result.endReason === 'completed' ? actor : -1);
     if (winner < 0) return false;
+    this.raceEndPending = false;
     const won = winner === this.battleRole;
     const oppData = (this.battleRole === 1 ? result.p2 : result.p1) || {};
     const oppScore = Number(oppData.score) || 0;
     this._battleEndFromServer = true;
     try {
-      if (winner === 0) this.handleBattleEnd(false, `무승부입니다 (${this.score}점 동점)`);
+      if (winner === 0 && result.endReason !== 'race') this.handleBattleEnd(false, `무승부입니다 (${this.score}점 동점)`);
       else if (result.endReason === 'turn') this.handleBattleEnd(won, won ? `판 완성! 점수 대결 승리 (${this.score} vs ${oppScore}) 🏆` : `판 완성! 점수 대결 패배 (${this.score} vs ${oppScore})`);
       else if (result.endReason === 'eliminated') this.handleBattleEnd(won, won ? '상대방이 목숨을 모두 잃어 탈락했습니다! 당신의 승리! 🏆' : '목숨을 모두 잃어 탈락했습니다!');
       else if (result.endReason === 'timeup') this.handleBattleEnd(won, won ? `제한 시간 종료! 점수 대결에서 승리했습니다! (${this.score} vs ${oppScore})` : `제한 시간 종료! 점수 대결에서 패배했습니다. (${this.score} vs ${oppScore})`);
       else if (result.endReason === 'negative') this.handleBattleEnd(won, won ? '상대방의 점수가 음수가 되어 당신의 승리! 🏆' : '점수가 음수여서 실패 처리되었습니다.');
+      else if (result.endReason === 'race') {
+        // 서버에 기록된 두 점수를 그대로 표시해 두 기기의 결과 문구가 일치하도록 합니다.
+        const ownData = (this.battleRole === 1 ? result.p1 : result.p2) || {};
+        const mine = Number(ownData.score ?? this.score) || 0;
+        if (mine !== this.score) { this.score = mine; this.dom.gameScore.textContent = mine; }
+        const h = actor === this.battleRole ? '완주했습니다!' : '상대방이 완주했습니다!';
+        if (winner === 0) this.handleBattleEnd(false, `레이스 종료! 무승부입니다 (${mine}점 동점)`);
+        else this.handleBattleEnd(won, won ? `${h} 점수 대결 승리 (${mine} vs ${oppScore}) 🏆` : `${h} 점수 대결 패배 (${mine} vs ${oppScore})`);
+      }
       else this.handleBattleEnd(won, won ? '스도쿠를 먼저 완성했습니다!' : '상대방이 먼저 스도쿠를 완성했습니다!');
     } finally { this._battleEndFromServer = false; }
     return true;
@@ -2461,6 +2486,7 @@ class SumdokuApp {
       const prevBoard = [...tl].reverse().find(x => x.board)?.board || null;
       tl.push({
         board: oppBoard && oppBoard !== prevBoard ? oppBoard : undefined,
+        notes: opp.notes,
         step: (this.currentGameReplay.moves ? this.currentGameReplay.moves.length : 0),
         sec: this.timerSeconds,
         filled: opp.filled || 0,
@@ -2477,8 +2503,9 @@ class SumdokuApp {
       return;
     }
 
-    // 상대방 실수 허용치 초과 탈락 판정 (설정에 따라 게임 오버 여부 및 목숨 개수 적용)
-    const isBattleEliminationAllowed = this.rules.mistakeLimit &&
+    // 상대방 실수 허용치 초과 탈락 판정 (서바이벌 모드 등 목숨 제한 모드에서만 적용)
+    const isBattleEliminationAllowed = this.battleMode === 'survival' &&
+                                       this.rules.mistakeLimit &&
                                        this.rules.maxLives !== 'unlimited' &&
                                        this.rules.livesExhaustedAction === 'game_over';
     if (isBattleEliminationAllowed && opp.mistakes >= this.maxMistakes) {
@@ -2491,9 +2518,44 @@ class SumdokuApp {
     if (this.battleMode === 'race') {
       if (opp.isWin) {
         this.closeForfeitModal();
-        this.handleBattleEnd(false, '상대방이 먼저 스도쿠를 완성했습니다!');
+        this.finishRaceByScore(false);
       }
     }
+  }
+
+  // 스피드 레이스 종료: 완주자(보너스 포함)와 상대의 점수를 비교합니다.
+  finishRaceByScore(iFinished) {
+    // 승패는 서버가 같은 시점의 두 점수로 한 번만 정합니다. 두 기기는 그 결과를 그대로 표시합니다.
+    if (this.raceEndPending || !this.isBattle) return;
+    const epoch = this.battleEpoch, role = this.battleRole;
+    const url = role === 1 ? `http://${this.battleHostIp || '127.0.0.1'}:8888` : this.battleHostUrl;
+    this.raceEndPending = true;
+    if (iFinished) {
+      const payload = JSON.stringify({ player: role, reason: 'race', score: this.score, filled: this.countFilledCells(), mistakes: this.mistakes, isWin: true });
+      (async () => {
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            if (!this.isBattle || this.battleEpoch !== epoch) return;
+            const result = await this.battleRequest(`${url}/api/end`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+            if (!this.isBattle || this.battleEpoch !== epoch) return;
+            if (this.applyBattleTerminal(result)) return;
+          } catch (_) { await new Promise(r => setTimeout(r, 400)); }
+        }
+        if (this.isBattle && this.battleEpoch === epoch) this.finishRaceLocally(true);
+      })();
+    } else {
+      // 상대가 완주: 서버 확정 결과는 진행 상황 확인 때 함께 도착합니다. 오지 않으면 잠시 후 직접 판정합니다.
+      setTimeout(() => { if (this.isBattle && this.battleEpoch === epoch) this.finishRaceLocally(false); }, 4000);
+    }
+  }
+
+  // 서버와 연결이 끊긴 경우의 예비 판정
+  finishRaceLocally(iFinished) {
+    const mine = this.score, opp = Number(this.oppState?.score) || 0;
+    if (mine === opp) { this.handleBattleEnd(false, `레이스 종료! 무승부입니다 (${mine}점 동점)`); return; }
+    const won = mine > opp;
+    const head = iFinished ? '완주했습니다!' : '상대방이 완주했습니다!';
+    this.handleBattleEnd(won, won ? `${head} 점수 대결 승리 (${mine} vs ${opp}) 🏆` : `${head} 점수 대결 패배 (${mine} vs ${opp})`);
   }
 
   handleBattleEnd(isVictory, reason) {
@@ -2813,7 +2875,14 @@ class SumdokuApp {
     this.hintsUsed = 0;
     this.resetCombo();
     this.dom.gameScore.textContent = '0';
-    this.maxMistakes = (this.rules.maxLives === 'unlimited') ? 999999 : parseInt(this.rules.maxLives || 3, 10);
+    if ((this.isBattle && (this.battleMode === 'race' || this.battleMode === 'score')) || this.gameMode === 'timeattack') {
+      this.rules.maxLives = 'unlimited';
+      this.rules.mistakeLimit = false;
+      this.rules.livesExhaustedAction = 'continue';
+      this.maxMistakes = 999999;
+    } else {
+      this.maxMistakes = (this.rules.maxLives === 'unlimited') ? 999999 : parseInt(this.rules.maxLives || 3, 10);
+    }
     const maxMistakesDisplay = (this.rules.maxLives === 'unlimited' || !this.rules.mistakeLimit) ? '∞' : this.maxMistakes;
     this.dom.mistakes.textContent = `0 / ${maxMistakesDisplay}`;
     this.undoStack = [];
@@ -3312,6 +3381,18 @@ class SumdokuApp {
   }
 
   // ----------------- 숫자 입력 & 고도화된 점수 시스템 -----------------
+  // 스피드 레이스: 점수가 바뀌면 다음 주기(0.6초)를 기다리지 않고 바로 서버에 보냅니다.
+  pushRaceProgress() {
+    if (!this.isBattle || this.battleMode !== 'race' || this.raceEndPending || this.isWin || this.forfeitPending) return;
+    clearTimeout(this._racePushTimer);
+    this._racePushTimer = setTimeout(() => {
+      if (!this.isBattle || this.raceEndPending || this.isWin) return;
+      const role = this.battleRole, url = role === 1 ? `http://${this.battleHostIp || '127.0.0.1'}:8888` : this.battleHostUrl;
+      this.battleFetch(`${url}/api/progress`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player: role, filled: this.countFilledCells(), score: this.score, mistakes: this.mistakes, isWin: false }) }).catch(() => {});
+    }, 30);
+  }
+
   handleNumberInput(num) {
     if (this.currentView !== 'game' || this.isWin || this.resultReason || this.isPaused) return;
     const { r, c } = this.selected;
@@ -3362,8 +3443,11 @@ class SumdokuApp {
           this.sound.play('error');
           cellData.error = true;
           this.resetCombo('오답 입력으로 콤보 리셋');
-          this.score -= 50;
-          this.showScoreDelta(-50, r, c);
+          // 목숨이 무한인 스피드 레이스·타임어택은 찍기 방지를 위해 큰 감점, 실수할수록 증가(200→300→…최대 600)
+          const unlimitedMode = (this.isBattle && (this.battleMode === 'race' || this.battleMode === 'score')) || this.gameMode === 'timeattack';
+          const penalty = unlimitedMode ? Math.min(600, 200 + this.mistakes * 100) : 50;
+          this.score -= penalty;
+          this.showScoreDelta(-penalty, r, c);
           this.dom.gameScore.textContent = this.score;
 
           this.mistakes++;
@@ -3371,7 +3455,7 @@ class SumdokuApp {
           this.dom.mistakes.textContent = `${this.mistakes} / ${maxMistakesDisplay}`;
 
           if (this.settings.autoCheck) {
-            this.showToast(`잘못된 숫자입니다! (-50점)`);
+            this.showToast(`잘못된 숫자입니다! (-${penalty}점)`);
           }
 
           // 목숨 소진 및 게임 오버 판정 (일반 모드 및 배틀 모드 둘 다 설정 적용)
@@ -3807,7 +3891,7 @@ class SumdokuApp {
         }
       }
     }
-    if (this.score < 0) { this.finishNegativeScore(); return false; }
+    if (this.score < 0 && (!this.isBattle || (this.battleMode !== 'race' && this.battleMode !== 'score'))) { this.finishNegativeScore(); return false; }
     this.isWin = true;
     this.sound.play('win');
     this.stopTimer();
@@ -3838,6 +3922,14 @@ class SumdokuApp {
     this.dom.gameScore.textContent = this.score;
 
     if (this.isBattle) {
+      if (this.battleMode === 'race') {
+        // 스피드 레이스: 완주 보너스를 더한 뒤 점수가 높은 쪽이 승리합니다.
+        this.score += RACE_FINISH_BONUS;
+        this.dom.gameScore.textContent = this.score;
+        this.showToast(`🏁 완주 보너스 (+${RACE_FINISH_BONUS.toLocaleString()}점)`);
+        this.finishRaceByScore(true);
+        return true;
+      }
       this.handleBattleEnd(true, '상대방보다 먼저 스도쿠를 완벽하게 클리어했습니다!');
       return true;
     }
@@ -4458,9 +4550,13 @@ class SumdokuApp {
         if (this.dom.replayOppScore) this.dom.replayOppScore.textContent = `${Number(curSnap.score || 0).toLocaleString()}점`;
         if (this.dom.replayOppMistakes) this.dom.replayOppMistakes.textContent = `${curSnap.mistakes || 0}회`;
         if (this.dom.replayOppStatus) this.dom.replayOppStatus.textContent = curSnap.status || '진행 중';
-        let oppBoard = null;
-        for (const snap of oppTimeline) { if (snap.step > targetStep) break; if (snap.board) oppBoard = snap.board; }
-        this.renderReplayOppBoard(replay, oppBoard);
+        let oppBoard = null, oppNotes = null;
+        for (const snap of oppTimeline) {
+          if (snap.step > targetStep) break;
+          if (snap.board) oppBoard = snap.board;
+          if (snap.notes !== undefined) oppNotes = snap.notes;
+        }
+        this.renderReplayOppBoard(replay, oppBoard, oppNotes);
         if (this.dom.replayOppBarFill) {
           const oppPct = Math.min(100, Math.round((curSnap.filled / 81) * 100));
           this.dom.replayOppBarFill.style.width = `${oppPct}%`;
@@ -4478,34 +4574,110 @@ class SumdokuApp {
     }
   }
 
-  renderReplayOppBoard(replay, boardStr) {
+  renderReplayOppBoard(replay, boardStr, notesData) {
     const el = document.getElementById('replay-opp-board');
     if (!el) return;
     const hasAny = replay.oppTimeline?.some(x => x.board);
     el.classList.toggle('hidden', !hasAny);
     if (!hasAny) return;
+
     if (el.children.length !== 81) {
       el.innerHTML = '';
-      const cageOf = {};
-      (replay.cages || []).forEach((cg, i) => cg.cells.forEach(([r, c]) => { cageOf[r + ',' + c] = i; }));
-      for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
-        const d = document.createElement('div');
-        d.className = 'rob-cell';
-        const k = cageOf[r + ',' + c];
-        if (c % 3 === 2 && c < 8) d.classList.add('box-r');
-        if (r % 3 === 2 && r < 8) d.classList.add('box-b');
-        if (k !== undefined && cageOf[r + ',' + (c + 1)] !== k && c < 8) d.classList.add('cage-r');
-        if (k !== undefined && cageOf[(r + 1) + ',' + c] !== k && r < 8) d.classList.add('cage-b');
-        el.appendChild(d);
+      const cellCageMap = {};
+      (replay.cages || []).forEach((cg, idx) => {
+        cg.cells.forEach(([r, c]) => { cellCageMap[`${r},${c}`] = idx; });
+      });
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'rob-cell cell';
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+
+          if (c === 2 || c === 5) cell.classList.add('border-box-right');
+          if (r === 2 || r === 5) cell.classList.add('border-box-bottom');
+
+          const cIdx = cellCageMap[`${r},${c}`];
+          if (cIdx !== undefined && replay.cages[cIdx]) {
+            const cage = replay.cages[cIdx];
+            const isTop = (r === 0 || cellCageMap[`${r - 1},${c}`] !== cIdx);
+            const isBot = (r === 8 || cellCageMap[`${r + 1},${c}`] !== cIdx);
+            const isLft = (c === 0 || cellCageMap[`${r},${c - 1}`] !== cIdx);
+            const isRgt = (c === 8 || cellCageMap[`${r},${c + 1}`] !== cIdx);
+
+            const inset = document.createElement('div');
+            inset.className = 'cage-inset-border';
+            if (isTop) inset.classList.add('cage-top');
+            if (isBot) inset.classList.add('cage-bottom');
+            if (isLft) inset.classList.add('cage-left');
+            if (isRgt) inset.classList.add('cage-right');
+            cell.appendChild(inset);
+
+            if (cage.labelCell && cage.labelCell[0] === r && cage.labelCell[1] === c) {
+              const sumEl = document.createElement('span');
+              sumEl.className = 'cell-cage-sum';
+              sumEl.textContent = cage.sum;
+              cell.appendChild(sumEl);
+              cell.classList.add('has-cage-sum');
+            }
+          }
+
+          const valSpan = document.createElement('span');
+          valSpan.className = 'cell-value';
+          cell.appendChild(valSpan);
+
+          const notesEl = document.createElement('div');
+          notesEl.className = 'cell-notes';
+          for (let n = 1; n <= 9; n++) {
+            const sp = document.createElement('span');
+            sp.className = 'note-num';
+            sp.dataset.note = n;
+            notesEl.appendChild(sp);
+          }
+          cell.appendChild(notesEl);
+
+          el.appendChild(cell);
+        }
       }
     }
+
+    let parsedNotes = null;
+    if (typeof notesData === 'string' && notesData) {
+      const rows = notesData.split('|');
+      parsedNotes = rows.flatMap(row => row.split(';'));
+    } else if (Array.isArray(notesData)) {
+      parsedNotes = notesData;
+    }
+
     const cells = el.children;
     for (let i = 0; i < 81; i++) {
+      const cell = cells[i];
+      const valSpan = cell.querySelector('.cell-value');
+      const notesEl = cell.querySelector('.cell-notes');
       const v = boardStr ? boardStr[i] : '0';
       const t = v === '0' ? '' : v;
-      if (cells[i].textContent !== t) {
-        cells[i].textContent = t;
-        if (t) { cells[i].classList.remove('pop'); void cells[i].offsetWidth; cells[i].classList.add('pop'); }
+
+      if (t) {
+        if (valSpan.textContent !== t) {
+          valSpan.textContent = t;
+          cell.classList.remove('pop');
+          void cell.offsetWidth;
+          cell.classList.add('pop');
+        }
+        if (notesEl) notesEl.style.display = 'none';
+      } else {
+        valSpan.textContent = '';
+        const noteStr = parsedNotes ? (parsedNotes[i] || '') : '';
+        if (noteStr && notesEl) {
+          notesEl.style.display = 'grid';
+          for (let n = 1; n <= 9; n++) {
+            const sp = notesEl.querySelector(`[data-note="${n}"]`);
+            if (sp) sp.textContent = noteStr.includes(String(n)) ? n : '';
+          }
+        } else if (notesEl) {
+          notesEl.style.display = 'none';
+        }
       }
     }
   }

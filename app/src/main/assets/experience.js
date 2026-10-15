@@ -75,8 +75,9 @@ const RoomFinder = {
 };
 
 const RULE_FIELDS = ['mistakeLimit', 'maxLives', 'livesExhaustedAction', 'initialHints', 'hintExhaustedAction', 'allowAutoNotes', 'turnSeconds'];
-function normalizedRules(settings) {
-  let maxLives = String(settings.maxLives ?? '3');
+function normalizedRules(settings, battleMode) {
+  const isInfiniteLives = battleMode === 'race' || battleMode === 'score';
+  let maxLives = isInfiniteLives ? 'unlimited' : String(settings.maxLives ?? '3');
   if (maxLives !== 'unlimited') {
     const num = parseInt(maxLives, 10);
     maxLives = isNaN(num) || num < 1 ? '3' : String(Math.min(999, num));
@@ -87,10 +88,10 @@ function normalizedRules(settings) {
     initialHints = isNaN(num) || num < 0 ? '3' : String(Math.min(999, num));
   }
   return {
-    mistakeLimit: settings.mistakeLimit !== false,
+    mistakeLimit: isInfiniteLives ? false : settings.mistakeLimit !== false,
     maxLives,
     initialHints,
-    livesExhaustedAction: settings.livesExhaustedAction === 'continue' ? 'continue' : 'game_over',
+    livesExhaustedAction: isInfiniteLives ? 'continue' : (settings.livesExhaustedAction === 'continue' ? 'continue' : 'game_over'),
     hintExhaustedAction: settings.hintExhaustedAction === 'disallow' ? 'disallow' : 'allow_penalty',
     allowAutoNotes: settings.allowAutoNotes !== false && settings.allowAutoNotes !== 'false',
     turnSeconds: String([15, 20, 30, 45, 60].includes(+settings.turnSeconds) ? +settings.turnSeconds : 30)
@@ -311,7 +312,7 @@ SumdokuApp.prototype.createHostRoom = function() {
   }
   try {
     this.battleRoomCode = RoomFinder.newCode();
-    const dummyPuzzle = { difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings), roomCode: this.battleRoomCode };
+    const dummyPuzzle = { difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings, this.battleMode || 'race'), roomCode: this.battleRoomCode };
     const response = JSON.parse(window.AndroidBridge.startBattleServer(
       this.battleMode || 'race',
       this.battleDiff || 'expert',
@@ -676,7 +677,8 @@ SumdokuApp.prototype.startGuestPolling = function() {
 
 const baseStartGame = SumdokuApp.prototype.startNewGame;
 SumdokuApp.prototype.startNewGame = async function(diff, rng, mode, puzzle) {
-  this.gameRules = normalizedRules(puzzle?.rules || this.settings);
+  const bMode = this.isBattle ? this.battleMode : (mode === 'timeattack' ? 'score' : null);
+  this.gameRules = normalizedRules(puzzle?.rules || this.settings, bMode);
   try { return await baseStartGame.call(this, diff, rng, mode, puzzle); }
   catch (error) { this.showToast(error.message); this.switchView('home'); }
 };

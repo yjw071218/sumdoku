@@ -209,6 +209,16 @@
     return result;
   };
 
+  const baseInputRace = P.handleNumberInput;
+  P.handleNumberInput = function () {
+    const before = this.score;
+    const result = baseInputRace.apply(this, arguments);
+    if (this.score !== before) this.pushRaceProgress?.();
+    return result;
+  };
+  const baseStartRace = P.startBattleMatch;
+  P.startBattleMatch = function () { this.raceEndPending = false; clearTimeout(this._racePushTimer); return baseStartRace.apply(this, arguments); };
+
   const baseWin = P.checkWinCondition;
   P.checkWinCondition = function () {
     if (isTurn(this)) return false; // 턴제 종료는 finishTurnGame에서 점수로 판정
@@ -304,7 +314,7 @@
     if (/기권|연결이 끊어/.test(text)) return result;
     const won = document.getElementById('battle-result-banner')?.classList.contains('win');
     const draw = /무승부/.test(text);
-    const kind = /판 완성/.test(text) ? 'turn' : /음수/.test(text) ? 'negative' : /제한 시간/.test(text) ? 'timeup' : /탈락/.test(text) ? 'eliminated' : 'completed';
+    const kind = /완주/.test(text) && this.battleMode === 'race' ? 'race' : /판 완성/.test(text) ? 'turn' : /음수/.test(text) ? 'negative' : /제한 시간/.test(text) ? 'timeup' : /탈락/.test(text) ? 'eliminated' : 'completed';
     const body = JSON.stringify({ player: role, reason: kind, winner: draw ? 0 : (won ? role : 3 - role),
       filled: this.countFilledCells(), score: this.score, mistakes: this.mistakes, isWin: !!won });
     const send = async (tries) => {

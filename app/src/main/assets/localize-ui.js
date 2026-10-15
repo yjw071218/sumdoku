@@ -54,7 +54,8 @@
   if(current!==output)node.nodeValue=output;
  }
  function element(el){
-  if(!el?.getAttribute||el.closest(skip))return;
+  if(!el?.getAttribute||(el.closest(skip)&&!el.matches('textarea,input')))return;
+
   let map=attributes.get(el);if(!map){map={};attributes.set(el,map);}
   for(const name of ['title','placeholder','aria-label','alt']){
    const value=el.getAttribute(name);if(!value)continue;

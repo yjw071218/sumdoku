@@ -405,12 +405,10 @@ public class BattleServer {
                     int player = playerNumber(body);
                     if (player == 0) {
                         statusCode = 400;
-                    } else if ("playing".equals(roomStatus)) {
-                        (player == 1 ? p1State : p2State).put("data", body);
-                        if (player == 2) lastGuestActiveTime = System.currentTimeMillis();
-                        if (flag(body, "resigned") || flag(body, "forfeit")) finishMatch(player, "forfeit");
+                    } else {
+                        responseJson = recordProgress(player, body);
                     }
-                    responseJson = player == 0 ? "{\"ok\":false}" : progressSnapshot();
+                    if (player == 0) responseJson = "{\"ok\":false}";
                 } else {
                     responseJson = progressSnapshot();
                 }
@@ -420,15 +418,7 @@ public class BattleServer {
                     statusCode = 400;
                     responseJson = "{\"ok\":false,\"error\":\"invalid_end\"}";
                 } else {
-                    if ("playing".equals(roomStatus)) {
-                        (player == 1 ? p1State : p2State).put("data", body);
-                        boolean forfeit = flag(body, "forfeit") || flag(body, "resigned");
-                        String kind = jsonString(body, "reason");
-                        if (forfeit || kind == null || !kind.matches("completed|turn|eliminated|timeup|negative")) kind = forfeit ? "forfeit" : "completed";
-                        int winner = forfeit ? 3 - player : jsonInt(body, "winner", "completed".equals(kind) ? player : -1);
-                        finishMatch(player, kind, winner < 0 || winner > 2 ? -1 : winner);
-                    }
-                    responseJson = progressSnapshot();
+                    responseJson = endMatch(player, body);
                 }
             }
             }
@@ -480,6 +470,35 @@ public class BattleServer {
         return java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*true\\s*[,}]").matcher(body).find();
     }
 
+    /** 경기 종료 요청을 한 번에 하나씩 처리합니다. 먼저 도착한 종료만 인정하고, 이후 요청은 확정된 결과를 돌려받습니다. */
+    private synchronized String recordProgress(int player, String body) {
+        if ("playing".equals(roomStatus)) {
+            (player == 1 ? p1State : p2State).put("data", body);
+            if (player == 2) lastGuestActiveTime = System.currentTimeMillis();
+            if (flag(body, "resigned") || flag(body, "forfeit")) finishMatch(player, "forfeit");
+        }
+        return progressSnapshot();
+    }
+
+    private synchronized String endMatch(int player, String body) {
+        if ("playing".equals(roomStatus)) {
+            (player == 1 ? p1State : p2State).put("data", body);
+            boolean forfeit = flag(body, "forfeit") || flag(body, "resigned");
+            String kind = jsonString(body, "reason");
+            if (forfeit || kind == null || !kind.matches("completed|race|turn|eliminated|timeup|negative")) kind = forfeit ? "forfeit" : "completed";
+            int winner;
+            if (forfeit) winner = 3 - player;
+            else if ("race".equals(kind)) {
+                // 스피드 레이스: 서버에 기록된 최신 점수로 승패를 정합니다(완주자는 보너스 포함 점수).
+                int mine = jsonInt(body, "score", 0);
+                int other = jsonInt((player == 1 ? p2State : p1State).getOrDefault("data", "{}"), "score", 0);
+                winner = mine > other ? player : mine < other ? 3 - player : 0;
+            } else winner = jsonInt(body, "winner", "completed".equals(kind) ? player : -1);
+            finishMatch(player, kind, winner < 0 || winner > 2 ? -1 : winner);
+        }
+        return progressSnapshot();
+    }
+
     private void finishMatch(int player, String reason) {
         finishMatch(player, reason, "forfeit".equals(reason) ? 3 - player : "completed".equals(reason) ? player : -1);
     }
@@ -493,7 +512,7 @@ public class BattleServer {
         terminalProgress = progressSnapshot();
     }
 
-    private String progressSnapshot() {
+    private synchronized String progressSnapshot() {
         // Retain the previous result while a rematch is waiting, so a slow peer
         // can still observe the terminal event before joining the new lobby.
         if (terminalProgress != null) return terminalProgress;
