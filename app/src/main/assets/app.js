@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.16";
+const APP_VERSION = "1.1.22";
 const RACE_FINISH_BONUS = 3000; // 스피드 레이스 완주 가산점
 const GITHUB_REPO = "yjw071218/sumdoku";
 
@@ -2774,7 +2774,7 @@ class SumdokuApp {
 
         document.getElementById('update-modal-title').textContent = `새 버전 발견! (v${latestTag})`;
         // 마크다운 파싱 및 렌더링 (*, #, -, 링크, 줄바꿈)
-        this.dom.updateNotes.innerHTML = this.renderMarkdown(release.body || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.');
+        this.dom.updateNotes.innerHTML = this.renderMarkdown(this.pickLocalizedNotes(release.body) || '최신 버그 수정 및 UI 개선이 포함되어 있습니다.');
 
         this.dom.updateActionsNormal.classList.remove('hidden');
         this.dom.updateProgressContainer.classList.add('hidden');
@@ -2824,6 +2824,23 @@ class SumdokuApp {
       if (r < l) return false;
     }
     return false;
+  }
+
+  // 패치노트에서 설정 언어 구역만 고릅니다.
+  // 형식: <!-- lang:ko --> ... <!-- lang:en --> ... (구역이 없으면 본문 전체)
+  // 설정 언어 → 영어 → 첫 구역 순으로 찾습니다. zh-TW 가 없으면 zh 를 씁니다.
+  pickLocalizedNotes(body) {
+    const text = String(body || '');
+    const re = /<!--\s*lang:([A-Za-z-]+)\s*-->/g;
+    const marks = [...text.matchAll(re)];
+    if (!marks.length) return text;
+    const parts = {};
+    marks.forEach((m, k) => {
+      const end = k + 1 < marks.length ? marks[k + 1].index : text.length;
+      parts[m[1].toLowerCase()] = text.slice(m.index + m[0].length, end).trim();
+    });
+    const lang = String((window.I18N && window.I18N.currentLang) || 'ko').toLowerCase();
+    return parts[lang] || parts[lang.split('-')[0]] || parts.en || parts[marks[0][1].toLowerCase()] || text;
   }
 
   renderMarkdown(text) {

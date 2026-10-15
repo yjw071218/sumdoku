@@ -197,7 +197,9 @@
     });
     // 5-1) 합계 라벨 보호: 후보·정답 동그라미가 칸 왼쪽 위 합계 숫자를 덮지 않도록,
     //      동그라미를 그린 칸의 합계 라벨을 같은 자리에 맨 위로 다시 그립니다.
-    const drawnCells = new Set((v.digits || []).map(d => d.i).filter(Number.isInteger));
+    // 점선 영역(주·보조)·근거 칸·대상 칸에 있는 합계 라벨도 점선 위로 다시 그려 겹침을 없앱니다.
+    // 연결 점선이 다른 칸을 지나갈 수도 있으므로 보드의 모든 합계 라벨을 보호합니다.
+    const drawnCells = new Set(Array.from({ length: 81 }, (_, i) => i));
     drawnCells.forEach(i => {
       const cell = board()?.querySelector(`.cell[data-r="${Math.floor(i / 9)}"][data-c="${i % 9}"]`);
       const lb = cell && cell.querySelector('.cell-cage-sum');
@@ -205,11 +207,15 @@
       if (!sb || !lb.textContent) return;
       const cs = getComputedStyle(lb);
       const bgc = cs.backgroundColor && !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) ? cs.backgroundColor : null;
-      const pad = 1.5;
-      el('rect', { x: sb.x0 - pad, y: sb.y0 - pad, width: sb.x1 - sb.x0 + pad * 2, height: sb.y1 - sb.y0 + pad * 2, rx: 3,
-        class: 'hv-sum-guard', style: bgc ? `fill:${bgc}` : '' }, root);
-      const t = el('text', { x: (sb.x0 + sb.x1) / 2, y: (sb.y0 + sb.y1) / 2, class: 'hv-sum-guard-t',
-        'font-size': parseFloat(cs.fontSize) || 9, style: `fill:${cs.color};font-weight:${cs.fontWeight}` }, root);
+      const pad = 1.5, noSum = lb.classList.contains('no-sum');
+      // '?' 배지는 맥박 중에 잰 크기가 달라지므로 원래 크기(offset)로 중심에 맞춰 그립니다.
+      const mx = (sb.x0 + sb.x1) / 2, my = (sb.y0 + sb.y1) / 2;
+      const bw = noSum && lb.offsetWidth ? lb.offsetWidth : sb.x1 - sb.x0, bh = noSum && lb.offsetHeight ? lb.offsetHeight : sb.y1 - sb.y0;
+      const grp = el('g', { class: 'hv-sum-guard-g' + (noSum ? ' hv-nosum' : '') }, root);
+      el('rect', { x: mx - bw / 2 - pad, y: my - bh / 2 - pad, width: bw + pad * 2, height: bh + pad * 2, rx: noSum ? 4 : 3,
+        class: 'hv-sum-guard', style: bgc ? `fill:${bgc}` : '' }, grp);
+      const t = el('text', { x: mx, y: my, class: 'hv-sum-guard-t',
+        'font-size': parseFloat(cs.fontSize) || 9, style: `fill:${cs.color};font-weight:${cs.fontWeight}` }, grp);
       t.textContent = lb.textContent;
     });
     // 6) 라벨: 칸 위쪽(맨 윗줄이면 아래쪽)에 말풍선처럼 띄우고 보드 밖으로 나가지 않게 맞춥니다.
@@ -241,6 +247,11 @@
     sumLabels.sort((p, q) => q.prio - p.prio);
     const sums = compact ? sumLabels.slice(0, 4) : sumLabels;
     const lfs = compact ? Math.max(9, cw * 0.27) : Math.max(10, cw * 0.3), h = lfs * 1.5;
+    // 보드의 합계 라벨 자리는 Σ 라벨이 들어갈 수 없는 자리로 미리 등록합니다.
+    board()?.querySelectorAll('.cell[data-r][data-c] .cell-cage-sum').forEach(lb => {
+      const cell = lb.closest('.cell'); const sb = sumBox(g, +cell.dataset.r * 9 + +cell.dataset.c);
+      if (sb) placed.push({ x: sb.x0 - 1, y: sb.y0 - 1, w: sb.x1 - sb.x0 + 2, h: sb.y1 - sb.y0 + 2, fixed: true });
+    });
     const hitsAny = (x, y, w) => placed.some(q => x < q.x + q.w + 1 && q.x < x + w + 1 && y < q.y + q.h + 1 && q.y < y + h + 1);
     const fits = (x, y, w) => x >= 2 && y >= 2 && x + w <= g.w - 2 && y + h <= g.h - 2;
     [...labels, ...sums].forEach(({ i, t, cageSum }) => {
@@ -251,6 +262,17 @@
         ? [[b.x + b.w + 2, b.y + 2], [b.x - w - 2, b.y + 2], [b.x + 2, b.y + b.h + 2], [b.x + 2, b.y - h - 2], [b.x + b.w + 2, b.y + b.h - h - 2], [b.x - w - 2, b.y + b.h - h - 2]]
         : [[b.x + b.w / 2 - w / 2, b.y - h - 2], [b.x + b.w / 2 - w / 2, b.y + b.h + 2], [b.x + b.w + 2, b.y + b.h / 2 - h / 2], [b.x - w - 2, b.y + b.h / 2 - h / 2]];
       let spot = spots.find(([x, y]) => fits(x, y, w) && !hitsAny(x, y, w));
+      if (!spot) {
+        // 주변을 넓혀 가며 가장 가까운 빈 자리를 찾습니다.
+        const [cx0, cy0] = center(g, i), step = Math.max(4, h / 2), cand = [];
+        for (let dy = -cw * 2.5; dy <= cw * 2.5; dy += step)
+          for (let dx = -cw * 2.5; dx <= cw * 2.5; dx += step) {
+            const x = cx0 + dx - w / 2, y = cy0 + dy - h / 2;
+            if (fits(x, y, w) && !hitsAny(x, y, w)) cand.push([x, y, dx * dx + dy * dy]);
+          }
+        cand.sort((p, q) => p[2] - q[2]);
+        if (cand.length) spot = [cand[0][0], cand[0][1]];
+      }
       if (!spot) {
         if (cageSum) { text.remove(); return; }
         // 단계 설명 라벨은 꼭 보여야 하므로 아래로 비켜 놓습니다.
@@ -269,6 +291,8 @@
       root.insertBefore(pill, text);
       text.setAttribute('x', x + w / 2); text.setAttribute('y', y + h / 2);
     });
+    // 합계 라벨 보호층은 연결 점선·라벨보다 위에 오도록 맨 마지막으로 옮깁니다.
+    root.querySelectorAll('.hv-sum-guard-g').forEach(n => root.appendChild(n));
   };
 
   /* 카드 안 메모 안내: 이 단계에서 필요한 메모와 지울 메모를 굵게 보여 줍니다. */

@@ -348,3 +348,29 @@ body.dist-play #btn-home-update, body.dist-play #home-update-banner, body.dist-p
 #cloud-settings .btn {margin:4px;white-space:normal;}
 /* 단계별 구매 버튼은 좁은 화면에서도 업그레이드 문구와 현지 가격을 줄바꿈합니다. */
 #settings-monetization .monetize-btn {max-width:46%;white-space:normal;overflow-wrap:anywhere;}
+
+/* ===== v1.1.22 · 설명서(플레이 가이드·게임 방법·도움말) 가로 스크롤 방지 =====
+   휴대폰 WebView에서 글자 크기 확대나 긴 단어로 내용이 조금만 넓어져도 화면이 가로로 밀리던 문제를 막습니다. */
+#modal-rules,
+#modal-rules .modal-card,
+#modal-rules .rules-body,
+#panel-howtoplay, #panel-help, #panel-math,
+#panel-howtoplay .info-card, #panel-help .info-card, #panel-math .info-card {
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  box-sizing: border-box;
+}
+#modal-rules .modal-card { width: min(92vw, 520px); touch-action: pan-y; }
+#modal-rules .rules-body { touch-action: pan-y; }
+#modal-rules .rules-body *,
+#panel-howtoplay *, #panel-help *, #panel-math * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  box-sizing: border-box;
+}
+#modal-rules img, #modal-rules svg, #modal-rules table,
+#panel-howtoplay img, #panel-howtoplay table, #panel-help table, #panel-math table { max-width: 100%; height: auto; }
+#modal-rules pre, #modal-rules code, #panel-help code, #panel-math code { white-space: pre-wrap; }
+html, body { overflow-x: clip; }

@@ -1,11 +1,11 @@
 /* ==========================================================================
-   루나틱 공포 연출 (lunatic-horror.css)
-   - 루나틱 게임 화면에서만 #view-game.lunatic-mode 로 적용됩니다.
-   - 숫자·후보·선택 표시는 대비를 유지하고, 주변 분위기만 어둡고 불안하게 만듭니다.
-   - 움직임 줄이기(prefers-reduced-motion) 설정 시 흔들림·깜박임은 끕니다.
+   루나틱 화면 (lunatic-horror.css) · v1.1.22 절제 버전
+   - 루나틱 싱글 게임에서만 #view-game.lunatic-mode / body.lunatic-active 로 적용됩니다.
+   - '?' 배지의 맥박 효과는 유지하고, 나머지 연출은 정적인 색감 위주로 줄였습니다.
+   - 힌트 창·상단 상태바도 같은 어두운 팔레트로 맞추고 글자 대비를 확보합니다.
    ========================================================================== */
 
-/* ---------- 합계 비공개 '?' 라벨: 모든 화면 공통으로 잘 보이게 ---------- */
+/* ---------- 합계 비공개 '?' 라벨: 모든 화면 공통 ---------- */
 #sudoku-board .cell-cage-sum.no-sum,
 .cell-cage-sum.no-sum {
   opacity: 1;
@@ -28,75 +28,109 @@
 }
 .no-sum-metric { color: #dc2626 !important; font-weight: 900 !important; }
 
-/* ---------- 팔레트 ---------- */
+/* ---------- 팔레트 (게임 화면 + 힌트 창 공통 변수) ---------- */
+#view-game.lunatic-mode,
+body.lunatic-active #app-statusbar {
+  --bg-primary: #0b0507;
+  --bg-surface: #150a0d;
+  --bg-card: #170b0e;
+  --bg-surface-glass: rgba(21, 10, 13, .95);
+  --text-primary: #f1e4e5;
+  --text-secondary: #c7a9ac;
+  --text-muted: #c7a9ac;
+  --ui-panel: #170b0e;
+  --ui-soft: #22100f;
+  --ui-ink: #f1e4e5;
+  --ui-muted: #c7a9ac;
+  --ui-line: #4a2228;
+  --ui-selected: #3a1219;
+  --ui-accent: #f87171;
+  --highlight-selected: #45121a;
+  --highlight-crosshair: #1b0b0f;
+  --highlight-cage: #281015;
+  --highlight-same-num: #3a1520;
+  --error-bg: #4f0b14;
+  --error-text: #ff6b78;
+  --grid-thick: 2px solid #6b1d24;
+  --grid-thin: 0.5px solid #34191d;
+  --cage-dashed-color: #8f4049;
+  --lh-beat: 1.8s;
+}
 #view-game.lunatic-mode {
-  --bg-primary: #07030a;
-  --bg-surface: #120709;
-  --bg-surface-glass: rgba(18, 7, 9, .94);
-  --text-primary: #f3e7e7;
-  --text-secondary: #a88a8d;
-  --highlight-selected: #4a0d16;
-  --highlight-crosshair: #1c0a0e;
-  --highlight-cage: #2a0d13;
-  --highlight-same-num: #3d1220;
-  --error-bg: #5c0612;
-  --error-text: #ff4d5e;
-  --grid-thick: 2px solid #7f1d1d;
-  --grid-thin: 0.5px solid #3a1a1f;
-  --cage-dashed-color: #9f3a45;
-  --lh-beat: 1.6s;
-  background:
-    radial-gradient(ellipse at 50% 120%, rgba(127, 29, 29, .35), transparent 60%),
-    radial-gradient(ellipse at 50% -20%, rgba(60, 10, 30, .5), transparent 55%),
-    #07030a !important;
+  background: radial-gradient(ellipse at 50% 115%, rgba(110, 22, 30, .22), transparent 60%), #0b0507 !important;
   color: var(--text-primary);
 }
+
+/* ---------- 상단 상태바 ---------- */
+body.lunatic-active #app-statusbar {
+  background: #0b0507 !important;
+  color: #e9d6d8 !important;
+}
+body.lunatic-active #app-statusbar svg { color: #e9d6d8; }
+body.lunatic-active #app-statusbar .sb-batt-body { border-color: #e9d6d8 !important; }
+body.lunatic-active #app-statusbar .sb-batt-fill { background: #e9d6d8 !important; }
+
+/* ---------- 헤더·상태줄·패널·버튼 ---------- */
 #view-game.lunatic-mode .game-header,
 #view-game.lunatic-mode .game-sub-bar,
 #view-game.lunatic-mode .logic-assistant-card,
-#view-game.lunatic-mode .action-toolbar,
-#view-game.lunatic-mode .number-pad,
-#view-game.lunatic-mode .numpad {
-  background: rgba(18, 7, 9, .88) !important;
-  border-color: rgba(127, 29, 29, .45) !important;
+#view-game.lunatic-mode .action-toolbar {
+  background: #150a0d !important;
+  border-color: #3d1c21 !important;
   color: var(--text-primary) !important;
-  box-shadow: 0 0 18px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(127, 29, 29, .25) !important;
+  box-shadow: none !important;
 }
 #view-game.lunatic-mode .sub-label,
 #view-game.lunatic-mode .tool-label,
-#view-game.lunatic-mode .m-label { color: #a88a8d !important; }
+#view-game.lunatic-mode .m-label,
+#view-game.lunatic-mode .score-label { color: #c7a9ac !important; }
 #view-game.lunatic-mode .sub-val,
 #view-game.lunatic-mode .score-val,
 #view-game.lunatic-mode .m-val,
 #view-game.lunatic-mode .tool-btn,
-#view-game.lunatic-mode .glass-icon-btn { color: #f3e7e7 !important; }
-#view-game.lunatic-mode .metric-box { background: rgba(40, 8, 14, .7) !important; border-color: rgba(127, 29, 29, .4) !important; }
+#view-game.lunatic-mode #assistant-cage-name { color: #f1e4e5 !important; }
+#view-game.lunatic-mode .metric-box { background: #1e0d11 !important; border-color: #3d1c21 !important; }
 #view-game.lunatic-mode .assistant-tip-box {
-  background: rgba(60, 8, 16, .55) !important;
-  color: #f0d3d6 !important;
-  border-color: rgba(220, 38, 38, .35) !important;
+  background: #1e0d11 !important;
+  color: #ead7d9 !important;
+  border-color: #4a2228 !important;
 }
-#view-game.lunatic-mode .assistant-tag { background: #7f1d1d !important; color: #fff !important; }
-#view-game.lunatic-mode .no-sum-metric { color: #ff4d5e !important; text-shadow: 0 0 10px rgba(255, 30, 60, .7); }
+#view-game.lunatic-mode .assistant-tag { background: #6b1d24 !important; color: #fff !important; }
+#view-game.lunatic-mode .no-sum-metric { color: #ff6b78 !important; }
+
+#view-game.lunatic-mode .key-btn,
+#view-game.lunatic-mode .tool-icon,
+#view-game.lunatic-mode .glass-icon-btn,
+#view-game.lunatic-mode .game-score-badge,
+#view-game.lunatic-mode .game-mode-tag,
+#view-game.lunatic-mode .sub-bar-cage-btn,
+#view-game.lunatic-mode .btn-assistant-multi {
+  background: #1c0c10 !important;
+  border: 1px solid #44202a !important;
+  color: #f1e4e5 !important;
+  box-shadow: none !important;
+}
+#view-game.lunatic-mode .key-btn { color: #f5c6cb !important; }
+#view-game.lunatic-mode .key-btn * { color: inherit; }
+#view-game.lunatic-mode .key-btn .key-sub { color: #b08a8f !important; }
+#view-game.lunatic-mode .key-btn:active,
+#view-game.lunatic-mode .tool-btn:active .tool-icon { background: #33121a !important; }
+#view-game.lunatic-mode .tool-btn.active .tool-icon { background: #4a1520 !important; border-color: #b9474f !important; }
 
 /* ---------- 보드 ---------- */
 #view-game.lunatic-mode .board-frame {
-  background: #0d0507 !important;
-  border-color: #7f1d1d !important;
-  box-shadow: 0 0 0 2px #2b0a10, 0 0 26px rgba(220, 38, 38, .28), 0 0 70px rgba(127, 29, 29, .35) !important;
-  animation: lh-board-breathe var(--lh-beat) ease-in-out infinite;
+  background: #0e0608 !important;
+  border-color: #5c1b22 !important;
+  box-shadow: 0 0 0 1px #2b0d12, 0 0 18px rgba(150, 30, 40, .18) !important;
 }
-#view-game.lunatic-mode .cell { color: #e9d5d7; }
-#view-game.lunatic-mode .cell.user-input .cell-value { color: #ff8a95; }
-#view-game.lunatic-mode .cell-cage-sum { color: #d9a3a9; }
-#view-game.lunatic-mode .cell-notes { color: #b98f94; }
-#view-game.lunatic-mode .cage-inset-border.cage-top.cage-left { background: rgba(127, 29, 29, .08); }
-#view-game.lunatic-mode .cell.selected {
-  outline-color: #ef4444 !important;
-  box-shadow: 0 0 14px rgba(239, 68, 68, .55), inset 0 0 10px rgba(239, 68, 68, .35);
-}
+#view-game.lunatic-mode .cell { color: #ecdcde; }
+#view-game.lunatic-mode .cell.user-input .cell-value { color: #ff9aa3; }
+#view-game.lunatic-mode .cell-cage-sum { color: #d6b0b4; }
+#view-game.lunatic-mode .cell-notes { color: #bf9ca0; }
+#view-game.lunatic-mode .cage-inset-border.cage-top.cage-left { background: rgba(120, 30, 40, .06); }
+#view-game.lunatic-mode .cell.selected { outline-color: #e05561 !important; }
 
-/* 루나틱의 '?' : 핏빛으로 맥박치듯 */
+/* '?' 배지: 기존 그대로 맥박 유지 */
 #view-game.lunatic-mode .cell-cage-sum.no-sum {
   font-size: 12px;
   min-width: 15px;
@@ -113,151 +147,129 @@
   box-shadow: 0 0 0 1px #450a0a, 0 0 12px #ef4444, 0 0 24px rgba(239, 68, 68, .8);
 }
 
-/* ---------- 난이도 라벨: 글리치 ---------- */
-#view-game.lunatic-mode #game-diff-label {
-  display: inline-block;
-  color: #ff3b4e !important;
-  font-weight: 900;
-  letter-spacing: .5px;
-  text-shadow: 1px 0 rgba(0, 255, 255, .35), -1px 0 rgba(255, 0, 60, .7);
-  animation: lh-glitch 4.7s steps(1) infinite;
-}
-#view-game.lunatic-mode #mistakes-count { color: #ff6b78 !important; font-weight: 900; }
+#view-game.lunatic-mode #game-diff-label { color: #ff5c69 !important; font-weight: 900; }
+#view-game.lunatic-mode #mistakes-count { color: #ff8a94 !important; font-weight: 900; }
 
-/* ---------- 화면 전체 오버레이(비네트·노이즈) ---------- */
+/* ---------- 힌트 창 ---------- */
+#view-game.lunatic-mode .floating-hint-card {
+  background: #170b0e !important;
+  border: 1.5px solid #7a2a33 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .6) !important;
+  color: #f1e4e5 !important;
+}
+#view-game.lunatic-mode .hint-card-title,
+#view-game.lunatic-mode .hint-card-icon,
+#view-game.lunatic-mode .hint-target-pos,
+#view-game.lunatic-mode .hint-answer-label { color: #f6e7e9 !important; }
+#view-game.lunatic-mode .hint-target-label,
+#view-game.lunatic-mode .hint-cage-info { color: #d3b3b7 !important; }
+#view-game.lunatic-mode .hint-card-badge {
+  background: #3a1219 !important; color: #ffb4bb !important; border-color: #6b2630 !important;
+}
+#view-game.lunatic-mode .hint-card-close-btn { color: #d3b3b7 !important; background: transparent !important; }
+#view-game.lunatic-mode .hint-logic-text,
+#view-game.lunatic-mode #hint-logic-text {
+  background: #22100f !important;
+  color: #f1e4e5 !important;
+  border-color: #4a2228 !important;
+}
+#view-game.lunatic-mode #hint-logic-text li,
+#view-game.lunatic-mode #hint-logic-text p,
+#view-game.lunatic-mode .hint-conclusion { color: #f1e4e5 !important; }
+#view-game.lunatic-mode .hint-steps li::marker { color: #ff8a94; }
+body.hint-visual-on #view-game.lunatic-mode #hint-logic-text .hv-active,
+#view-game.lunatic-mode #hint-logic-text .hv-active {
+  background: rgba(220, 70, 80, .16) !important;
+  box-shadow: inset 3px 0 0 #e05561 !important;
+}
+#view-game.lunatic-mode #hint-logic-text .hv-more {
+  color: #ffb4bb !important; border-color: rgba(255, 140, 150, .5) !important; background: transparent !important;
+}
+#view-game.lunatic-mode #hint-logic-text .hv-more[aria-expanded="true"] { background: rgba(255, 140, 150, .12) !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-detail { background: rgba(255, 255, 255, .05) !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-detail li { color: #e6d0d3 !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-detail li.ok { color: #86efac !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-detail li.no { color: #a58a8e !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-memo { background: rgba(251, 146, 60, .1) !important; border-color: rgba(251, 146, 60, .4) !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-memo-head,
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.miss .hv-memo-ds,
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.miss .hv-memo-st { color: #fdba74 !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.have .hv-memo-ds,
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.have .hv-memo-st { color: #86efac !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-memo-pos { color: #f1e4e5 !important; }
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.erase .hv-memo-ds,
+#view-game.lunatic-mode #hint-logic-text .hv-memo-row.erase .hv-memo-st { color: #ff8a94 !important; }
+#view-game.lunatic-mode .hv-btn { background: #2a1116 !important; color: #f1e4e5 !important; border-color: #5a2630 !important; }
+#view-game.lunatic-mode .hv-counter { color: #f1e4e5 !important; }
+#view-game.lunatic-mode .hint-answer-val { background: #2a1116 !important; color: #f6e7e9 !important; border-color: #5a2630 !important; }
+#view-game.lunatic-mode .hint-btn-sub {
+  background: #2a1116 !important; color: #f1e4e5 !important; border: 1px solid #5a2630 !important; box-shadow: none !important;
+}
+#view-game.lunatic-mode .hint-btn-apply {
+  background: #9b1c28 !important; color: #fff !important; border: 1px solid #c2414d !important; box-shadow: none !important;
+}
+/* 보드 위 힌트 그림: 어두운 바탕에서 읽히는 색 */
+#view-game.lunatic-mode #hint-visual-layer {
+  --hv-chip: rgba(24, 10, 13, .94);
+  --hv-label-bg: #f1e4e5; --hv-label-fg: #1a0a0d;
+  --hv-cand: #93c5fd; --hv-elim: #ff6b78; --hv-ans: #4ade80;
+  --hv-area: #e0a3ff; --hv-src: rgba(96, 165, 250, .26); --hv-target: #fbbf24;
+  --hv-note-have: #4ade80; --hv-note-need: #fb923c;
+}
+
+/* ---------- 화면 오버레이: 정적인 옅은 비네트만 ---------- */
 #lh-overlay {
   position: fixed; inset: 0; pointer-events: none; z-index: 40;
-  opacity: 0; visibility: hidden; transition: opacity .8s ease, visibility .8s;
+  opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility .6s;
 }
 #lh-overlay.on { opacity: 1; visibility: visible; }
 #lh-overlay .lh-vignette {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 48%, rgba(40, 0, 6, .55) 78%, rgba(0, 0, 0, .9) 100%);
-  animation: lh-vignette var(--lh-beat, 1.6s) ease-in-out infinite;
-}
-#lh-overlay .lh-noise {
-  position: absolute; inset: -50%;
-  opacity: .07;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, .5) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgba(255, 0, 0, .25) 0 1px, transparent 1px 4px);
-  animation: lh-noise .35s steps(3) infinite;
-  mix-blend-mode: overlay;
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(20, 0, 4, .35) 88%, rgba(0, 0, 0, .55) 100%);
 }
 #lh-overlay .lh-flash {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(255, 0, 30, .35), rgba(120, 0, 10, .65));
+  background: rgba(160, 10, 25, .18);
   opacity: 0;
 }
-#lh-overlay.hit .lh-flash { animation: lh-flash .55s ease-out; }
-#lh-overlay .lh-whisper {
-  position: absolute; left: 50%; top: 42%;
-  transform: translate(-50%, -50%);
-  width: 86%; text-align: center;
-  font-size: clamp(18px, 5vw, 30px);
-  font-weight: 900; letter-spacing: 3px;
-  color: rgba(255, 60, 80, 0);
-}
-#lh-overlay .lh-whisper.show { animation: lh-whisper 3.6s ease-in-out forwards; }
-#lh-overlay .lh-eyes {
-  position: absolute; left: 50%; top: 18%;
-  transform: translateX(-50%);
-  font-size: 22px; letter-spacing: 34px; color: #ff1f3d;
-  opacity: 0; text-shadow: 0 0 10px #ff1f3d, 0 0 22px #b91c1c;
-}
-#lh-overlay .lh-eyes.show { animation: lh-eyes 2.4s ease-in-out forwards; }
-
-/* 실수: 화면 흔들림 */
-#view-game.lunatic-mode.lh-shake .game-layout { animation: lh-shake .42s cubic-bezier(.36, .07, .19, .97); }
-
-/* 마지막 목숨: 붉은 압박 */
+#lh-overlay.hit .lh-flash { animation: lh-flash .35s ease-out; }
 #lh-overlay.dread .lh-vignette {
-  background: radial-gradient(ellipse at center, transparent 34%, rgba(90, 0, 12, .7) 70%, rgba(0, 0, 0, .95) 100%);
+  background: radial-gradient(ellipse at center, transparent 56%, rgba(60, 0, 8, .42) 86%, rgba(0, 0, 0, .62) 100%);
 }
-#view-game.lunatic-mode.lh-dread #mistakes-count { animation: lh-flicker-soft var(--lh-beat) linear infinite; }
 
-/* 입장 연출 */
-#lh-intro {
-  position: fixed; inset: 0; z-index: 60;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-  background: #000; pointer-events: none;
-  animation: lh-intro-fade 2.2s ease forwards;
-}
-#lh-intro .t1 {
-  font-size: clamp(34px, 11vw, 64px); font-weight: 900; letter-spacing: 10px;
-  color: #ff2340; text-shadow: 0 0 18px #b91c1c, 3px 0 rgba(0, 255, 255, .25), -3px 0 rgba(255, 0, 60, .6);
-  animation: lh-glitch .9s steps(1) infinite, lh-flicker 2.2s linear;
-}
-#lh-intro .t2 { font-size: 13px; letter-spacing: 4px; color: #a88a8d; animation: lh-flicker 2.2s linear; }
+/* 실수: 짧고 작은 흔들림 */
+#view-game.lunatic-mode.lh-shake .game-layout { animation: lh-shake .25s ease-out; }
 
-@keyframes lh-board-breathe {
-  0%, 100% { box-shadow: 0 0 0 2px #2b0a10, 0 0 22px rgba(220, 38, 38, .22), 0 0 60px rgba(127, 29, 29, .3); }
-  14% { box-shadow: 0 0 0 2px #3b0d14, 0 0 32px rgba(239, 68, 68, .45), 0 0 80px rgba(127, 29, 29, .45); }
-  28% { box-shadow: 0 0 0 2px #2b0a10, 0 0 22px rgba(220, 38, 38, .25), 0 0 60px rgba(127, 29, 29, .3); }
-  40% { box-shadow: 0 0 0 2px #3b0d14, 0 0 28px rgba(239, 68, 68, .38), 0 0 72px rgba(127, 29, 29, .4); }
-}
 @keyframes lh-question-pulse {
   0%, 100% { transform: scale(1); filter: brightness(1); }
   14% { transform: scale(1.18); filter: brightness(1.35); }
   28% { transform: scale(1); filter: brightness(1); }
   40% { transform: scale(1.1); filter: brightness(1.2); }
 }
-@keyframes lh-vignette { 0%, 100% { opacity: .85; } 14% { opacity: 1; } 28% { opacity: .85; } 40% { opacity: .95; } }
-@keyframes lh-noise { 0% { transform: translate(0, 0); } 33% { transform: translate(-3%, 2%); } 66% { transform: translate(2%, -3%); } 100% { transform: translate(0, 0); } }
-@keyframes lh-flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes lh-flash { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes lh-shake {
-  10%, 90% { transform: translate3d(-2px, 0, 0); }
-  20%, 80% { transform: translate3d(4px, 1px, 0); }
-  30%, 50%, 70% { transform: translate3d(-7px, -1px, 0); }
-  40%, 60% { transform: translate3d(7px, 1px, 0); }
+  25% { transform: translate3d(-2px, 0, 0); }
+  50% { transform: translate3d(2px, 0, 0); }
+  75% { transform: translate3d(-1px, 0, 0); }
 }
-@keyframes lh-glitch {
-  0%, 92%, 100% { transform: none; clip-path: none; }
-  93% { transform: translate(-2px, 1px) skewX(-8deg); clip-path: inset(10% 0 55% 0); }
-  95% { transform: translate(2px, -1px); clip-path: inset(50% 0 10% 0); }
-  97% { transform: translate(-1px, 0) skewX(6deg); clip-path: none; }
-}
-@keyframes lh-flicker {
-  0% { opacity: 0; } 8% { opacity: 1; } 10% { opacity: .2; } 13% { opacity: 1; } 40% { opacity: .9; }
-  42% { opacity: .1; } 45% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; }
-}
-@keyframes lh-flicker-soft { 0%, 100% { opacity: 1; } 14% { opacity: .35; } 28% { opacity: 1; } }
-@keyframes lh-intro-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-@keyframes lh-whisper {
-  0% { color: rgba(255, 60, 80, 0); letter-spacing: 3px; text-shadow: 0 0 12px rgba(255, 0, 40, 0); }
-  30% { color: rgba(255, 60, 80, .55); text-shadow: 0 0 14px rgba(255, 0, 40, .6); }
-  55% { color: rgba(255, 60, 80, .4); letter-spacing: 9px; }
-  100% { color: rgba(255, 60, 80, 0); letter-spacing: 14px; text-shadow: 0 0 12px rgba(255, 0, 40, 0); }
-}
-@keyframes lh-eyes { 0% { opacity: 0; } 20% { opacity: .9; } 26% { opacity: .05; } 30% { opacity: .9; } 70% { opacity: .7; } 100% { opacity: 0; } }
 
-/* 움직임 줄이기: 색감만 유지 */
 @media (prefers-reduced-motion: reduce) {
-  #view-game.lunatic-mode .board-frame,
   #view-game.lunatic-mode .cell-cage-sum.no-sum,
-  #view-game.lunatic-mode #game-diff-label,
-  #view-game.lunatic-mode.lh-dread #mistakes-count,
-  #lh-overlay .lh-vignette, #lh-overlay .lh-noise,
   #view-game.lunatic-mode.lh-shake .game-layout,
-  #lh-intro .t1, #lh-intro .t2 { animation: none !important; }
-  #lh-overlay .lh-whisper, #lh-overlay .lh-eyes, #lh-intro { display: none; }
+  #lh-overlay.hit .lh-flash,
+  #view-game.lunatic-mode #hint-visual-layer .hv-nosum { animation: none !important; }
 }
 
-/* ---------- 조작 버튼도 어둡게(밝은 흰 버튼이 분위기를 깨지 않도록) ---------- */
-#view-game.lunatic-mode .key-btn,
-#view-game.lunatic-mode .tool-icon,
-#view-game.lunatic-mode .glass-icon-btn,
-#view-game.lunatic-mode .game-score-badge,
-#view-game.lunatic-mode .game-mode-tag,
-#view-game.lunatic-mode .sub-bar-cage-btn,
-#view-game.lunatic-mode .btn-assistant-multi {
-  background: linear-gradient(180deg, #1d0a0e, #12060a) !important;
-  border: 1px solid rgba(159, 58, 69, .45) !important;
-  color: #f3e7e7 !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 90, 100, .08) !important;
+/* 정답 가림 상태: 숫자는 숨기고 '보기'만 또렷하게 */
+#view-game.lunatic-mode .hint-answer-val.concealed {
+  color: transparent !important;
+  background: repeating-linear-gradient(45deg, #2a1116 0 6px, #3a1820 6px 12px) !important;
 }
-#view-game.lunatic-mode .key-btn * { color: inherit; }
-#view-game.lunatic-mode .key-btn { color: #ffb3ba !important; }
-#view-game.lunatic-mode .key-btn:active,
-#view-game.lunatic-mode .tool-btn:active .tool-icon { background: #3b0d14 !important; box-shadow: 0 0 14px rgba(239, 68, 68, .5) !important; }
-#view-game.lunatic-mode .tool-btn.active .tool-icon { background: #5c0d18 !important; border-color: #ef4444 !important; }
+#view-game.lunatic-mode .hint-answer-val.concealed::after { color: #f1d3d6 !important; }
+
+/* 힌트가 열려 있어도 보드 위에 다시 그린 '?' 배지가 같은 박자로 맥박칩니다. */
+#view-game.lunatic-mode #hint-visual-layer .hv-nosum {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lh-question-pulse var(--lh-beat) ease-in-out infinite;
+}
