@@ -1,0 +1,181 @@
+/* v1.1.28 · 시즌 화면 */
+.season-head { margin: 0 0 14px; padding: 14px 16px; border-radius: 16px; color: #f1f5f9;
+  background: radial-gradient(circle at 15% 0%, #4c1d95 0%, #1e1b4b 55%, #0f0d24 100%); box-shadow: 0 6px 18px rgba(30,27,75,.3); }
+.sh-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sh-n { font-size: 20px; font-weight: 900; letter-spacing: .5px; }
+.sh-left { font-size: 12.5px; font-weight: 800; color: #fde68a; }
+.sh-bar { height: 5px; margin: 8px 0 10px; border-radius: 9px; background: rgba(255,255,255,.14); overflow: hidden; }
+.sh-bar i { display: block; height: 100%; background: linear-gradient(90deg, #a78bfa, #f0abfc); }
+.sh-rules { margin: 0 0 4px; font-size: 12px; font-weight: 700; line-height: 1.45; word-break: keep-all; }
+.sh-reset { margin: 0; font-size: 11px; opacity: .7; word-break: keep-all; }
+
+.season-reward { display: grid; grid-template-columns: 72px 1fr; gap: 6px 12px; align-items: center; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px;
+  background: color-mix(in srgb, var(--tier) 14%, var(--bg-surface, #fff)); box-shadow: inset 0 0 0 1.5px var(--tier); }
+.season-reward.hidden { display: none; }
+.sr-tx { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; word-break: keep-all; }
+.sr-tx b { font-size: 14px; color: var(--tier); }
+.season-reward .btn { grid-column: 1 / -1; }
+
+.hof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.hof-item { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 4px; border-radius: 12px; text-align: center; min-width: 0;
+  background: color-mix(in srgb, var(--tier) 9%, transparent); border: 1px solid color-mix(in srgb, var(--tier) 30%, transparent); }
+.hof-s { font-size: 12px; font-weight: 900; }
+.hof-d, .hof-t { font-size: 10.5px; font-weight: 700; opacity: .75; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hof-t { color: var(--tier); opacity: 1; }
+
+.cos-row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 8px 4px; border-top: 1px solid rgba(100,116,139,.15); cursor: pointer; }
+.cos-row.locked { opacity: .5; cursor: default; }
+.cos-row.locked .cos-em { filter: grayscale(1); }
+.cos-tx { display: flex; flex-direction: column; min-width: 0; font-size: 12px; word-break: keep-all; }
+.cos-tx b { font-size: 13px; color: var(--tier); }
+.cos-lock { font-size: 11px; font-weight: 800; white-space: nowrap; }
+.theme-dark .season-reward { background: color-mix(in srgb, var(--tier) 18%, #1e293b); }
+
+/* 랭크 카드: 승급전·보호·가속 */
+.rating-card .rc-series { margin-top: 8px; font-size: 13px; font-weight: 900; color: #7c3aed; letter-spacing: .5px; }
+.rating-card .rc-protect { margin-top: 4px; font-size: 12px; font-weight: 800; color: #0284c7; }
+.rating-card .rc-boost { margin-top: 4px; font-size: 12px; font-weight: 800; color: #d97706; }
+.theme-dark .rating-card .rc-series { color: #c4b5fd; }
+.theme-dark .rating-card .rc-protect { color: #7dd3fc; }
+
+/* 결과 패널 시즌 정보 */
+.rr-season { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.rr-season:empty { display: none; }
+.rr-chip { padding: 3px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 900; background: rgba(255,255,255,.1); color: #e2e8f0; }
+.rr-chip.series { color: #ddd6fe; background: rgba(139,92,246,.25); letter-spacing: 1px; }
+.rr-chip.protect { color: #bae6fd; background: rgba(14,165,233,.22); }
+.rr-chip.boost { color: #fde68a; background: rgba(245,158,11,.22); }
+.rr-chip.place { color: #e2e8f0; background: rgba(148,163,184,.25); }
+
+/* ---------- 티어 보상 꾸미기 ---------- */
+body.rkc-gold #view-game .board-frame { box-shadow: 0 0 0 3px #eab308, 0 0 0 5px #713f12, 0 0 16px rgba(234,179,8,.45) !important; }
+body.rkc-platinum #view-game .board-frame { box-shadow: 0 0 0 3px #2dd4bf, 0 0 0 5px #134e4a, 0 0 18px rgba(45,212,191,.5) !important; }
+body.rkc-master #view-game .board-frame { box-shadow: 0 0 0 3px #a855f7, 0 0 0 5px #3b0764, 0 0 22px rgba(168,85,247,.65) !important; animation: rkc-glow 2.6s ease-in-out infinite; }
+@keyframes rkc-glow { 50% { filter: drop-shadow(0 0 6px rgba(192,132,252,.7)); } }
+body.rkc-diamond #view-game .cell.user-input .cell-value {
+  background: linear-gradient(160deg, #93c5fd, #2563eb 55%, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+body.rkc-grandmaster #view-game:not(.lunatic-mode) .board-frame {
+  box-shadow: 0 0 0 3px #f59e0b, 0 0 0 6px #7f1d1d, 0 0 26px rgba(239,68,68,.55) !important; }
+body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: inset 0 0 0 2px #dc2626; }
+.rkc-home-emblem { position: absolute; top: 10px; right: 12px; z-index: 5; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { body.rkc-master #view-game .board-frame { animation: none; } }
+
+/* ---------- v1.1.29 · 시즌 최고 티어(다이아몬드·마스터·그랜드마스터) 전용 승리 배너 스킨 ---------- */
+.result-banner.tier-banner-skin {
+  padding: 28px 18px 20px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.result-banner.tier-banner-skin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.22) 45%, transparent 60%);
+  transform: translateX(-120%);
+  animation: rbs-sheen 3.2s ease-in-out infinite;
+  z-index: 1;
+}
+@keyframes rbs-sheen { 0%, 35% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+
+/* 다이아몬드 승리 배너 스킨: 사파이어 크리스탈 & 실버-골드 베젤 */
+.result-banner.tier-banner-skin.skin-diamond {
+  background:
+    radial-gradient(circle at 50% 15%, rgba(147, 197, 253, .55) 0%, transparent 58%),
+    linear-gradient(135deg, #0b1e54 0%, #1d4ed8 48%, #0f172a 100%) !important;
+  box-shadow:
+    inset 0 0 0 2px #93c5fd,
+    inset 0 0 0 4px #1e3a8a,
+    inset 0 0 24px rgba(59, 130, 246, .55),
+    0 10px 28px rgba(37, 99, 235, .45) !important;
+}
+
+/* 마스터 승리 배너 스킨: 아케인 퍼플 & 임페리얼 골드 아머 프레임 */
+.result-banner.tier-banner-skin.skin-master {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(232, 121, 249, .5) 0%, transparent 60%),
+    linear-gradient(135deg, #2b0656 0%, #7e22ce 48%, #170332 100%) !important;
+  box-shadow:
+    inset 0 0 0 2.5px #facc15,
+    inset 0 0 0 5px #4c1d95,
+    inset 0 0 28px rgba(168, 85, 247, .65),
+    0 12px 30px rgba(147, 51, 234, .5) !important;
+}
+
+/* 그랜드마스터 승리 배너 스킨: PUBG 컨커러/프레데터 크림슨-골드 신화 프레임 */
+.result-banner.tier-banner-skin.skin-grandmaster {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(251, 191, 36, .58) 0%, rgba(239, 35, 60, .35) 45%, transparent 72%),
+    linear-gradient(135deg, #3d030a 0%, #b91c1c 46%, #1f0206 100%) !important;
+  box-shadow:
+    inset 0 0 0 2.5px #fde047,
+    inset 0 0 0 5.5px #7f1d1d,
+    inset 0 0 32px rgba(245, 158, 11, .6),
+    0 12px 34px rgba(220, 38, 38, .55) !important;
+}
+
+.result-banner.tier-banner-skin .rb-skin-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.result-banner.tier-banner-skin .result-icon-bounce,
+.result-banner.tier-banner-skin .result-title,
+.result-banner.tier-banner-skin .result-sub {
+  position: relative;
+  z-index: 2;
+}
+.result-banner.tier-banner-skin .result-title {
+  text-shadow: 0 0 16px var(--skin-tier, #facc15), 0 3px 6px rgba(0, 0, 0, .75);
+}
+
+/* 네 모서리 금속 브래킷 리벳 장식 */
+.rbs-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: #fde047;
+  border-style: solid;
+  opacity: .88;
+}
+.skin-diamond .rbs-corner { border-color: #bfdbfe; }
+.rbs-corner.tl { top: 6px; left: 6px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 6px; }
+.rbs-corner.tr { top: 6px; right: 6px; border-width: 2.5px 2.5px 0 0; border-top-right-radius: 6px; }
+.rbs-corner.bl { bottom: 6px; left: 6px; border-width: 0 0 2.5px 2.5px; border-bottom-left-radius: 6px; }
+.rbs-corner.br { bottom: 6px; right: 6px; border-width: 0 2.5px 2.5px 0; border-bottom-right-radius: 6px; }
+
+/* 좌우 배경 택티컬 크레스트 워터마크 */
+.rbs-wing {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: .24;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+}
+.rbs-wing.left { left: 10px; }
+.rbs-wing.right { right: 10px; transform: translateY(-50%) scaleX(-1); }
+
+/* 상단 중앙 티어 승리 명판 리본 */
+.rbs-ribbon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 14px 3px;
+  border-radius: 0 0 10px 10px;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+  background: linear-gradient(90deg, rgba(15,23,42,.85), color-mix(in srgb, var(--skin-tier, #eab308) 70%, #000), rgba(15,23,42,.85));
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-top: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .45);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-banner.tier-banner-skin::after { animation: none; display: none; }
+}

@@ -103,13 +103,13 @@
     R.DIFFS.forEach(d => {
       grid.append(cell('rk-diff', diffName(d)));
       R.MODES.forEach(m => {
-        const s = R.ladder(all, m).byDiff[d], tier = R.tierOf(s.rating);
+        const s = R.ladder(all, m).byDiff[d], tier = R.shownTier(s), unr = tier.id === 'unranked';
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'rk-cell' + (m === curMode && d === curDiff ? ' on' : '') + (s.games ? '' : ' empty');
-        b.style.setProperty('--tier', s.games ? tier.color : '#94a3b8');
-        b.setAttribute('aria-label', `${diffName(d)} ${t(m)} ${s.games ? tier.name + ' ' + s.rating + ' RP' : t('unplayed')}`);
-        const sym = cell('rk-sym'); sym.innerHTML = s.games ? R.tierSymbol(tier.id, 26) : '';
-        const txt = cell('rk-txt'); txt.append(cell('rk-tier', s.games ? tier.name : '—'), cell('rk-rp', s.games ? `${s.rating} RP` : t('unplayed')));
+        b.style.setProperty('--tier', !unr && s.games ? tier.color : '#94a3b8');
+        b.setAttribute('aria-label', `${diffName(d)} ${t(m)} ${unr ? tier.name : s.games ? tier.name + ' ' + s.rating + ' RP' : t('unplayed')}`);
+        const sym = cell('rk-sym'); sym.innerHTML = unr || s.games ? R.tierSymbol(tier.id, 26) : '';
+        const txt = cell('rk-txt'); txt.append(cell('rk-tier', unr || s.games ? tier.name : '—'), cell('rk-rp', unr ? `${tier.placementDone} / ${R.PLACEMENT}` : s.games ? `${s.rating} RP` : t('unplayed')));
         b.append(sym, txt);
         b.onclick = () => { this._rankMode = m; this._rankDiff = d; this.renderRankingView(); };
         grid.append(b);
@@ -129,23 +129,25 @@
     document.getElementById('ranking-ladder-sub').textContent = `${t('ladderSub')} · ${diffName(diff)} ${t(mode)} · ${s.rating} RP`;
     const list = document.getElementById('ranking-ladder-list');
     list.innerHTML = '';
-    const me = R.tierOf(s.rating);
+    const me = R.shownTier(s);
     const tiers = R.TIERS.slice().reverse();
     const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
     tiers.forEach((tier, k) => {
       const idx = R.TIERS.indexOf(tier), next = R.TIERS[idx + 1];
       const row = mk('div', 'rl-row' + (idx === me.index ? ' on' : '') + (idx < me.index ? ' passed' : ''));
       row.style.setProperty('--tier', tier.color);
-      const name = R.tierOf(tier.min).name.replace(/\s+(IV|III|II|I)$/, '');
+      const name = R.tierOf(tier.min).name.replace(/\s+(V|IV|III|II|I)$/, '');
       const badge = mk('div', 'rl-badge rl-symbol'); badge.innerHTML = R.tierSymbol(tier.id, 38);
       const info = mk('div', 'rl-info');
       info.append(mk('div', 'rl-name', name), mk('div', 'rl-range', next ? `${tier.min} – ${next.min - 1} RP` : `${tier.min}+ RP`));
       const bar = mk('div', 'rl-bar');
       const divided = !!next && idx <= 4;
-      const parts = divided ? 4 : 1, span = next ? (next.min - tier.min) / parts : 400;
+      const parts = divided ? 5 : 1;
       for (let d = 0; d < parts; d++) {
-        const lo = tier.min + span * d, hi = lo + span;
-        const seg = mk('div', 'rl-seg'); seg.append(mk('span', 'rl-lbl', divided ? ['IV', 'III', 'II', 'I'][d] : ''));
+        // 단계마다 100 RP: 가장 아래 칸(V)만 티어 시작점부터
+        const hi = divided ? next.min - (parts - 1 - d) * 100 : (next ? next.min : tier.min + 500);
+        const lo = divided ? (d === 0 ? tier.min : hi - 100) : tier.min, span = hi - lo;
+        const seg = mk('div', 'rl-seg'); seg.append(mk('span', 'rl-lbl', divided ? ['V', 'IV', 'III', 'II', 'I'][d] : ''));
         if (s.rating >= hi || idx < me.index) seg.classList.add('full');
         if (idx === me.index && s.rating >= lo && (s.rating < hi || !next)) {
           seg.classList.add('cur');

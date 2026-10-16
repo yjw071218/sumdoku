@@ -129,46 +129,129 @@
 .theme-dark .ranking-board { background: rgba(30,41,59,.6); border-color: rgba(148,163,184,.2); }
 .theme-dark .rb-me-rank { color: #93c5fd; }
 
-/* v1.1.26 · 화려한 엠블럼 */
-.tier-symbol { overflow: visible; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+/* v1.1.29 · PUBG 스타일 화려한 엠블럼 & 승급 이펙트 */
+.tier-symbol { overflow: visible; filter: drop-shadow(0 3px 5px rgba(0,0,0,.38)); }
 .tier-symbol .te-spark { transform-box: fill-box; transform-origin: center; animation: te-spark 2.6s ease-in-out infinite; }
-.tier-symbol.te-k5 .te-rays, .tier-symbol.te-k6 .te-rays { transform-origin: 50px 48px; animation: te-spin 14s linear infinite; }
-.tier-symbol.te-k5, .tier-symbol.te-k6 { animation: te-glow 2.4s ease-in-out infinite; }
-.tier-symbol .te-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: te-flame 1.4s ease-in-out infinite; }
-@keyframes te-spark { 0%,100% { opacity: 0; transform: scale(.3) rotate(0); } 40%,60% { opacity: 1; transform: scale(1) rotate(45deg); } }
+.tier-symbol .te-spark-2 { animation-delay: 1.3s; }
+.tier-symbol.te-k3 .te-rays, .tier-symbol.te-k4 .te-rays, .tier-symbol.te-k5 .te-rays, .tier-symbol.te-k6 .te-rays { transform-origin: 50px 46px; animation: te-spin 16s linear infinite; }
+.tier-symbol.te-k4, .tier-symbol.te-k5, .tier-symbol.te-k6 { animation: te-glow 2.4s ease-in-out infinite; }
+.tier-symbol .te-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: te-flame 1.3s ease-in-out infinite; }
+.tier-symbol.te-k5 .te-gem, .tier-symbol.te-k6 .te-gem { transform-box: fill-box; transform-origin: center; animation: te-gem-pulse 2s ease-in-out infinite; }
+@keyframes te-spark { 0%,100% { opacity: 0; transform: scale(.25) rotate(0); } 45%,55% { opacity: 1; transform: scale(1.08) rotate(45deg); } }
 @keyframes te-spin { to { transform: rotate(360deg); } }
-@keyframes te-glow { 0%,100% { filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); } 50% { filter: drop-shadow(0 0 8px var(--tier)) drop-shadow(0 3px 4px rgba(0,0,0,.3)); } }
-@keyframes te-flame { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.08) scaleX(.97); } }
-.rating-card .rc-badge.rc-symbol { width: 64px; height: 64px; }
-.rating-card .rc-badge.rc-symbol .tier-symbol { width: 64px; height: 64px; }
+@keyframes te-glow { 0%,100% { filter: drop-shadow(0 3px 5px rgba(0,0,0,.38)); } 50% { filter: drop-shadow(0 0 10px var(--tier)) drop-shadow(0 3px 5px rgba(0,0,0,.42)); } }
+@keyframes te-flame { 0%,100% { transform: scaleY(1); filter: brightness(1); } 50% { transform: scaleY(1.12) scaleX(.96); filter: brightness(1.3); } }
+@keyframes te-gem-pulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+.rating-card .rc-badge.rc-symbol { width: 68px; height: 68px; }
+.rating-card .rc-badge.rc-symbol .tier-symbol { width: 68px; height: 68px; }
 
-/* v1.1.26 · 승급 연출 */
-.tier-promo { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; overflow: hidden;
-  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tier) 35%, rgba(0,0,0,.55)), rgba(0,0,0,.82) 70%);
-  animation: tp-in .35s ease-out; cursor: pointer; }
+/* v1.1.29 · 승급 연출 (PUBG 경쟁전 스타일 충격파 + 메탈 스파크) */
+.tier-promo { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; overflow: hidden;
+  background: radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tier) 42%, rgba(8,10,20,.72)), rgba(3,5,12,.92) 72%);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  animation: tp-in .32s ease-out; cursor: pointer; }
 .tier-promo.out { animation: tp-out .35s ease-in forwards; }
-.tier-promo.small { background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tier) 25%, rgba(0,0,0,.4)), rgba(0,0,0,.6) 70%); }
-.tp-burst { position: absolute; left: 50%; top: 45%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; pointer-events: none;
-  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--tier) 60%, #fff) 0 6deg, transparent 6deg 18deg);
-  mask: radial-gradient(circle, #000 20%, transparent 68%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%);
-  opacity: .55; animation: te-spin 9s linear infinite, tp-burst .9s ease-out; }
-.tier-promo.small .tp-burst { opacity: .3; }
-.tp-emblem { position: relative; animation: tp-emblem 1s cubic-bezier(.2,1.6,.4,1) both; }
-.tier-promo.big .tp-emblem { animation-delay: .45s; }
-.tp-emblem .tier-symbol { filter: drop-shadow(0 0 22px var(--tier)) drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.tier-promo.small { background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tier) 28%, rgba(0,0,0,.48)), rgba(0,0,0,.72) 70%); }
+.tp-burst { position: absolute; left: 50%; top: 44%; width: 580px; height: 580px; margin: -290px 0 0 -290px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--tier) 70%, #fff) 0 5deg, transparent 5deg 15deg);
+  mask: radial-gradient(circle, #000 18%, transparent 68%); -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%);
+  opacity: .62; animation: te-spin 10s linear infinite, tp-burst .75s cubic-bezier(.16,1,.3,1); }
+.tier-promo.small .tp-burst { opacity: .32; }
+.tp-shockwave { position: absolute; left: 50%; top: 44%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; pointer-events: none;
+  border: 3px solid color-mix(in srgb, var(--tier) 45%, #fff);
+  box-shadow: 0 0 28px var(--tier), inset 0 0 22px var(--tier);
+  opacity: 0; animation: tp-wave .85s cubic-bezier(.15,.85,.3,1) forwards; }
+.tp-shockwave.s2 { border-width: 1.5px; animation-delay: .14s; animation-duration: 1.05s; }
+.tp-emblem { position: relative; animation: tp-emblem .95s cubic-bezier(.18,1.5,.36,1) both; }
+.tier-promo.big .tp-emblem { animation-delay: .38s; }
+.tp-emblem .tier-symbol { filter: drop-shadow(0 0 26px var(--tier)) drop-shadow(0 8px 14px rgba(0,0,0,.65)); }
 .tp-title { position: relative; font-size: 34px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 14px var(--tier), 0 2px 4px rgba(0,0,0,.6);
-  animation: tp-text .6s ease-out both; animation-delay: .9s; }
-.tier-promo.small .tp-title { font-size: 24px; animation-delay: .3s; }
-.tp-name { position: relative; font-size: 18px; font-weight: 800; color: color-mix(in srgb, var(--tier) 40%, #fff); animation: tp-text .6s ease-out both; animation-delay: 1.05s; }
-.tier-promo.small .tp-name { animation-delay: .45s; }
-.tp-parts { position: absolute; left: 50%; top: 45%; width: 0; height: 0; pointer-events: none; }
-.tp-parts i { position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 2px; background: color-mix(in srgb, var(--tier) 40%, #fff);
-  box-shadow: 0 0 6px var(--tier); opacity: 0; animation: tp-part 1.3s ease-out var(--dl) forwards; }
+  animation: tp-text .6s ease-out both; animation-delay: .85s; }
+.tier-promo.small .tp-title { font-size: 24px; animation-delay: .28s; }
+.tp-name { position: relative; font-size: 18px; font-weight: 800; color: color-mix(in srgb, var(--tier) 40%, #fff); animation: tp-text .6s ease-out both; animation-delay: 1s; }
+.tier-promo.small .tp-name { animation-delay: .42s; }
+.tp-parts { position: absolute; left: 50%; top: 44%; width: 0; height: 0; pointer-events: none; }
+.tp-parts i { position: absolute; width: 10px; height: 4px; margin: -2px -5px; border-radius: 2px;
+  background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--tier) 55%, #fff));
+  box-shadow: 0 0 8px var(--tier); opacity: 0; animation: tp-part 1.15s cubic-bezier(.16,.84,.32,1) var(--dl) forwards; }
+.tp-parts i.ember { width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fef08a; box-shadow: 0 0 10px #f59e0b; }
 @keyframes tp-in { from { opacity: 0; } }
 @keyframes tp-out { to { opacity: 0; } }
-@keyframes tp-burst { from { transform: scale(.2); opacity: 0; } }
-@keyframes tp-emblem { 0% { transform: scale(0) rotate(-25deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
-@keyframes tp-text { from { transform: translateY(14px) scale(.9); opacity: 0; } }
-@keyframes tp-part { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(.4); } }
+@keyframes tp-burst { from { transform: scale(.15); opacity: 0; } }
+@keyframes tp-wave { 0% { transform: scale(.35); opacity: 1; } 100% { transform: scale(2.45); opacity: 0; } }
+@keyframes tp-emblem { 0% { transform: scale(2.2) rotate(-12deg); opacity: 0; filter: brightness(2.4); } 65% { transform: scale(.93) rotate(0); opacity: 1; } 100% { transform: none; opacity: 1; filter: brightness(1); } }
+@keyframes tp-text { from { transform: translateY(16px) scale(.88); opacity: 0; } }
+@keyframes tp-part { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1.2); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(.2); } }
 .tier-promo.reduced, .tier-promo.reduced * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .tier-symbol, .tier-symbol * { animation: none !important; } }
+
+/* v1.1.29 · 새 게임 모달: 랭크전 / 일반전 구분 탭 & 난이도별 미니 티어 칩 */
+.rank-queue-box { margin: 10px 0 12px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(15, 23, 42, .05); border: 1px solid rgba(100, 116, 139, .22); }
+.theme-dark .rank-queue-box { background: rgba(15, 23, 42, .45); border-color: rgba(148, 163, 184, .22); }
+.rank-queue-box .rq-label { font-size: 0.78rem; font-weight: 800; color: var(--text-muted, #64748b); margin-bottom: 6px; letter-spacing: .3px; }
+.rank-queue-box .rq-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 3px; border-radius: 11px; background: rgba(100, 116, 139, .14); }
+.rank-queue-box .rq-btn { border: 0; border-radius: 9px; padding: 8px 6px; font-size: 0.84rem; font-weight: 800;
+  background: transparent; color: inherit; cursor: pointer; opacity: .72; transition: all .18s ease; }
+.rank-queue-box .rq-btn.active[data-queue="ranked"] {
+  opacity: 1; color: #fff;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #78350f 100%);
+  box-shadow: 0 2px 10px rgba(217, 119, 6, .38), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+.rank-queue-box .rq-btn.active[data-queue="normal"] {
+  opacity: 1; color: #fff;
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  box-shadow: 0 2px 8px rgba(51, 65, 85, .32), inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+.rank-queue-box .rq-desc { margin-top: 6px; font-size: 0.75rem; font-weight: 600; opacity: .78; line-height: 1.35; }
+
+#modal-difficulty .diff-tier-mini {
+  display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 2px 7px 2px 4px;
+  border-radius: 99px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--tier, #64748b) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tier, #64748b) 42%, transparent);
+  color: color-mix(in srgb, var(--tier, #64748b) 85%, var(--text-primary, #0f172a));
+}
+.theme-dark #modal-difficulty .diff-tier-mini {
+  color: color-mix(in srgb, var(--tier, #94a3b8) 65%, #fff);
+}
+#modal-difficulty .diff-tier-mini.hidden { display: none !important; }
+#modal-difficulty .diff-tier-mini .tier-symbol { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* v1.1.29 · 인게임 상단 서브 헤더 실시간 미니 티어 배지 (HUD) */
+.game-rank-hud-badge {
+  --tier: #ca8a04;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px 2px 4px; border-radius: 99px; cursor: pointer;
+  font-family: inherit; line-height: 1.1; white-space: nowrap;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tier) 18%, rgba(15, 23, 42, .88)), rgba(15, 23, 42, .94));
+  border: 1px solid color-mix(in srgb, var(--tier) 58%, rgba(255, 255, 255, .2));
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--tier) 25%, rgba(0, 0, 0, .25)), inset 0 1px 0 rgba(255, 255, 255, .18);
+  color: #f8fafc; transition: transform .15s ease, box-shadow .2s ease;
+}
+.game-rank-hud-badge:active { transform: scale(.95); }
+.game-rank-hud-badge.hidden { display: none !important; }
+.game-rank-hud-badge.high-tier {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tier) 45%, transparent), inset 0 0 0 1px rgba(255, 255, 255, .22);
+}
+.game-rank-hud-badge .grb-emblem { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0; }
+.game-rank-hud-badge .grb-emblem .tier-symbol { width: 22px; height: 22px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
+.game-rank-hud-badge .grb-info { display: inline-flex; align-items: baseline; gap: 4px; font-variant-numeric: tabular-nums; }
+.game-rank-hud-badge .grb-tier { font-size: 11px; font-weight: 900; color: color-mix(in srgb, var(--tier) 42%, #fff); letter-spacing: .2px; }
+.game-rank-hud-badge .grb-rp { font-size: 10.5px; font-weight: 800; color: #cbd5e1; opacity: .92; }
+.game-rank-hud-badge .grb-streak { font-size: 10.5px; font-weight: 900; color: #fb923c; margin-left: 1px; }
+.game-rank-hud-badge.is-casual {
+  padding: 3px 8px;
+  background: rgba(100, 116, 139, .16);
+  border: 1px dashed rgba(100, 116, 139, .45);
+  box-shadow: none;
+  color: var(--text-secondary, #475569);
+}
+.theme-dark .game-rank-hud-badge.is-casual { color: #cbd5e1; background: rgba(51, 65, 85, .45); }
+.game-rank-hud-badge.is-casual .grb-casual-dot { font-size: 11px; }
+.game-rank-hud-badge.is-casual .grb-txt { font-size: 11px; font-weight: 800; }
+@media (max-width: 420px) {
+  .game-rank-hud-badge { padding: 2px 6px 2px 3px; gap: 4px; }
+  .game-rank-hud-badge .grb-tier { font-size: 10.5px; }
+  .game-rank-hud-badge .grb-rp { font-size: 10px; }
+}

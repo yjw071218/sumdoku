@@ -28,7 +28,7 @@
  * 난이도 배율(v1.1.25): 난이도가 높을수록 RP 변화 폭(얻는 RP·잃는 RP 모두)이 커집니다.
  *   초급 ×1 · 중급 ×1.25 · 고급 ×1.5 · 전문가 ×2 · 루나틱 ×2.5   (타임어택 점수 기반 RP도 같은 배율)
  *
- * 티어: 브론즈 0~999 · 실버 1000 · 골드 1200 · 플래티넘 1600 · 다이아몬드 2000 · 마스터 2400 · 그랜드마스터 2800
+ * 티어: 브론즈 0~1399 · 실버 1400 · 골드 1900 · 플래티넘 2400 · 다이아몬드 2900 · 마스터 3400 · 그랜드마스터 3900 (브론즈~다이아몬드 V~I, 단계당 100 RP)
  */
 (() => {
   if (typeof SumdokuApp === 'undefined') return;
@@ -53,170 +53,467 @@
   const OLD_CAP = { easy: 1200, medium: 1700, hard: 2200, expert: 2700, lunatic: 3200 }; // 이전 버전 기록 이전용
   const TIERS = [
     { id: 'bronze', ko: '브론즈', min: 0, color: '#b45309' },
-    { id: 'silver', ko: '실버', min: 1000, color: '#64748b' },
-    { id: 'gold', ko: '골드', min: 1200, color: '#ca8a04' },
-    { id: 'platinum', ko: '플래티넘', min: 1600, color: '#0d9488' },
-    { id: 'diamond', ko: '다이아몬드', min: 2000, color: '#2563eb' },
-    { id: 'master', ko: '마스터', min: 2400, color: '#9333ea' },
-    { id: 'grandmaster', ko: '그랜드마스터', min: 2800, color: '#dc2626' }
+    { id: 'silver', ko: '실버', min: 1400, color: '#64748b' },
+    { id: 'gold', ko: '골드', min: 1900, color: '#ca8a04' },
+    { id: 'platinum', ko: '플래티넘', min: 2400, color: '#0d9488' },
+    { id: 'diamond', ko: '다이아몬드', min: 2900, color: '#2563eb' },
+    { id: 'master', ko: '마스터', min: 3400, color: '#9333ea' },
+    { id: 'grandmaster', ko: '그랜드마스터', min: 3900, color: '#dc2626' }
   ];
-  const ROMAN = ['IV', 'III', 'II', 'I'];
+  const ROMAN = ['V', 'IV', 'III', 'II', 'I']; // v1.1.28: 5단계, 단계마다 100 RP (브론즈 V는 0~999)
 
-  /* v1.1.27 · 티어 엠블럼(SVG) — 티어마다 외형이 달라지고 장식이 단계적으로 커집니다.
-   *   브론즈   원형 동전 + 리벳 테두리 + 스도쿠 격자
-   *   실버     육각 철판 + 볼트 + 교차한 연필
-   *   골드     네 방향 가시 + 팔각 메달 + 연필·격자
-   *   플래티넘 톱니 링 + 양옆 칼날 + 조준선 메달
-   *   다이아몬드 8방향 칼날 별 + 월계수 + 보석 + 리본
-   *   마스터   햇살 가시 + 월계관 + 중간 날개 + 방패와 왕관
-   *   그랜드마스터 거대한 3겹 날개 + 교차한 홀 + 붉은 방패 + 큰 왕관
-   *   단계(IV~I)는 아래 가운데 명판에 새깁니다. size: 픽셀, division: 'IV'~'I' */
+  /* v1.1.29 · PUBG 경쟁전 스타일 택티컬 엠블럼(SVG) — 다층 입체 금속 베젤 + 장갑 크레스트 + 단계(V~I)별 외형 진화
+   *   언랭크       건메탈 육각 독태그 장갑판 + 전술 스텐실 '?' + 볼트
+   *   브론즈       황동 리벳 팔각 중장갑 방패 + 양각 베벨 코어 + 전술 격자
+   *   실버         브러시드 스틸 날개형 셰브론 실드 + 측면 장갑 블레이드 + 교차 전술 펜슬
+   *   골드         로열 골드 4방향 검날 크레스트 + 금빛 월계관 + 입체 방패 + 상단 스타 크라운
+   *   플래티넘     티타늄-시안 2겹 날개 + 8각 기계식 베젤 + 택티컬 조준 코어 + 플라즈마 젬
+   *   다이아몬드   크리스탈 3겹 발키리 날개 + 8방향 칼날 스타 + 다면 컷 다이아몬드 코어 + 황금 월계관
+   *   마스터       아케인 퍼플-골드 3겹 대날개 + 교차 의장검 + 후광 링 + 황제 크라운 + 루비 코어
+   *   그랜드마스터 태양빛 진홍·순금 4겹 신화 날개 + 회전 룬 후광 + 불꽃 아우라 + 쌍홀(Scepter) + 5성 제왕관
+   *   같은 티어 안에서도 단계(V→I)가 오를수록 상단 별·측면 장갑·하단 셰브론 핀이 추가되어 더 위압적으로 진화합니다. */
   const PAL = {
-    bronze: ['#ffd9b0', '#b8682f', '#4a1d08'], silver: ['#ffffff', '#a3afbf', '#2b3544'], gold: ['#fff3b8', '#e2a91a', '#5e3700'],
-    platinum: ['#d6fff7', '#33b8a6', '#0a423d'], diamond: ['#e4f0ff', '#4f8ff7', '#0e2463'], master: ['#f6e6ff', '#a55cff', '#33086a'], grandmaster: ['#ffe2e2', '#e8293a', '#43040c']
+    bronze: ['#ffe0ba', '#c87132', '#522008', '#ff9b4e'],
+    silver: ['#ffffff', '#94a7bc', '#233040', '#dbeafe'],
+    gold: ['#fff8c4', '#eab308', '#5c3800', '#fde047'],
+    platinum: ['#dffef9', '#14b8a6', '#063935', '#5eead4'],
+    diamond: ['#e8f3ff', '#3b82f6', '#0b1e54', '#93c5fd'],
+    master: ['#f7e8ff', '#a855f7', '#2b0656', '#e879f9'],
+    grandmaster: ['#ffe4e6', '#ef233c', '#3d030a', '#fbbf24']
   };
-  const METAL = { light: '#fff8e6', mid: '#d9b45a', dark: '#5e4310' }; // 공통 금 장식
+  const METAL = { light: '#fffbeb', mid: '#e0b24c', dark: '#543809', edge: '#9a6f18' };
+  const STEEL = { light: '#f8fafc', mid: '#8b9bb0', dark: '#1e293b' };
   let symSeq = 0;
+
   function tierSymbol(id, size = 40, division = '') {
-    const t = TIERS.find(x => x.id === id) || TIERS[0];
-    const k = TIERS.indexOf(t), [lt, c, dk] = PAL[t.id], u = 'te' + (++symSeq), G = n => `url(#${u}${n})`;
     const f1 = n => n.toFixed(1);
+    const CX = 50, CY = 46;
+
+    // 언랭크(배치 중): 건메탈 택티컬 독태그 실드 + 경고 스트라이프 + 스텐실 '?'
+    if (id === 'unranked') {
+      const u = 'teu' + (++symSeq);
+      const plate = division ? (
+        `<g class="te-plate">` +
+        `<path d="M30 80 L34 76 H66 L70 80 L66 93 H34 Z" fill="#0f172a" stroke="#64748b" stroke-width="1.5" stroke-linejoin="round"/>` +
+        `<path d="M33 80 H67" stroke="#94a3b8" stroke-width=".6" opacity=".5"/>` +
+        `<text x="50" y="88.8" text-anchor="middle" font-size="9.5" font-weight="900" font-family="system-ui,sans-serif" letter-spacing=".5" fill="#e2e8f0">${division}</text></g>`
+      ) : '';
+      return `<svg class="tier-symbol tier-symbol-unranked" style="--tier:#64748b" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>` +
+        `<linearGradient id="${u}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f5f9"/><stop offset=".45" stop-color="#64748b"/><stop offset="1" stop-color="#0f172a"/></linearGradient>` +
+        `<linearGradient id="${u}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#334155"/><stop offset="1" stop-color="#090d16"/></linearGradient></defs>` +
+        `<g class="te-body">` +
+        `<path d="M50 8 L82 18 L85 46 L68 74 L50 83 L32 74 L15 46 L18 18 Z" fill="url(#${u}a)" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>` +
+        `<path d="M50 13 L77 21.5 L79.5 45.5 L64.5 70 L50 77.5 L35.5 70 L20.5 45.5 L23 21.5 Z" fill="url(#${u}b)" stroke="#94a3b8" stroke-width="1"/>` +
+        `<path d="M30 28 H70 M30 62 H70" stroke="#475569" stroke-width="1" stroke-dasharray="3 2"/>` +
+        `<circle cx="26" cy="24" r="1.6" fill="#cbd5e1"/><circle cx="74" cy="24" r="1.6" fill="#cbd5e1"/><circle cx="24" cy="46" r="1.6" fill="#cbd5e1"/><circle cx="76" cy="46" r="1.6" fill="#cbd5e1"/>` +
+        `<text x="50" y="56" text-anchor="middle" font-size="31" font-weight="900" font-family="Georgia,serif" fill="#cbd5e1" stroke="#020617" stroke-width="1.5" paint-order="stroke">?</text>` +
+        `</g>${plate}</svg>`;
+    }
+
+    const t = TIERS.find(x => x.id === id) || TIERS[0];
+    const k = TIERS.indexOf(t);
+    const [lt, c, dk, acc] = PAL[t.id];
+    const u = 'te' + (++symSeq), G = n => `url(#${u}${n})`;
+    // division 단계(V=1, IV=2, III=3, II=4, I=5). 표시가 없거나 마스터 이상이면 5(풀 장식)
+    const divRank = { V: 1, IV: 2, III: 3, II: 4, I: 5 }[division] || (k >= 5 ? 5 : 3);
+
     const defs =
-      `<linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${lt}"/><stop offset=".6" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
-      `<linearGradient id="${u}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
-      `<linearGradient id="${u}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fb"/><stop offset=".5" stop-color="#9aa6b6"/><stop offset="1" stop-color="#3b4554"/></linearGradient>` +
-      `<linearGradient id="${u}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${METAL.light}"/><stop offset=".5" stop-color="${METAL.mid}"/><stop offset="1" stop-color="${METAL.dark}"/></linearGradient>` +
-      `<radialGradient id="${u}f" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="${c}"/><stop offset=".65" stop-color="${dk}"/><stop offset="1" stop-color="#05070b"/></radialGradient>` +
-      `<radialGradient id="${u}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${lt}" stop-opacity=".85"/><stop offset=".55" stop-color="${c}" stop-opacity=".35"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>` +
-      `<radialGradient id="${u}c" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${lt}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
-    const CX = 50, CY = 45;
-    const poly = (n, r, rot = -90, cx = CX, cy = CY) => { let d = ''; for (let i = 0; i < n; i++) { const a = (rot + i * 360 / n) * Math.PI / 180; d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r); } return d + 'Z'; };
-    const starP = (n, ro, ri, rot = -90, cx = CX, cy = CY) => { let d = ''; for (let i = 0; i < n * 2; i++) { const a = (rot + i * 180 / n) * Math.PI / 180, r = i % 2 ? ri : ro; d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r); } return d + 'Z'; };
-    const circle = (r, fill, stroke, sw = 1.4) => `<circle cx="${CX}" cy="${CY}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
-    const rivets = (n, r, rr = 1.6, rot = -90) => { let s = ''; for (let i = 0; i < n; i++) { const a = (rot + i * 360 / n) * Math.PI / 180; s += `<circle cx="${f1(CX + Math.cos(a) * r)}" cy="${f1(CY + Math.sin(a) * r)}" r="${rr}" fill="${G('b')}" stroke="${dk}" stroke-width=".6"/>`; } return s; };
-    // 깃털 하나: 기점 (bx,by)에서 각도 a(도, 화면 기준), 길이 L, 폭 w
-    const feather = (bx, by, a, L, w) => {
-      const r = a * Math.PI / 180, dx = Math.cos(r), dy = Math.sin(r), nx = -dy, ny = dx;
-      const tx = bx + dx * L, ty = by + dy * L, mx = bx + dx * L * .55, my = by + dy * L * .55;
-      return `M${f1(bx + nx * w * .5)} ${f1(by + ny * w * .5)} Q${f1(mx + nx * w)} ${f1(my + ny * w)} ${f1(tx)} ${f1(ty)} Q${f1(mx - nx * w * .35)} ${f1(my - ny * w * .35)} ${f1(bx - nx * w * .5)} ${f1(by - ny * w * .5)}Z`;
+      // 메인 티어 금속 그라데이션 (4단 입체 반사)
+      `<linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".22" stop-color="${lt}"/><stop offset=".55" stop-color="${c}"/><stop offset=".82" stop-color="${dk}"/><stop offset="1" stop-color="${c}"/></linearGradient>` +
+      `<linearGradient id="${u}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".5" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      // 역방향 베벨 그라데이션 (음각·내부 테두리 입체감)
+      `<linearGradient id="${u}i" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${lt}"/><stop offset=".5" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      // 브러시드 스틸 / 실버 블레이드
+      `<linearGradient id="${u}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${STEEL.light}"/><stop offset=".48" stop-color="${STEEL.mid}"/><stop offset=".85" stop-color="${STEEL.dark}"/><stop offset="1" stop-color="${STEEL.mid}"/></linearGradient>` +
+      // 골드 트림 (배그 특유의 묵직한 황금 장갑 테두리)
+      `<linearGradient id="${u}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${METAL.light}"/><stop offset=".35" stop-color="${METAL.mid}"/><stop offset=".78" stop-color="${METAL.dark}"/><stop offset="1" stop-color="${METAL.mid}"/></linearGradient>` +
+      // 딥 아머 코어 배경
+      `<radialGradient id="${u}f" cx=".5" cy=".32" r=".78"><stop offset="0" stop-color="${c}"/><stop offset=".55" stop-color="${dk}"/><stop offset="1" stop-color="#04060c"/></radialGradient>` +
+      // 후광 글로우
+      `<radialGradient id="${u}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${acc}" stop-opacity=".9"/><stop offset=".5" stop-color="${c}" stop-opacity=".4"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>` +
+      // 보석·크리스탈 하이라이트
+      `<radialGradient id="${u}c" cx=".35" cy=".28" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="${lt}"/><stop offset=".8" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></radialGradient>`;
+
+    const poly = (n, r, rot = -90, cx = CX, cy = CY) => {
+      let d = '';
+      for (let i = 0; i < n; i++) {
+        const a = (rot + i * 360 / n) * Math.PI / 180;
+        d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r);
+      }
+      return d + 'Z';
     };
-    // 날개: 3겹(긴 칼깃 → 중간깃 → 덮깃). scale 1이면 그랜드마스터 크기
-    const wings = (scale, fill) => {
-      const bx = CX - 10, by = CY + 4;
-      let p1 = '', p2 = '', p3 = '';
-      const n1 = 8; for (let i = 0; i < n1; i++) { const a = 200 - i * 12; p1 += feather(bx, by, a, (44 - Math.abs(i - 2.5) * 2.6) * scale, 12 * scale); }
-      const n2 = 7; for (let i = 0; i < n2; i++) { const a = 202 - i * 13; p2 += feather(bx + 2, by - 1, a, (30 - Math.abs(i - 2.5) * 1.8) * scale, 11 * scale); }
-      const n3 = 6; for (let i = 0; i < n3; i++) { const a = 205 - i * 16; p3 += feather(bx + 4, by - 2, a, 17 * scale, 10 * scale); }
-      const one = `<path d="${p1}" fill="${fill}" stroke="${dk}" stroke-width=".9" stroke-linejoin="round"/>` +
-        `<path d="${p2}" fill="${G('b')}" stroke="${dk}" stroke-width=".8" stroke-linejoin="round"/>` +
-        `<path d="${p3}" fill="${G('c')}" stroke="${dk}" stroke-width=".7" stroke-linejoin="round"/>`;
-      return `<g class="te-wing">${one}</g><g class="te-wing" transform="translate(100 0) scale(-1 1)">${one}</g>`;
+    const starP = (n, ro, ri, rot = -90, cx = CX, cy = CY) => {
+      let d = '';
+      for (let i = 0; i < n * 2; i++) {
+        const a = (rot + i * 180 / n) * Math.PI / 180, r = i % 2 ? ri : ro;
+        d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r);
+      }
+      return d + 'Z';
     };
-    const laurel = (r, from, to, n, fill) => {
+    const rivets = (n, r, rr = 1.4, rot = -90, cy = CY) => {
       let s = '';
       for (let i = 0; i < n; i++) {
-        const a = (from + (to - from) * i / (n - 1)) * Math.PI / 180, x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r;
-        const deg = (a * 180 / Math.PI) + 90;
-        s += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="2.2" ry="5" transform="rotate(${f1(deg - 35)} ${f1(x)} ${f1(y)})"/>`;
+        const a = (rot + i * 360 / n) * Math.PI / 180;
+        s += `<circle cx="${f1(CX + Math.cos(a) * r)}" cy="${f1(cy + Math.sin(a) * r)}" r="${rr}" fill="${G('a')}" stroke="${dk}" stroke-width=".5"/>`;
       }
-      const g = `<g fill="${fill}" stroke="${dk}" stroke-width=".6">${s}</g>`;
-      return g + `<g transform="translate(100 0) scale(-1 1)">${g}</g>`;
+      return `<g class="te-rivets">${s}</g>`;
     };
-    // 문양들
-    const grid = (s = 1, cy = CY) => { let q = ''; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) q += `<rect x="${f1(CX - 9 * s + j * 6 * s)}" y="${f1(cy - 9 * s + i * 6 * s)}" width="${f1(5 * s)}" height="${f1(5 * s)}" rx="${f1(.8 * s)}"/>`;
-      return `<g fill="${G('c')}" stroke="${dk}" stroke-width=".6">${q}</g>`; };
-    const pencil = (deg, len = 34, w = 5) => `<g transform="rotate(${deg} ${CX} ${CY})"><rect x="${CX - w / 2}" y="${CY - len / 2}" width="${w}" height="${len - 7}" rx="1" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/>` +
-      `<rect x="${CX - w / 2}" y="${CY - len / 2}" width="${w}" height="3" fill="#b9c2cc" stroke="${METAL.dark}" stroke-width=".5"/>` +
-      `<path d="M${CX - w / 2} ${CY + len / 2 - 7} L${CX} ${CY + len / 2} L${CX + w / 2} ${CY + len / 2 - 7}Z" fill="#f2d7b0" stroke="${METAL.dark}" stroke-width=".6"/><path d="M${CX - 1} ${CY + len / 2 - 2} L${CX} ${CY + len / 2} L${CX + 1} ${CY + len / 2 - 2}Z" fill="#333"/></g>`;
-    const pencils = (len, w) => pencil(-38, len, w) + pencil(38, len, w);
-    const gem = (cy, s) => `<g transform="translate(${CX} ${cy}) scale(${s})"><path d="M-9 -2 L-5 -7 H5 L9 -2 L0 9 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/><path d="M-9 -2 H9 M-5 -7 L-2 -2 L0 9 L2 -2 L5 -7" fill="none" stroke="#fff" stroke-width=".7" opacity=".85"/></g>`;
-    const crown = (cy, s, fill) => `<g transform="translate(${CX} ${cy}) scale(${s})"><path d="M-12 7 L-13 -5 L-6 1 L0 -9 L6 1 L13 -5 L12 7 Z" fill="${fill}" stroke="${METAL.dark}" stroke-width="1.1" stroke-linejoin="round"/>` +
-      `<rect x="-12.5" y="6" width="25" height="4" rx="1" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/>` +
-      `<circle cx="0" cy="-9" r="1.8" fill="#fff"/><circle cx="-13" cy="-5" r="1.4" fill="#fff"/><circle cx="13" cy="-5" r="1.4" fill="#fff"/><circle cx="0" cy="2" r="2" fill="${c}" stroke="#fff" stroke-width=".6"/></g>`;
-    const crosshair = r => `<g fill="none" stroke="${lt}" stroke-width="1.2"><circle cx="${CX}" cy="${CY}" r="${r}"/><circle cx="${CX}" cy="${CY}" r="${r * .55}"/><path d="M${CX - r - 3} ${CY} H${CX - r * .3} M${CX + r * .3} ${CY} H${CX + r + 3} M${CX} ${CY - r - 3} V${CY - r * .3} M${CX} ${CY + r * .3} V${CY + r + 3}"/></g>`;
-    const heater = (w, h, top, fill) => `<path d="M${CX - w} ${top} H${CX + w} V${top + h * .45} C${CX + w} ${top + h * .8} ${CX + w * .4} ${top + h * .95} ${CX} ${top + h} C${CX - w * .4} ${top + h * .95} ${CX - w} ${top + h * .8} ${CX - w} ${top + h * .45} Z" fill="${fill}" stroke="${METAL.dark}" stroke-width="1.6"/>` +
-      `<path d="M${CX - w + 3} ${top + 3} H${CX + w - 3} V${top + h * .45} C${CX + w - 3} ${top + h * .76} ${CX + w * .35} ${top + h * .9} ${CX} ${top + h - 3.5} C${CX - w * .35} ${top + h * .9} ${CX - w + 3} ${top + h * .76} ${CX - w + 3} ${top + h * .45} Z" fill="none" stroke="${METAL.light}" stroke-width=".8" opacity=".8"/>`;
-    const glow = r => `<circle cx="${CX}" cy="${CY}" r="${r}" fill="${G('g')}"/>`;
-    const rays = (n, R, cls = 'te-rays') => { let d = ''; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; d += `M${CX} ${CY} L${f1(CX + Math.cos(a - .05) * R)} ${f1(CY + Math.sin(a - .05) * R)} L${f1(CX + Math.cos(a + .05) * R)} ${f1(CY + Math.sin(a + .05) * R)}Z`; } return `<path class="${cls}" d="${d}" fill="${lt}" opacity=".35"/>`; };
-    const shine = (r) => `<path d="M${CX - r * .7} ${CY - r * .35} A${r} ${r} 0 0 1 ${CX + r * .7} ${CY - r * .35} A${r * 1.4} ${r * 1.4} 0 0 0 ${CX - r * .7} ${CY - r * .35}Z" fill="#fff" opacity=".3"/>`;
+
+    // PUBG 스타일 날카로운 메카닉·발키리 칼깃 (개별 각면 + 중심 능선)
+    const bladeFeather = (bx, by, deg, L, w) => {
+      const r = deg * Math.PI / 180, dx = Math.cos(r), dy = Math.sin(r), nx = -dy, ny = dx;
+      const tx = bx + dx * L, ty = by + dy * L;
+      const m1x = bx + dx * L * .62 + nx * w * .58, m1y = by + dy * L * .62 + ny * w * .58;
+      const m2x = bx + dx * L * .45 - nx * w * .38, m2y = by + dy * L * .45 - ny * w * .38;
+      return `M${f1(bx)} ${f1(by)} L${f1(m1x)} ${f1(m1y)} L${f1(tx)} ${f1(ty)} L${f1(m2x)} ${f1(m2y)} Z`;
+    };
+    // 다겹 전술 날개: 외곽 장갑깃 + 중간 블레이드깃 + 내부 코어깃
+    const tacWings = (scale, outerFill, midFill, innerFill, layers = 3) => {
+      const bx = CX - 9, by = CY + 3;
+      let p1 = '', p2 = '', p3 = '', ridge = '';
+      const n1 = 7;
+      for (let i = 0; i < n1; i++) {
+        const a = 212 - i * 13.5;
+        const len = (45 - Math.abs(i - 2.2) * 3.1) * scale;
+        p1 += bladeFeather(bx, by, a, len, 9.5 * scale);
+        const r = a * Math.PI / 180;
+        ridge += `M${f1(bx)} ${f1(by)} L${f1(bx + Math.cos(r) * len * .92)} ${f1(by + Math.sin(r) * len * .92)}`;
+      }
+      const n2 = 6;
+      for (let i = 0; i < n2; i++) {
+        const a = 208 - i * 14.5;
+        p2 += bladeFeather(bx + 2, by - 1, a, (32 - Math.abs(i - 2) * 2.2) * scale, 8.2 * scale);
+      }
+      if (layers >= 3) {
+        const n3 = 5;
+        for (let i = 0; i < n3; i++) {
+          const a = 204 - i * 16;
+          p3 += bladeFeather(bx + 4, by - 2, a, 20 * scale, 7 * scale);
+        }
+      }
+      const one =
+        `<path d="${p1}" fill="${outerFill}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>` +
+        `<path d="${ridge}" stroke="${lt}" stroke-width=".55" opacity=".75"/>` +
+        `<path d="${p2}" fill="${midFill}" stroke="${dk}" stroke-width=".85" stroke-linejoin="round"/>` +
+        (p3 ? `<path d="${p3}" fill="${innerFill}" stroke="${dk}" stroke-width=".75" stroke-linejoin="round"/>` : '');
+      return `<g class="te-wing te-wing-l">${one}</g><g class="te-wing te-wing-r" transform="translate(100 0) scale(-1 1)">${one}</g>`;
+    };
+
+    // 금속 월계관 (날카로운 겹잎)
+    const tacLaurel = (r, from, to, n, fill) => {
+      let s = '';
+      for (let i = 0; i < n; i++) {
+        const a = (from + (to - from) * i / (n - 1)) * Math.PI / 180;
+        const x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r;
+        const deg = (a * 180 / Math.PI) + 90;
+        s += `<path d="M0 -6 L2.4 -1 L0 5 L-2.4 -1 Z" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(deg - 28)})"/>`;
+      }
+      const g = `<g class="te-laurel" fill="${fill}" stroke="${dk}" stroke-width=".6" stroke-linejoin="round">${s}</g>`;
+      return g + `<g class="te-laurel" transform="translate(100 0) scale(-1 1)">${g}</g>`;
+    };
+
+    // PUBG 스타일 다각 아머 실드 (외곽 프레임 + 역베벨 림 + 딥 코어 + 상단 하이라이트)
+    const armorShield = (w, h, top, rimFill, bezelFill, coreFill) => {
+      const b = top + h, m = top + h * .52, sh = top + h * .14;
+      const outer = `M${CX} ${top} L${CX + w * .78} ${sh} L${CX + w} ${m} L${CX + w * .62} ${top + h * .82} L${CX} ${b} L${CX - w * .62} ${top + h * .82} L${CX - w} ${m} L${CX - w * .78} ${sh} Z`;
+      const iw = w * .84, ih = h * .84, it = top + h * .08, ib = it + ih, im = it + ih * .52, ish = it + ih * .14;
+      const mid = `M${CX} ${it} L${CX + iw * .78} ${ish} L${CX + iw} ${im} L${CX + iw * .62} ${it + ih * .82} L${CX} ${ib} L${CX - iw * .62} ${it + ih * .82} L${CX - iw} ${im} L${CX - iw * .78} ${ish} Z`;
+      const cw = w * .72, ch = h * .72, ct = top + h * .14, cb = ct + ch, cm = ct + ch * .52, csh = ct + ch * .14;
+      const core = `M${CX} ${ct} L${CX + cw * .78} ${csh} L${CX + cw} ${cm} L${CX + cw * .62} ${ct + ch * .82} L${CX} ${cb} L${CX - cw * .62} ${ct + ch * .82} L${CX - cw} ${cm} L${CX - cw * .78} ${csh} Z`;
+      return `<g class="te-shield">` +
+        `<path d="${outer}" fill="${rimFill}" stroke="${dk}" stroke-width="1.6" stroke-linejoin="round"/>` +
+        `<path d="${mid}" fill="${bezelFill}" stroke="${lt}" stroke-width=".8" stroke-linejoin="round"/>` +
+        `<path d="${core}" fill="${coreFill}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>` +
+        `<path d="M${CX} ${ct + 1} L${CX + cw * .72} ${csh + 1} L${CX} ${cm - 2} L${CX - cw * .72} ${csh + 1} Z" fill="#fff" opacity=".16"/>` +
+        `</g>`;
+    };
+
+    // 문양: 3x3 스도쿠 전술 코어 / 교차 검·연필 / 다면 보석 / 제왕 크라운
+    const tacGrid = (s = 1, cy = CY) => {
+      let q = '';
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        const isCenter = i === 1 && j === 1;
+        q += `<rect x="${f1(CX - 8.5 * s + j * 6 * s)}" y="${f1(cy - 8.5 * s + i * 6 * s)}" width="${f1(5 * s)}" height="${f1(5 * s)}" rx="${f1(.7 * s)}" fill="${isCenter ? '#fff' : G('c')}" opacity="${isCenter ? '1' : '.9'}"/>`;
+      }
+      return `<g class="te-core-grid" stroke="${dk}" stroke-width=".65">${q}</g>`;
+    };
+    const tacSwords = (deg, len = 42, w = 4.2) =>
+      `<g class="te-sword" transform="rotate(${deg} ${CX} ${CY})">` +
+      // 칼날 (좌우 투톤 베벨)
+      `<path d="M${CX} ${CY - len / 2 - 4} L${CX + w / 2} ${CY - len / 2 + 5} V${CY + len / 2 - 8} H${CX} Z" fill="#fff" stroke="${dk}" stroke-width=".5"/>` +
+      `<path d="M${CX} ${CY - len / 2 - 4} L${CX - w / 2} ${CY - len / 2 + 5} V${CY + len / 2 - 8} H${CX} Z" fill="${G('s')}" stroke="${dk}" stroke-width=".5"/>` +
+      // 코등이(가드) & 손잡이 & 폼멜
+      `<path d="M${CX - w * 1.6} ${CY + len / 2 - 8} L${CX} ${CY + len / 2 - 10} L${CX + w * 1.6} ${CY + len / 2 - 8} L${CX + w * 1.2} ${CY + len / 2 - 5.5} H${CX - w * 1.2} Z" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".6"/>` +
+      `<rect x="${CX - w * .38}" y="${CY + len / 2 - 5.5}" width="${w * .76}" height="6.5" rx=".8" fill="${dk}" stroke="${METAL.mid}" stroke-width=".5"/>` +
+      `<circle cx="${CX}" cy="${CY + len / 2 + 2}" r="${w * .55}" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".6"/>` +
+      `</g>`;
+    const crossedBlades = (len = 44, w = 4.2) => tacSwords(-38, len, w) + tacSwords(38, len, w);
+
+    // 다면 컷팅 보석 (PUBG 다이아·마스터 센터 코어)
+    const facetGem = (cy = CY, s = 1.35) =>
+      `<g class="te-gem" transform="translate(${CX} ${cy}) scale(${s})">` +
+      `<polygon points="0,-10 7,-4 7,4 0,10 -7,4 -7,-4" fill="${G('c')}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>` +
+      `<polygon points="0,-10 7,-4 3,-1 0,-5" fill="#fff" opacity=".75"/>` +
+      `<polygon points="-7,-4 0,-10 0,-5 -3,-1" fill="${lt}" opacity=".85"/>` +
+      `<polygon points="0,10 7,4 3,1 0,5" fill="${dk}" opacity=".55"/>` +
+      `<polygon points="0,-5 3,-1 0,5 -3,-1" fill="#fff" opacity=".5"/>` +
+      `<polygon points="0,-10 7,-4 7,4 0,10 -7,4 -7,-4" fill="none" stroke="${lt}" stroke-width=".5"/>` +
+      `</g>`;
+
+    // 임페리얼 크라운 (마스터·그랜드마스터 상단 왕관)
+    const impCrown = (cy, s, fill) =>
+      `<g class="te-crown" transform="translate(${CX} ${cy}) scale(${s})">` +
+      `<path d="M-13 6 L-15 -5 L-7 1 L-4 -6 L0 -10 L4 -6 L7 1 L15 -5 L13 6 Z" fill="${fill}" stroke="${METAL.dark}" stroke-width="1" stroke-linejoin="round"/>` +
+      `<path d="M-13 6 L-7 1 L0 -10 L7 1 L13 6 Z" fill="#fff" opacity=".28"/>` +
+      `<rect x="-13.5" y="5.5" width="27" height="4" rx="1.2" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".8"/>` +
+      `<circle cx="0" cy="-10.5" r="1.9" fill="#fff" stroke="${METAL.dark}" stroke-width=".5"/>` +
+      `<circle cx="-15" cy="-5.5" r="1.5" fill="${lt}"/><circle cx="15" cy="-5.5" r="1.5" fill="${lt}"/>` +
+      `<polygon points="0,0 2.2,2.2 0,4.4 -2.2,2.2" fill="${c}" stroke="#fff" stroke-width=".5"/>` +
+      `<circle cx="-7" cy="7.5" r="1.1" fill="${c}"/><circle cx="7" cy="7.5" r="1.1" fill="${c}"/>` +
+      `</g>`;
+
+    // 단계(V~I)에 따라 추가되는 상단 전술 스타 & 하단 셰브론 윙
+    const divStars = (y, count, r = 2.6) => {
+      if (count <= 0) return '';
+      let s = '';
+      const gap = 5.6, startX = CX - (count - 1) * gap / 2;
+      for (let i = 0; i < count; i++) {
+        const sx = startX + i * gap, sy = y + Math.abs(i - (count - 1) / 2) * 1.1;
+        s += `<path d="${starP(5, r, r * .45, -90, sx, sy)}" fill="${G('a')}" stroke="${dk}" stroke-width=".55"/>`;
+      }
+      return `<g class="te-div-stars">${s}</g>`;
+    };
+    const sideFlanges = (tierLv) => {
+      if (tierLv < 2) return '';
+      const w = 31 + tierLv * 1.5;
+      return `<g class="te-flange">` +
+        `<path d="M${CX - w} ${CY - 9} L${CX - w - 6} ${CY - 3} L${CX - w - 4} ${CY + 9} L${CX - w + 2} ${CY + 13} Z" fill="${G('a')}" stroke="${dk}" stroke-width=".8"/>` +
+        `<path d="M${CX + w} ${CY - 9} L${CX + w + 6} ${CY - 3} L${CX + w + 4} ${CY + 9} L${CX + w - 2} ${CY + 13} Z" fill="${G('a')}" stroke="${dk}" stroke-width=".8"/>` +
+        `</g>`;
+    };
+
+    const glow = r => `<circle class="te-aura" cx="${CX}" cy="${CY}" r="${r}" fill="${G('g')}"/>`;
+    const rays = (n, R, cls = 'te-rays') => {
+      let d = '';
+      for (let i = 0; i < n; i++) {
+        const a = i / n * Math.PI * 2;
+        d += `M${CX} ${CY} L${f1(CX + Math.cos(a - .045) * R)} ${f1(CY + Math.sin(a - .045) * R)} L${f1(CX + Math.cos(a + .045) * R)} ${f1(CY + Math.sin(a + .045) * R)}Z`;
+      }
+      return `<path class="${cls}" d="${d}" fill="${lt}" opacity=".36"/>`;
+    };
+    const haloRing = (r) =>
+      `<g class="te-rays">` +
+      `<circle cx="${CX}" cy="${CY}" r="${r}" fill="none" stroke="${lt}" stroke-width="1.1" stroke-dasharray="5 3" opacity=".65"/>` +
+      `<circle cx="${CX}" cy="${CY}" r="${r - 3.5}" fill="none" stroke="${G('a')}" stroke-width=".7" opacity=".55"/>` +
+      `</g>`;
 
     let art = '';
     switch (t.id) {
       case 'bronze':
-        art = circle(29, G('b'), dk, 2) + circle(25, G('r'), dk, 1) + rivets(16, 27.2, 1.3) + circle(20.5, G('f'), dk, 1.2) + grid(1.15, CY - 2) + shine(20);
+        // 브론즈: 팔각 중장갑 방패 + 리벳 베젤 + 스도쿠 코어 + 단계별 상단 핍
+        art =
+          (divRank >= 3 ? sideFlanges(2) : '') +
+          `<path d="${poly(8, 32, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="2" stroke-linejoin="round"/>` +
+          `<path d="${poly(8, 28, -67.5)}" fill="${G('i')}" stroke="${lt}" stroke-width=".9"/>` +
+          rivets(8, 30, 1.35, -67.5) +
+          armorShield(20, 42, CY - 20, G('r'), G('i'), G('f')) +
+          tacGrid(1.05, CY + 1) +
+          divStars(17, Math.min(3, Math.ceil(divRank / 2)), 2.5);
         break;
+
       case 'silver':
-        art = `<path d="${poly(6, 32, -90)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/><path d="${poly(6, 27.5, -90)}" fill="${G('r')}" stroke="${lt}" stroke-width="1"/>` +
-          rivets(6, 29.7, 1.8) + `<path d="${poly(6, 22, -90)}" fill="${G('f')}" stroke="${dk}" stroke-width="1.2"/>` + pencils(34, 5) + shine(22);
+        // 실버: 브러시드 스틸 측면 칼날 + 교차 전술 블레이드 + 6각 장갑 실드
+        art =
+          `<g class="te-wing"><path d="M12 34 L28 28 L25 54 L15 48 Z M88 34 L72 28 L75 54 L85 48 Z" fill="${G('s')}" stroke="${dk}" stroke-width="1.2" stroke-linejoin="round"/></g>` +
+          crossedBlades(56, 3.8) +
+          `<path d="${poly(6, 31, -90)}" fill="${G('b')}" stroke="${dk}" stroke-width="2" stroke-linejoin="round"/>` +
+          `<path d="${poly(6, 26.5, -90)}" fill="${G('i')}" stroke="#fff" stroke-width=".9"/>` +
+          rivets(6, 28.8, 1.5, -90) +
+          armorShield(19, 41, CY - 19.5, G('s'), G('i'), G('f')) +
+          tacGrid(1.0, CY + 1) +
+          divStars(15.5, Math.min(4, divRank), 2.6);
         break;
+
       case 'gold':
-        art = glow(44) + `<path d="${starP(4, 46, 16, -90)}" fill="${G('b')}" stroke="${dk}" stroke-width="1.4"/>` +
-          `<path d="${starP(4, 38, 16, -45)}" fill="${G('r')}" stroke="${dk}" stroke-width="1"/>` +
-          `<path d="${poly(8, 29, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/><path d="${poly(8, 23, -67.5)}" fill="${G('f')}" stroke="${lt}" stroke-width="1"/>` +
-          rivets(8, 26, 1.4, -67.5) + grid(.75, CY - 4) + pencils(36, 4.5) + shine(23);
+        // 골드: 후광 + 4방향 황금 검날 스타 + 월계관 + 로열 골드 장갑 방패 + 상단 크라운/스타
+        art =
+          glow(44) +
+          `<path d="${starP(4, 46, 17, -90)}" fill="${G('a')}" stroke="${dk}" stroke-width="1.3" stroke-linejoin="round"/>` +
+          `<path d="${starP(4, 39, 17, -45)}" fill="${G('b')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/>` +
+          tacLaurel(33, 108, 198, 7, G('a')) +
+          crossedBlades(58, 4) +
+          armorShield(21, 44, CY - 21, G('b'), G('i'), G('f')) +
+          tacGrid(1.0, CY + 2) +
+          impCrown(CY - 22, .82, G('a')) +
+          divStars(11.5, Math.min(5, divRank), 2.3);
         break;
+
       case 'platinum':
-        art = glow(46) + rays(12, 46) +
-          `<path d="M${CX - 44} ${CY} L${CX - 26} ${CY - 6} L${CX - 26} ${CY + 6}Z M${CX + 44} ${CY} L${CX + 26} ${CY - 6} L${CX + 26} ${CY + 6}Z M${CX} ${CY - 46} L${CX - 6} ${CY - 28} L${CX + 6} ${CY - 28}Z" fill="${G('s')}" stroke="#2b3544" stroke-width="1"/>` +
-          `<path d="${starP(16, 34, 29)}" fill="${G('b')}" stroke="${dk}" stroke-width="1.6"/>` + circle(27, G('r'), dk, 1) + rivets(16, 30.8, 1.1) +
-          circle(22.5, G('f'), lt, 1.2) + crosshair(15) + pencils(38, 4.5) + shine(22);
+        // 플래티넘: 시안 에너지 후광 + 2겹 메카닉 윙 + 12각 톱니 베젤 + 택티컬 조준선 + 플라즈마 보석
+        art =
+          glow(47) + rays(12, 46) +
+          tacWings(.78, G('s'), G('b'), G('c'), 2) +
+          `<path d="${starP(12, 34, 29.5, -90)}" fill="${G('s')}" stroke="${dk}" stroke-width="1.4" stroke-linejoin="round"/>` +
+          armorShield(21, 45, CY - 21.5, G('b'), G('a'), G('f')) +
+          `<g fill="none" stroke="${lt}" stroke-width="1.1" opacity=".85"><circle cx="${CX}" cy="${CY}" r="13"/><path d="M${CX - 17} ${CY} H${CX - 7} M${CX + 7} ${CY} H${CX + 17} M${CX} ${CY - 17} V${CY - 7} M${CX} ${CY + 7} V${CY + 17}"/></g>` +
+          facetGem(CY, 1.18) +
+          impCrown(CY - 23, .92, G('s')) +
+          divStars(11, Math.min(5, divRank), 2.4);
         break;
+
       case 'diamond':
-        art = glow(48) + rays(16, 48) +
-          `<path d="${starP(8, 46, 12, -90)}" fill="${G('s')}" stroke="#2b3544" stroke-width="1"/>` +
-          `<path d="${starP(8, 36, 12, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="1"/>` +
-          laurel(33, 100, 200, 8, G('a')) +
-          circle(25, G('a'), METAL.dark, 1.8) + circle(21, G('f'), lt, 1.2) + rivets(12, 23, 1) + gem(CY - 2, 1.5) + shine(21);
+        // 다이아몬드: 8방향 크리스탈 스타 + 3겹 발키리 날개 + 황금 월계관 + 대형 다면 다이아몬드 코어
+        art =
+          glow(50) + rays(16, 49) +
+          `<path d="${starP(8, 47, 15, -90)}" fill="${G('s')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/>` +
+          `<path d="${starP(8, 39, 15, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>` +
+          tacWings(.92, G('b'), G('s'), G('c'), 3) +
+          tacLaurel(31, 105, 202, 8, G('a')) +
+          armorShield(21.5, 46, CY - 22, G('a'), G('b'), G('f')) +
+          facetGem(CY + 1, 1.48) +
+          impCrown(CY - 24, 1.05, G('a')) +
+          divStars(10, Math.min(5, divRank), 2.5);
         break;
+
       case 'master':
-        art = glow(50) + rays(20, 50) +
-          `<path d="${starP(16, 47, 30)}" fill="${G('a')}" stroke="${METAL.dark}" stroke-width="1" opacity=".95"/>` +
-          wings(.85, G('r')) + laurel(28, 110, 200, 7, '#6bbf59') +
-          heater(17, 36, CY - 16, G('b')) + `<path d="M${CX - 13} ${CY - 12} H${CX + 13} V${CY + 2} C${CX + 13} ${CY + 10} ${CX + 6} ${CY + 15} ${CX} ${CY + 17} C${CX - 6} ${CY + 15} ${CX - 13} ${CY + 10} ${CX - 13} ${CY + 2}Z" fill="${G('f')}"/>` +
-          grid(.7, CY + 1) + crown(CY - 22, 1, G('a'));
+        // 마스터: 회전 룬 후광 + 20각 황금 태양림 + 교차 의장검 + 3겹 대날개 + 황제 크라운 + 아케인 코어
+        art =
+          glow(52) + rays(20, 51) + haloRing(44) +
+          `<path d="${starP(16, 46, 33)}" fill="${G('a')}" stroke="${METAL.dark}" stroke-width="1" opacity=".95"/>` +
+          crossedBlades(68, 4.4) +
+          tacWings(1.04, G('a'), G('b'), G('c'), 3) +
+          tacLaurel(30, 104, 204, 8, G('a')) +
+          armorShield(22, 47, CY - 22, G('a'), G('b'), G('f')) +
+          tacGrid(.78, CY + 2) +
+          facetGem(CY + 2, 1.15) +
+          impCrown(CY - 25, 1.25, G('a'));
         break;
+
       case 'grandmaster':
-        art = glow(46) + rays(20, 50) +
-          `<g transform="rotate(-35 ${CX} ${CY})"><rect x="${CX - 1.8}" y="${CY - 40}" width="3.6" height="78" rx="1.5" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/><circle cx="${CX}" cy="${CY - 41}" r="3.5" fill="${G('c')}" stroke="${METAL.dark}" stroke-width=".7"/></g>` +
-          `<g transform="rotate(35 ${CX} ${CY})"><rect x="${CX - 1.8}" y="${CY - 40}" width="3.6" height="78" rx="1.5" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/><circle cx="${CX}" cy="${CY - 41}" r="3.5" fill="${G('c')}" stroke="${METAL.dark}" stroke-width=".7"/></g>` +
-          wings(1.05, `url(#${u}s)`) +
-          heater(18, 40, CY - 15, G('a')) + `<path d="M${CX - 14} ${CY - 11} H${CX + 14} V${CY + 4} C${CX + 14} ${CY + 13} ${CX + 6} ${CY + 18} ${CX} ${CY + 21} C${CX - 6} ${CY + 18} ${CX - 14} ${CY + 13} ${CX - 14} ${CY + 4}Z" fill="${G('r')}" stroke="${dk}" stroke-width=".8"/>` +
-          grid(.72, CY + 3) + crown(CY - 23, 1.35, G('r'));
+        // 그랜드마스터 (PUBG 프레데터/컨커러 급): 회전 이중 후광 + 타오르는 진홍 불꽃 + 쌍홀 + 4겹 황금 대날개 + 5성 제왕관
+        art =
+          glow(56) + rays(28, 55) + haloRing(47) +
+          `<path d="${starP(20, 49, 35)}" fill="${G('a')}" stroke="${METAL.dark}" stroke-width="1"/>` +
+          `<path d="${starP(20, 43, 32, -81)}" fill="${G('r')}" stroke="${dk}" stroke-width=".85"/>` +
+          `<path class="te-flame" d="M50 -4 C56 6 64 4 62 15 C69 9 75 16 71 26 C66 20 59 22 57 16 C54 22 46 22 43 16 C41 22 34 20 29 26 C25 16 31 9 38 15 C36 4 44 6 50 -4Z" fill="${G('r')}" stroke="${METAL.mid}" stroke-width="1"/>` +
+          crossedBlades(74, 4.8) +
+          tacWings(1.16, G('a'), G('r'), G('c'), 3) +
+          tacLaurel(32, 100, 206, 9, G('a')) +
+          armorShield(23, 49, CY - 22.5, G('a'), G('r'), G('f')) +
+          tacGrid(.82, CY + 3) +
+          facetGem(CY + 3, 1.28) +
+          impCrown(CY - 26.5, 1.45, G('a')) +
+          divStars(6.5, 5, 2.3);
         break;
     }
-    // 단계 명판: 아래 가운데
+
+    // 하단 택티컬 셰브론 명판 (볼트 + 메탈릭 로마 숫자 배지)
     const plate = division ? (() => {
-      const w = 13, y = 80, h = 13;
-      const fs = division.length >= 3 ? 9.5 : division.length === 2 ? 10.5 : 11.5;
-      return `<path d="M${CX - w - 4} ${y} H${CX + w + 4} L${CX + w} ${y + h / 2} L${CX + w + 4} ${y + h} H${CX - w - 4} L${CX - w} ${y + h / 2} Z" fill="${G('f')}" stroke="${G('a')}" stroke-width="1.6" stroke-linejoin="round"/>` +
-        `<text x="${CX}" y="${y + h / 2 + fs * .36}" text-anchor="middle" font-size="${fs}" font-weight="900" font-family="Georgia,'Times New Roman',serif" fill="${G('c')}" stroke="${dk}" stroke-width=".5" paint-order="stroke">${division}</text>`;
+      const w = 15, y = 78.5, h = 14.5;
+      const fs = division.length >= 3 ? 9.5 : division.length === 2 ? 10.8 : 11.8;
+      return `<g class="te-plate">` +
+        `<path d="M${CX - w - 5} ${y + 3} L${CX - w} ${y} H${CX + w} L${CX + w + 5} ${y + 3} L${CX + w + 2} ${y + h - 2} L${CX} ${y + h + 2.5} L${CX - w - 2} ${y + h - 2} Z" fill="${G('a')}" stroke="${dk}" stroke-width="1.3" stroke-linejoin="round"/>` +
+        `<path d="M${CX - w - 2} ${y + 3.5} L${CX - w + 1.5} ${y + 1.6} H${CX + w - 1.5} L${CX + w + 2} ${y + 3.5} L${CX + w} ${y + h - 3} L${CX} ${y + h + .5} L${CX - w} ${y + h - 3} Z" fill="${G('f')}" stroke="${lt}" stroke-width=".6" stroke-linejoin="round"/>` +
+        `<circle cx="${CX - w - 1.2}" cy="${y + h * .46}" r="1.1" fill="${METAL.light}"/><circle cx="${CX + w + 1.2}" cy="${y + h * .46}" r="1.1" fill="${METAL.light}"/>` +
+        `<text x="${CX}" y="${y + h * .52 + fs * .35}" text-anchor="middle" font-size="${fs}" font-weight="900" font-family="Georgia,'Times New Roman',serif" letter-spacing=".5" fill="${G('c')}" stroke="${dk}" stroke-width=".6" paint-order="stroke">${division}</text>` +
+        `</g>`;
     })() : '';
-    const spark = k >= 2 ? `<path class="te-spark" d="M72 18 L73.6 22.4 L78 24 L73.6 25.6 L72 30 L70.4 25.6 L66 24 L70.4 22.4Z" fill="#fff"/>` : '';
-    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs><g class="te-body">${art}</g>${plate}${spark}</svg>`;
+
+    const spark = k >= 2 ? (
+      `<path class="te-spark" d="M73 16 L74.8 21.2 L80 23 L74.8 24.8 L73 30 L71.2 24.8 L66 23 L71.2 21.2Z" fill="#fff"/>` +
+      (k >= 4 ? `<path class="te-spark te-spark-2" d="M26 20 L27.3 23.7 L31 25 L27.3 26.3 L26 30 L24.7 26.3 L21 25 L24.7 23.7Z" fill="${lt}"/>` : '')
+    ) : '';
+    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k} te-div-${divRank}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs><g class="te-body">${art}</g>${plate}${spark}</svg>`;
   }
 
-  /* v1.1.26 · 승급 연출: 큰 티어 승급은 상승음 + 금관 팡파르 + 종소리와 전체 화면 연출,
-   *   단계 승급(IV→III 등)은 짧은 아르페지오와 작은 연출. 화면을 누르면 닫힙니다. 효과음 설정을 따릅니다. */
-  function promoSound(big, k) {
+  /* v1.1.29 · PUBG 경쟁전 스타일 사운드:
+   *   - 단계 승급(small): 금속 잠금 해제 클랭크 + 전술 스탬프 임팩트 + 상승 브라스 코드
+   *   - 티어 승급(big): 저음 에너지 차지 → 아머 크랙 → 중량감 있는 메탈 포징 슬램(서브베이스 드롭) → 웅장한 금관 팡파르 + 크리스탈 차임 */
+  function promoSound(big, k, phase = 'full') {
     try {
       const sfx = window.app && window.app.sound; if (!sfx || !sfx.enabled) return;
       sfx.init(); const ctx = sfx.ctx; if (!ctx) return;
-      const out = ctx.createGain(); out.gain.value = .9; out.connect(sfx.out || ctx.destination);
-      const t0 = ctx.currentTime + .05, mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-      const tone = (m, at, dur, type, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = mtof(m);
-        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .015); g.gain.exponentialRampToValueAtTime(.0008, at + dur);
-        o.connect(g); g.connect(out); o.start(at); o.stop(at + dur + .05); };
-      const base = 60 + Math.min(k, 6);
-      if (!big) { [0, 4, 7, 12].forEach((s, i) => tone(base + 12 + s, t0 + i * .07, .5, 'triangle', .12)); return; }
+      const out = ctx.createGain(); out.gain.value = .92; out.connect(sfx.out || ctx.destination);
+      const t0 = ctx.currentTime + .02, mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+      const tone = (m, at, dur, type, v, det = 0) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type; o.frequency.value = mtof(m); o.detune.value = det;
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.linearRampToValueAtTime(v, at + .014);
+        g.gain.exponentialRampToValueAtTime(.0008, at + dur);
+        o.connect(g); g.connect(out); o.start(at); o.stop(at + dur + .04);
+      };
+      // 메탈릭 타격 노이즈 + 서브 임팩트 헬퍼
+      const metalHit = (at, punch = .28, pitch = 140) => {
+        const sub = ctx.createOscillator(), sg = ctx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(pitch, at);
+        sub.frequency.exponentialRampToValueAtTime(34, at + .32);
+        sg.gain.setValueAtTime(punch, at);
+        sg.gain.exponentialRampToValueAtTime(.001, at + .35);
+        sub.connect(sg); sg.connect(out); sub.start(at); sub.stop(at + .38);
+        // 금속 배음 클랭크
+        [820, 1340, 2180].forEach((f, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.setValueAtTime(f * (1 + k * .04), at);
+          o.frequency.exponentialRampToValueAtTime(f * .72, at + .18);
+          g.gain.setValueAtTime(punch * (.28 - i * .06), at);
+          g.gain.exponentialRampToValueAtTime(.0008, at + .22);
+          o.connect(g); g.connect(out); o.start(at); o.stop(at + .24);
+        });
+      };
+
+      const base = 60 + Math.min(Math.max(0, k || 0), 6);
+      if (!big) {
+        metalHit(t0, .2, 120);
+        [0, 4, 7, 12].forEach((s, i) => {
+          tone(base + 12 + s, t0 + .06 + i * .065, .48, 'sawtooth', .065);
+          tone(base + 12 + s, t0 + .06 + i * .065, .52, 'triangle', .11);
+        });
+        return;
+      }
+      if (phase === 'charge') {
+        // 엠블럼 에너지 응축 라이저
+        const sw = ctx.createOscillator(), sg = ctx.createGain(), lp = ctx.createBiquadFilter();
+        sw.type = 'sawtooth';
+        sw.frequency.setValueAtTime(95, t0);
+        sw.frequency.exponentialRampToValueAtTime(680, t0 + .65);
+        lp.type = 'lowpass'; lp.frequency.value = 1400;
+        sg.gain.setValueAtTime(.001, t0);
+        sg.gain.linearRampToValueAtTime(.09, t0 + .55);
+        sg.gain.linearRampToValueAtTime(.001, t0 + .7);
+        sw.connect(lp); lp.connect(sg); sg.connect(out); sw.start(t0); sw.stop(t0 + .72);
+        return;
+      }
+      if (phase === 'shatter') {
+        metalHit(t0, .24, 180);
+        [19, 24, 28, 31].forEach((s, i) => tone(base + s, t0 + i * .03, .22, 'square', .045));
+        return;
+      }
+      if (phase === 'slam') {
+        // 날개/장갑 결합 후 마지막 명판 스탬프 슬램 + 브라스 팡파르
+        metalHit(t0, .38, 150);
+        [0, 4, 7, 12, 16].forEach(s => {
+          tone(base + s, t0 + .04, 1.7, 'sawtooth', .055, -6);
+          tone(base + s, t0 + .04, 1.7, 'sawtooth', .055, 6);
+          tone(base + s + 12, t0 + .04, 1.5, 'triangle', .06);
+        });
+        tone(base - 12, t0 + .04, 1.8, 'sine', .28);
+        [24, 28, 31, 36, 40].forEach((s, i) => tone(base + s, t0 + .12 + i * .055, 1.25, 'sine', .075));
+        return;
+      }
+      // 기본 통합 사운드 (phase === 'full')
       const sw = ctx.createOscillator(), sg = ctx.createGain(), lp = ctx.createBiquadFilter(); sw.type = 'sawtooth';
-      sw.frequency.setValueAtTime(180, t0); sw.frequency.exponentialRampToValueAtTime(1400, t0 + .55);
+      sw.frequency.setValueAtTime(140, t0); sw.frequency.exponentialRampToValueAtTime(1400, t0 + .55);
       lp.type = 'lowpass'; lp.frequency.value = 1800;
-      sg.gain.setValueAtTime(0, t0); sg.gain.linearRampToValueAtTime(.06, t0 + .3); sg.gain.linearRampToValueAtTime(0, t0 + .6);
+      sg.gain.setValueAtTime(0, t0); sg.gain.linearRampToValueAtTime(.07, t0 + .3); sg.gain.linearRampToValueAtTime(0, t0 + .6);
       sw.connect(lp); lp.connect(sg); sg.connect(out); sw.start(t0); sw.stop(t0 + .65);
-      const f = t0 + .6;
-      [0, 7, 12].forEach((s, i) => { tone(base + s, f + i * .12, .25, 'sawtooth', .06); tone(base + s, f + i * .12, .25, 'square', .03); });
-      [0, 4, 7, 12, 16].forEach(s => { tone(base + s, f + .42, 1.6, 'sawtooth', .045); tone(base + s + 12, f + .42, 1.4, 'triangle', .05); });
-      tone(base - 12, f + .42, 1.6, 'sine', .25);
+      const f = t0 + .58;
+      metalHit(f, .32, 145);
+      [0, 7, 12].forEach((s, i) => { tone(base + s, f + i * .11, .28, 'sawtooth', .065); tone(base + s, f + i * .11, .28, 'square', .035); });
+      metalHit(f + .4, .36, 130);
+      [0, 4, 7, 12, 16].forEach(s => { tone(base + s, f + .42, 1.65, 'sawtooth', .05, -5); tone(base + s + 12, f + .42, 1.45, 'triangle', .055); });
+      tone(base - 12, f + .42, 1.7, 'sine', .26);
       [24, 28, 31, 36, 40].forEach((s, i) => tone(base + s, f + .5 + i * .06, 1.2, 'sine', .07));
     } catch (_) {}
   }
@@ -228,15 +525,15 @@
     wrap.style.setProperty('--tier', tier.color);
     wrap.setAttribute('role', 'status');
     let parts = '';
-    if (big && !reduced) for (let i = 0; i < 26; i++) {
-      parts += `<i style="--a:${Math.round(Math.random() * 360)}deg;--d:${Math.round(90 + Math.random() * 120)}px;--dl:${(.55 + Math.random() * .3).toFixed(2)}s"></i>`;
+    if (big && !reduced) for (let i = 0; i < 32; i++) {
+      parts += `<i style="--a:${Math.round(Math.random() * 360)}deg;--d:${Math.round(95 + Math.random() * 140)}px;--dl:${(.45 + Math.random() * .3).toFixed(2)}s"></i>`;
     }
-    wrap.innerHTML = `<div class="tp-burst"></div><div class="tp-parts">${parts}</div><div class="tp-emblem">${tierSymbol(tier.id, big ? 200 : 140, tier.division)}</div>`;
+    wrap.innerHTML = `<div class="tp-burst"></div><div class="tp-shockwave"></div><div class="tp-parts">${parts}</div><div class="tp-emblem">${tierSymbol(tier.id, big ? 210 : 148, tier.division)}</div>`;
     wrap.setAttribute('aria-label', tier.name);
     const close = () => { wrap.classList.add('out'); setTimeout(() => wrap.remove(), 350); };
     wrap.addEventListener('click', close);
     document.body.append(wrap);
-    setTimeout(close, big ? 3600 : 2000);
+    setTimeout(close, big ? 3800 : 2100);
     promoSound(big, tier.index);
   }
 
@@ -273,6 +570,7 @@
     if (!all.ta || typeof all.ta !== 'object') all.ta = { lastDiff: null, byDiff: {} };
     if (!all.ta.byDiff) all.ta.byDiff = {};
     DIFFS.forEach(d => { all.ta.byDiff[d] = fix(all.ta.byDiff[d]); });
+    if (ensureSeason(all)) saveAll(all);
     return all;
   };
   const MODES = ['standard', 'timeattack'];
@@ -281,13 +579,64 @@
   const saveAll = all => { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (_) {} };
   const load = d => loadAll().byDiff[DIFFS.includes(d) ? d : 'easy'];
 
+  const DIV_RP = 100;
+
+  /* ---------- v1.1.28 · 시즌 ----------
+   * 8주(56일) 시즌. 2027-01-21부터 시즌 1(그 전은 프리시즌). 기기 날짜 기준으로 계산합니다.
+   * 시즌이 바뀌면 모든 랭크를 소프트 리셋: 새 RP = 1000 + (이전 RP − 1000) × 0.5
+   *   → 배치 경기 5판(그동안 '언랭크', 얻는 RP ×1.5) → 이후 5판 시즌 초반 가속(얻는 RP ×1.25)
+   * 지난 시즌 최고 티어는 명예의 전당에 남고, 티어 보상(꾸미기)은 지금까지 도달한 최고 티어로 영구 해금됩니다.
+   * 승급전: 다음 티어로 넘어갈 RP를 얻으면 경계 바로 아래에서 멈추고 3판 2선승 승급전을 치릅니다.
+   * 강등 보호: 승급 직후 3판은 티어 시작점 아래로 떨어지지 않습니다. */
+  const SEASON_EPOCH = new Date(2027, 0, 21).getTime(), SEASON_DAYS = 56, PLACEMENT = 5, BOOST_GAMES = 5;
+  // 시즌 1 시작 전은 0(프리시즌): 리셋·배치 경기 없이 지금처럼 랭크가 쌓입니다.
+  const seasonOf = (now = Date.now()) => now < SEASON_EPOCH ? 0 : Math.floor((now - SEASON_EPOCH) / (SEASON_DAYS * DAY)) + 1;
+  const seasonEnd = n => SEASON_EPOCH + n * SEASON_DAYS * DAY;
+  const UNRANKED = { id: 'unranked', ko: '언랭크', min: 0, color: '#64748b' };
+  function ensureSeason(all) {
+    const cur = seasonOf();
+    if (!cur || all.season === cur) return false;
+    const first = !all.season;
+    if (!Array.isArray(all.hof)) all.hof = [];
+    let bestIdx = -1;
+    MODES.forEach(m => DIFFS.forEach(d => {
+      const s = ladder(all, m).byDiff[d];
+      if (first) {
+        // 시즌 도입 전 기록은 '프리시즌'으로 남깁니다.
+        if (s.games > 0) all.hof.unshift({ season: 0, mode: m, diff: d, best: Math.max(s.peak || 0, s.rating), final: s.rating });
+      } else if ((s.seasonGames || 0) > 0 && !(s.placement > 0)) {
+        const best = Math.max(s.seasonBest || 0, s.rating);
+        all.hof.unshift({ season: all.season, mode: m, diff: d, best, final: s.rating });
+        bestIdx = Math.max(bestIdx, tierOf(best).index);
+      }
+      s.rating = Math.round(1000 + (s.rating - 1000) * 0.5);
+      s.placement = PLACEMENT; s.seasonGames = 0; s.seasonBest = 0; s.series = null; s.protect = 0; s.boost = 0; s.streak = 0;
+    }));
+    all.hof = all.hof.slice(0, 80);
+    if (!first && bestIdx >= 0) all.seasonReward = { season: all.season, tier: TIERS[bestIdx].id, seen: false };
+    all.season = cur;
+    return true;
+  }
+  // 화면에 보일 티어: 배치 중이면 언랭크
+  function shownTier(s) {
+    if (s && s.placement > 0) return { ...UNRANKED, index: -1, division: '', name: tr(UNRANKED.ko), divMin: 0, divMax: null, next: TIERS[0], placementDone: PLACEMENT - s.placement };
+    return tierOf(s ? s.rating : 1000);
+  }
+  // 지금까지 도달한 최고 티어(명예의 전당 시즌 기록 + 이번 시즌 배치를 마친 랭크)
+  function bestTierIndex(all) {
+    let k = -1;
+    (all.hof || []).forEach(h => { if (h.season > 0) k = Math.max(k, tierOf(h.best).index); });
+    MODES.forEach(m => DIFFS.forEach(d => { const s = ladder(all, m).byDiff[d]; if (!(s.placement > 0) && s.seasonGames > 0) k = Math.max(k, tierOf(Math.max(s.seasonBest || 0, s.rating)).index); }));
+    return k;
+  }
   function tierOf(rating) {
     let k = 0; for (let i = 0; i < TIERS.length; i++) if (rating >= TIERS[i].min) k = i;
     const t = TIERS[k], next = TIERS[k + 1];
     let division = '', divMin = t.min, divMax = next ? next.min : null;
     if (k <= 4) {
-      const span = (next.min - t.min) / ROMAN.length, d = clamp(Math.floor((rating - t.min) / span), 0, ROMAN.length - 1);
-      division = ROMAN[d]; divMin = t.min + span * d; divMax = divMin + span;
+      // 다음 티어 시작점에서 100 RP씩 아래로 I, II, III, IV, V. 가장 아래 단계(V)는 티어 시작점까지 포함합니다.
+      const d = clamp(ROMAN.length - 1 - Math.floor((next.min - 1 - rating) / DIV_RP), 0, ROMAN.length - 1);
+      division = ROMAN[d]; divMax = next.min - (ROMAN.length - 1 - d) * DIV_RP; divMin = d === 0 ? t.min : divMax - DIV_RP;
     }
     return { ...t, index: k, division, name: tr(t.ko) + (division ? ' ' + division : ''), divMin, divMax, next };
   }
@@ -358,6 +707,7 @@
   const RATED_MODES = ['standard', 'daily', undefined, null, ''];
   const record = p.recordGameEnd;
   p.recordGameEnd = function (isWin, ...rest) {
+    this.lastRatingChange = null;
     const out = record.call(this, isWin, ...rest);
     try {
       const mode = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
@@ -378,8 +728,50 @@
       const bonusRate = delta > 0 ? streakBonus(s.streak) : 0;
       const bonus = bonusRate ? Math.max(1, Math.round(delta * bonusRate)) : 0;
       delta += bonus;
+      // ---- v1.1.28 시즌 규칙 ----
+      const rawDelta = delta, placing = s.placement > 0, hadSeries = !!s.series;
+      let seriesResult = null, protectedHit = false, revealed = false, boosted = false;
+      if (placing) {
+        if (delta > 0) delta = Math.round(delta * 1.5);
+        s.placement--;
+        if (!s.placement) { revealed = true; s.boost = BOOST_GAMES; }
+      } else {
+        if (s.boost > 0) { if (delta > 0) { delta = Math.round(delta * 1.25); boosted = true; } s.boost--; }
+        const bt = tierOf(s.rating);
+        if (s.series) {
+          // 승급전: RP는 움직이지 않고 승패만 셉니다. 타임어택은 RP를 얻은 판을 승리로 봅니다.
+          const sWin = mode === 'timeattack' ? rawDelta > 0 : win;
+          if (sWin) s.series.w++; else s.series.l++;
+          if (s.series.w >= 2) { delta = s.series.target - s.rating; s.series = null; seriesResult = 'won'; s.protect = 3; }
+          else if (s.series.l >= 2) { delta = Math.min(0, delta); s.series = null; seriesResult = 'lost'; }
+          else { delta = 0; seriesResult = 'progress'; }
+        } else if (delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index) {
+          delta = bt.next.min - 1 - s.rating;
+          s.series = { w: 0, l: 0, target: bt.next.min, tier: bt.next.id };
+          seriesResult = 'start';
+        }
+        if (delta < 0 && s.protect > 0 && seriesResult !== 'won') {
+          const floor = TIERS[Math.max(0, bt.index)].min;
+          if (s.rating + delta < floor) { delta = floor - s.rating; protectedHit = true; }
+        }
+        if (s.protect > 0 && seriesResult !== 'won') s.protect--;
+      }
+      s.seasonGames = (s.seasonGames || 0) + 1;
+      const season = { placing, revealed, placementDone: PLACEMENT - (s.placement || 0), series: s.series ? { ...s.series } : null,
+        seriesResult, protectedHit, protect: s.protect || 0, boosted, boost: s.boost || 0, hadSeries };
+      if (!delta && (placing || hadSeries || seriesResult)) {
+        // RP 변화는 없지만 배치·승급전 진행은 저장합니다.
+        s.games++; s.lastActive = Date.now(); s.lastDecay = 0;
+        if (!s.placement) s.seasonBest = Math.max(s.seasonBest || 0, s.rating);
+        lad.lastDiff = g.difficulty; all.lastMode = mode;
+        saveAll(all); this._ratedGameId = this._ratingToken; this._rankDiff = g.difficulty; this._rankMode = mode;
+        this.lastRatingChange = { mode, streak: s.streak, bonus, difficulty: g.difficulty, before, after: s.rating, delta: 0, tier: tierOf(s.rating), beforeTier, season };
+        this.renderRatingCard?.();
+        return out;
+      }
       if (!delta) {
         saveAll(all);
+        this.lastRatingChange = { mode, streak: s.streak, bonus: 0, difficulty: g.difficulty, before, after: s.rating, delta: 0, tier: tierOf(s.rating), beforeTier, season };
         if (mode === 'timeattack' && (this.score || 0) > 0) {
           const need = Math.ceil(taExpected(s.rating) / (TA_WEIGHT[g.difficulty] || 1));
           setTimeout(() => this.showToast?.(`${modeName(mode)} · ${diffName(g.difficulty)} · ${tr('레이팅 유지')} (${s.rating}) · ${tr('상승 기준')} ${need.toLocaleString()}`, 3500), 900);
@@ -389,15 +781,20 @@
       }
       s.rating = Math.max(0, s.rating + delta); s.peak = Math.max(s.peak, s.rating);
       s.games++; s.lastActive = Date.now(); s.lastDecay = 0;
+      if (!s.placement) s.seasonBest = Math.max(s.seasonBest || 0, s.rating);
       s.history.unshift({ t: Date.now(), d: delta, bonus, streak: s.streak, diff: g.difficulty, mode, win }); s.history = s.history.slice(0, 30);
       lad.lastDiff = g.difficulty; all.lastMode = mode;
       saveAll(all); this._ratedGameId = this._ratingToken; this._rankDiff = g.difficulty; this._rankMode = mode;
-      this.lastRatingChange = { mode, streak: s.streak, bonus, difficulty: g.difficulty, before, after: s.rating, delta, tier: tierOf(s.rating), beforeTier };
+      this.lastRatingChange = { mode, streak: s.streak, bonus, difficulty: g.difficulty, before, after: s.rating, delta, tier: tierOf(s.rating), beforeTier, season };
       // 리더보드: 레이팅, 난이도별 최단 시간(밀리초), 일일 도전 시간
-      if (mode === 'timeattack') {
+      const sk = 's' + all.season + '_';
+      if (s.placement > 0) { /* 배치 중에는 순위에 올리지 않습니다 */ }
+      else if (mode === 'timeattack') {
+        submit(sk + 'ta_rating_' + g.difficulty, s.rating);
         submit('ta_rating_' + g.difficulty, s.rating);
         submit('ta_rating', Math.max(...DIFFS.map(d => all.ta.byDiff[d].rating)));
       } else {
+        submit(sk + 'rating_' + g.difficulty, s.rating);
         submit('rating_' + g.difficulty, s.rating);
         submit('rating', Math.max(...DIFFS.map(d => all.byDiff[d].rating)));
         if (win) { submit(this.difficulty, g.seconds * 1000); if (this.isDaily) submit('daily', g.seconds * 1000); }
@@ -408,10 +805,8 @@
       if (bonus) msg += ` · ${streakText(s.streak)} +${bonus} (+${Math.round(bonusRate * 100)}%)`;
       if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
       else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
-      setTimeout(() => this.showToast?.(msg, 3500), 900);
-      // 승급 연출: 결과 화면이 뜬 뒤 보여 줍니다.
-      if (after.index > beforeTier.index) setTimeout(() => playPromotion(after, true), 1200);
-      else if (after.index === beforeTier.index && after.divMin > beforeTier.divMin) setTimeout(() => playPromotion(after, false), 1200);
+      // v1.1.28: RP 변화·단계·승급 연출은 결과 화면의 랭크 패널(rank-result.js)에서 보여 줍니다.
+      this.lastRatingChange.msg = msg;
       this.renderRatingCard?.();
     } catch (e) { console.warn('rating', e); }
     return out;
@@ -443,8 +838,8 @@
     MODES.forEach(m => DIFFS.forEach(d => { const x = applyDecay(ladder(all, m).byDiff[d]); if (m === mode && d === cur) lost = x; }));
     saveAll(all);
     const s = lad.byDiff[cur];
-    const t = tierOf(s.rating);
-    const pct = t.divMax ? clamp((s.rating - t.divMin) / (t.divMax - t.divMin) * 100, 0, 100) : 100;
+    const t = shownTier(s), unr = t.id === 'unranked';
+    const pct = unr ? t.placementDone / PLACEMENT * 100 : t.divMax ? clamp((s.rating - t.divMin) / (t.divMax - t.divMin) * 100, 0, 100) : 100;
     const idle = s.lastActive ? Math.floor((Date.now() - s.lastActive) / DAY) : 0;
     const decayIn = GRACE_DAYS - idle;
     card.style.setProperty('--tier', t.color);
@@ -453,7 +848,7 @@
     const head = el('div', 'rc-top');
     const badge = el('div', 'rc-badge rc-symbol tier-' + t.id); badge.innerHTML = tierSymbol(t.id, 56, t.division);
     const info = el('div', 'rc-info');
-    info.append(el('div', 'rc-tier', t.name), el('div', 'rc-rp', `${s.rating} RP · ${tr('최고')} ${s.peak}`));
+    info.append(el('div', 'rc-tier', t.name), el('div', 'rc-rp', unr ? `${tr('배치 경기')} ${t.placementDone} / ${PLACEMENT}` : `${s.rating} RP · ${tr('최고')} ${s.peak}`));
     head.append(badge, info); card.append(el('h3', 'section-title', tr('난이도별 랭크')));
     // 난이도 탭: 이름과 그 난이도의 티어(티어 색 밑줄)를 함께 보여 줍니다.
     // 모드 전환(일반 / 타임어택)
@@ -467,7 +862,7 @@
     card.append(modes);
     const tabs = el('div', 'rc-tabs'); tabs.setAttribute('role', 'tablist');
     DIFFS.forEach(d => {
-      const ds = lad.byDiff[d], dt = tierOf(ds.rating), b = el('button', 'rc-tab' + (d === cur ? ' on' : ''));
+      const ds = lad.byDiff[d], dt = shownTier(ds), b = el('button', 'rc-tab' + (d === cur ? ' on' : ''));
       b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', d === cur ? 'true' : 'false');
       b.style.setProperty('--tab-tier', ds.games ? dt.color : '#94a3b8');
       b.append(el('span', 'rc-tab-name', diffName(d)), el('span', 'rc-tab-tier', ds.games ? dt.name : '—'));
@@ -477,7 +872,11 @@
     card.append(tabs, head);
     const bar = el('div', 'rc-bar'); const fill = el('div', 'rc-fill'); fill.style.width = pct.toFixed(1) + '%'; bar.append(fill); card.append(bar);
     if ((s.streak || 0) >= 1) card.append(el('div', 'rc-streak', `${streakText(s.streak)} · ${tr('다음 클리어 보너스')} +${Math.round(streakBonus(s.streak + 1) * 100)}%`));
-    card.append(el('div', 'rc-next', t.divMax ? `${tr('다음 단계까지')} ${Math.ceil(t.divMax - s.rating)} RP` : tr('최고 티어입니다')));
+    if (s.series) card.append(el('div', 'rc-series', `${tr('승급전')} ${'●'.repeat(s.series.w)}${'✕'.repeat(s.series.l)}${'○'.repeat(Math.max(0, 3 - s.series.w - s.series.l))} · ${tr('3판 2선승')}`));
+    if (s.protect > 0) card.append(el('div', 'rc-protect', `🛡 ${tr('강등 보호')} ${s.protect}${tr('판')}`));
+    if (s.boost > 0) card.append(el('div', 'rc-boost', `⚡ ${tr('시즌 초반 가속')} +25% · ${s.boost}${tr('판')}`));
+    if (unr) card.append(el('div', 'rc-next', `${tr('배치 경기')} ${PLACEMENT - t.placementDone}${tr('판')} ${tr('남음')} · ${tr('얻는 RP')} ×1.5`));
+    else card.append(el('div', 'rc-next', t.divMax ? `${tr('다음 단계까지')} ${Math.ceil(t.divMax - s.rating)} RP` : tr('최고 티어입니다')));
     if (mode === 'timeattack') card.append(el('div', 'rc-note', `${tr('상승 기준 점수')} ${Math.ceil(taExpected(s.rating) / (TA_WEIGHT[cur] || 1)).toLocaleString()}`));
     if (!s.games) card.append(el('div', 'rc-note', tr(mode === 'timeattack' ? '이 난이도의 타임어택에서 기준보다 높은 점수를 내면 레이팅이 오릅니다.' : '이 난이도의 일반 게임이나 일일 도전을 클리어하면 레이팅이 쌓입니다.')));
     else if (s.rating > DECAY_FLOOR) card.append(el('div', 'rc-note' + (decayIn <= 2 ? ' warn' : ''),
@@ -502,8 +901,259 @@
   const renderStats = p.renderStatsView;
   if (renderStats) p.renderStatsView = function (...a) { const r = renderStats.apply(this, a); this.renderRatingCard(); return r; };
 
-  // 언어가 바뀌면 다시 그립니다.
-  new MutationObserver(() => window.app?.renderRatingCard?.()).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  /* ---------- v1.1.29 · 일반전 / 랭크전 구분 & 인게임 상단 미니 티어 배지 HUD ----------
+   * - 새 게임 모달(#modal-difficulty)에서 '🏆 랭크전 (RP 반영)'과 '🎮 일반전 (연습 · RP 무관)'을 선택할 수 있습니다.
+   * - 기본값은 랭크전(isRanked = true)이라 기존 동작·테스트와 호환되며, 일반전으로 시작하면 RP·연승·승급전에 영향을 주지 않습니다.
+   * - 게임 보드 상단 서브바(.diff-item) 옆에 현재 난이도의 실시간 미니 택티컬 엠블럼 + 티어명 + RP 배지를 표시합니다. */
+  const QKEY = 'sumdoku_queue_type'; // 'ranked' | 'normal'
+  const Q_TXT = {
+    label: ['매치 유형', 'Match Queue', 'マッチ種別', '比赛类型', '比賽類型', 'Tipo de partida', 'Type de partie', 'Spieltyp'],
+    ranked: ['🏆 랭크전 (RP 반영)', '🏆 Ranked (RP)', '🏆 ランク戦 (RP)', '🏆 排位赛 (RP)', '🏆 排位賽 (RP)', '🏆 Clasificatoria (RP)', '🏆 Classé (RP)', '🏆 Rangliste (RP)'],
+    normal: ['🎮 일반전 (연습 · RP 무관)', '🎮 Normal (Casual)', '🎮 ノーマル (練習)', '🎮 普通赛 (练习)', '🎮 一般賽 (練習)', '🎮 Normal (Práctica)', '🎮 Normal (Entraînement)', '🎮 Normal (Übung)'],
+    rankedDesc: ['승패와 기록에 따라 티어와 RP가 변동됩니다.', 'Tier and RP change based on match outcome and performance.', '勝敗と記録に応じてティアとRPが変動します。', '段位与RP会根据胜负和成绩变动。', '段位與RP會根據勝負和成績變動。', 'El rango y RP cambian según el resultado.', 'Le rang et les RP changent selon le résultat.', 'Rang und RP ändern sich je nach Ergebnis.'],
+    normalDesc: ['RP와 연승 기록 변동 없이 부담 없이 연습할 수 있습니다.', 'Practice freely without affecting your RP or win streak.', 'RPや連勝記録の変動なしで気軽に練習できます。', '不影响RP与连胜记录，可轻松练习。', '不影響RP與連勝紀錄，可輕鬆練習。', 'Practica libremente sin afectar tu RP ni racha.', 'Entraînez-vous sans affecter vos RP ni votre série.', 'Übe frei ohne Einfluss auf RP oder Siegesserie.'],
+    casualBadge: ['일반전 · RP 무관', 'Normal · No RP', 'ノーマル · RPなし', '普通赛 · 无RP', '一般賽 · 無RP', 'Normal · Sin RP', 'Normal · Sans RP', 'Normal · Ohne RP'],
+    placeShort: ['배치', 'Place', '配置', '定级', '定級', 'Clasif.', 'Place.', 'Platz.']
+  };
+  const qt = k => {
+    const langs = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
+    const i = Math.max(0, langs.indexOf((window.I18N && I18N.currentLang) || 'ko'));
+    return (Q_TXT[k] && (Q_TXT[k][i] || Q_TXT[k][1])) || k;
+  };
 
-  window.SumdokuRating = { tierSymbol, playPromotion, load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT, TIERS, KEY, DIFFS, MODES };
+  function getSavedQueue() {
+    try { return localStorage.getItem(QKEY) === 'normal' ? 'normal' : 'ranked'; } catch (_) { return 'ranked'; }
+  }
+  function setSavedQueue(q) {
+    try { localStorage.setItem(QKEY, q === 'normal' ? 'normal' : 'ranked'); } catch (_) {}
+  }
+
+  // 난이도 모달에 [🏆 랭크전 | 🎮 일반전] 선택 UI 주입 및 각 난이도 카드에 미니 티어 표시
+  function ensureQueueSelector(app) {
+    const modal = document.getElementById('modal-difficulty');
+    if (!modal) return;
+    const card = modal.querySelector('.modal-card');
+    if (!card) return;
+    let wrap = document.getElementById('rank-queue-box');
+    const q = app?.isRanked === false ? 'normal' : getSavedQueue();
+    if (app && app.isRanked === undefined) app.isRanked = (q === 'ranked');
+
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'rank-queue-box';
+      wrap.className = 'rank-queue-box';
+      wrap.innerHTML =
+        `<div class="rq-label" id="rq-label"></div>` +
+        `<div class="rq-tabs" role="tablist">` +
+        `  <button type="button" class="rq-btn" data-queue="ranked" role="tab"></button>` +
+        `  <button type="button" class="rq-btn" data-queue="normal" role="tab"></button>` +
+        `</div>` +
+        `<div class="rq-desc" id="rq-desc"></div>`;
+      const modeBox = modal.querySelector('.play-mode-options')?.parentElement;
+      if (modeBox) modeBox.before(wrap);
+      else card.insertBefore(wrap, modal.querySelector('.difficulty-options'));
+
+      wrap.querySelectorAll('.rq-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          try { window.app?.sound?.play('click'); } catch (_) {}
+          const sel = btn.dataset.queue === 'normal' ? 'normal' : 'ranked';
+          setSavedQueue(sel);
+          if (window.app) window.app.isRanked = (sel === 'ranked');
+          syncQueueSelector(window.app);
+        });
+      });
+      // 플레이 모드(일반/타임어택) 버튼 클릭 시에도 카드의 미니 엠블럼을 즉시 갱신
+      modal.querySelectorAll('.mode-select-btn').forEach(b => {
+        b.addEventListener('click', () => setTimeout(() => syncQueueSelector(window.app), 0));
+      });
+    }
+    syncQueueSelector(app);
+  }
+
+  function syncQueueSelector(app) {
+    const wrap = document.getElementById('rank-queue-box');
+    if (!wrap) return;
+    const isRanked = app ? app.isRanked !== false : getSavedQueue() === 'ranked';
+    const lbl = wrap.querySelector('#rq-label');
+    const desc = wrap.querySelector('#rq-desc');
+    if (lbl) lbl.textContent = qt('label');
+    if (desc) desc.textContent = qt(isRanked ? 'rankedDesc' : 'normalDesc');
+    wrap.querySelectorAll('.rq-btn').forEach(btn => {
+      const on = (btn.dataset.queue === 'ranked') === isRanked;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.textContent = qt(btn.dataset.queue === 'normal' ? 'normal' : 'ranked');
+    });
+    // 난이도 선택 카드 옆에도 해당 난이도의 현재 티어 미니 배지를 표시 (랭크전일 때 강조)
+    const all = loadAll();
+    const activeModeBtn = document.querySelector('#modal-difficulty .mode-select-btn.active');
+    const mode = (activeModeBtn?.dataset?.mode || app?.gameMode) === 'timeattack' ? 'timeattack' : 'standard';
+    const lad = ladder(all, mode);
+    document.querySelectorAll('#modal-difficulty .diff-card-btn').forEach(cardBtn => {
+      const d = cardBtn.dataset.diff;
+      if (!DIFFS.includes(d)) return;
+      const header = cardBtn.querySelector('.diff-card-header');
+      if (!header) return;
+      let chip = header.querySelector('.diff-tier-mini');
+      if (!chip) {
+        chip = document.createElement('span');
+        chip.className = 'diff-tier-mini';
+        header.append(chip);
+      }
+      if (!isRanked) {
+        chip.classList.add('hidden');
+        return;
+      }
+      chip.classList.remove('hidden');
+      const s = lad.byDiff[d];
+      const t = shownTier(s);
+      const unr = t.id === 'unranked';
+      chip.style.setProperty('--tier', (!unr && s.games) ? t.color : '#64748b');
+      chip.innerHTML = `${tierSymbol(t.id, 18, t.division)}<span class="dtm-txt">${unr ? `${qt('placeShort')} ${t.placementDone}/${PLACEMENT}` : `${t.name} · ${s.rating} RP`}</span>`;
+    });
+  }
+
+  // 게임 상단 서브 헤더(.game-sub-bar .diff-item)에 실시간 미니 택티컬 엠블럼 + RP 배지 표시
+  p.updateHeaderRankBadge = function () {
+    const subBar = document.querySelector('#view-game .game-sub-bar');
+    if (!subBar) return;
+    const diffItem = subBar.querySelector('.diff-item');
+    if (!diffItem) return;
+    let badge = document.getElementById('game-rank-hud-badge');
+    if (!badge) {
+      badge = document.createElement('button');
+      badge.type = 'button';
+      badge.id = 'game-rank-hud-badge';
+      badge.className = 'game-rank-hud-badge';
+      badge.addEventListener('click', () => {
+        const m = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
+        const all = loadAll(), s = ladder(all, m).byDiff[this.difficulty] || fresh();
+        const t = shownTier(s), unr = t.id === 'unranked';
+        if (this.isRanked === false && !this.isDaily) {
+          this.showToast?.(`🎮 ${qt('casualBadge')} · ${diffName(this.difficulty)}`, 2400);
+        } else {
+          const nxt = !unr && t.divMax ? ` · ${tr('다음 단계까지')} ${Math.ceil(t.divMax - s.rating)} RP` : '';
+          this.showToast?.(`🏆 ${diffName(this.difficulty)} · ${t.name} (${unr ? `${tr('배치 경기')} ${t.placementDone}/${PLACEMENT}` : `${s.rating} RP`})${nxt}`, 2800);
+        }
+      });
+      diffItem.after(badge);
+    }
+    if (this.isBattle || this.gameMode === 'battle' || !DIFFS.includes(this.difficulty)) {
+      badge.classList.add('hidden');
+      return;
+    }
+    badge.classList.remove('hidden');
+    const isRankedMatch = this.isDaily || this.isRanked !== false;
+    const mode = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
+    const all = loadAll(), s = ladder(all, mode).byDiff[this.difficulty] || fresh();
+    const t = shownTier(s), unr = t.id === 'unranked';
+
+    if (!isRankedMatch) {
+      badge.className = 'game-rank-hud-badge is-casual';
+      badge.style.setProperty('--tier', '#64748b');
+      badge.innerHTML = `<span class="grb-casual-dot">🎮</span><span class="grb-txt">${qt('casualBadge')}</span>`;
+      return;
+    }
+
+    badge.className = `game-rank-hud-badge is-ranked tier-${t.id}` + (t.index >= 4 ? ' high-tier' : '');
+    badge.style.setProperty('--tier', t.color);
+    const rpTxt = unr ? `${qt('placeShort')} ${t.placementDone}/${PLACEMENT}` : `${s.rating} RP`;
+    const streakFire = (s.streak || 0) >= 2 ? `<span class="grb-streak">🔥${s.streak}</span>` : '';
+    badge.innerHTML =
+      `<span class="grb-emblem">${tierSymbol(t.id, 24, t.division)}</span>` +
+      `<span class="grb-info"><b class="grb-tier">${t.name}</b><span class="grb-rp">${rpTxt}</span></span>` +
+      streakFire;
+  };
+
+  // recordGameEnd 에서 일반전(isRanked === false, 일일 도전 제외)이면 RP 변화를 건너뜁니다.
+  const rankedRecord = p.recordGameEnd;
+  p.recordGameEnd = function (isWin, ...rest) {
+    if (this.isRanked === false && !this.isDaily) {
+      this.lastRatingChange = null;
+      const prevToken = this._ratingToken;
+      this._ratingToken = null;
+      try { return rankedRecord.call(this, isWin, ...rest); }
+      finally { this._ratingToken = prevToken; }
+    }
+    const r = rankedRecord.call(this, isWin, ...rest);
+    try { this.updateHeaderRankBadge?.(); } catch (_) {}
+    return r;
+  };
+
+  // openDifficultyModal, startNewGame, saveOngoingGame, restoreOngoingGame, updateModeDisplay 훅 연결
+  const origOpenDiff = p.openDifficultyModal;
+  if (origOpenDiff) {
+    p.openDifficultyModal = function (...a) {
+      const r = origOpenDiff.apply(this, a);
+      try { ensureQueueSelector(this); } catch (_) {}
+      return r;
+    };
+  }
+  const origStartNew = p.startNewGame;
+  if (origStartNew) {
+    p.startNewGame = function (diff, customRng, mode, existingPuzzle, ...rest) {
+      // 모달의 큐 선택 버튼이 있으면 그 상태를 우선 반영하고, 없으면 기존 isRanked(기본 true)를 유지
+      const activeQ = document.querySelector('#rank-queue-box .rq-btn.active');
+      if (this.isDaily) {
+        this.isRanked = true;
+      } else if (activeQ) {
+        this.isRanked = activeQ.dataset.queue !== 'normal';
+      } else if (this.isRanked === undefined) {
+        this.isRanked = true;
+      }
+      const r = origStartNew.call(this, diff, customRng, mode, existingPuzzle, ...rest);
+      Promise.resolve(r).then(() => { try { this.updateHeaderRankBadge?.(); } catch (_) {} });
+      try { this.updateHeaderRankBadge?.(); } catch (_) {}
+      return r;
+    };
+  }
+  const origUpdateMode = p.updateModeDisplay;
+  if (origUpdateMode) {
+    p.updateModeDisplay = function (...a) {
+      const r = origUpdateMode.apply(this, a);
+      try { this.updateHeaderRankBadge?.(); } catch (_) {}
+      return r;
+    };
+  }
+  const origSaveOngoing = p.saveOngoingGame;
+  if (origSaveOngoing) {
+    p.saveOngoingGame = function (...a) {
+      const r = origSaveOngoing.apply(this, a);
+      try {
+        if (!this.isDaily && this.currentView === 'game' && !this.isBattle) {
+          const raw = localStorage.getItem('sumdoku_ongoing_game');
+          if (raw) {
+            const st = JSON.parse(raw);
+            st.isRanked = this.isRanked !== false;
+            localStorage.setItem('sumdoku_ongoing_game', JSON.stringify(st));
+          }
+        }
+      } catch (_) {}
+      return r;
+    };
+  }
+  const origRestoreOngoing = p.restoreOngoingGame;
+  if (origRestoreOngoing) {
+    p.restoreOngoingGame = function (savedState, ...rest) {
+      let st = savedState;
+      if (!st) { try { st = JSON.parse(localStorage.getItem('sumdoku_ongoing_game')); } catch (_) {} }
+      if (st && st.isRanked !== undefined) this.isRanked = !!st.isRanked;
+      else this.isRanked = true;
+      const r = origRestoreOngoing.call(this, savedState, ...rest);
+      try { this.updateHeaderRankBadge?.(); } catch (_) {}
+      return r;
+    };
+  }
+
+  const initQueueUI = () => { try { ensureQueueSelector(window.app); window.app?.updateHeaderRankBadge?.(); } catch (_) {} };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initQueueUI); else initQueueUI();
+
+  // 언어가 바뀌면 다시 그립니다.
+  new MutationObserver(() => {
+    window.app?.renderRatingCard?.();
+    syncQueueSelector(window.app);
+    window.app?.updateHeaderRankBadge?.();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+
+  window.SumdokuRating = { shownTier, seasonOf, seasonEnd, bestTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound, load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT, TIERS, KEY, DIFFS, MODES };
 })();

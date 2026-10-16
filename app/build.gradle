@@ -21,6 +21,8 @@ def admobRewardedId = findProperty('sumdoku.admob.rewardedId') ?: 'ca-app-pub-39
 def gamesId = (findProperty('sumdoku.games.appId') ?: '').toString()
 // v1.1.19 Play 게임즈 리더보드 ID (Play Console에서 생성 후 gradle.properties 또는 -P 로 지정)
 def lbKeys = ['rating','rating_easy','rating_medium','rating_hard','rating_expert','rating_lunatic','ta_rating','ta_rating_easy','ta_rating_medium','ta_rating_hard','ta_rating_expert','ta_rating_lunatic','easy','medium','hard','expert','lunatic','daily']
+// v1.1.28: 시즌 리더보드(s1_rating_hard 등)처럼 목록에 없는 키도 gradle 속성에 있으면 함께 넣습니다.
+lbKeys = (lbKeys + project.properties.keySet().findAll { it.toString().startsWith('sumdoku.games.lb.') }.collect { it.toString().substring(17) }).unique()
 def leaderboards = lbKeys.collect { k -> def v = (findProperty("sumdoku.games.lb." + k) ?: '').toString(); if (v && !(v ==~ /[A-Za-z0-9_-]+/)) throw new GradleException('Invalid leaderboard ID: ' + k); v ? k + '=' + v : null }.findAll { it }.join(';')
 if (gamesId && !(gamesId ==~ /[0-9]+/)) throw new GradleException('Invalid Games app ID')
 
@@ -32,8 +34,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 35
-        versionCode 137
-        versionName '1.1.27'
+        versionCode 138
+        versionName '1.1.28'
     }
 
     buildFeatures {
