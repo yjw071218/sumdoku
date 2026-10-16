@@ -33,6 +33,12 @@
             android:authorities="io.github.yjw071218.sumdoku.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true" />
+        <!-- v1.1.30 · 성과 공유 이미지(캐시 share/*.png 전용) -->
+        <provider
+            android:name=".ShareImageProvider"
+            android:authorities="${applicationId}.shareprovider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

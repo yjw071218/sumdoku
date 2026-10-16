@@ -14,21 +14,27 @@ const url='file:///'+path.resolve('app/src/main/assets/index.html').split(path.s
  const p=await open('play');
  const play=await p.evaluate(async()=>{
   app.switchView('stats');app.openHubPanel('panel-settings','Settings');
+  const inSettings=!!document.querySelector('#panel-settings #settings-monetization, #panel-settings #setting-privacy-options');
   const g=document.getElementById('settings-monetization');const vis=id=>{const e=document.getElementById(id);return !!e&&!e.hidden&&e.offsetParent!==null;};
-  const buyText=g?.querySelector('#setting-remove-ads button').textContent;const items=['setting-remove-ads','setting-restore-purchase','setting-privacy-options','setting-privacy-policy'].map(vis);
+  app.openHubPanel('panel-noads','Remove ads');
+  const buyText=g?.querySelector('#setting-remove-ads button').textContent;const items=['setting-remove-ads','setting-restore-purchase'].map(vis);
+  const inNoAds=!!g?.closest('#panel-noads');
+  app.openHubPanel('panel-privacy','Privacy');
+  items.push(...['setting-privacy-options','setting-privacy-policy'].map(vis));
+  const inPrivacy=!!document.getElementById('setting-privacy-policy')?.closest('#panel-privacy');
   g.querySelector('#setting-remove-ads button').click();g.querySelector('#setting-restore-purchase button').click();
-  g.querySelector('#setting-privacy-options button').click();g.querySelector('#setting-privacy-policy button').click();
+  document.querySelector('#setting-privacy-options button').click();document.querySelector('#setting-privacy-policy button').click();
   const updateHidden=getComputedStyle(document.getElementById('btn-home-update')).display==='none';
   await app.checkForUpdates(true);const toastUpdate=document.getElementById('toast').textContent;
   onPurchaseResult('purchased');const toastBuy=document.getElementById('toast').textContent;
   onMonetizationChanged(true,'₩3,300',false);
-  const after={buy:g.querySelector('#setting-remove-ads button').textContent,disabled:g.querySelector('#setting-remove-ads button').disabled,restoreHidden:g.querySelector('#setting-restore-purchase').hidden,privacyHidden:g.querySelector('#setting-privacy-options').hidden};
+  const after={buy:g.querySelector('#setting-remove-ads button').textContent,disabled:g.querySelector('#setting-remove-ads button').disabled,restoreHidden:g.querySelector('#setting-restore-purchase').hidden,privacyHidden:document.querySelector('#setting-privacy-options').hidden};
   // 결과 화면 → 전면 광고 요청
   app.showGameResultModal({status:'win',title:'t',sub:'s',score:1,time:'00:01',mistakes:'0',difficulty:'Easy',isNewBestScore:false,isNewBestTime:false});
   await new Promise(r=>setTimeout(r,1500));
-  return {exists:!!g,items,buyText,updateHidden,toastUpdate,toastBuy,after,calls:[...calls]};
+  return {exists:!!g,inSettings,inNoAds,inPrivacy,items,buyText,updateHidden,toastUpdate,toastBuy,after,calls:[...calls]};
  });
- assert.ok(play.exists);assert.deepEqual(play.items,[true,true,true,true]);
+ assert.ok(play.exists);assert.ok(!play.inSettings,'moved out of settings');assert.ok(play.inNoAds&&play.inPrivacy,'moved to tabs');assert.deepEqual(play.items,[true,true,true,true]);
  assert.equal(play.buyText,'구매 (₩3,300)');assert.ok(play.updateHidden,'update button hidden');
  assert.match(play.toastUpdate,/Google Play/);assert.match(play.toastBuy,/구매 혜택/);
  assert.deepEqual(play.after,{buy:'전체 제거 구매 완료',disabled:true,restoreHidden:false,privacyHidden:true});
@@ -46,5 +52,5 @@ const url='file:///'+path.resolve('app/src/main/assets/index.html').split(path.s
   return {settings:!!document.getElementById('settings-monetization'),update:getComputedStyle(document.getElementById('btn-home-update')).display!=='none',calls:[...calls]};});
  assert.deepEqual(gh,{settings:false,update:true,calls:[]});
  assert.deepEqual(g.errors,[]);
- console.log('PASS: play settings (buy/restore/privacy/policy), update UI hidden, result interstitial request, purchase toasts, en translation; github unchanged');
+ console.log('PASS: play noads/privacy tabs (buy/restore/privacy/policy), update UI hidden, result interstitial request, purchase toasts, en translation; github unchanged');
 }finally{await b.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -141,7 +141,7 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
     {key:'maxLives', title:'목숨 (최대 3)', type:'number', min:1, max:3, def:'3'},
     {key:'initialHints', title:'힌트 (최대 3)', type:'number', min:0, max:3, def:'3'},
     {key:'livesExhaustedAction', title:'목숨 소진', type:'select', options:[['game_over','게임 종료'],['continue','감점 후 계속']]},
-    {key:'hintExhaustedAction', title:'힌트 소진', type:'select', options:[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 50점 감점']]},
+    {key:'hintExhaustedAction', title:'힌트 소진', type:'select', options:[['disallow','추가 사용 금지'],['allow_penalty','추가 사용 · 최대 500점 감점']]},
     {key:'allowAutoNotes', title:'자동 메모 기능', type:'select', options:[[true,'허용'],[false,'금지']]},
     ...(battle ? [{key:'turnSeconds', title:'턴제 · 한 턴 제한 시간', type:'select', options:[['15','15초'],['20','20초'],['30','30초'],['45','45초'],['60','60초']]}] : []),
     {key:'autoNotes', title:'후보 메모 자동 정리', type:'select', options:[[true,'켜짐'],[false,'꺼짐']]},
@@ -164,7 +164,7 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
         this.settings[f.key] = String(safe);
         if (f.key === 'maxLives') this.settings.mistakeLimit = true;
         this.saveSettings(); this.applySettings(); this.syncQuickSettings();
-        if (battle && RULE_FIELDS.includes(f.key)) this.setupHostRoom();
+        if (battle && RULE_FIELDS.includes(f.key)) this.onHostConfigChanged();
       };
       input.oninput = onValChange;
       input.onchange = onValChange;
@@ -177,14 +177,14 @@ SumdokuApp.prototype.installQuickSettings = function(container, battle) {
         this.settings[f.key] = select.value === 'true' ? true : select.value === 'false' ? false : select.value;
         if (f.key === 'maxLives') this.settings.mistakeLimit = select.value !== 'unlimited';
         this.saveSettings(); this.applySettings(); this.syncQuickSettings();
-        if (battle && RULE_FIELDS.includes(f.key)) this.setupHostRoom();
+        if (battle && RULE_FIELDS.includes(f.key)) this.onHostConfigChanged();
       };
       label.append(select);
     }
     grid.append(label);
   });
   const note = document.createElement('p'); note.className = 'quick-settings-note';
-  note.textContent = battle ? '방을 준비한 뒤 코드를 공유하세요. 규칙 변경 시 방을 다시 준비합니다. 기본 힌트는 최대 30점 감점됩니다.' : '규칙은 새 게임부터 적용됩니다. 기본 힌트는 최대 30점 감점됩니다.';
+  note.textContent = battle ? '방을 만든 뒤에도 방장은 규칙을 바꿀 수 있습니다. 변경하면 참가자는 다시 준비해야 합니다. 기본 힌트는 최대 300점 감점됩니다.' : '규칙은 새 게임부터 적용됩니다. 기본 힌트는 최대 300점 감점됩니다.';
   panel.append(note);
   const before = battle ? container.querySelector('.battle-ip-box') : container.querySelector('.modal-footer');
   before.before(panel);
@@ -250,6 +250,7 @@ SumdokuApp.prototype.switchView = function(name) {
 SumdokuApp.prototype.cancelRoomPreparation = function() {
   this.hideGeneratingOverlay();
   const hadHostRoom = !!this.hostRoomCreated;
+  this._guestCfgSig = undefined;
   this.hostRoomCreated = false;
   this.battleStarting = false;
   this.roomGeneration = (this.roomGeneration || 0) + 1;
@@ -432,7 +433,9 @@ SumdokuApp.prototype.startBattleAsHost = function() {
     const now = Date.now();
     if (now - lastSentTime > 120 || progress.percent === 100 || progress.stepStatus === 'completed') {
       lastSentTime = now;
-      sendProgress({ generating: true, diff: this.battleDiff || 'expert', ...progress });
+      // v1.1.30: 정답(solution)·풀이 셀은 참가자에게 보내지 않습니다(생성 화면 캡처로 정답 유출 방지).
+      const { solution, solvedCells, ...safe } = progress || {};
+      sendProgress({ generating: true, diff: this.battleDiff || 'expert', ...safe });
     }
   }).then(async (puzzleData) => {
     if (token !== this.roomGeneration) return;
@@ -636,7 +639,19 @@ SumdokuApp.prototype.startGuestPolling = function() {
         const lives = !rules.mistakeLimit || rules.maxLives === 'unlimited' ? '무제한' : rules.maxLives + '개';
         const hints = rules.initialHints === 'unlimited' ? '무제한' : rules.initialHints + '개';
         const summaryEl = document.getElementById('guest-rules-summary');
+        const modeKo = { race: '⚡ 스피드 레이스', score: '⏱️ 타임어택 점수전', survival: '🛡️ 서바이벌', turn: '♟️ 턴제 대결' }[room.mode] || room.mode;
+        const diffKo = { easy: '초급', medium: '중급', hard: '고급', expert: '전문가', lunatic: '루나틱' }[room.diff] || room.diff;
+        const sig = `${room.configVersion || 0}`;
+        if (this._guestCfgSig !== undefined && this._guestCfgSig !== sig) {
+          this.sound?.play?.('click');
+          { const tt = window.I18N?.text || (x => x); this.showToast(`방장이 방 설정을 변경했습니다 · ${tt(modeKo)} · ${tt(diffKo)}`, 3200); }
+        }
+        this._guestCfgSig = sig;
         if (summaryEl) {
+          let modeEl = document.getElementById('guest-room-mode');
+          if (!modeEl) { modeEl = document.createElement('div'); modeEl.id = 'guest-room-mode'; modeEl.className = 'guest-room-mode'; summaryEl.before(modeEl); }
+          modeEl.innerHTML = '';
+          for (const part of [modeKo, diffKo]) { const sp = document.createElement('span'); sp.textContent = part; modeEl.append(sp); }
           summaryEl.textContent =
             `방장 규칙 · 목숨 ${lives} · 힌트 ${hints} · 목숨 소진: ${rules.livesExhaustedAction === 'continue' ? '계속' : '종료'} · 힌트 소진: ${rules.hintExhaustedAction === 'disallow' ? '사용 금지' : '추가 감점'} · 자동 메모: ${rules.allowAutoNotes ? '허용' : '금지'}${room.mode === 'turn' ? ` · 턴 제한 ${rules.turnSeconds}초` : ''}`;
         }
@@ -679,6 +694,17 @@ const baseStartGame = SumdokuApp.prototype.startNewGame;
 SumdokuApp.prototype.startNewGame = async function(diff, rng, mode, puzzle) {
   const bMode = this.isBattle ? this.battleMode : (mode === 'timeattack' ? 'score' : null);
   this.gameRules = normalizedRules(puzzle?.rules || this.settings, bMode);
+  // 랭크전(일반전 제외, 일일 도전 포함): 실수 한도·기본 힌트 3개 고정. 광고 부활·광고 힌트는 그대로 사용 가능합니다.
+  if (!this.isBattle && (this.isDaily || this.isRanked !== false)) {
+    this.gameRules.initialHints = '3';
+    this.gameRules.hintExhaustedAction = 'disallow';
+    if (bMode !== 'score') {
+      this.gameRules.mistakeLimit = true;
+      this.gameRules.maxLives = '3';
+      this.gameRules.livesExhaustedAction = 'game_over';
+    }
+    this.gameRules.rankedFixed = true;
+  }
   try { return await baseStartGame.call(this, diff, rng, mode, puzzle); }
   catch (error) { this.showToast(error.message); this.switchView('home'); }
 };
@@ -731,10 +757,41 @@ SumdokuApp.prototype.showHostRoomStage = function(created) {
     this.dom.btnBattleHostReady.hidden=true;
     const footer=document.createElement('div');footer.className='modal-footer';footer.append(this.dom.btnBattleGuestReady);this.dom.battleGuestRoomPanel.append(footer);
   }
-  document.getElementById('host-config-stage').classList.toggle('hidden',created);
+  // v1.1.30: 방을 만든 뒤에도 방장이 모드·난이도·규칙을 바꿀 수 있도록 설정 영역을 접어서 남겨 둡니다.
+  const configStage=document.getElementById('host-config-stage');
+  let toggle=document.getElementById('btn-host-config-toggle');
+  if(!toggle){
+    toggle=document.createElement('button');toggle.type='button';toggle.id='btn-host-config-toggle';toggle.className='btn btn-secondary host-config-toggle';
+    toggle.onclick=()=>{this.sound?.play?.('click');configStage.classList.toggle('collapsed');toggle.textContent=configStage.classList.contains('collapsed')?'⚙️ 방 설정 변경 (모드 · 난이도 · 규칙)':'▲ 방 설정 접기';};
+    configStage.prepend(toggle);
+  }
+  configStage.classList.remove('hidden');
+  configStage.classList.toggle('room-live',!!created);
+  if(created){configStage.classList.add('collapsed');toggle.textContent='⚙️ 방 설정 변경 (모드 · 난이도 · 규칙)';}
+  else configStage.classList.remove('collapsed');
+  toggle.hidden=!created;
+  const createBtn=document.getElementById('btn-create-room');if(createBtn)createBtn.hidden=!!created;
   document.getElementById('host-room-stage').classList.toggle('hidden',!created);
   const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
   if (tabs) tabs.classList.toggle('hidden', !!created);
+};
+// v1.1.30 · 방이 열린 상태에서 방장이 모드·난이도·규칙을 바꾸면 방을 닫지 않고 서버 설정만 갱신합니다.
+SumdokuApp.prototype.onHostConfigChanged = function() {
+  const bridge = window.AndroidBridge;
+  if (!this.hostRoomCreated || this.battleRole !== 1 || this.battleStarting || !bridge?.updateBattleServer) { this.setupHostRoom(); return; }
+  clearTimeout(this._hostCfgTimer);
+  this._hostCfgTimer = setTimeout(() => {
+    if (!this.hostRoomCreated || this.battleStarting) return;
+    this.syncQuickSettings();
+    const mode = this.battleMode || 'race', diff = this.battleDiff || 'expert';
+    const dummy = { difficulty: diff, rules: normalizedRules(this.settings, mode), roomCode: this.battleRoomCode };
+    let ok = false;
+    try { ok = !!bridge.updateBattleServer(mode, diff, mode === 'score' ? 300 : 0, JSON.stringify(dummy)); } catch (_) { ok = false; }
+    if (!ok) { this.showToast('지금은 방 설정을 바꿀 수 없습니다.'); return; }
+    this.hostP2Ready = false;
+    this.updateHostLobbyUI();
+    this.showToast(this.guestJoined ? '방 설정을 변경했습니다. 참가자가 다시 준비해야 합니다.' : '방 설정을 변경했습니다.', 2600);
+  }, 250);
 };
 SumdokuApp.prototype.setupHostRoom = function() {
   this.cancelRoomPreparation();this.syncQuickSettings();this.showHostRoomStage(false);

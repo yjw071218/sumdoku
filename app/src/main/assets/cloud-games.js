@@ -3,7 +3,8 @@
  const keys = ['settings','stats','daily_cleared','daily_session','ongoing_game','replays','achievements','ach_counters','prefs_v2','scratchpad','selected_diff','last_diff','last_mode','theme','rating'].map(k=>'sumdoku_'+k);
  const bridge=()=>window.AndroidBridge;
  let busy=false;
- const tr=(ko,en)=>window.I18N?.currentLang==='ko'?ko:en;
+ // v1.1.30: 한국어·영어 외 언어도 번역표(UI_TRANSLATIONS)에서 찾아 표시합니다.
+ const tr=(ko,en)=>{const l=window.I18N?.currentLang||'ko';if(l==='ko')return ko;return (window.UI_TRANSLATIONS?.[l]?.[ko])||en;};
  const toast=(ko,en)=>window.app?.showToast(tr(ko,en),5000);
  const allowed=()=>!window.app?.isBattle && window.app?.currentView!=='game';
  function dialog(title,body,yes,no,accept) {
@@ -40,6 +41,15 @@
    catch(e){toast('호환되지 않거나 손상된 저장본입니다.','This save is incompatible or damaged.');}return;
   }
   const messages={signed_in:['Google Play 게임즈에 로그인했습니다.','Signed in to Google Play Games.'],saved:['저장했습니다. 인터넷 연결 후 다른 기기에서 불러올 수 있습니다.','Saved. Connect to the internet to sync to other devices.'],unconfigured:['Google Play 게임즈 연결 설정이 아직 완료되지 않았습니다.','Google Play Games is not configured yet.'],error:['연결하지 못했습니다. 계정과 인터넷 연결을 확인해 주세요.','Unable to connect. Check your account and internet connection.'],too_large:['저장 용량을 초과했습니다. 리플레이를 정리해 주세요.','Save too large. Remove older replays.']};
+  if(status==='error'&&raw&&raw!=='-1'){
+   // v1.1.30: 실패 코드별 안내(내부 테스트 진단용)
+   const c=String(raw);
+   if(c==='10')return toast('Play 게임즈 설정 오류(코드 10): Play Console의 OAuth 클라이언트 SHA-1이 앱 서명 키와 다르거나 테스터로 등록되지 않았습니다.','Play Games config error (code 10): OAuth client SHA-1 does not match the app signing key, or this account is not a tester.');
+   if(c==='4')return toast('로그인이 필요합니다(코드 4). Play 게임즈 앱에 로그인했는지 확인해 주세요.','Sign-in required (code 4). Make sure you are signed in to Play Games.');
+   if(c==='7')return toast('네트워크 오류(코드 7). 인터넷 연결을 확인해 주세요.','Network error (code 7). Check your connection.');
+   if(c==='16')return toast('로그인을 취소했습니다.','Sign-in canceled.');
+   {const l=window.I18N?.currentLang||'ko';const tpl=l==='ko'?'연결하지 못했습니다 (코드 {0}). 계정과 인터넷 연결을 확인해 주세요.':(window.UI_TRANSLATIONS?.[l]?.['연결하지 못했습니다 (코드 {0}). 계정과 인터넷 연결을 확인해 주세요.']||'Unable to connect (code {0}). Check your account and connection.');return window.app?.showToast(tpl.replace('{0}',c),5000);}
+  }
   if(messages[status])toast(...messages[status]);
  };
  function initialize(){

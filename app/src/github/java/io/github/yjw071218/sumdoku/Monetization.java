@@ -20,6 +20,7 @@ public class Monetization {
     public String getRemoveAdsPrice() { return ""; }
     public void purchaseRemoveAds() {}
     public void restorePurchases() {}
+    public void refreshProducts() {}
     public void onResume() {}
     public void onPause() {}
     public void onDestroy() {}

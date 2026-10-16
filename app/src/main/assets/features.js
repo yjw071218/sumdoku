@@ -378,7 +378,51 @@
 
   /* ---------- 7. 배틀 채팅 · 이모티콘 ---------- */
   const EMOJI = ['👍', '😂', '😮', '😭', '🔥', '👏', '🤝', '😎'];
-  const PHRASES = ['GG!', '잘하시네요', '빠르다!', '어렵다…', '한 판 더?'];
+  // v1.1.30: 상용 문구는 [[키]] 로 보내고, 받는 사람이 고른 언어로 표시합니다(보내는 사람 언어와 무관).
+  const CHAT_LANGS = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
+  const PHRASE_TEXT = {
+    gg: ['GG!', 'GG!', 'GG!', 'GG!', 'GG!', '¡GG!', 'GG !', 'GG!'],
+    nice: ['잘하시네요', 'Nice play!', 'お上手ですね', '玩得真好', '玩得真好', '¡Bien jugado!', 'Bien joué !', 'Gut gespielt!'],
+    fast: ['빠르다!', 'So fast!', '速い！', '好快！', '好快！', '¡Qué rápido!', 'Trop rapide !', 'So schnell!'],
+    hard: ['어렵다…', 'This is tough…', '難しい…', '好难…', '好難…', 'Qué difícil…', 'C’est dur…', 'Ganz schön schwer…'],
+    again: ['한 판 더?', 'One more?', 'もう一戦？', '再来一局？', '再來一局？', '¿Otra?', 'Encore une ?', 'Noch eine Runde?']
+  };
+  const PHRASES = Object.keys(PHRASE_TEXT);
+  const chatLangIdx = () => Math.max(0, CHAT_LANGS.indexOf((window.I18N && I18N.currentLang) || 'ko'));
+  const phraseLabel = k => PHRASE_TEXT[k][chatLangIdx()] || PHRASE_TEXT[k][1];
+  // [[키]] 또는 (이전 버전이 보낸) 어떤 언어의 문구든 내 언어로 바꿔 보여 줍니다.
+  const localizeChat = t => {
+    const m = /^\[\[([a-z]+)\]\]$/.exec(t);
+    if (m && PHRASE_TEXT[m[1]]) return phraseLabel(m[1]);
+    for (const k of PHRASES) if (PHRASE_TEXT[k].includes(t)) return phraseLabel(k);
+    return t;
+  };
+  const CHAT_UI = {
+    title: ['대화', 'Chat', 'チャット', '聊天', '聊天', 'Chat', 'Discussion', 'Chat'],
+    sub: ['상대에게 실시간으로 전달돼요', 'Delivered to your opponent in real time', '相手にリアルタイムで届きます', '实时发送给对手', '即時傳送給對手', 'Se envía al rival en tiempo real', 'Envoyé à l’adversaire en temps réel', 'Wird in Echtzeit an den Gegner gesendet'],
+    empty: ['아직 대화가 없어요. 이모티콘으로 인사해 보세요!', 'No messages yet. Say hi with an emoji!', 'まだメッセージはありません。絵文字で挨拶しよう！', '还没有消息，用表情打个招呼吧！', '還沒有訊息，用表情打個招呼吧！', 'Aún no hay mensajes. ¡Saluda con un emoji!', 'Aucun message. Dites bonjour avec un emoji !', 'Noch keine Nachrichten. Sag Hallo mit einem Emoji!'],
+    placeholder: ['메시지 입력 (최대 80자)', 'Message (max 80 chars)', 'メッセージ（最大80文字）', '输入消息（最多80字）', '輸入訊息（最多80字）', 'Mensaje (máx. 80)', 'Message (80 max)', 'Nachricht (max. 80)'],
+    send: ['보내기', 'Send', '送信', '发送', '傳送', 'Enviar', 'Envoyer', 'Senden'],
+    close: ['대화 닫기', 'Close chat', 'チャットを閉じる', '关闭聊天', '關閉聊天', 'Cerrar chat', 'Fermer', 'Chat schließen'],
+    open: ['상대와 대화하기', 'Chat with opponent', '相手とチャット', '与对手聊天', '與對手聊天', 'Chatear con el rival', 'Discuter avec l’adversaire', 'Mit Gegner chatten'],
+    them: ['상대', 'Opponent', '相手', '对手', '對手', 'Rival', 'Adversaire', 'Gegner']
+  };
+  const cu = k => CHAT_UI[k][chatLangIdx()] || CHAT_UI[k][1];
+  function applyChatLanguage() {
+    const sheet = document.getElementById('battle-chat-sheet');
+    if (!sheet) return;
+    sheet.querySelector('.chat-head strong').textContent = cu('title');
+    sheet.querySelector('.chat-sub').textContent = cu('sub');
+    sheet.querySelector('.chat-close').setAttribute('aria-label', cu('close'));
+    const input = sheet.querySelector('#chat-input'); if (input) input.placeholder = cu('placeholder');
+    const send = sheet.querySelector('.chat-send'); if (send) send.textContent = cu('send');
+    const empty = sheet.querySelector('.chat-empty'); if (empty) empty.textContent = cu('empty');
+    sheet.querySelectorAll('.chat-phrase').forEach(b => { b.textContent = phraseLabel(b.dataset.phrase); });
+    // 이미 받은 문구 말풍선도 새 언어로 다시 표시
+    sheet.querySelectorAll('.chat-msg[data-text]').forEach(b => { if (!b.classList.contains('emoji')) b.textContent = localizeChat(b.dataset.text); });
+    document.getElementById('btn-battle-chat')?.setAttribute('aria-label', cu('open'));
+  }
+  new MutationObserver(applyChatLanguage).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   const chat = { timer: null, last: 0, busy: false, sentAt: 0, unread: 0, open: false };
   const chatUrl = app => app.battleRole === 1 ? `http://${app.battleHostIp || '127.0.0.1'}:8888` : app.battleHostUrl;
   const isEmojiOnly = t => t.length <= 8 && EMOJI.includes(t);
@@ -388,24 +432,38 @@
     list.querySelector('.chat-empty')?.remove();
     const emoji = isEmojiOnly(text), last = list.lastElementChild, now = Date.now();
     // 같은 이모지를 연타하면 말풍선을 새로 쌓지 않고 콤보 숫자를 키우며 다시 튕깁니다.
+    // v1.1.30: 같은 이모지를 연타하면 '×숫자' 대신 같은 이모지가 뾰잉 튀어나왔다가 사라집니다(누적 배지 없음).
     if (emoji && last && last.dataset.text === text && last.classList.contains(mine ? 'mine' : 'theirs') && now - (+last.dataset.at || 0) < 2500) {
-      const n = (+last.dataset.count || 1) + 1;
-      last.dataset.count = n; last.dataset.at = now;
-      let badge = last.querySelector('.chat-combo');
-      if (!badge) { badge = document.createElement('span'); badge.className = 'chat-combo'; last.append(badge); }
-      badge.textContent = '×' + n;
-      last.style.setProperty('--boost', Math.min(1 + n * 0.06, 1.6));
-      for (const el of [last, badge]) { el.classList.remove('boing'); void el.offsetWidth; el.classList.add('boing'); }
+      last.dataset.at = now;
+      last.classList.remove('boing'); void last.offsetWidth; last.classList.add('boing');
+      emojiPop(last, text, mine);
       list.scrollTop = list.scrollHeight;
       return;
     }
     const b = document.createElement('div');
     b.className = `chat-msg ${mine ? 'mine' : 'theirs'}${emoji ? ' emoji boing' : ''}`;
-    b.dataset.text = text; b.dataset.at = now; b.dataset.count = 1;
-    b.textContent = text;
+    b.dataset.text = text; b.dataset.at = now;
+    b.textContent = emoji ? text : localizeChat(text);
     list.append(b);
     while (list.children.length > 60) list.firstChild.remove();
     list.scrollTop = list.scrollHeight;
+  }
+  // 기준 요소 위에서 이모지 하나가 탄력 있게 커졌다가 위로 떠오르며 사라집니다.
+  function emojiPop(anchor, text, mine) {
+    if (!anchor || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = anchor.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    const f = document.createElement('span');
+    f.className = 'emoji-pop'; f.textContent = text; f.setAttribute('aria-hidden', 'true');
+    const side = mine === undefined ? (Math.random() - .5) : (mine ? -1 : 1);
+    f.style.left = (r.left + r.width / 2) + 'px';
+    f.style.top = (r.top + r.height / 2) + 'px';
+    f.style.setProperty('--dx', (side * (18 + Math.random() * 34)).toFixed(0) + 'px');
+    f.style.setProperty('--rot', ((Math.random() * 40 - 20)).toFixed(0) + 'deg');
+    f.style.setProperty('--s', (1.15 + Math.random() * .35).toFixed(2));
+    document.body.append(f);
+    f.addEventListener('animationend', () => f.remove());
+    setTimeout(() => f.remove(), 1400);
   }
   function burst(btn, text) {
     if (!btn || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -423,10 +481,12 @@
   function popBubble(text) {
     const pop = document.getElementById('chat-pop');
     if (!pop) return;
-    const same = isEmojiOnly(text) && pop.classList.contains('show') && pop.dataset.text === text;
-    pop._n = same ? (pop._n || 1) + 1 : 1; pop.dataset.text = text;
-    pop.textContent = isEmojiOnly(text) ? (pop._n > 1 ? `${text} ×${pop._n}` : text) : `상대: ${text}`;
-    pop.classList.toggle('emoji', isEmojiOnly(text));
+    const emoji = isEmojiOnly(text);
+    const same = emoji && pop.classList.contains('show') && pop.dataset.text === text;
+    pop.dataset.text = text;
+    pop.textContent = emoji ? text : `${cu('them')}: ${localizeChat(text)}`;
+    pop.classList.toggle('emoji', emoji);
+    if (same) emojiPop(pop, text);
     pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
     clearTimeout(pop._t); pop._t = setTimeout(() => pop.classList.remove('show'), 2600);
   }
@@ -505,7 +565,7 @@
     if (!this.isRematchActive) {
       chat.last = 0; setUnread(0);
       const list = document.getElementById('chat-list');
-      if (list) list.innerHTML = '<p class="chat-empty">아직 대화가 없어요. 이모티콘으로 인사해 보세요!</p>';
+      if (list) { list.innerHTML = ''; const e = document.createElement('p'); e.className = 'chat-empty'; e.textContent = cu('empty'); list.append(e); }
     }
     const result = baseStartBattle.apply(this, arguments);
     try { this.startBattleChat(); } catch (e) {}
@@ -555,10 +615,11 @@
       <header class="chat-head"><strong>대화</strong><span class="chat-sub">상대에게 실시간으로 전달돼요</span><button type="button" class="chat-close" aria-label="대화 닫기">✕</button></header>
       <div id="chat-list" class="chat-list" aria-live="polite"><p class="chat-empty">아직 대화가 없어요. 이모티콘으로 인사해 보세요!</p></div>
       <div class="chat-emoji-row">${EMOJI.map(e => `<button type="button" class="chat-emoji" data-text="${e}" aria-label="${e} 보내기">${e}</button>`).join('')}</div>
-      <div class="chat-phrase-row">${PHRASES.map(t => `<button type="button" class="chat-phrase" data-text="${t}">${t}</button>`).join('')}</div>
+      <div class="chat-phrase-row">${PHRASES.map(k => `<button type="button" class="chat-phrase" data-phrase="${k}" data-keep-text="">${phraseLabel(k)}</button>`).join('')}</div>
       <form class="chat-form"><input id="chat-input" type="text" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="메시지 입력 (최대 80자)" aria-label="메시지"><button type="submit" class="btn btn-primary chat-send">보내기</button></form>`;
     sheet.querySelector('.chat-close').addEventListener('click', () => app.closeBattleChat());
-    sheet.querySelectorAll('[data-text]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(b.dataset.text, b)));
+    sheet.querySelectorAll('.chat-emoji[data-text]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(b.dataset.text, b)));
+    sheet.querySelectorAll('.chat-phrase[data-phrase]').forEach(b => b.addEventListener('click', () => app.sendBattleChat(`[[${b.dataset.phrase}]]`, b)));
     sheet.querySelector('.chat-form').addEventListener('submit', e => {
       e.preventDefault();
       const input = document.getElementById('chat-input');
@@ -568,6 +629,7 @@
     // 채팅 입력 중 숫자 키가 보드 입력으로 넘어가지 않도록 차단
     sheet.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') app.closeBattleChat(); });
     view.append(pop, sheet);
+    applyChatLanguage();
   }
   function buildSettings(app) {
     if (document.getElementById('setting-volume')) return;

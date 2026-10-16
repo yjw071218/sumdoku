@@ -285,3 +285,73 @@ body.hint-visual-on #view-game.lunatic-mode #hint-logic-text .hv-active,
 }
 #view-game.lunatic-mode .game-header::before, #view-game.lunatic-mode .game-header::after,
 #view-game.lunatic-mode .game-sub-bar::before, #view-game.lunatic-mode .game-sub-bar::after { display: none !important; }
+
+/* =====================================================================
+   v1.1.30 · 루나틱 UI 통일: 흰 카드·밝은 글씨 때문에 안 보이거나 어울리지 않던 요소를 진홍 톤으로 맞춤
+   ===================================================================== */
+/* 영역 합산 바(휴대폰): 흰 바탕 + 연한 글씨 → 어두운 진홍 유리 + 밝은 글씨 */
+#view-game.lunatic-mode .multi-cage-banner {
+  background: linear-gradient(135deg, rgba(40, 6, 12, .96), rgba(22, 4, 8, .97)) !important;
+  border-color: #b91c1c !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .65), 0 0 18px rgba(220, 38, 38, .28) !important;
+  color: #fde2e2 !important;
+}
+#view-game.lunatic-mode .multi-cage-banner .mc-text { color: #fecaca !important; opacity: 1 !important; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+#view-game.lunatic-mode .multi-cage-banner .mc-pill-icon { color: #f87171 !important; }
+#view-game.lunatic-mode .multi-cage-banner .mc-btn {
+  background: rgba(127, 29, 29, .55) !important; border-color: rgba(248, 113, 113, .55) !important; color: #fecaca !important;
+}
+/* 영역 합산 결과 카드(태블릿 추론 도우미 안의 흰 카드) */
+#view-game.lunatic-mode .multi-cage-panel {
+  background: linear-gradient(160deg, rgba(36, 5, 10, .95), rgba(18, 3, 6, .96)) !important;
+  border: 1px solid rgba(185, 28, 28, .55) !important; box-shadow: inset 0 0 18px rgba(127, 29, 29, .35) !important; color: #fde2e2 !important;
+}
+#view-game.lunatic-mode .multi-cage-panel .mc-panel-title,
+#view-game.lunatic-mode .multi-cage-panel .mc-total-label,
+#view-game.lunatic-mode .multi-cage-panel .mc-panel-formula { color: #fca5a5 !important; opacity: 1 !important; }
+#view-game.lunatic-mode .multi-cage-panel .mc-total-num { color: #fff !important; text-shadow: 0 0 12px rgba(239, 68, 68, .6); }
+#view-game.lunatic-mode .multi-cage-panel .mc-total-cells { color: #fecaca !important; }
+#view-game.lunatic-mode .multi-cage-panel .mc-reset-chip { background: rgba(127, 29, 29, .5) !important; color: #fecaca !important; border-color: rgba(248, 113, 113, .5) !important; }
+#view-game.lunatic-mode .assistant-tip-box { background: rgba(30, 5, 9, .85) !important; color: #fecaca !important; border-color: rgba(185, 28, 28, .45) !important; }
+#view-game.lunatic-mode .assistant-header, #view-game.lunatic-mode #assistant-cage-name { color: #fde2e2 !important; }
+#view-game.lunatic-mode .metric-box { background: rgba(30, 5, 9, .8) !important; border-color: rgba(185, 28, 28, .45) !important; }
+#view-game.lunatic-mode .metric-box .m-label { color: #fca5a5 !important; }
+#view-game.lunatic-mode .metric-box .m-val { color: #fff !important; }
+
+/* 루나틱 중 뜨는 모달(힌트 확인 · 광고 보상 · 랭크전 포기 경고 · 게임 설정 등): 흰 카드 → 진홍 카드 */
+body.lunatic-active .modal-backdrop:not(.hidden) > .modal-card,
+body.lunatic-active .modal-backdrop:not(.hidden) > section.modal-card {
+  background: linear-gradient(170deg, #1d0408 0%, #120206 100%) !important;
+  color: #fde2e2 !important;
+  border: 1px solid rgba(185, 28, 28, .6) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .7), 0 0 30px rgba(220, 38, 38, .22) !important;
+}
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card h3,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .s-title,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-match-title { color: #fee2e2 !important; }
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card p,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .s-desc,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card label,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-desc,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-match-sub,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-daily-note { color: #fecaca !important; opacity: .95; }
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .btn-primary {
+  background: linear-gradient(135deg, #dc2626, #7f1d1d) !important; color: #fff !important; border: 0 !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, .45) !important;
+}
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .btn-secondary,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .btn-outline {
+  background: rgba(127, 29, 29, .28) !important; color: #fecaca !important; border: 1px solid rgba(248, 113, 113, .45) !important;
+}
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card select,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card input:not([type=checkbox]):not([type=range]) {
+  background: rgba(20, 3, 6, .9) !important; color: #fde2e2 !important; border-color: rgba(185, 28, 28, .55) !important;
+}
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-match-box,
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .settings-item {
+  background: rgba(40, 6, 12, .6) !important; border-color: rgba(185, 28, 28, .4) !important;
+}
+body.lunatic-active .modal-backdrop:not(.hidden) .modal-card .am-title { color: #f87171 !important; }
+/* 토스트 · 랭크 HUD 배지도 진홍 톤 */
+body.lunatic-active #toast { background: rgba(30, 4, 8, .95) !important; color: #fee2e2 !important; border: 1px solid rgba(220, 38, 38, .55) !important; }
+#view-game.lunatic-mode .game-rank-hud-badge.is-casual { color: #fecaca; background: rgba(127, 29, 29, .3); border-color: rgba(248, 113, 113, .45); }

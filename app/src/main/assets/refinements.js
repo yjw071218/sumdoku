@@ -73,7 +73,7 @@
     if(document.getElementById('hint-confirm')) return;
     const replay=this.currentGameReplay, board=this.board;
     const modal=document.createElement('div'); modal.id='hint-confirm'; modal.className='modal-backdrop';
-    modal.innerHTML=`<section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="hint-confirm-title"><h3 id="hint-confirm-title">힌트를 확인할까요?</h3><p>추론 설명과 정답이 표시됩니다.<br>설명을 보는 즉시 힌트 1회를 사용하고 ${this.hintsRemaining>0||this.rules.initialHints==='unlimited'?30:50}점이 차감됩니다.</p><div class="modal-footer"><button class="btn btn-secondary" data-cancel>취소</button><button class="btn btn-primary" data-confirm>힌트 보기</button></div></section>`;
+    modal.innerHTML=`<section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="hint-confirm-title"><h3 id="hint-confirm-title">힌트를 확인할까요?</h3><p>추론 설명과 정답이 표시됩니다.<br>설명을 보는 즉시 힌트 1회를 사용하고 ${(this.hintsRemaining>0&&!(this.adHintCredit>0))||this.rules.initialHints==='unlimited'?300:500}점이 차감됩니다.</p><div class="modal-footer"><button class="btn btn-secondary" data-cancel>취소</button><button class="btn btn-primary" data-confirm>힌트 보기</button></div></section>`;
     document.getElementById('app').append(modal);
     const close=()=>{modal.remove();this.dom.btnHint?.focus();};
     modal.querySelector('[data-cancel]').onclick=close;

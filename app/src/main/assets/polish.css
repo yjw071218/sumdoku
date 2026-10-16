@@ -382,3 +382,33 @@ html, body { overflow-x: clip; }
 .res-score-penalty { margin-top: 2px; font-size: 11.5px; font-weight: 700; color: #dc2626; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
 .res-score-penalty.hidden { display: none; }
 .theme-dark .res-score-penalty, #view-game.lunatic-mode ~ * .res-score-penalty { color: #fca5a5; }
+
+/* v1.1.30 · 광고 제거 탭 · 개인 정보 탭 (Play판) */
+.hub-panel .monetize-list { margin-top: 12px; }
+.hub-panel .monetize-problem { margin: 10px 2px 6px; font-size: .82rem; font-weight: 700; line-height: 1.4; color: #dc2626; }
+.theme-dark .hub-panel .monetize-problem { color: #fca5a5; }
+.hub-panel .monetize-retry { width: 100%; }
+
+/* v1.1.30 · 생성 미리보기 암호 글리프 */
+.gen-preview-cell.cipher { font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', system-ui, sans-serif; color: rgba(15,23,42,.72); animation: gen-cipher 0.9s steps(2, end) infinite; }
+@keyframes gen-cipher { 0% { opacity: .55; filter: blur(.3px); } 50% { opacity: 1; filter: none; } 100% { opacity: .7; } }
+
+/* v1.1.30 · 랭크전 앱 이탈 시 보드 가림 */
+.integrity-veil { position: fixed; inset: 0; z-index: 9700; display: grid; place-items: center; padding: 24px; text-align: center;
+  font-size: 1rem; font-weight: 900; color: #e2e8f0; letter-spacing: .3px;
+  background: radial-gradient(circle at 50% 40%, rgba(30,41,59,.96), rgba(2,6,23,.99)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.integrity-veil[hidden] { display: none; }
+
+/* v1.1.30 · 성과 공유 버튼 */
+.result-sub-actions .btn-result-share { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: 0; }
+.rating-card .rc-share-row { margin-top: 10px; }
+.rating-card .rc-share-btn { width: 100%; }
+.result-sub-actions:has(.btn-result-share) { flex-wrap: wrap; }
+.result-sub-actions .btn-result-share { flex-basis: 100%; }
+
+/* v1.1.30 · 방 생성 후 방장 설정 변경 */
+#host-config-stage .host-config-toggle { width: 100%; margin-bottom: 10px; font-weight: 800; }
+#host-config-stage.room-live { padding: 10px; margin-bottom: 12px; border-radius: 14px; border: 1px dashed rgba(100,116,139,.45); background: rgba(100,116,139,.06); }
+#host-config-stage.room-live.collapsed > :not(.host-config-toggle) { display: none !important; }
+#host-config-stage.room-live.collapsed { padding-bottom: 0; }
+#host-config-stage.room-live.collapsed .host-config-toggle { margin-bottom: 10px; }

@@ -160,7 +160,7 @@
     '행·열 강조': ['Row & column highlight','行・列の強調','行·列高亮','行·列醒目提示','Resaltar filas y columnas','Mise en surbrillance lignes/colonnes','Zeilen & Spalten hervorheben'],
     '감점 후 계속': ['Continue with penalty','減点して続行','扣分后继续','扣分後繼續','Continuar con penalización','Continuer avec pénalité','Mit Punktabzug weiterspielen'],
     '추가 사용 금지': ['No further use','追加使用禁止','禁止继续使用','禁止繼續使用','Sin uso adicional','Aucune utilisation supplémentaire','Keine weitere Nutzung'],
-    '추가 사용 · 최대 50점 감점': ['Allow with penalty (up to -50 pts)','追加使用 · 最大50点減点','继续使用 · 最多扣除50分','繼續使用 · 最多扣除50分','Uso adicional · hasta -50 pts','Autoriser avec pénalité (jusqu’à -50 pts)','Erlauben mit Abzug (bis zu -50 Pkt.)'],
+    '추가 사용 · 최대 500점 감점': ['Allow with penalty (up to -500 pts)','追加使用 · 最大500点減点','继续使用 · 最多扣除500分','繼續使用 · 最多扣除500分','Uso adicional · hasta -500 pts','Autoriser avec pénalité (jusqu’à -500 pts)','Erlauben mit Abzug (bis zu -500 Pkt.)'],
     '닫힘': ['Closed','閉じる','已关闭','已關閉','Cerrado','Fermé','Geschlossen'],
     '방을 준비한 뒤 코드를 공유하세요. 규칙 변경 시 방을 다시 준비합니다. 기본 힌트는 최대 30점 감점됩니다.': [
       'Prepare the room then share the code. Modifying rules resets the room. Default hints deduct up to 30 pts.',

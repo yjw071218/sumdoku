@@ -419,6 +419,14 @@ public class MainActivity extends Activity {
         super.onActivityResult(request, result, data);
         if (cloudGames != null) cloudGames.result(request, result, data);
     }
+    private void shareTextInternal(String text) {
+        try {
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_TEXT, text == null ? "" : text);
+            startActivity(Intent.createChooser(send, null));
+        } catch (Exception ignored) {}
+    }
     private class AndroidBridgeInterface {
         @JavascriptInterface public boolean isCloudConfigured() { return BuildConfig.GAMES_CONFIGURED; }
         @JavascriptInterface public void cloudSignIn() { if(cloudGames!=null) cloudGames.signIn(); }
@@ -439,6 +447,45 @@ public class MainActivity extends Activity {
         @JavascriptInterface public String getRemoveAdsPrice() { return monetization == null ? "" : monetization.getRemoveAdsPrice(); }
         @JavascriptInterface public void purchaseRemoveAds() { if (monetization != null) monetization.purchaseRemoveAds(); }
         @JavascriptInterface public void restorePurchases() { if (monetization != null) monetization.restorePurchases(); }
+        @JavascriptInterface public void refreshProducts() { if (monetization != null) monetization.refreshProducts(); }
+        // v1.1.30 · 성과 공유: PNG(data URL의 base64 본문)와 문구를 Android 공유 시트로 보냅니다.
+        @JavascriptInterface public void shareImage(final String base64Png, final String text) {
+            runOnUiThread(() -> {
+                try {
+                    String b64 = base64Png == null ? "" : base64Png;
+                    int comma = b64.indexOf(',');
+                    if (comma >= 0) b64 = b64.substring(comma + 1);
+                    byte[] bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+                    if (bytes.length == 0 || bytes.length > 8 * 1024 * 1024) throw new IllegalArgumentException("size");
+                    File dir = new File(getCacheDir(), "share");
+                    if (!dir.exists()) dir.mkdirs();
+                    File[] old = dir.listFiles();
+                    if (old != null) for (File f : old) f.delete();
+                    String name = "sumdoku-" + System.currentTimeMillis() + ".png";
+                    File out = new File(dir, name);
+                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) { fos.write(bytes); }
+                    Uri uri = Uri.parse("content://" + ShareImageProvider.authority(MainActivity.this) + "/" + name);
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("image/png");
+                    send.putExtra(Intent.EXTRA_STREAM, uri);
+                    if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+                    send.setClipData(android.content.ClipData.newRawUri("sumdoku", uri));
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(send, null));
+                } catch (Exception e) {
+                    shareTextInternal(text);
+                }
+            });
+        }
+        @JavascriptInterface public void shareText(final String text) { runOnUiThread(() -> shareTextInternal(text)); }
+
+        // v1.1.30 · 랭크전 화면 보호: 켜면 스크린샷·화면 녹화·최근 앱 미리보기에 화면이 보이지 않습니다(FLAG_SECURE).
+        @JavascriptInterface public void setSecureScreen(final boolean on) {
+            runOnUiThread(() -> {
+                if (on) getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            });
+        }
         @JavascriptInterface public void showInterstitial() { if (monetization != null) monetization.showInterstitial(); }
         @JavascriptInterface public void showRewarded(String requestId) { if (monetization != null) monetization.showRewarded(requestId); }
         @JavascriptInterface public boolean isRewardedReady() { return monetization != null && monetization.isRewardedReady(); }
@@ -533,6 +580,12 @@ public class MainActivity extends Activity {
             for (String octet : ip.split("\\.")) address = address * 256 + Integer.parseInt(octet);
             String code = String.format(java.util.Locale.ROOT, "%010d%02d", address, address % 97);
             return String.format("{\"ok\":%b,\"ip\":\"%s\",\"port\":8888,\"code\":\"%s\"}", ok, ip, code);
+        }
+
+        /** v1.1.30: 방 생성 후 방장이 모드·난이도·규칙을 변경합니다(대기 중에만). */
+        @JavascriptInterface
+        public boolean updateBattleServer(String mode, String diff, int timeLimitSec, String puzzleJson) {
+            return battleServer != null && battleServer.updateRoomConfig(mode, diff, timeLimitSec, puzzleJson);
         }
 
         /** v1.0.42: 4자리 코드로 방 찾기(비동기). 최근 접속 IP가 있으면 우선 확인합니다. */

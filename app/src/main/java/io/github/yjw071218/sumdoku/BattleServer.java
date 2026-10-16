@@ -171,7 +171,9 @@ public class BattleServer {
         return port;
     }
 
+    private int configVersion = 0;
     public synchronized void configureRoom(String mode, String diff, int timeLimitSec, String puzzleData) {
+        configVersion = 0;
         terminalProgress = null;
         this.battleMode = mode;
         this.difficulty = diff;
@@ -190,6 +192,21 @@ public class BattleServer {
         this.generationProgress = null; resetTurns();
         String code = jsonString(this.puzzleJson, "roomCode");
         this.roomCode = code != null && code.matches("[0-9]{4}") ? code : "";
+    }
+
+    /** v1.1.30 · 방을 연 뒤 방장이 모드·난이도·규칙을 바꿉니다. 대기 중일 때만 허용하며, 참가자는 유지하고 준비 상태만 해제합니다. */
+    public synchronized boolean updateRoomConfig(String mode, String diff, int timeLimitSec, String puzzleData) {
+        if (!"waiting".equals(roomStatus)) return false;
+        this.battleMode = mode;
+        this.difficulty = diff;
+        this.timeLimit = timeLimitSec;
+        String keepCode = this.roomCode;
+        this.puzzleJson = (puzzleData != null && !puzzleData.isEmpty()) ? puzzleData : "{}";
+        String code = jsonString(this.puzzleJson, "roomCode");
+        this.roomCode = code != null && code.matches("[0-9]{4}") ? code : keepCode;
+        this.p2Ready = false;
+        this.configVersion++;
+        return true;
     }
 
     public synchronized void startMatch() {
@@ -357,8 +374,8 @@ public class BattleServer {
             } else if (path.startsWith("/api/room")) {
                 lastGuestActiveTime = System.currentTimeMillis();
                 responseJson = String.format(
-                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"puzzle\":%s,\"generation\":%s}",
-                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, puzzleJson,
+                    "{\"ok\":true,\"status\":\"%s\",\"mode\":\"%s\",\"diff\":\"%s\",\"timeLimit\":%d,\"p1Ready\":%b,\"p2Ready\":%b,\"guestJoined\":%b,\"endedBy\":%d,\"endReason\":\"%s\",\"configVersion\":%d,\"puzzle\":%s,\"generation\":%s}",
+                    roomStatus, battleMode, difficulty, timeLimit, p1Ready, p2Ready, guestJoined, endedBy, endReason, configVersion, puzzleJson,
                     generationProgress == null ? "null" : generationProgress
                 );
             } else if (path.startsWith("/api/chat")) {

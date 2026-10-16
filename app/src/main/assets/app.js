@@ -16,7 +16,7 @@
  * - 인앱 즉시 업데이트 (OTA 핫 리소스) 및 인앱 원클릭 APK 설치기 탑재
  */
 
-const APP_VERSION = "1.1.29";
+const APP_VERSION = "1.1.30";
 const RACE_FINISH_BONUS = 3000; // 스피드 레이스 완주 가산점
 const GITHUB_REPO = "yjw071218/sumdoku";
 
@@ -796,6 +796,7 @@ class SumdokuApp {
         hintsUsed: this.hintsUsed || 0,
         revivesUsed: this.revivesUsed || 0,
         adHintsUsed: this.adHintsUsed || 0,
+        adHintCredit: this.adHintCredit || 0,
         scratchpadText: this.scratchpadText || '',
         isDaily: this.isDaily,
         dailyDate: this.dailyDate,
@@ -868,6 +869,7 @@ class SumdokuApp {
       this.hintsUsed = state.hintsUsed || 0;
       this.revivesUsed = Math.min(2, Math.max(0, Number(state.revivesUsed) || 0));
       this.adHintsUsed = Math.min(3, Math.max(0, Number(state.adHintsUsed) || 0));
+      this.adHintCredit = Math.min(3, Math.max(0, Number(state.adHintCredit) || 0));
       this.scratchpadText = state.scratchpadText || this.scratchpadText || '';
       if (this.dom.scratchpadInput) this.dom.scratchpadInput.value = this.scratchpadText;
       this.isDaily = !!state.isDaily;
@@ -1450,6 +1452,8 @@ class SumdokuApp {
     }
 
     // 스마트 케이지 및 연역 확정 칸 미니 프리뷰 렌더링
+    // v1.1.30: 생성 화면을 캡처해 정답을 알아내지 못하도록 숫자(정답·합계)는 암호 글리프로만 표시합니다.
+    const cipher = () => SumdokuApp.CIPHER_GLYPHS[Math.floor(Math.random() * SumdokuApp.CIPHER_GLYPHS.length)];
     if (p.cages && this.dom.genPreviewBoard) {
       const palette = [
         '#bfdbfe', '#bbf7d0', '#fef08a', '#fed7aa', '#fbcfe8',
@@ -1463,8 +1467,8 @@ class SumdokuApp {
           if (el) {
             el.style.backgroundColor = isSingleAnchor ? '#fbbf24' : color;
             if (isSingleAnchor) {
-              el.classList.add('anchor');
-              el.textContent = cage.sum || '★';
+              el.classList.add('anchor', 'cipher');
+              el.textContent = cipher();
             } else {
               el.classList.remove('anchor');
               el.textContent = '';
@@ -1478,10 +1482,8 @@ class SumdokuApp {
         p.solvedCells.forEach(([r, c]) => {
           const el = document.getElementById(`gen-cell-${r}-${c}`);
           if (el && !el.classList.contains('anchor')) {
-            el.classList.add('solved');
-            if (p.solution && p.solution[r]) {
-              el.textContent = p.solution[r][c];
-            }
+            el.classList.add('solved', 'cipher');
+            el.textContent = cipher();
           }
         });
       }
@@ -1496,6 +1498,7 @@ class SumdokuApp {
 
   hideGeneratingOverlay() {
     if (!this.dom.generatingOverlay) return;
+    if (this.dom.genPreviewBoard) this.dom.genPreviewBoard.querySelectorAll('.cipher').forEach(el => { el.textContent = ''; });
     this.dom.generatingOverlay.classList.add('hidden');
   }
 
@@ -2121,7 +2124,8 @@ class SumdokuApp {
         target.classList.add('active');
         this.battleMode = target.dataset.bmode;
         try { localStorage.setItem('sumdoku_last_battle_mode', this.battleMode); } catch (e) {}
-        this.setupHostRoom();
+        // v1.1.30: 방이 열려 있으면 방을 닫지 않고 설정만 바꿉니다.
+        if (this.onHostConfigChanged) this.onHostConfigChanged(); else this.setupHostRoom();
       });
     });
 
@@ -2134,7 +2138,8 @@ class SumdokuApp {
         target.classList.add('active');
         this.battleDiff = target.dataset.bdiff;
         try { localStorage.setItem('sumdoku_last_battle_diff', this.battleDiff); } catch (e) {}
-        this.setupHostRoom();
+        // v1.1.30: 방이 열려 있으면 방을 닫지 않고 설정만 바꿉니다.
+        if (this.onHostConfigChanged) this.onHostConfigChanged(); else this.setupHostRoom();
       });
     });
 
@@ -3490,7 +3495,7 @@ class SumdokuApp {
           this.resetCombo('오답 입력으로 콤보 리셋');
           // 목숨이 무한인 스피드 레이스·타임어택은 찍기 방지를 위해 큰 감점, 실수할수록 증가(200→300→…최대 600)
           const unlimitedMode = (this.isBattle && (this.battleMode === 'race' || this.battleMode === 'score')) || this.gameMode === 'timeattack';
-          const penalty = this.scaled(unlimitedMode ? Math.min(600, 200 + this.mistakes * 100) : 50);
+          const penalty = this.scaled(unlimitedMode ? Math.min(600, 200 + this.mistakes * 100) : 300);
           this.score -= penalty;
           this.showScoreDelta(-penalty, r, c);
           this.dom.gameScore.textContent = this.score;
@@ -3882,18 +3887,25 @@ class SumdokuApp {
 
     let hintMsg = '';
     if (this.rules.initialHints === 'unlimited') {
-      this.score -= this.scaled(30);
-      this.showScoreDelta(-this.scaled(30), r, c, '힌트');
-      hintMsg = `[힌트] ${answer} 확정! (무제한 힌트, -30점)`;
+      this.score -= this.scaled(300);
+      this.showScoreDelta(-this.scaled(300), r, c, '힌트');
+      hintMsg = `[힌트] ${answer} 확정! (무제한 힌트, -300점)`;
+    } else if (this.hintsRemaining > 0 && (this.adHintCredit || 0) > 0) {
+      // 광고로 받은 힌트: 기존 추가 힌트와 같은 -50점
+      this.hintsRemaining--;
+      this.adHintCredit--;
+      this.score -= this.scaled(500);
+      this.showScoreDelta(-this.scaled(500), r, c, '추가 힌트');
+      hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -500점)`;
     } else if (this.hintsRemaining > 0) {
       this.hintsRemaining--;
-      this.score -= this.scaled(30);
-      this.showScoreDelta(-this.scaled(30), r, c, '힌트');
-      hintMsg = `[힌트] ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -30점)`;
+      this.score -= this.scaled(300);
+      this.showScoreDelta(-this.scaled(300), r, c, '힌트');
+      hintMsg = `[힌트] ${answer} 확정! (남은 힌트: ${this.hintsRemaining}개, -300점)`;
     } else {
-      this.score -= this.scaled(50);
-      this.showScoreDelta(-this.scaled(50), r, c, '추가 힌트');
-      hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -50점)`;
+      this.score -= this.scaled(500);
+      this.showScoreDelta(-this.scaled(500), r, c, '추가 힌트');
+      hintMsg = `[추가 힌트] ${answer} 확정! (보너스 힌트 제공, -500점)`;
     }
     this.updateHintBadge();
     this.dom.gameScore.textContent = this.score;
@@ -4114,13 +4126,13 @@ class SumdokuApp {
   scaled(points) { return Math.round(points * this.scoreMult()); }
 
   /* 힌트·목숨 사용 감점
-   *   힌트 1회 −8% · 목숨 1개(실수) −6% · 광고 부활 1회 −12%, 합계 최대 −50%
+   *   힌트 1회 −12% · 목숨 1개(실수) −10% · 광고 부활 1회 −20%, 합계 최대 −70%
    *   클리어 보너스까지 더한 최종 점수(양수일 때)에 적용합니다. */
   applyAssistPenalty() {
     const hints = Math.max(0, this.hintsUsed || 0);
     const lives = Math.max(0, this.mistakes || 0);
     const revives = Math.max(0, this.revivesUsed || 0);
-    const rate = Math.min(0.5, hints * 0.08 + lives * 0.06 + revives * 0.12);
+    const rate = Math.min(0.7, hints * 0.12 + lives * 0.1 + revives * 0.2);
     if (rate <= 0 || this.score <= 0) return null;
     const penalty = Math.round(this.score * rate);
     if (!penalty) return null;
@@ -4916,3 +4928,6 @@ window.onUpdateProgress = (percent, message) => {
 window.onUpdateError = (message) => {
   if (window.app) window.app.handleUpdateError(message);
 };
+
+// v1.1.30: 생성 미리보기에 쓰는 암호 글리프(실제 숫자 대신 표시)
+if (typeof SumdokuApp !== 'undefined') SumdokuApp.CIPHER_GLYPHS = ['◈','⌬','⟁','Ψ','Ж','§','¤','Ω','⊗','⋔','⌖','⍟','✶','ʘ','ϟ','₪'];

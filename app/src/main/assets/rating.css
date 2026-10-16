@@ -255,3 +255,76 @@
   .game-rank-hud-badge .grb-tier { font-size: 10.5px; }
   .game-rank-hud-badge .grb-rp { font-size: 10px; }
 }
+
+/* v1.1.30 · 진행 중인 랭크전 경기 포기 경고 모달 */
+.abandon-modal-backdrop { z-index: 9800; padding: 16px; }
+.abandon-modal-card {
+  max-width: 400px; width: 100%; padding: 20px 18px 18px; border-radius: 20px;
+  border: 1.5px solid rgba(239, 68, 68, .45);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(255, 255, 255, .15);
+}
+.abandon-modal-card .am-header { margin-bottom: 12px; text-align: center; }
+.abandon-modal-card .am-title {
+  margin: 0; font-size: 1.12rem; font-weight: 900; color: #dc2626; letter-spacing: -.2px;
+}
+.theme-dark .abandon-modal-card .am-title { color: #f87171; }
+.abandon-modal-card .am-match-box {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(15, 23, 42, .06); border: 1px solid rgba(100, 116, 139, .22); margin-bottom: 10px;
+}
+.theme-dark .abandon-modal-card .am-match-box {
+  background: rgba(15, 23, 42, .55); border-color: rgba(148, 163, 184, .22);
+}
+.abandon-modal-card .am-emblem { flex-shrink: 0; display: grid; place-items: center; }
+.abandon-modal-card .am-match-info { min-width: 0; flex: 1; text-align: left; }
+.abandon-modal-card .am-match-title { font-size: 0.95rem; font-weight: 900; color: var(--text-primary, #0f172a); }
+.abandon-modal-card .am-match-sub { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary, #475569); margin-top: 2px; }
+
+.abandon-modal-card .am-penalty-box {
+  padding: 11px 13px; border-radius: 14px; margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, .12), rgba(185, 28, 28, .06));
+  border: 1px solid rgba(239, 68, 68, .38);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.abandon-modal-card .am-penalty-row { display: flex; align-items: center; justify-content: space-between; }
+.abandon-modal-card .am-penalty-lbl { font-size: 0.8rem; font-weight: 800; color: var(--text-secondary, #475569); }
+.abandon-modal-card .am-penalty-val { font-size: 1.15rem; font-weight: 900; color: #dc2626; font-variant-numeric: tabular-nums; }
+.theme-dark .abandon-modal-card .am-penalty-val { color: #f87171; text-shadow: 0 0 10px rgba(239, 68, 68, .4); }
+.abandon-modal-card .am-rp-flow {
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+  font-size: 0.82rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.abandon-modal-card .am-arrow { opacity: .6; }
+.abandon-modal-card .am-rp-after { color: #dc2626; }
+.theme-dark .abandon-modal-card .am-rp-after { color: #fca5a5; }
+.abandon-modal-card .am-streak-loss {
+  font-size: 0.76rem; font-weight: 800; color: #ea580c; text-align: right;
+}
+.theme-dark .abandon-modal-card .am-streak-loss { color: #fdba74; }
+
+.abandon-modal-card .am-desc {
+  margin: 0 0 6px; font-size: 0.84rem; font-weight: 600; line-height: 1.45;
+  color: var(--text-primary, #1e293b); text-align: center;
+}
+.abandon-modal-card .am-daily-note {
+  margin: 0 0 14px; font-size: 0.76rem; font-weight: 700; line-height: 1.35;
+  color: var(--text-muted, #64748b); text-align: center;
+}
+.abandon-modal-card .am-actions { display: flex; flex-direction: column; gap: 8px; }
+.abandon-modal-card .am-actions .btn { width: 100%; padding: 11px 12px; font-size: 0.9rem; font-weight: 800; border-radius: 12px; }
+.abandon-modal-card .am-btn-forfeit {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: #fff; border: 0; box-shadow: 0 4px 12px rgba(220, 38, 38, .35);
+}
+.abandon-modal-card .am-btn-forfeit:active { transform: scale(.98); }
+
+
+/* v1.1.30 · 다국어 레이아웃 최적화 (독·프·스·일 등 긴 문구 잘림 방지) */
+.rating-card .rc-tab-name { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere;
+  font-size: clamp(9.5px, 2.7vw, 12px); line-height: 1.1; text-align: center; hyphens: auto; }
+.rating-card .rc-tab-tier { white-space: normal; text-align: center; line-height: 1.1; font-size: clamp(9px, 2.5vw, 11px); }
+.rs-chip { min-width: 0; }
+.rs-chip span { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; word-break: keep-all; overflow-wrap: anywhere;
+  text-align: center; line-height: 1.1; font-size: clamp(9.5px, 2.6vw, 12px); hyphens: auto; }
+.rl-name { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; font-size: clamp(11px, 3.1vw, 13px); }
+.rl-row { grid-template-columns: 34px minmax(84px, 1.15fr) 2fr; }

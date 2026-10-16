@@ -912,10 +912,46 @@
     label: ['매치 유형', 'Match Queue', 'マッチ種別', '比赛类型', '比賽類型', 'Tipo de partida', 'Type de partie', 'Spieltyp'],
     ranked: ['🏆 랭크전 (RP 반영)', '🏆 Ranked (RP)', '🏆 ランク戦 (RP)', '🏆 排位赛 (RP)', '🏆 排位賽 (RP)', '🏆 Clasificatoria (RP)', '🏆 Classé (RP)', '🏆 Rangliste (RP)'],
     normal: ['🎮 일반전 (연습 · RP 무관)', '🎮 Normal (Casual)', '🎮 ノーマル (練習)', '🎮 普通赛 (练习)', '🎮 一般賽 (練習)', '🎮 Normal (Práctica)', '🎮 Normal (Entraînement)', '🎮 Normal (Übung)'],
-    rankedDesc: ['승패와 기록에 따라 티어와 RP가 변동됩니다.', 'Tier and RP change based on match outcome and performance.', '勝敗と記録に応じてティアとRPが変動します。', '段位与RP会根据胜负和成绩变动。', '段位與RP會根據勝負和成績變動。', 'El rango y RP cambian según el resultado.', 'Le rang et les RP changent selon le résultat.', 'Rang und RP ändern sich je nach Ergebnis.'],
+    rankedDesc: ['승패와 기록에 따라 티어와 RP가 변동됩니다. 실수 3회·힌트 3개로 고정됩니다(광고 부활·힌트 가능).', 'Tier and RP change by result. Mistakes and hints are fixed at 3 (ad revive/hints still available).', '勝敗と記録に応じてティアとRPが変動します。ミス3回・ヒント3個で固定（広告で復活・ヒント可）。', '段位与RP会根据胜负和成绩变动。失误与提示固定为3次（可看广告复活/获取提示）。', '段位與RP會根據勝負和成績變動。失誤與提示固定為3次（可看廣告復活/獲取提示）。', 'El rango y RP cambian según el resultado. Errores y pistas fijos en 3 (anuncios disponibles).', 'Le rang et les RP changent selon le résultat. Erreurs et indices fixés à 3 (pubs disponibles).', 'Rang und RP ändern sich je nach Ergebnis. Fehler und Hinweise fest auf 3 (Werbung möglich).'],
     normalDesc: ['RP와 연승 기록 변동 없이 부담 없이 연습할 수 있습니다.', 'Practice freely without affecting your RP or win streak.', 'RPや連勝記録の変動なしで気軽に練習できます。', '不影响RP与连胜记录，可轻松练习。', '不影響RP與連勝紀錄，可輕鬆練習。', 'Practica libremente sin afectar tu RP ni racha.', 'Entraînez-vous sans affecter vos RP ni votre série.', 'Übe frei ohne Einfluss auf RP oder Siegesserie.'],
     casualBadge: ['일반전 · RP 무관', 'Normal · No RP', 'ノーマル · RPなし', '普通赛 · 无RP', '一般賽 · 無RP', 'Normal · Sin RP', 'Normal · Sans RP', 'Normal · Ohne RP'],
-    placeShort: ['배치', 'Place', '配置', '定级', '定級', 'Clasif.', 'Place.', 'Platz.']
+    placeShort: ['배치', 'Place', '配置', '定级', '定級', 'Clasif.', 'Place.', 'Platz.'],
+    abandonTitle: ['⚠️ 진행 중인 랭크전 포기 경고', '⚠️ Abandon Ongoing Ranked Match?', '⚠️ 進行中のランク戦を放棄しますか？', '⚠️ 放弃进行中的排位赛警告', '⚠️ 放棄進行中的排位賽警告', '⚠️ ¿Abandonar partida clasificatoria?', '⚠️ Abandonner la partie classée ?', '⚠️ Laufendes Ranglistenspiel aufgeben?'],
+    abandonDesc: [
+      '진행 중인 경기를 이어서 완료하지 않고 새 게임을 시작하면 기권(패배) 처리되어 랭크 점수(RP)가 차감됩니다.',
+      'Starting a new game without continuing your ongoing match counts as a forfeit and deducts RP.',
+      '進行中の試合を続けずに新しいゲームを始めると棄権（敗北）扱いとなり、RPが減少します。',
+      '若不继续当前对局而开始新游戏，当前对局将按弃权（战败）处理并扣除RP。',
+      '若不繼續目前對局而開始新遊戲，目前對局將按棄權（戰敗）處理並扣除RP。',
+      'Iniciar una nueva partida sin continuar la actual contará como derrota y restará RP.',
+      'Lancer une nouvelle partie sans continuer la partie en cours comptera comme un abandon et réduira vos RP.',
+      'Wenn du ein neues Spiel startest, ohne das laufende fortzusetzen, wird es als Niederlage gewertet und RP werden abgezogen.'
+    ],
+    abandonDailyNote: [
+      '※ 일일 도전은 진행 중인 경기의 점수 차감 없이 시작할 수 있습니다.',
+      '※ Daily Challenges can be started without any RP penalty.',
+      '※ デイリーチャレンジはRP減少なしで開始できます。',
+      '※ 每日挑战可直接开始，不会扣除当前对局RP。',
+      '※ 每日挑戰可直接開始，不會扣除目前對局RP。',
+      '※ El desafío diario se puede iniciar sin penalización de RP.',
+      '※ Le défi quotidien peut être lancé sans pénalité de RP.',
+      '※ Die tägliche Herausforderung kann ohne RP-Abzug gestartet werden.'
+    ],
+    abandonPenaltyLbl: ['포기 시 차감 점수', 'Forfeit RP Penalty', '放棄時の減少RP', '弃权扣除分数', '棄權扣除分數', 'Penalización por abandono', 'Pénalité d’abandon', 'RP-Abzug bei Aufgabe'],
+    abandonStreakReset: ['연승 초기화', 'Streak reset', '連勝リセット', '连胜重置', '連勝重置', 'Racha reiniciada', 'Série réinitialisée', 'Serie zurückgesetzt'],
+    abandonBtnResume: ['이전 경기 이어하기', 'Continue Ongoing Match', '前の試合を続ける', '继续上局比赛', '繼續上局比賽', 'Continuar partida', 'Continuer la partie', 'Spiel fortsetzen'],
+    abandonBtnConfirm: ['감점 감수하고 새 게임 ({0} RP)', 'Forfeit & New Game ({0} RP)', '減点して新規ゲーム ({0} RP)', '扣分并开始新游戏 ({0} RP)', '扣分並開始新遊戲 ({0} RP)', 'Abandonar y nueva ({0} RP)', 'Abandonner et nouvelle ({0} RP)', 'Aufgeben & Neues Spiel ({0} RP)'],
+    abandonBtnCancel: ['취소', 'Cancel', 'キャンセル', '取消', '取消', 'Cancelar', 'Annuler', 'Abbrechen'],
+    abandonToast: [
+      '💔 {0} 경기 포기로 {1} RP 차감 ({2} → {3} RP)',
+      '💔 {0} forfeited: {1} RP ({2} → {3} RP)',
+      '💔 {0} 試合放棄により {1} RP 減少 ({2} → {3} RP)',
+      '💔 放弃 {0} 对局，扣除 {1} RP ({2} → {3} RP)',
+      '💔 放棄 {0} 對局，扣除 {1} RP ({2} → {3} RP)',
+      '💔 {0} abandonada: {1} RP ({2} → {3} RP)',
+      '💔 {0} abandonnée : {1} RP ({2} → {3} RP)',
+      '💔 {0} aufgegeben: {1} RP ({2} → {3} RP)'
+    ]
   };
   const qt = k => {
     const langs = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
@@ -928,6 +964,211 @@
   }
   function setSavedQueue(q) {
     try { localStorage.setItem(QKEY, q === 'normal' ? 'normal' : 'ranked'); } catch (_) {}
+  }
+
+  /* ---------- 진행 중인 랭크전 포기(새 게임 시작) 경고 & RP 차감 (일일 도전 제외) ---------- */
+  function getAbandonableOngoingGame(app) {
+    try {
+      if (app && app.currentView === 'game' && !app.isDaily && !app.isBattle && app.gameMode !== 'battle' && !app.isWin && !app.resultReason && Array.isArray(app.board) && app.board.length === 9) {
+        app.saveOngoingGame?.();
+      }
+      const raw = localStorage.getItem('sumdoku_ongoing_game');
+      if (!raw) return null;
+      const st = JSON.parse(raw);
+      if (!st || !Array.isArray(st.board) || st.isDaily || st.isBattle || st.gameMode === 'battle' || st.isWin || st.resultReason) return null;
+      if (window.SumdokuGameStateGuard?.invalidSaved?.(st)) return null;
+      if (st.isRanked === false) return null;
+      if (!DIFFS.includes(st.difficulty)) return null;
+      return st;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function previewAbandonPenalty(st) {
+    if (!st || !DIFFS.includes(st.difficulty)) return null;
+    const mode = st.gameMode === 'timeattack' ? 'timeattack' : 'standard';
+    const diff = st.difficulty;
+    const all = loadAll();
+    const s = ladder(all, mode).byDiff[diff] || fresh();
+    const base = BASE_POINTS * (RP_MULT[diff] || 1);
+    const over = clamp(1 + (s.rating - 1600) / 1000, 0.6, 1.8);
+    const delta = -Math.round(base * 0.6 * over);
+    const before = s.rating;
+    const after = Math.max(0, before + delta);
+    const beforeTier = shownTier(s);
+    const afterTier = (s.placement && s.placement > 1) ? beforeTier : tierOf(after);
+    return {
+      mode,
+      diff,
+      delta,
+      before,
+      after,
+      beforeTier,
+      afterTier,
+      streak: s.streak || 0,
+      timerSeconds: st.timerSeconds || 0,
+      score: st.score || 0
+    };
+  }
+
+  function applyAbandonPenalty(app, st) {
+    const target = st || getAbandonableOngoingGame(app);
+    if (!target || !DIFFS.includes(target.difficulty)) return null;
+    const mode = target.gameMode === 'timeattack' ? 'timeattack' : 'standard';
+    const diff = target.difficulty;
+    const all = loadAll();
+    const lad = ladder(all, mode);
+    const s = lad.byDiff[diff];
+    applyDecay(s);
+
+    const base = BASE_POINTS * (RP_MULT[diff] || 1);
+    const over = clamp(1 + (s.rating - 1600) / 1000, 0.6, 1.8);
+    const delta = -Math.round(base * 0.6 * over);
+    const before = s.rating;
+    const beforeTier = tierOf(before);
+
+    s.streak = 0;
+    if (s.placement > 0) {
+      s.placement--;
+      if (!s.placement) s.boost = BOOST_GAMES;
+    } else {
+      if (s.boost > 0) s.boost--;
+      if (s.series) {
+        s.series.l++;
+        if (s.series.l >= 2) s.series = null;
+      }
+      if (s.protect > 0) s.protect--;
+    }
+
+    s.rating = Math.max(0, s.rating + delta);
+    s.peak = Math.max(s.peak || 0, s.rating);
+    s.games = (s.games || 0) + 1;
+    s.seasonGames = (s.seasonGames || 0) + 1;
+    s.lastActive = Date.now();
+    s.lastDecay = 0;
+    if (!s.placement) s.seasonBest = Math.max(s.seasonBest || 0, s.rating);
+    s.history.unshift({ t: Date.now(), d: delta, bonus: 0, streak: 0, diff, mode, win: false, why: 'abandon' });
+    s.history = s.history.slice(0, 30);
+    lad.lastDiff = diff;
+    all.lastMode = mode;
+    saveAll(all);
+
+    try {
+      localStorage.removeItem('sumdoku_ongoing_game');
+      app?.dom?.btnHomeContinue?.classList.add('hidden');
+      if (app) {
+        app._rankDiff = diff;
+        app._rankMode = mode;
+        if (app.stats) {
+          app.stats.totalGames = (app.stats.totalGames || 0) + 1;
+          app.stats.currentStreak = 0;
+          if (app.stats.byDiff && app.stats.byDiff[diff]) {
+            app.stats.byDiff[diff].trackedGames = (app.stats.byDiff[diff].trackedGames || 0) + 1;
+            app.stats.byDiff[diff].currentStreak = 0;
+          }
+          app.saveStats?.();
+        }
+        if (app.currentView === 'game' && !app.isDaily && !app.isBattle) {
+          app.resultReason = 'forfeit';
+          app._ratedGameId = app._ratingToken;
+          app.stopTimer?.();
+        }
+      }
+    } catch (_) {}
+
+    const after = s.rating;
+    const afterTier = tierOf(after);
+    try {
+      app?.renderRatingCard?.();
+      app?.updateHeaderRankBadge?.();
+      syncQueueSelector(app);
+    } catch (_) {}
+
+    const label = `${diffName(diff)} (${modeName(mode)})`;
+    const toastMsg = qt('abandonToast')
+      .replace('{0}', label)
+      .replace('{1}', String(delta))
+      .replace('{2}', before.toLocaleString())
+      .replace('{3}', after.toLocaleString());
+    try {
+      app?.sound?.play?.('error');
+      app?.showToast?.(toastMsg, 3600);
+    } catch (_) {}
+
+    return { mode, diff, delta, before, after, beforeTier, afterTier };
+  }
+
+  function showAbandonWarningModal(app, st, onConfirm) {
+    const info = previewAbandonPenalty(st);
+    if (!info) {
+      if (typeof onConfirm === 'function') onConfirm();
+      return;
+    }
+    document.getElementById('modal-abandon-confirm')?.remove();
+    const mins = String(Math.floor((info.timerSeconds || 0) / 60)).padStart(2, '0');
+    const secs = String((info.timerSeconds || 0) % 60).padStart(2, '0');
+    const modal = document.createElement('div');
+    modal.id = 'modal-abandon-confirm';
+    modal.className = 'modal-backdrop abandon-modal-backdrop';
+    modal.style.setProperty('--tier', info.beforeTier.color || '#ef4444');
+    const streakTag = info.streak >= 1 ? `<span class="am-streak-loss">🔥 ${info.streak} → 0 (${qt('abandonStreakReset')})</span>` : '';
+
+    modal.innerHTML =
+      `<div class="modal-card abandon-modal-card" role="dialog" aria-modal="true" aria-labelledby="abandon-modal-title">` +
+      `  <div class="am-header">` +
+      `    <h3 id="abandon-modal-title" class="am-title">${qt('abandonTitle')}</h3>` +
+      `  </div>` +
+      `  <div class="am-match-box">` +
+      `    <div class="am-emblem">${tierSymbol(info.beforeTier.id, 46, info.beforeTier.division)}</div>` +
+      `    <div class="am-match-info">` +
+      `      <div class="am-match-title">${diffName(info.diff)} · ${modeName(info.mode)}</div>` +
+      `      <div class="am-match-sub">${info.beforeTier.name} · ⏱️ ${mins}:${secs}</div>` +
+      `    </div>` +
+      `  </div>` +
+      `  <div class="am-penalty-box">` +
+      `    <div class="am-penalty-row">` +
+      `      <span class="am-penalty-lbl">${qt('abandonPenaltyLbl')}</span>` +
+      `      <strong class="am-penalty-val">${info.delta} RP</strong>` +
+      `    </div>` +
+      `    <div class="am-rp-flow">` +
+      `      <span>${info.before.toLocaleString()} RP</span>` +
+      `      <span class="am-arrow">➔</span>` +
+      `      <strong class="am-rp-after">${info.after.toLocaleString()} RP (${info.afterTier.name})</strong>` +
+      `    </div>` +
+      `    ${streakTag}` +
+      `  </div>` +
+      `  <p class="am-desc">${qt('abandonDesc')}</p>` +
+      `  <p class="am-daily-note">${qt('abandonDailyNote')}</p>` +
+      `  <div class="am-actions">` +
+      `    <button type="button" class="btn btn-primary am-btn-resume" data-abandon-resume>${qt('abandonBtnResume')}</button>` +
+      `    <button type="button" class="btn am-btn-forfeit" data-abandon-confirm>${qt('abandonBtnConfirm').replace('{0}', String(info.delta))}</button>` +
+      `    <button type="button" class="btn btn-secondary am-btn-cancel" data-abandon-cancel>${qt('abandonBtnCancel')}</button>` +
+      `  </div>` +
+      `</div>`;
+
+    (document.getElementById('app') || document.body).append(modal);
+    const close = () => modal.remove();
+
+    modal.querySelector('[data-abandon-cancel]').addEventListener('click', () => {
+      try { app?.sound?.play('click'); } catch (_) {}
+      close();
+    });
+    modal.querySelector('[data-abandon-resume]').addEventListener('click', () => {
+      try { app?.sound?.play('click'); } catch (_) {}
+      close();
+      app?.dom?.modalDiff?.classList.add('hidden');
+      app?.dom?.modalSettings?.classList.add('hidden');
+      app?.restoreOngoingGame?.();
+    });
+    modal.querySelector('[data-abandon-confirm]').addEventListener('click', () => {
+      close();
+      applyAbandonPenalty(app, st);
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+    modal.addEventListener('click', e => {
+      if (e.target === modal) close();
+    });
   }
 
   // 난이도 모달에 [🏆 랭크전 | 🎮 일반전] 선택 UI 주입 및 각 난이도 카드에 미니 티어 표시
@@ -1082,7 +1323,18 @@
     return r;
   };
 
-  // openDifficultyModal, startNewGame, saveOngoingGame, restoreOngoingGame, updateModeDisplay 훅 연결
+  // openDifficultyModal, startNewGame, saveOngoingGame, restoreOngoingGame, updateModeDisplay, handleBackKey 훅 연결
+  const origBackKey = p.handleBackKey;
+  if (origBackKey) {
+    p.handleBackKey = function (...a) {
+      const m = document.getElementById('modal-abandon-confirm');
+      if (m) {
+        m.remove();
+        return 'handled';
+      }
+      return origBackKey.apply(this, a);
+    };
+  }
   const origOpenDiff = p.openDifficultyModal;
   if (origOpenDiff) {
     p.openDifficultyModal = function (...a) {
@@ -1104,7 +1356,12 @@
         this.isRanked = true;
       }
       const r = origStartNew.call(this, diff, customRng, mode, existingPuzzle, ...rest);
-      Promise.resolve(r).then(() => { try { this.updateHeaderRankBadge?.(); } catch (_) {} });
+      Promise.resolve(r).then(() => {
+        try {
+          if (!this.isDaily && !this.isBattle && this.gameMode !== 'battle') this.saveOngoingGame?.();
+          this.updateHeaderRankBadge?.();
+        } catch (_) {}
+      });
       try { this.updateHeaderRankBadge?.(); } catch (_) {}
       return r;
     };
@@ -1147,7 +1404,64 @@
     };
   }
 
-  const initQueueUI = () => { try { ensureQueueSelector(window.app); window.app?.updateHeaderRankBadge?.(); } catch (_) {} };
+  function bindAbandonGuards() {
+    const btnHomeNew = document.getElementById('btn-home-new');
+    if (btnHomeNew && !btnHomeNew._abandonBound) {
+      btnHomeNew._abandonBound = true;
+      btnHomeNew.addEventListener('click', e => {
+        const app = window.app;
+        const st = getAbandonableOngoingGame(app);
+        if (!st) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        try { app?.sound?.play('error'); } catch (_) {}
+        showAbandonWarningModal(app, st, () => {
+          app?.openDifficultyModal?.();
+        });
+      }, true);
+    }
+
+    const btnSettingsRestart = document.getElementById('btn-settings-restart');
+    if (btnSettingsRestart && !btnSettingsRestart._abandonBound) {
+      btnSettingsRestart._abandonBound = true;
+      btnSettingsRestart.addEventListener('click', e => {
+        const app = window.app;
+        const st = getAbandonableOngoingGame(app);
+        if (!st) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        try { app?.sound?.play('error'); } catch (_) {}
+        app?.dom?.modalSettings?.classList.add('hidden');
+        showAbandonWarningModal(app, st, () => {
+          app?.openDifficultyModal?.();
+        });
+      }, true);
+    }
+
+    const btnDiffStart = document.getElementById('btn-diff-start');
+    if (btnDiffStart && !btnDiffStart._abandonBound) {
+      btnDiffStart._abandonBound = true;
+      btnDiffStart.addEventListener('click', e => {
+        const app = window.app;
+        const st = getAbandonableOngoingGame(app);
+        if (!st) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        try { app?.sound?.play('error'); } catch (_) {}
+        showAbandonWarningModal(app, st, () => {
+          btnDiffStart.click();
+        });
+      }, true);
+    }
+  }
+
+  const initQueueUI = () => {
+    try {
+      ensureQueueSelector(window.app);
+      bindAbandonGuards();
+      window.app?.updateHeaderRankBadge?.();
+    } catch (_) {}
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initQueueUI); else initQueueUI();
 
   // 언어가 바뀌면 다시 그립니다.
@@ -1157,5 +1471,10 @@
     window.app?.updateHeaderRankBadge?.();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
-  window.SumdokuRating = { shownTier, seasonOf, seasonEnd, bestTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound, load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT, TIERS, KEY, DIFFS, MODES };
+  window.SumdokuRating = {
+    shownTier, seasonOf, seasonEnd, bestTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
+    load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT,
+    TIERS, KEY, DIFFS, MODES,
+    getAbandonableOngoingGame, previewAbandonPenalty, applyAbandonPenalty, showAbandonWarningModal
+  };
 })();

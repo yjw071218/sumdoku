@@ -15,12 +15,26 @@ public class CloudGames {
  public CloudGames(Activity a, WebView w) { activity=a; web=w; }
  private void emit(String status,String data) { activity.runOnUiThread(()->web.evaluateJavascript("window.onCloudResult&&window.onCloudResult("+JSONObject.quote(status)+","+JSONObject.quote(data)+")",null)); }
  private void fail() { busy=false; emit("error",""); }
+ // v1.1.30: 실패 원인 코드(ApiException 상태 코드)를 함께 전달해 내부 테스트에서 원인을 바로 알 수 있게 합니다.
+ //   10 = DEVELOPER_ERROR(OAuth 클라이언트 SHA-1 불일치·테스터 미등록) · 4 = SIGN_IN_REQUIRED · 7 = NETWORK_ERROR · 16 = CANCELED
+ private void fail(Exception e) {
+  busy=false;
+  int code=-1;
+  if(e instanceof com.google.android.gms.common.api.ApiException) code=((com.google.android.gms.common.api.ApiException)e).getStatusCode();
+  android.util.Log.w("SumdokuGames","Play Games failed code="+code,e);
+  emit("error",String.valueOf(code));
+ }
  private void auth(Runnable next) {
   if(!BuildConfig.GAMES_CONFIGURED) { emit("unconfigured",""); return; }
   if(busy) return; busy=true;
-  PlayGames.getGamesSignInClient(activity).signIn().addOnSuccessListener(r->{
-   if(r.isAuthenticated()) next.run(); else fail();
-  }).addOnFailureListener(e->fail());
+  com.google.android.gms.games.GamesSignInClient client=PlayGames.getGamesSignInClient(activity);
+  // 이미 자동 로그인된 경우 로그인 창 없이 바로 진행합니다.
+  client.isAuthenticated().addOnCompleteListener(t->{
+   if(t.isSuccessful() && t.getResult()!=null && t.getResult().isAuthenticated()) { next.run(); return; }
+   client.signIn().addOnSuccessListener(r->{
+    if(r.isAuthenticated()) next.run(); else { busy=false; emit("error","4"); }
+   }).addOnFailureListener(this::fail);
+  });
  }
  public void signIn() { activity.runOnUiThread(()->auth(()->{busy=false; emit("signed_in","");})); }
  public void save(String data) { activity.runOnUiThread(()->{

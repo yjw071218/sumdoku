@@ -28,14 +28,14 @@ if (gamesId && !(gamesId ==~ /[0-9]+/)) throw new GradleException('Invalid Games
 
 android {
     namespace 'io.github.yjw071218.sumdoku'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
-        targetSdk 35
-        versionCode 139
-        versionName '1.1.29'
+        targetSdk 36
+        versionCode 140
+        versionName '1.1.30'
     }
 
     buildFeatures {

@@ -81,6 +81,11 @@ public class Monetization implements PurchasesUpdatedListener {
     private boolean purchasing, connecting;
     private int ownedGeneration;
     private final java.util.List<Runnable> connectionWaiters = new java.util.ArrayList<>();
+    // v1.1.30: 상품 조회 진단 정보. 가격이 비어 있을 때 '가격 확인 중'에 멈추지 않고 원인을 화면에 표시합니다.
+    private int billingCode = -100;            // -100 = 아직 조회 전
+    private String billingDebug = "";
+    private String missingProducts = "";
+    private int productRetry = 0;
 
     public Monetization(Activity activity, WebView webView, FrameLayout bannerHost) {
         this.activity = activity;
@@ -142,7 +147,9 @@ public class Monetization implements PurchasesUpdatedListener {
     private AdSize adaptiveSize() {
         DisplayMetrics m = activity.getResources().getDisplayMetrics();
         int widthDp = (int) (m.widthPixels / m.density);
-        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, widthDp);
+        // v1.1.30: 화면 전체 폭 적응형 배너는 태블릿·가로 화면에서 90dp 이상으로 커져 탭 화면을 많이 가립니다.
+        //          폭을 320dp로 제한해 높이를 표준 배너(약 50dp) 수준으로 유지합니다.
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, Math.min(widthDp, 320));
     }
 
     private void removeBanner() {
@@ -250,13 +257,19 @@ public class Monetization implements PurchasesUpdatedListener {
                     connecting=false;
                     java.util.List<Runnable> waiting=new java.util.ArrayList<>(connectionWaiters);
                     connectionWaiters.clear();
-                    if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK) { purchasing=false; notifyPurchase("unavailable"); return; }
+                    if(result.getResponseCode()!=BillingClient.BillingResponseCode.OK) {
+                        purchasing=false; billingCode=result.getResponseCode(); billingDebug=result.getDebugMessage();
+                        notifyJs(); notifyPurchase("unavailable"); return;
+                    }
                     queryProduct(null);
                     if(waiting.isEmpty()) queryOwned(false);
                     else for(Runnable r:waiting) r.run();
                 });
             }
-            @Override public void onBillingServiceDisconnected() { }
+            @Override public void onBillingServiceDisconnected() {
+                // 연결이 끊기면 잠시 뒤 다시 연결합니다(내부 테스트 첫 실행 시 Play 스토어 서비스가 늦게 뜨는 경우 포함).
+                main.postDelayed(()->{ connecting=false; if(!activity.isFinishing()) connectBilling(null); }, 3000);
+            }
         });
     }
 
@@ -266,9 +279,20 @@ public class Monetization implements PurchasesUpdatedListener {
             list.add(QueryProductDetailsParams.Product.newBuilder().setProductId(id).setProductType(BillingClient.ProductType.INAPP).build());
         billing.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(list).build(),(result,details)->main.post(()->{
             products.clear();
-            if(result.getResponseCode()==BillingClient.BillingResponseCode.OK)
+            billingCode=result.getResponseCode();
+            billingDebug=result.getDebugMessage()==null?"":result.getDebugMessage();
+            java.util.List<String> missing=new java.util.ArrayList<>();
+            if(result.getResponseCode()==BillingClient.BillingResponseCode.OK) {
                 for(ProductDetails d:details.getProductDetailsList()) products.put(d.getProductId(),d);
+                for(String id:new String[]{AdEntitlement.BASIC,AdEntitlement.FULL,AdEntitlement.UPGRADE}) if(!products.containsKey(id)) missing.add(id);
+            }
+            missingProducts=String.join(",",missing);
+            android.util.Log.i("SumdokuBilling","products code="+billingCode+" found="+products.keySet()+" missing="+missingProducts+" debug="+billingDebug);
             notifyJs();
+            // 일시 오류면 몇 번 더 시도합니다.
+            boolean transient_=billingCode==BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE||billingCode==BillingClient.BillingResponseCode.NETWORK_ERROR||billingCode==BillingClient.BillingResponseCode.ERROR;
+            if(transient_ && productRetry<3 && after==null) { productRetry++; main.postDelayed(()->{ if(billing.isReady()) queryProduct(null); }, 4000L*productRetry); }
+            else if(billingCode==BillingClient.BillingResponseCode.OK) productRetry=0;
             if(after!=null) after.run();
         }));
     }
@@ -309,6 +333,7 @@ public class Monetization implements PurchasesUpdatedListener {
             state.put("tier",getAdTier()); state.put("basicPrice",price(AdEntitlement.BASIC));
             state.put("fullPrice",price(AdEntitlement.FULL)); state.put("upgradePrice",price(AdEntitlement.UPGRADE));
             state.put("privacy",isPrivacyOptionsRequired());
+            state.put("billingCode",billingCode); state.put("billingDebug",billingDebug); state.put("missing",missingProducts);
         }catch(org.json.JSONException ignored){}
         return state.toString();
     }
@@ -337,6 +362,8 @@ public class Monetization implements PurchasesUpdatedListener {
         });
     }
     public void restorePurchases() { main.post(()->connectBilling(()->queryOwned(true))); }
+    /** 가격 다시 불러오기(설정 화면의 '다시 시도'). */
+    public void refreshProducts() { main.post(()->{ productRetry=0; connectBilling(()->queryProduct(null)); }); }
     @Override public void onPurchasesUpdated(@NonNull BillingResult result,List<Purchase> purchases) {
         main.post(()->{
             purchasing=false;

@@ -7,6 +7,21 @@
   // ---------------- 번역(localize-ui.js 보다 먼저 등록) ----------------
   const T = window.UI_TRANSLATIONS = window.UI_TRANSLATIONS || {};
   const rows = {
+    '다시 시도': ['Retry','再試行','重试','重試','Reintentar','Réessayer','Erneut versuchen'],
+    '구매 불가': ['Unavailable','購入不可','无法购买','無法購買','No disponible','Indisponible','Nicht verfügbar'],
+    '🚫 광고 제거': ['🚫 Remove ads','🚫 広告を削除','🚫 移除广告','🚫 移除廣告','🚫 Quitar anuncios','🚫 Supprimer les pubs','🚫 Werbung entfernen'],
+    '한 번 구매하면 다시 결제할 필요 없이 같은 Google 계정의 모든 기기에서 유지됩니다.': ['A one-time purchase stays on every device with the same Google account.','一度購入すると同じGoogleアカウントのすべての端末で維持されます。','一次购买后，同一Google账号的所有设备均可保留。','一次購買後，同一Google帳號的所有裝置皆可保留。','Una compra única se mantiene en todos tus dispositivos con la misma cuenta de Google.','Un achat unique reste actif sur tous vos appareils avec le même compte Google.','Ein einmaliger Kauf gilt auf allen Geräten mit demselben Google-Konto.'],
+    '부분 제거는 배너·전면 광고만, 전체 제거는 보상형 광고(부활·힌트)까지 광고 없이 받습니다.': ['Basic removes banners and interstitials; Full also gives revives and hints without ads.','一部削除はバナー・全画面のみ、完全削除は復活・ヒントも広告なしで受け取れます。','部分移除仅去除横幅和插屏；全部移除还可免广告获得复活与提示。','部分移除僅去除橫幅與插頁；全部移除還可免廣告獲得復活與提示。','Básico quita banners e intersticiales; Total también da revivir y pistas sin anuncios.','Partielle retire bannières et interstitiels ; Totale donne aussi résurrections et indices sans pub.','Teilweise entfernt Banner und Interstitials; Vollständig gibt auch Wiederbelebungen und Hinweise ohne Werbung.'],
+    '상품 정보를 찾지 못했습니다. Play Console에서 인앱 상품을 활성화했는지 확인해 주세요.': ['Products not found. Check that in-app products are active in Play Console.','商品情報が見つかりません。Play Consoleでアプリ内商品が有効か確認してください。','未找到商品信息，请确认 Play 管理中心已启用应用内商品。','找不到商品資訊，請確認 Play 管理中心已啟用應用程式內商品。','No se encontraron productos. Verifica que estén activos en Play Console.','Produits introuvables. Vérifiez qu’ils sont actifs dans la Play Console.','Produkte nicht gefunden. Prüfe, ob sie in der Play Console aktiv sind.'],
+    '이 기기에서는 Play 결제를 사용할 수 없습니다. Play 스토어에서 설치했는지, 테스터 계정으로 로그인했는지 확인해 주세요.': ['Play Billing is unavailable on this device. Install from the Play Store and sign in with a tester account.','この端末ではPlay決済を利用できません。Playストアからのインストールとテスターアカウントを確認してください。','此设备无法使用 Play 结算。请确认从 Play 商店安装并使用测试账号登录。','此裝置無法使用 Play 帳款服務。請確認從 Play 商店安裝並以測試帳號登入。','Play Billing no está disponible. Instala desde Play Store con una cuenta de prueba.','Play Billing indisponible. Installez depuis le Play Store avec un compte testeur.','Play Billing nicht verfügbar. Aus dem Play Store installieren und mit Testkonto anmelden.'],
+    '결제 서비스에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.': ['Could not reach the billing service. Check your connection and retry.','決済サービスに接続できません。接続を確認して再試行してください。','无法连接结算服务，请检查网络后重试。','無法連線帳款服務，請檢查網路後重試。','No se pudo conectar con el servicio de pago. Revisa la conexión.','Service de paiement injoignable. Vérifiez la connexion.','Zahlungsdienst nicht erreichbar. Verbindung prüfen.'],
+    '📋 개인 정보 보호': ['📋 Privacy','📋 プライバシー','📋 隐私保护','📋 隱私保護','📋 Privacidad','📋 Confidentialité','📋 Datenschutz'],
+    '게임 기록·리플레이·설정은 기기에 저장되며, Google Play 게임즈 저장을 직접 실행한 경우에만 내 Google 계정에 백업됩니다.': ['Records, replays and settings stay on this device and are backed up to your Google account only when you use Play Games save.','記録・リプレイ・設定は端末に保存され、Playゲームズ保存を実行した場合のみGoogleアカウントにバックアップされます。','记录、回放和设置保存在设备上，仅在你使用 Play 游戏保存时备份到 Google 账号。','紀錄、重播和設定儲存在裝置上，僅在你使用 Play 遊戲儲存時備份到 Google 帳號。','Registros, repeticiones y ajustes quedan en el dispositivo; solo se respaldan en Google al usar el guardado de Play Juegos.','Les données restent sur l’appareil et ne sont sauvegardées sur Google que via Play Jeux.','Daten bleiben auf dem Gerät und werden nur per Play Spiele-Speicherung im Google-Konto gesichert.'],
+    '광고(Google AdMob)는 광고 표시와 빈도 제한을 위해 기기 식별자 등을 처리할 수 있으며, 동의 여부는 아래에서 언제든 바꿀 수 있습니다.': ['Ads (Google AdMob) may process device identifiers for serving and frequency capping. You can change consent below at any time.','広告（Google AdMob）は表示や頻度制限のため端末識別子などを処理する場合があります。同意は下でいつでも変更できます。','广告（Google AdMob）可能为投放与频次控制处理设备标识符，可随时在下方更改同意。','廣告（Google AdMob）可能為投放與頻次控制處理裝置識別碼，可隨時在下方變更同意。','Los anuncios (Google AdMob) pueden procesar identificadores del dispositivo. Puedes cambiar el consentimiento abajo.','Les pubs (Google AdMob) peuvent traiter des identifiants d’appareil. Vous pouvez modifier le consentement ci-dessous.','Werbung (Google AdMob) kann Gerätekennungen verarbeiten. Einwilligung unten jederzeit änderbar.'],
+    '결제는 Google Play가 처리하며 앱은 카드 정보를 받지 않습니다.': ['Payments are handled by Google Play; the app never receives card details.','決済はGoogle Playが処理し、アプリはカード情報を受け取りません。','付款由 Google Play 处理，应用不会获取卡片信息。','付款由 Google Play 處理，應用程式不會取得卡片資訊。','Los pagos los gestiona Google Play; la app no recibe datos de tarjeta.','Les paiements sont gérés par Google Play ; l’app ne reçoit aucune donnée de carte.','Zahlungen laufen über Google Play; die App erhält keine Kartendaten.'],
+    '👤 개인정보 판매 및 공유 거부': ['👤 Do not sell or share my info','👤 個人情報の販売・共有の拒否','👤 拒绝出售或共享个人信息','👤 拒絕出售或共享個人資訊','👤 No vender ni compartir mis datos','👤 Ne pas vendre ni partager','👤 Daten nicht verkaufen/teilen'],
+    '썸도쿠는 개인정보를 판매하지 않습니다.': ['Sumdoku does not sell personal information.','サムドクは個人情報を販売しません。','Sumdoku 不出售个人信息。','Sumdoku 不出售個人資訊。','Sumdoku no vende datos personales.','Sumdoku ne vend pas de données personnelles.','Sumdoku verkauft keine personenbezogenen Daten.'],
+    '맞춤 광고에 쓰이는 정보 공유를 원하지 않으면 아래에서 광고 동의를 변경해 주세요.': ['To opt out of sharing for personalized ads, change your ad consent below.','パーソナライズ広告への情報共有を望まない場合は、下で広告の同意を変更してください。','如不希望为个性化广告共享信息，请在下方更改广告同意。','如不希望為個人化廣告共享資訊，請在下方變更廣告同意。','Para no compartir datos para anuncios personalizados, cambia el consentimiento abajo.','Pour refuser le partage pour la pub personnalisée, modifiez le consentement ci-dessous.','Um die Weitergabe für personalisierte Werbung abzulehnen, ändere unten die Einwilligung.'],
 "부분 광고 제거": ["Basic ad removal","一部の広告を削除","部分广告移除","部分廣告移除","Eliminar anuncios básicos","Suppression partielle","Teilweise werbefrei"],
 "전체 광고 제거": ["Full ad removal","すべての広告を削除","移除全部广告","移除全部廣告","Eliminar todos los anuncios","Suppression totale","Vollständig werbefrei"],
 "출시 특가": ["Launch Special","記念特価","首发特惠","首發特惠","Oferta de lanzamiento","Offre de lancement","Einführungsangebot"],
@@ -100,44 +115,102 @@
     row.querySelector('button').textContent = button;
     return row;
   };
-  function render() {
-    const card = document.querySelector('#panel-settings .settings-list-card');
-    if (!card || !isPlay()) return;
+  // v1.1.30: 광고 제거·구매 복원은 [광고 제거] 탭으로, 개인정보 동의·처리방침은 [개인 정보] 탭으로 옮겼습니다.
+  //          (게임 설정 목록에는 더 이상 넣지 않습니다.) Play판에서는 '무광고 오픈소스' 안내 문구도 실제 내용으로 바꿉니다.
+  const tr = t => (window.I18N && typeof I18N.text === 'function') ? I18N.text(t) : t;
+  const infoCard = (title, lines) => {
+    const c = document.createElement('div'); c.className = 'info-card';
+    const h = document.createElement('h3'); h.textContent = tr(title); c.append(h);
+    lines.forEach(l => { const p = document.createElement('p'); p.textContent = tr(l); c.append(p); });
+    return c;
+  };
+  const listBox = (...rows) => { const box = document.createElement('div'); box.className = 'settings-list-card monetize-list'; box.append(...rows); return box; };
+  // 가격이 비어 있을 때의 원인 (BillingResponseCode)
+  function priceProblem() {
+    if (state.billingCode === undefined) return '';
+    const code = Number(state.billingCode);
+    if (code === -100) return '';
+    if (code === 0 && state.missing && !state.fullPrice && !state.basicPrice) return '상품 정보를 찾지 못했습니다. Play Console에서 인앱 상품을 활성화했는지 확인해 주세요.';
+    if (code === 3) return '이 기기에서는 Play 결제를 사용할 수 없습니다. Play 스토어에서 설치했는지, 테스터 계정으로 로그인했는지 확인해 주세요.';
+    if (code === 2 || code === 12 || code === -1 || code === 6) return '결제 서비스에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+    if (code !== 0) return '상품 정보를 불러오지 못했습니다 (코드 ' + code + ').';
+    return '';
+  }
+  function mountNoAds() {
     let group = document.getElementById('settings-monetization');
-    if (!group) {
-      group = document.createElement('div'); group.id = 'settings-monetization';
-      group.append(
-        item('setting-basic-ads', '부분 광고 제거', '배너·전면 광고 제거. 부활·힌트 보상은 광고 시청 후 받습니다.', '구매'),
-        item('setting-remove-ads', '전체 광고 제거', getFullAdDesc(), '구매', isLaunchSale() ? '출시 특가' : null),
-        item('setting-restore-purchase', '구매 복원', '다른 기기나 재설치 후 이전 구매를 다시 적용합니다', '복원'),
-        item('setting-privacy-options', '개인정보 및 광고 설정', '광고 개인정보 동의를 다시 선택합니다', '열기'),
-        item('setting-privacy-policy', '개인정보처리방침', '광고와 결제에서 처리하는 정보를 확인합니다', '보기'));
-      card.append(group);
-      group.querySelector('#setting-basic-ads button').addEventListener('click', () => bridge()?.purchaseAdProduct?.('remove_ads_basic'));
-      group.querySelector('#setting-remove-ads button').addEventListener('click', () => {
-        if(bridge()?.purchaseAdProduct) bridge().purchaseAdProduct(state.tier===1?'remove_ads_upgrade':'remove_ads');
-        else bridge()?.purchaseRemoveAds?.();
-      });
-      group.querySelector('#setting-restore-purchase button').addEventListener('click', () => { window.app?.sound?.play?.('click'); bridge()?.restorePurchases?.(); });
-      group.querySelector('#setting-privacy-options button').addEventListener('click', () => bridge()?.showPrivacyOptions?.());
-      group.querySelector('#setting-privacy-policy button').addEventListener('click', () => {
-        if (bridge()?.openExternalUrl) bridge().openExternalUrl(PRIVACY_URL); else window.open(PRIVACY_URL, '_blank');
-      });
+    if (group) return group;
+    const panel = document.getElementById('panel-noads');
+    if (!panel) return null;
+    panel.innerHTML = '';
+    panel.append(infoCard('🚫 광고 제거', ['한 번 구매하면 다시 결제할 필요 없이 같은 Google 계정의 모든 기기에서 유지됩니다.', '부분 제거는 배너·전면 광고만, 전체 제거는 보상형 광고(부활·힌트)까지 광고 없이 받습니다.']));
+    group = listBox(
+      item('setting-basic-ads', '부분 광고 제거', '배너·전면 광고 제거. 부활·힌트 보상은 광고 시청 후 받습니다.', '구매'),
+      item('setting-remove-ads', '전체 광고 제거', getFullAdDesc(), '구매', isLaunchSale() ? '출시 특가' : null),
+      item('setting-restore-purchase', '구매 복원', '다른 기기나 재설치 후 이전 구매를 다시 적용합니다', '복원'));
+    group.id = 'settings-monetization';
+    const note = document.createElement('p'); note.id = 'monetize-problem'; note.className = 'monetize-problem'; note.hidden = true;
+    const retry = document.createElement('button'); retry.type = 'button'; retry.id = 'monetize-retry'; retry.className = 'btn btn-secondary monetize-retry'; retry.hidden = true;
+    retry.addEventListener('click', () => { window.app?.sound?.play?.('click'); state.billingCode = -100; render(); bridge()?.refreshProducts?.(); });
+    panel.append(group, note, retry);
+    group.querySelector('#setting-basic-ads button').addEventListener('click', () => bridge()?.purchaseAdProduct?.('remove_ads_basic'));
+    group.querySelector('#setting-remove-ads button').addEventListener('click', () => {
+      if (bridge()?.purchaseAdProduct) bridge().purchaseAdProduct(state.tier === 1 ? 'remove_ads_upgrade' : 'remove_ads');
+      else bridge()?.purchaseRemoveAds?.();
+    });
+    group.querySelector('#setting-restore-purchase button').addEventListener('click', () => { window.app?.sound?.play?.('click'); bridge()?.restorePurchases?.(); });
+    return group;
+  }
+  function mountPrivacy() {
+    if (document.getElementById('settings-privacy-group')) return;
+    const panel = document.getElementById('panel-privacy');
+    if (!panel) return;
+    panel.innerHTML = '';
+    panel.append(infoCard('📋 개인 정보 보호', [
+      '게임 기록·리플레이·설정은 기기에 저장되며, Google Play 게임즈 저장을 직접 실행한 경우에만 내 Google 계정에 백업됩니다.',
+      '광고(Google AdMob)는 광고 표시와 빈도 제한을 위해 기기 식별자 등을 처리할 수 있으며, 동의 여부는 아래에서 언제든 바꿀 수 있습니다.',
+      '결제는 Google Play가 처리하며 앱은 카드 정보를 받지 않습니다.']));
+    const g = listBox(
+      item('setting-privacy-options', '개인정보 및 광고 설정', '광고 개인정보 동의를 다시 선택합니다', '열기'),
+      item('setting-privacy-policy', '개인정보처리방침', '광고와 결제에서 처리하는 정보를 확인합니다', '보기'));
+    g.id = 'settings-privacy-group';
+    panel.append(g);
+    g.querySelector('#setting-privacy-options button').addEventListener('click', () => bridge()?.showPrivacyOptions?.());
+    g.querySelector('#setting-privacy-policy button').addEventListener('click', () => {
+      if (bridge()?.openExternalUrl) bridge().openExternalUrl(PRIVACY_URL); else window.open(PRIVACY_URL, '_blank');
+    });
+    const opt = document.getElementById('panel-privacy-opt');
+    if (opt) {
+      opt.innerHTML = '';
+      opt.append(infoCard('👤 개인정보 판매 및 공유 거부', ['썸도쿠는 개인정보를 판매하지 않습니다.', '맞춤 광고에 쓰이는 정보 공유를 원하지 않으면 아래에서 광고 동의를 변경해 주세요.']));
+      const b = item('setting-privacy-optout', '개인정보 및 광고 설정', '광고 개인정보 동의를 다시 선택합니다', '열기');
+      b.querySelector('button').addEventListener('click', () => bridge()?.showPrivacyOptions?.());
+      opt.append(listBox(b));
     }
-    const tr = t => (window.I18N && typeof I18N.text === 'function') ? I18N.text(t) : t;
-    const basic=group.querySelector('#setting-basic-ads button'),buy=group.querySelector('#setting-remove-ads button');
-    const owned=state.tier>=1, full=state.tier===2, price=state.tier===1?state.upgradePrice:state.fullPrice;
-    basic.textContent=owned?tr('부분 제거 구매 완료'):state.basicPrice?tr('구매')+' ('+state.basicPrice+')':tr('가격 확인 중');
-    basic.disabled=owned||!state.basicPrice;
-    const label=state.tier===1?'전체 제거로 업그레이드':'구매';
-    buy.textContent=full?tr('전체 제거 구매 완료'):price?tr(label)+' ('+price+')':tr('가격 확인 중');
-    buy.disabled=full||!price;
+  }
+  function render() {
+    if (!isPlay()) return;
+    const group = mountNoAds();
+    mountPrivacy();
+    if (!group) return;
+    const basic = group.querySelector('#setting-basic-ads button'), buy = group.querySelector('#setting-remove-ads button');
+    const owned = state.tier >= 1, full = state.tier === 2, price = state.tier === 1 ? state.upgradePrice : state.fullPrice;
+    const problem = priceProblem();
+    const waiting = problem ? tr('구매 불가') : tr('가격 확인 중');
+    basic.textContent = owned ? tr('부분 제거 구매 완료') : state.basicPrice ? tr('구매') + ' (' + state.basicPrice + ')' : waiting;
+    basic.disabled = owned || !state.basicPrice;
+    const label = state.tier === 1 ? '전체 제거로 업그레이드' : '구매';
+    buy.textContent = full ? tr('전체 제거 구매 완료') : price ? tr(label) + ' (' + price + ')' : waiting;
+    buy.disabled = full || !price;
     const badge = group.querySelector('#setting-remove-ads .launch-badge');
     if (badge) badge.hidden = full || !isLaunchSale();
     const descEl = group.querySelector('#setting-remove-ads .s-desc');
     if (descEl) descEl.textContent = tr(getFullAdDesc());
-    group.querySelector('#setting-restore-purchase').hidden=false;
-    group.querySelector('#setting-privacy-options').hidden = !state.privacy;
+    const note = document.getElementById('monetize-problem'), retry = document.getElementById('monetize-retry');
+    const showProblem = !!problem && !full;
+    if (note) { note.hidden = !showProblem; note.textContent = showProblem ? tr(problem) : ''; }
+    if (retry) { retry.hidden = !showProblem; retry.textContent = tr('다시 시도'); }
+    const opt = document.getElementById('setting-privacy-options');
+    if (opt) opt.hidden = !state.privacy;
   }
   // 언어를 바꾸면 가격 버튼 문구를 다시 조합합니다.
   window.addEventListener('DOMContentLoaded', () => { const base = window.I18N?.setLanguage; if (base) I18N.setLanguage = function () { const r = base.apply(this, arguments); render(); return r; }; });
