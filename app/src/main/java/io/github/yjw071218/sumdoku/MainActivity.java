@@ -183,26 +183,20 @@ public class MainActivity extends Activity {
                 if (customDir.exists()) {
                     String path = request.getUrl().getPath();
                     if (path != null) {
-                        if (path.endsWith("index.html")) {
-                            File f = new File(customDir, "index.html");
-                            if (f.exists()) {
-                                try {
-                                    return new WebResourceResponse("text/html", "UTF-8", new FileInputStream(f));
-                                } catch (Exception ignored) {}
-                            }
-                        } else if (path.endsWith("style.css")) {
-                            File f = new File(customDir, "style.css");
-                            if (f.exists()) {
-                                try {
-                                    return new WebResourceResponse("text/css", "UTF-8", new FileInputStream(f));
-                                } catch (Exception ignored) {}
-                            }
-                        } else if (path.endsWith("app.js")) {
-                            File f = new File(customDir, "app.js");
-                            if (f.exists()) {
-                                try {
-                                    return new WebResourceResponse("application/javascript", "UTF-8", new FileInputStream(f));
-                                } catch (Exception ignored) {}
+                        int slash = path.lastIndexOf('/');
+                        String name = slash >= 0 ? path.substring(slash + 1) : path;
+                        if (!name.isEmpty() && !name.contains("..")) {
+                            File f = new File(customDir, name);
+                            if (f.isFile() && f.length() > 0) {
+                                String mime = name.endsWith(".html") ? "text/html"
+                                    : name.endsWith(".css") ? "text/css"
+                                    : name.endsWith(".js") ? "application/javascript"
+                                    : name.endsWith(".svg") ? "image/svg+xml" : null;
+                                if (mime != null) {
+                                    try {
+                                        return new WebResourceResponse(mime, "UTF-8", new FileInputStream(f));
+                                    } catch (Exception ignored) {}
+                                }
                             }
                         }
                     }
@@ -292,11 +286,8 @@ public class MainActivity extends Activity {
             deleteDir(customDir);
         }
 
-        if (hotVersion != null && customIndex.exists()) {
-            webView.loadUrl("file://" + customIndex.getAbsolutePath());
-        } else {
-            webView.loadUrl("file:///android_asset/index.html");
-        }
+        // 항상 android_asset/index.html을 기본 경로로 로드하고, www 폴더에 최신 파일이 있으면 shouldInterceptRequest에서 덮어씁니다.
+        webView.loadUrl("file:///android_asset/index.html");
     }
 
     private BattleServer battleServer;
@@ -610,13 +601,13 @@ public class MainActivity extends Activity {
                     if (baseUrl.isEmpty()) return;
 
                     byte[] indexBytes = downloadUrlBytes(baseUrl + "index.html");
-                    sendProgress(40, "HTML/구조 파일 업데이트 중...");
+                    sendProgress(25, "HTML/구조 파일 업데이트 중...");
 
                     byte[] cssBytes = downloadUrlBytes(baseUrl + "style.css");
-                    sendProgress(65, "스타일시트 업데이트 중...");
+                    sendProgress(45, "스타일시트 업데이트 중...");
 
                     byte[] jsBytes = downloadUrlBytes(baseUrl + "app.js");
-                    sendProgress(90, "게임 로직 및 알고리즘 업데이트 중...");
+                    sendProgress(65, "게임 로직 및 모듈 업데이트 중...");
 
                     if (indexBytes.length > 500 && cssBytes.length > 500 && jsBytes.length > 1000) {
                         File wwwDir = new File(getFilesDir(), "www");
@@ -625,6 +616,26 @@ public class MainActivity extends Activity {
                         writeFile(new File(wwwDir, "index.html"), indexBytes);
                         writeFile(new File(wwwDir, "style.css"), cssBytes);
                         writeFile(new File(wwwDir, "app.js"), jsBytes);
+
+                        // index.html에서 참조하는 추가 로컬 CSS/JS 모듈도 함께 다운로드
+                        String html = new String(indexBytes, java.nio.charset.StandardCharsets.UTF_8);
+                        java.util.regex.Matcher m = java.util.regex.Pattern
+                            .compile("(?:href|src)=\"([A-Za-z0-9_.-]+\\.(?:css|js))\"")
+                            .matcher(html);
+                        java.util.LinkedHashSet<String> extras = new java.util.LinkedHashSet<>();
+                        while (m.find()) {
+                            String fn = m.group(1);
+                            if (!"style.css".equals(fn) && !"app.js".equals(fn)) extras.add(fn);
+                        }
+                        int idx = 0, total = Math.max(1, extras.size());
+                        for (String fn : extras) {
+                            idx++;
+                            try {
+                                byte[] b = downloadUrlBytes(baseUrl + fn);
+                                if (b != null && b.length > 0) writeFile(new File(wwwDir, fn), b);
+                            } catch (Exception ignored) {}
+                            sendProgress(65 + (idx * 30 / total), "모듈 동기화 중 (" + idx + "/" + total + ")...");
+                        }
 
                         // 버전 저장
                         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
