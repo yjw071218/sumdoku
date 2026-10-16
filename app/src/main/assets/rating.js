@@ -62,91 +62,137 @@
   ];
   const ROMAN = ['IV', 'III', 'II', 'I'];
 
-  /* v1.1.26 · 배그 스타일 티어 엠블럼(SVG)
-   *   구성(뒤→앞): 광채·회전 광선(골드+) → 펼친 날개(모든 티어, 티어가 높을수록 크고 깃털 많음) → 월계수(플래티넘+)
-   *   → 불꽃 볏(마스터+) → 깎은 육각 메달(금속 베벨 3겹) → 상단 문양 → 중앙 각인 숫자(VI~I) → 반짝임
-   *   size: 픽셀 크기, division: 'VI'~'I'이면 메달 중앙에 크게 새깁니다(마스터·그랜드마스터는 문양만). */
+  /* v1.1.27 · 티어 엠블럼(SVG) — 티어마다 외형이 달라지고 장식이 단계적으로 커집니다.
+   *   브론즈   원형 동전 + 리벳 테두리 + 스도쿠 격자
+   *   실버     육각 철판 + 볼트 + 교차한 연필
+   *   골드     네 방향 가시 + 팔각 메달 + 연필·격자
+   *   플래티넘 톱니 링 + 양옆 칼날 + 조준선 메달
+   *   다이아몬드 8방향 칼날 별 + 월계수 + 보석 + 리본
+   *   마스터   햇살 가시 + 월계관 + 중간 날개 + 방패와 왕관
+   *   그랜드마스터 거대한 3겹 날개 + 교차한 홀 + 붉은 방패 + 큰 왕관
+   *   단계(IV~I)는 아래 가운데 명판에 새깁니다. size: 픽셀, division: 'IV'~'I' */
   const PAL = {
-    bronze: ['#ffe0bd', '#c8783a', '#5a230a'], silver: ['#ffffff', '#a7b4c6', '#2e3a4c'], gold: ['#fff6c2', '#eab308', '#6b3f00'],
-    platinum: ['#dcfff8', '#2dc2ad', '#0b4a44'], diamond: ['#e6f2ff', '#4f8ff7', '#0f2766'], master: ['#f6e6ff', '#a259ff', '#35086a'], grandmaster: ['#ffe4e4', '#f0303f', '#46050d']
+    bronze: ['#ffd9b0', '#b8682f', '#4a1d08'], silver: ['#ffffff', '#a3afbf', '#2b3544'], gold: ['#fff3b8', '#e2a91a', '#5e3700'],
+    platinum: ['#d6fff7', '#33b8a6', '#0a423d'], diamond: ['#e4f0ff', '#4f8ff7', '#0e2463'], master: ['#f6e6ff', '#a55cff', '#33086a'], grandmaster: ['#ffe2e2', '#e8293a', '#43040c']
   };
+  const METAL = { light: '#fff8e6', mid: '#d9b45a', dark: '#5e4310' }; // 공통 금 장식
   let symSeq = 0;
   function tierSymbol(id, size = 40, division = '') {
     const t = TIERS.find(x => x.id === id) || TIERS[0];
     const k = TIERS.indexOf(t), [lt, c, dk] = PAL[t.id], u = 'te' + (++symSeq), G = n => `url(#${u}${n})`;
+    const f1 = n => n.toFixed(1);
     const defs =
-      `<linearGradient id="${u}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".45" stop-color="${c}"/><stop offset=".5" stop-color="${dk}" stop-opacity=".55"/><stop offset=".56" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
-      `<linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${lt}"/><stop offset=".7" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
-      `<linearGradient id="${u}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
-      `<radialGradient id="${u}f" cx=".5" cy=".35" r=".75"><stop offset="0" stop-color="${c}"/><stop offset=".7" stop-color="${dk}"/><stop offset="1" stop-color="#000"/></radialGradient>` +
-      `<radialGradient id="${u}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${lt}" stop-opacity=".9"/><stop offset=".5" stop-color="${c}" stop-opacity=".4"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>` +
+      `<linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${lt}"/><stop offset=".6" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<linearGradient id="${u}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<linearGradient id="${u}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fb"/><stop offset=".5" stop-color="#9aa6b6"/><stop offset="1" stop-color="#3b4554"/></linearGradient>` +
+      `<linearGradient id="${u}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${METAL.light}"/><stop offset=".5" stop-color="${METAL.mid}"/><stop offset="1" stop-color="${METAL.dark}"/></linearGradient>` +
+      `<radialGradient id="${u}f" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="${c}"/><stop offset=".65" stop-color="${dk}"/><stop offset="1" stop-color="#05070b"/></radialGradient>` +
+      `<radialGradient id="${u}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${lt}" stop-opacity=".85"/><stop offset=".55" stop-color="${c}" stop-opacity=".35"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>` +
       `<radialGradient id="${u}c" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${lt}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
-    const star = (cx, cy, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); } return d + 'Z'; };
-    let back = '';
-    // 광채 + 광선
-    if (k >= 2) {
-      back += `<circle cx="50" cy="50" r="${40 + k}" fill="${G('g')}"/>`;
-      const n = k >= 4 ? 18 : 12, R = 44 + k;
-      let rays = '';
-      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2;
-        rays += `M50 50 L${(50 + Math.cos(a - .06) * R).toFixed(1)} ${(50 + Math.sin(a - .06) * R).toFixed(1)} L${(50 + Math.cos(a + .06) * R).toFixed(1)} ${(50 + Math.sin(a + .06) * R).toFixed(1)}Z`; }
-      back += `<path class="te-rays" d="${rays}" fill="${lt}" opacity=".4"/>`;
-    }
-    // 날개: 위로 휘어 펼쳐진 깃털, 메달 밖으로 확실히 보이게
-    {
-      const f = 3 + Math.min(k, 4), reach = 30 + k * 2.6;
-      let wing = '';
-      for (let i = 0; i < f; i++) {
-        const a = (-35 + i * (70 / (f - 1))) * Math.PI / 180, len = reach - Math.abs(i - (f - 1) / 2) * 2.2;
-        const ox = 30, ex = ox - Math.cos(a) * len * .62, ey = 52 + Math.sin(a) * len * .7, w = 3.6;
-        const nx = Math.sin(a) * w, ny = Math.cos(a) * w;
-        wing += `M${ox} ${52 + nx * .5} Q${((ox + ex) / 2 - nx).toFixed(1)} ${((52 + ey) / 2 - ny).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)} Q${((ox + ex) / 2 + nx).toFixed(1)} ${((52 + ey) / 2 + ny).toFixed(1)} ${ox} ${52 - nx * .5}Z`;
+    const CX = 50, CY = 45;
+    const poly = (n, r, rot = -90, cx = CX, cy = CY) => { let d = ''; for (let i = 0; i < n; i++) { const a = (rot + i * 360 / n) * Math.PI / 180; d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r); } return d + 'Z'; };
+    const starP = (n, ro, ri, rot = -90, cx = CX, cy = CY) => { let d = ''; for (let i = 0; i < n * 2; i++) { const a = (rot + i * 180 / n) * Math.PI / 180, r = i % 2 ? ri : ro; d += (i ? 'L' : 'M') + f1(cx + Math.cos(a) * r) + ' ' + f1(cy + Math.sin(a) * r); } return d + 'Z'; };
+    const circle = (r, fill, stroke, sw = 1.4) => `<circle cx="${CX}" cy="${CY}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    const rivets = (n, r, rr = 1.6, rot = -90) => { let s = ''; for (let i = 0; i < n; i++) { const a = (rot + i * 360 / n) * Math.PI / 180; s += `<circle cx="${f1(CX + Math.cos(a) * r)}" cy="${f1(CY + Math.sin(a) * r)}" r="${rr}" fill="${G('b')}" stroke="${dk}" stroke-width=".6"/>`; } return s; };
+    // 깃털 하나: 기점 (bx,by)에서 각도 a(도, 화면 기준), 길이 L, 폭 w
+    const feather = (bx, by, a, L, w) => {
+      const r = a * Math.PI / 180, dx = Math.cos(r), dy = Math.sin(r), nx = -dy, ny = dx;
+      const tx = bx + dx * L, ty = by + dy * L, mx = bx + dx * L * .55, my = by + dy * L * .55;
+      return `M${f1(bx + nx * w * .5)} ${f1(by + ny * w * .5)} Q${f1(mx + nx * w)} ${f1(my + ny * w)} ${f1(tx)} ${f1(ty)} Q${f1(mx - nx * w * .35)} ${f1(my - ny * w * .35)} ${f1(bx - nx * w * .5)} ${f1(by - ny * w * .5)}Z`;
+    };
+    // 날개: 3겹(긴 칼깃 → 중간깃 → 덮깃). scale 1이면 그랜드마스터 크기
+    const wings = (scale, fill) => {
+      const bx = CX - 10, by = CY + 4;
+      let p1 = '', p2 = '', p3 = '';
+      const n1 = 8; for (let i = 0; i < n1; i++) { const a = 200 - i * 12; p1 += feather(bx, by, a, (44 - Math.abs(i - 2.5) * 2.6) * scale, 12 * scale); }
+      const n2 = 7; for (let i = 0; i < n2; i++) { const a = 202 - i * 13; p2 += feather(bx + 2, by - 1, a, (30 - Math.abs(i - 2.5) * 1.8) * scale, 11 * scale); }
+      const n3 = 6; for (let i = 0; i < n3; i++) { const a = 205 - i * 16; p3 += feather(bx + 4, by - 2, a, 17 * scale, 10 * scale); }
+      const one = `<path d="${p1}" fill="${fill}" stroke="${dk}" stroke-width=".9" stroke-linejoin="round"/>` +
+        `<path d="${p2}" fill="${G('b')}" stroke="${dk}" stroke-width=".8" stroke-linejoin="round"/>` +
+        `<path d="${p3}" fill="${G('c')}" stroke="${dk}" stroke-width=".7" stroke-linejoin="round"/>`;
+      return `<g class="te-wing">${one}</g><g class="te-wing" transform="translate(100 0) scale(-1 1)">${one}</g>`;
+    };
+    const laurel = (r, from, to, n, fill) => {
+      let s = '';
+      for (let i = 0; i < n; i++) {
+        const a = (from + (to - from) * i / (n - 1)) * Math.PI / 180, x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r;
+        const deg = (a * 180 / Math.PI) + 90;
+        s += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="2.2" ry="5" transform="rotate(${f1(deg - 35)} ${f1(x)} ${f1(y)})"/>`;
       }
-      const wingEl = `<path d="${wing}" fill="${G('b')}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>`;
-      back += `<g>${wingEl}</g><g transform="translate(100 0) scale(-1 1)">${wingEl}</g>`;
+      const g = `<g fill="${fill}" stroke="${dk}" stroke-width=".6">${s}</g>`;
+      return g + `<g transform="translate(100 0) scale(-1 1)">${g}</g>`;
+    };
+    // 문양들
+    const grid = (s = 1, cy = CY) => { let q = ''; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) q += `<rect x="${f1(CX - 9 * s + j * 6 * s)}" y="${f1(cy - 9 * s + i * 6 * s)}" width="${f1(5 * s)}" height="${f1(5 * s)}" rx="${f1(.8 * s)}"/>`;
+      return `<g fill="${G('c')}" stroke="${dk}" stroke-width=".6">${q}</g>`; };
+    const pencil = (deg, len = 34, w = 5) => `<g transform="rotate(${deg} ${CX} ${CY})"><rect x="${CX - w / 2}" y="${CY - len / 2}" width="${w}" height="${len - 7}" rx="1" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/>` +
+      `<rect x="${CX - w / 2}" y="${CY - len / 2}" width="${w}" height="3" fill="#b9c2cc" stroke="${METAL.dark}" stroke-width=".5"/>` +
+      `<path d="M${CX - w / 2} ${CY + len / 2 - 7} L${CX} ${CY + len / 2} L${CX + w / 2} ${CY + len / 2 - 7}Z" fill="#f2d7b0" stroke="${METAL.dark}" stroke-width=".6"/><path d="M${CX - 1} ${CY + len / 2 - 2} L${CX} ${CY + len / 2} L${CX + 1} ${CY + len / 2 - 2}Z" fill="#333"/></g>`;
+    const pencils = (len, w) => pencil(-38, len, w) + pencil(38, len, w);
+    const gem = (cy, s) => `<g transform="translate(${CX} ${cy}) scale(${s})"><path d="M-9 -2 L-5 -7 H5 L9 -2 L0 9 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/><path d="M-9 -2 H9 M-5 -7 L-2 -2 L0 9 L2 -2 L5 -7" fill="none" stroke="#fff" stroke-width=".7" opacity=".85"/></g>`;
+    const crown = (cy, s, fill) => `<g transform="translate(${CX} ${cy}) scale(${s})"><path d="M-12 7 L-13 -5 L-6 1 L0 -9 L6 1 L13 -5 L12 7 Z" fill="${fill}" stroke="${METAL.dark}" stroke-width="1.1" stroke-linejoin="round"/>` +
+      `<rect x="-12.5" y="6" width="25" height="4" rx="1" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/>` +
+      `<circle cx="0" cy="-9" r="1.8" fill="#fff"/><circle cx="-13" cy="-5" r="1.4" fill="#fff"/><circle cx="13" cy="-5" r="1.4" fill="#fff"/><circle cx="0" cy="2" r="2" fill="${c}" stroke="#fff" stroke-width=".6"/></g>`;
+    const crosshair = r => `<g fill="none" stroke="${lt}" stroke-width="1.2"><circle cx="${CX}" cy="${CY}" r="${r}"/><circle cx="${CX}" cy="${CY}" r="${r * .55}"/><path d="M${CX - r - 3} ${CY} H${CX - r * .3} M${CX + r * .3} ${CY} H${CX + r + 3} M${CX} ${CY - r - 3} V${CY - r * .3} M${CX} ${CY + r * .3} V${CY + r + 3}"/></g>`;
+    const heater = (w, h, top, fill) => `<path d="M${CX - w} ${top} H${CX + w} V${top + h * .45} C${CX + w} ${top + h * .8} ${CX + w * .4} ${top + h * .95} ${CX} ${top + h} C${CX - w * .4} ${top + h * .95} ${CX - w} ${top + h * .8} ${CX - w} ${top + h * .45} Z" fill="${fill}" stroke="${METAL.dark}" stroke-width="1.6"/>` +
+      `<path d="M${CX - w + 3} ${top + 3} H${CX + w - 3} V${top + h * .45} C${CX + w - 3} ${top + h * .76} ${CX + w * .35} ${top + h * .9} ${CX} ${top + h - 3.5} C${CX - w * .35} ${top + h * .9} ${CX - w + 3} ${top + h * .76} ${CX - w + 3} ${top + h * .45} Z" fill="none" stroke="${METAL.light}" stroke-width=".8" opacity=".8"/>`;
+    const glow = r => `<circle cx="${CX}" cy="${CY}" r="${r}" fill="${G('g')}"/>`;
+    const rays = (n, R, cls = 'te-rays') => { let d = ''; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; d += `M${CX} ${CY} L${f1(CX + Math.cos(a - .05) * R)} ${f1(CY + Math.sin(a - .05) * R)} L${f1(CX + Math.cos(a + .05) * R)} ${f1(CY + Math.sin(a + .05) * R)}Z`; } return `<path class="${cls}" d="${d}" fill="${lt}" opacity=".35"/>`; };
+    const shine = (r) => `<path d="M${CX - r * .7} ${CY - r * .35} A${r} ${r} 0 0 1 ${CX + r * .7} ${CY - r * .35} A${r * 1.4} ${r * 1.4} 0 0 0 ${CX - r * .7} ${CY - r * .35}Z" fill="#fff" opacity=".3"/>`;
+
+    let art = '';
+    switch (t.id) {
+      case 'bronze':
+        art = circle(29, G('b'), dk, 2) + circle(25, G('r'), dk, 1) + rivets(16, 27.2, 1.3) + circle(20.5, G('f'), dk, 1.2) + grid(1.15, CY - 2) + shine(20);
+        break;
+      case 'silver':
+        art = `<path d="${poly(6, 32, -90)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/><path d="${poly(6, 27.5, -90)}" fill="${G('r')}" stroke="${lt}" stroke-width="1"/>` +
+          rivets(6, 29.7, 1.8) + `<path d="${poly(6, 22, -90)}" fill="${G('f')}" stroke="${dk}" stroke-width="1.2"/>` + pencils(34, 5) + shine(22);
+        break;
+      case 'gold':
+        art = glow(44) + `<path d="${starP(4, 46, 16, -90)}" fill="${G('b')}" stroke="${dk}" stroke-width="1.4"/>` +
+          `<path d="${starP(4, 38, 16, -45)}" fill="${G('r')}" stroke="${dk}" stroke-width="1"/>` +
+          `<path d="${poly(8, 29, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/><path d="${poly(8, 23, -67.5)}" fill="${G('f')}" stroke="${lt}" stroke-width="1"/>` +
+          rivets(8, 26, 1.4, -67.5) + grid(.75, CY - 4) + pencils(36, 4.5) + shine(23);
+        break;
+      case 'platinum':
+        art = glow(46) + rays(12, 46) +
+          `<path d="M${CX - 44} ${CY} L${CX - 26} ${CY - 6} L${CX - 26} ${CY + 6}Z M${CX + 44} ${CY} L${CX + 26} ${CY - 6} L${CX + 26} ${CY + 6}Z M${CX} ${CY - 46} L${CX - 6} ${CY - 28} L${CX + 6} ${CY - 28}Z" fill="${G('s')}" stroke="#2b3544" stroke-width="1"/>` +
+          `<path d="${starP(16, 34, 29)}" fill="${G('b')}" stroke="${dk}" stroke-width="1.6"/>` + circle(27, G('r'), dk, 1) + rivets(16, 30.8, 1.1) +
+          circle(22.5, G('f'), lt, 1.2) + crosshair(15) + pencils(38, 4.5) + shine(22);
+        break;
+      case 'diamond':
+        art = glow(48) + rays(16, 48) +
+          `<path d="${starP(8, 46, 12, -90)}" fill="${G('s')}" stroke="#2b3544" stroke-width="1"/>` +
+          `<path d="${starP(8, 36, 12, -67.5)}" fill="${G('b')}" stroke="${dk}" stroke-width="1"/>` +
+          laurel(33, 100, 200, 8, G('a')) +
+          circle(25, G('a'), METAL.dark, 1.8) + circle(21, G('f'), lt, 1.2) + rivets(12, 23, 1) + gem(CY - 2, 1.5) + shine(21);
+        break;
+      case 'master':
+        art = glow(50) + rays(20, 50) +
+          `<path d="${starP(16, 47, 30)}" fill="${G('a')}" stroke="${METAL.dark}" stroke-width="1" opacity=".95"/>` +
+          wings(.85, G('r')) + laurel(28, 110, 200, 7, '#6bbf59') +
+          heater(17, 36, CY - 16, G('b')) + `<path d="M${CX - 13} ${CY - 12} H${CX + 13} V${CY + 2} C${CX + 13} ${CY + 10} ${CX + 6} ${CY + 15} ${CX} ${CY + 17} C${CX - 6} ${CY + 15} ${CX - 13} ${CY + 10} ${CX - 13} ${CY + 2}Z" fill="${G('f')}"/>` +
+          grid(.7, CY + 1) + crown(CY - 22, 1, G('a'));
+        break;
+      case 'grandmaster':
+        art = glow(46) + rays(20, 50) +
+          `<g transform="rotate(-35 ${CX} ${CY})"><rect x="${CX - 1.8}" y="${CY - 40}" width="3.6" height="78" rx="1.5" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/><circle cx="${CX}" cy="${CY - 41}" r="3.5" fill="${G('c')}" stroke="${METAL.dark}" stroke-width=".7"/></g>` +
+          `<g transform="rotate(35 ${CX} ${CY})"><rect x="${CX - 1.8}" y="${CY - 40}" width="3.6" height="78" rx="1.5" fill="${G('a')}" stroke="${METAL.dark}" stroke-width=".7"/><circle cx="${CX}" cy="${CY - 41}" r="3.5" fill="${G('c')}" stroke="${METAL.dark}" stroke-width=".7"/></g>` +
+          wings(1.05, `url(#${u}s)`) +
+          heater(18, 40, CY - 15, G('a')) + `<path d="M${CX - 14} ${CY - 11} H${CX + 14} V${CY + 4} C${CX + 14} ${CY + 13} ${CX + 6} ${CY + 18} ${CX} ${CY + 21} C${CX - 6} ${CY + 18} ${CX - 14} ${CY + 13} ${CX - 14} ${CY + 4}Z" fill="${G('r')}" stroke="${dk}" stroke-width=".8"/>` +
+          grid(.72, CY + 3) + crown(CY - 23, 1.35, G('r'));
+        break;
     }
-    // 월계수 (플래티넘+)
-    if (k >= 3) {
-      let leaves = '';
-      for (let i = 0; i < 6; i++) { const a = (200 - i * 22) * Math.PI / 180, x = 50 + Math.cos(a) * 33, y = 54 - Math.sin(a) * 33;
-        leaves += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="4.2" ry="1.8" transform="rotate(${(i * 22 - 110).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }
-      const L = `<g fill="${G('b')}" stroke="${dk}" stroke-width=".6">${leaves}</g>`;
-      back += L + `<g transform="translate(100 0) scale(-1 1)">${L}</g>`;
-    }
-    // 불꽃 볏 (마스터+)
-    if (k >= 5) back += `<path class="te-flame" d="M50 1 C54 9 60 8 59 17 C64 12 68 17 66 24 C62 20 57 22 55 18 C53 22 47 22 45 18 C43 22 38 20 34 24 C32 17 36 12 41 17 C40 8 46 9 50 1Z" fill="${G('r')}" stroke="${dk}" stroke-width="1"/>`;
-    // 깎은 육각 메달: 바깥 테 → 베벨 → 안쪽 판
-    const hex = (r, cy = 52) => { let d = ''; for (let i = 0; i < 6; i++) { const a = (-90 + i * 60) * Math.PI / 180; d += (i ? 'L' : 'M') + (50 + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r * 1.06).toFixed(1); } return d + 'Z'; };
-    let body = `<path d="${hex(29)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/>` +
-      `<path d="${hex(25.5)}" fill="${G('m')}" stroke="${lt}" stroke-width="1"/>` +
-      `<path d="${hex(21)}" fill="${G('f')}" stroke="${dk}" stroke-width="1.4"/>` +
-      `<path d="${hex(21)}" fill="none" stroke="${lt}" stroke-width=".6" opacity=".6" transform="translate(0 .8)"/>`;
-    // 테 위 장식 점
-    for (let i = 0; i < 6; i++) { const a = (-90 + i * 60) * Math.PI / 180;
-      body += `<circle cx="${(50 + Math.cos(a) * 27.3).toFixed(1)}" cy="${(52 + Math.sin(a) * 28.9).toFixed(1)}" r="1.5" fill="#fff" stroke="${dk}" stroke-width=".6"/>`; }
-    // 상단 문양(작게) — 숫자가 주인공
-    const crown = (y, s = 1) => `<g transform="translate(50 ${y}) scale(${s})"><path d="M-12 7 L-11 -4 L-5.5 1.5 L0 -7 L5.5 1.5 L11 -4 L12 7 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="0" cy="2.5" r="1.8" fill="${c}" stroke="#fff" stroke-width=".6"/></g>`;
-    const gem = (y, s = 1) => `<g transform="translate(50 ${y}) scale(${s})"><path d="M-9 -2 L-5 -7 H5 L9 -2 L0 9 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/><path d="M-9 -2 H9 M-5 -7 L-2 -2 L0 9 L2 -2 L5 -7" fill="none" stroke="#fff" stroke-width=".7" opacity=".8"/></g>`;
-    const chev = (n, dy = 0) => Array.from({ length: n }, (_, i) => `M41 ${39 + dy + i * 5.5} L50 ${45 + dy + i * 5.5} L59 ${39 + dy + i * 5.5}`).join(' ');
-    const top = {
-      bronze: `<path d="${chev(1, division ? 0 : 7)}" fill="none" stroke="${G('c')}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
-      silver: `<path d="${chev(2, division ? 0 : 6)}" fill="none" stroke="${G('c')}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
-      gold: `<path d="${star(50, division ? 43 : 52, division ? 9 : 11)}" fill="${G('c')}" stroke="${dk}" stroke-width="1"/>`,
-      platinum: `<path d="${star(43, division ? 43 : 51, 6)} ${star(57, division ? 43 : 51, 6)}" fill="${G('c')}" stroke="${dk}" stroke-width=".9"/>`,
-      diamond: gem(division ? 43 : 51, division ? 1.05 : 1.3),
-      master: crown(44, 1.25) + `<path d="${star(50, 63, 4.5)}" fill="#fff" stroke="${dk}" stroke-width=".6"/>`,
-      grandmaster: crown(45, 1.3) + `<path d="${star(41, 63, 3.6)} ${star(50, 65, 4.6)} ${star(59, 63, 3.6)}" fill="#fff" stroke="${dk}" stroke-width=".6"/>`
-    }[t.id];
-    // 중앙 각인 숫자: 그림자 → 금속 → 하이라이트
-    const num = division ? (() => {
-      const fs = division.length >= 3 ? 11 : division.length === 2 ? 12.5 : 14;
-      const at = `x="50" y="${67 + fs * .35}" text-anchor="middle" font-size="${fs}" font-weight="900" font-family="Georgia,'Times New Roman',serif" letter-spacing="-.5"`;
-      return `<text ${at} fill="#000" opacity=".55" transform="translate(0 1.4)">${division}</text>` +
-        `<text ${at} fill="${G('c')}" stroke="${dk}" stroke-width=".9" paint-order="stroke">${division}</text>`;
+    // 단계 명판: 아래 가운데
+    const plate = division ? (() => {
+      const w = 13, y = 80, h = 13;
+      const fs = division.length >= 3 ? 9.5 : division.length === 2 ? 10.5 : 11.5;
+      return `<path d="M${CX - w - 4} ${y} H${CX + w + 4} L${CX + w} ${y + h / 2} L${CX + w + 4} ${y + h} H${CX - w - 4} L${CX - w} ${y + h / 2} Z" fill="${G('f')}" stroke="${G('a')}" stroke-width="1.6" stroke-linejoin="round"/>` +
+        `<text x="${CX}" y="${y + h / 2 + fs * .36}" text-anchor="middle" font-size="${fs}" font-weight="900" font-family="Georgia,'Times New Roman',serif" fill="${G('c')}" stroke="${dk}" stroke-width=".5" paint-order="stroke">${division}</text>`;
     })() : '';
-    const shine = `<path d="M33 37 L50 27 L67 37 L64 39 L50 31 L36 39Z" fill="#fff" opacity=".28"/>`;
-    const spark = k >= 2 ? `<path class="te-spark" d="M70 26 L71.6 30.4 L76 32 L71.6 33.6 L70 38 L68.4 33.6 L64 32 L68.4 30.4Z" fill="#fff"/>` : '';
-    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs>${back}<g class="te-body">${body}${top}${num}${shine}</g>${spark}</svg>`;
+    const spark = k >= 2 ? `<path class="te-spark" d="M72 18 L73.6 22.4 L78 24 L73.6 25.6 L72 30 L70.4 25.6 L66 24 L70.4 22.4Z" fill="#fff"/>` : '';
+    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs><g class="te-body">${art}</g>${plate}${spark}</svg>`;
   }
 
   /* v1.1.26 · 승급 연출: 큰 티어 승급은 상승음 + 금관 팡파르 + 종소리와 전체 화면 연출,
