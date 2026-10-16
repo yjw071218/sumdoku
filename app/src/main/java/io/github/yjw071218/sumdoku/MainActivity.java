@@ -436,6 +436,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean isLeaderboardConfigured(String key) { return leaderboards != null && leaderboards.isConfigured(key); }
         @JavascriptInterface public void submitLeaderboardScore(String key, String score) { try { if (leaderboards != null) leaderboards.submit(key, Long.parseLong(score)); } catch (NumberFormatException ignored) {} }
         @JavascriptInterface public void showLeaderboard(String key) { if (leaderboards != null) leaderboards.show(key); }
+        @JavascriptInterface public void loadLeaderboardRanks(String key, int max, boolean interactive) { if (leaderboards != null) leaderboards.load(key, max, interactive); }
 
         // ---------------- 배포판 · 광고 · 광고 제거 구매 ----------------
         @JavascriptInterface public String getDistribution() { return BuildConfig.DISTRIBUTION; }

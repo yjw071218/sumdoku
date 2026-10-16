@@ -28,7 +28,7 @@
  * 난이도 배율(v1.1.25): 난이도가 높을수록 RP 변화 폭(얻는 RP·잃는 RP 모두)이 커집니다.
  *   초급 ×1 · 중급 ×1.25 · 고급 ×1.5 · 전문가 ×2 · 루나틱 ×2.5   (타임어택 점수 기반 RP도 같은 배율)
  *
- * 티어: 브론즈 0 · 실버 800 · 골드 1200 · 플래티넘 1600 · 다이아몬드 2000 · 마스터 2400 · 그랜드마스터 2800
+ * 티어: 브론즈 0~999 · 실버 1000 · 골드 1200 · 플래티넘 1600 · 다이아몬드 2000 · 마스터 2400 · 그랜드마스터 2800
  */
 (() => {
   if (typeof SumdokuApp === 'undefined') return;
@@ -53,7 +53,7 @@
   const OLD_CAP = { easy: 1200, medium: 1700, hard: 2200, expert: 2700, lunatic: 3200 }; // 이전 버전 기록 이전용
   const TIERS = [
     { id: 'bronze', ko: '브론즈', min: 0, color: '#b45309' },
-    { id: 'silver', ko: '실버', min: 800, color: '#64748b' },
+    { id: 'silver', ko: '실버', min: 1000, color: '#64748b' },
     { id: 'gold', ko: '골드', min: 1200, color: '#ca8a04' },
     { id: 'platinum', ko: '플래티넘', min: 1600, color: '#0d9488' },
     { id: 'diamond', ko: '다이아몬드', min: 2000, color: '#2563eb' },
@@ -61,6 +61,139 @@
     { id: 'grandmaster', ko: '그랜드마스터', min: 2800, color: '#dc2626' }
   ];
   const ROMAN = ['IV', 'III', 'II', 'I'];
+
+  /* v1.1.26 · 배그 스타일 티어 엠블럼(SVG)
+   *   구성(뒤→앞): 광채·회전 광선(골드+) → 펼친 날개(모든 티어, 티어가 높을수록 크고 깃털 많음) → 월계수(플래티넘+)
+   *   → 불꽃 볏(마스터+) → 깎은 육각 메달(금속 베벨 3겹) → 상단 문양 → 중앙 각인 숫자(VI~I) → 반짝임
+   *   size: 픽셀 크기, division: 'VI'~'I'이면 메달 중앙에 크게 새깁니다(마스터·그랜드마스터는 문양만). */
+  const PAL = {
+    bronze: ['#ffe0bd', '#c8783a', '#5a230a'], silver: ['#ffffff', '#a7b4c6', '#2e3a4c'], gold: ['#fff6c2', '#eab308', '#6b3f00'],
+    platinum: ['#dcfff8', '#2dc2ad', '#0b4a44'], diamond: ['#e6f2ff', '#4f8ff7', '#0f2766'], master: ['#f6e6ff', '#a259ff', '#35086a'], grandmaster: ['#ffe4e4', '#f0303f', '#46050d']
+  };
+  let symSeq = 0;
+  function tierSymbol(id, size = 40, division = '') {
+    const t = TIERS.find(x => x.id === id) || TIERS[0];
+    const k = TIERS.indexOf(t), [lt, c, dk] = PAL[t.id], u = 'te' + (++symSeq), G = n => `url(#${u}${n})`;
+    const defs =
+      `<linearGradient id="${u}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".45" stop-color="${c}"/><stop offset=".5" stop-color="${dk}" stop-opacity=".55"/><stop offset=".56" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${lt}"/><stop offset=".7" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<linearGradient id="${u}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<radialGradient id="${u}f" cx=".5" cy=".35" r=".75"><stop offset="0" stop-color="${c}"/><stop offset=".7" stop-color="${dk}"/><stop offset="1" stop-color="#000"/></radialGradient>` +
+      `<radialGradient id="${u}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${lt}" stop-opacity=".9"/><stop offset=".5" stop-color="${c}" stop-opacity=".4"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>` +
+      `<radialGradient id="${u}c" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${lt}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
+    const star = (cx, cy, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); } return d + 'Z'; };
+    let back = '';
+    // 광채 + 광선
+    if (k >= 2) {
+      back += `<circle cx="50" cy="50" r="${40 + k}" fill="${G('g')}"/>`;
+      const n = k >= 4 ? 18 : 12, R = 44 + k;
+      let rays = '';
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2;
+        rays += `M50 50 L${(50 + Math.cos(a - .06) * R).toFixed(1)} ${(50 + Math.sin(a - .06) * R).toFixed(1)} L${(50 + Math.cos(a + .06) * R).toFixed(1)} ${(50 + Math.sin(a + .06) * R).toFixed(1)}Z`; }
+      back += `<path class="te-rays" d="${rays}" fill="${lt}" opacity=".4"/>`;
+    }
+    // 날개: 위로 휘어 펼쳐진 깃털, 메달 밖으로 확실히 보이게
+    {
+      const f = 3 + Math.min(k, 4), reach = 30 + k * 2.6;
+      let wing = '';
+      for (let i = 0; i < f; i++) {
+        const a = (-35 + i * (70 / (f - 1))) * Math.PI / 180, len = reach - Math.abs(i - (f - 1) / 2) * 2.2;
+        const ox = 30, ex = ox - Math.cos(a) * len * .62, ey = 52 + Math.sin(a) * len * .7, w = 3.6;
+        const nx = Math.sin(a) * w, ny = Math.cos(a) * w;
+        wing += `M${ox} ${52 + nx * .5} Q${((ox + ex) / 2 - nx).toFixed(1)} ${((52 + ey) / 2 - ny).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)} Q${((ox + ex) / 2 + nx).toFixed(1)} ${((52 + ey) / 2 + ny).toFixed(1)} ${ox} ${52 - nx * .5}Z`;
+      }
+      const wingEl = `<path d="${wing}" fill="${G('b')}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/>`;
+      back += `<g>${wingEl}</g><g transform="translate(100 0) scale(-1 1)">${wingEl}</g>`;
+    }
+    // 월계수 (플래티넘+)
+    if (k >= 3) {
+      let leaves = '';
+      for (let i = 0; i < 6; i++) { const a = (200 - i * 22) * Math.PI / 180, x = 50 + Math.cos(a) * 33, y = 54 - Math.sin(a) * 33;
+        leaves += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="4.2" ry="1.8" transform="rotate(${(i * 22 - 110).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }
+      const L = `<g fill="${G('b')}" stroke="${dk}" stroke-width=".6">${leaves}</g>`;
+      back += L + `<g transform="translate(100 0) scale(-1 1)">${L}</g>`;
+    }
+    // 불꽃 볏 (마스터+)
+    if (k >= 5) back += `<path class="te-flame" d="M50 1 C54 9 60 8 59 17 C64 12 68 17 66 24 C62 20 57 22 55 18 C53 22 47 22 45 18 C43 22 38 20 34 24 C32 17 36 12 41 17 C40 8 46 9 50 1Z" fill="${G('r')}" stroke="${dk}" stroke-width="1"/>`;
+    // 깎은 육각 메달: 바깥 테 → 베벨 → 안쪽 판
+    const hex = (r, cy = 52) => { let d = ''; for (let i = 0; i < 6; i++) { const a = (-90 + i * 60) * Math.PI / 180; d += (i ? 'L' : 'M') + (50 + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r * 1.06).toFixed(1); } return d + 'Z'; };
+    let body = `<path d="${hex(29)}" fill="${G('b')}" stroke="${dk}" stroke-width="2"/>` +
+      `<path d="${hex(25.5)}" fill="${G('m')}" stroke="${lt}" stroke-width="1"/>` +
+      `<path d="${hex(21)}" fill="${G('f')}" stroke="${dk}" stroke-width="1.4"/>` +
+      `<path d="${hex(21)}" fill="none" stroke="${lt}" stroke-width=".6" opacity=".6" transform="translate(0 .8)"/>`;
+    // 테 위 장식 점
+    for (let i = 0; i < 6; i++) { const a = (-90 + i * 60) * Math.PI / 180;
+      body += `<circle cx="${(50 + Math.cos(a) * 27.3).toFixed(1)}" cy="${(52 + Math.sin(a) * 28.9).toFixed(1)}" r="1.5" fill="#fff" stroke="${dk}" stroke-width=".6"/>`; }
+    // 상단 문양(작게) — 숫자가 주인공
+    const crown = (y, s = 1) => `<g transform="translate(50 ${y}) scale(${s})"><path d="M-12 7 L-11 -4 L-5.5 1.5 L0 -7 L5.5 1.5 L11 -4 L12 7 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="0" cy="2.5" r="1.8" fill="${c}" stroke="#fff" stroke-width=".6"/></g>`;
+    const gem = (y, s = 1) => `<g transform="translate(50 ${y}) scale(${s})"><path d="M-9 -2 L-5 -7 H5 L9 -2 L0 9 Z" fill="${G('c')}" stroke="${dk}" stroke-width="1.1" stroke-linejoin="round"/><path d="M-9 -2 H9 M-5 -7 L-2 -2 L0 9 L2 -2 L5 -7" fill="none" stroke="#fff" stroke-width=".7" opacity=".8"/></g>`;
+    const chev = (n, dy = 0) => Array.from({ length: n }, (_, i) => `M41 ${39 + dy + i * 5.5} L50 ${45 + dy + i * 5.5} L59 ${39 + dy + i * 5.5}`).join(' ');
+    const top = {
+      bronze: `<path d="${chev(1, division ? 0 : 7)}" fill="none" stroke="${G('c')}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+      silver: `<path d="${chev(2, division ? 0 : 6)}" fill="none" stroke="${G('c')}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+      gold: `<path d="${star(50, division ? 43 : 52, division ? 9 : 11)}" fill="${G('c')}" stroke="${dk}" stroke-width="1"/>`,
+      platinum: `<path d="${star(43, division ? 43 : 51, 6)} ${star(57, division ? 43 : 51, 6)}" fill="${G('c')}" stroke="${dk}" stroke-width=".9"/>`,
+      diamond: gem(division ? 43 : 51, division ? 1.05 : 1.3),
+      master: crown(44, 1.25) + `<path d="${star(50, 63, 4.5)}" fill="#fff" stroke="${dk}" stroke-width=".6"/>`,
+      grandmaster: crown(45, 1.3) + `<path d="${star(41, 63, 3.6)} ${star(50, 65, 4.6)} ${star(59, 63, 3.6)}" fill="#fff" stroke="${dk}" stroke-width=".6"/>`
+    }[t.id];
+    // 중앙 각인 숫자: 그림자 → 금속 → 하이라이트
+    const num = division ? (() => {
+      const fs = division.length >= 3 ? 11 : division.length === 2 ? 12.5 : 14;
+      const at = `x="50" y="${67 + fs * .35}" text-anchor="middle" font-size="${fs}" font-weight="900" font-family="Georgia,'Times New Roman',serif" letter-spacing="-.5"`;
+      return `<text ${at} fill="#000" opacity=".55" transform="translate(0 1.4)">${division}</text>` +
+        `<text ${at} fill="${G('c')}" stroke="${dk}" stroke-width=".9" paint-order="stroke">${division}</text>`;
+    })() : '';
+    const shine = `<path d="M33 37 L50 27 L67 37 L64 39 L50 31 L36 39Z" fill="#fff" opacity=".28"/>`;
+    const spark = k >= 2 ? `<path class="te-spark" d="M70 26 L71.6 30.4 L76 32 L71.6 33.6 L70 38 L68.4 33.6 L64 32 L68.4 30.4Z" fill="#fff"/>` : '';
+    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs>${back}<g class="te-body">${body}${top}${num}${shine}</g>${spark}</svg>`;
+  }
+
+  /* v1.1.26 · 승급 연출: 큰 티어 승급은 상승음 + 금관 팡파르 + 종소리와 전체 화면 연출,
+   *   단계 승급(IV→III 등)은 짧은 아르페지오와 작은 연출. 화면을 누르면 닫힙니다. 효과음 설정을 따릅니다. */
+  function promoSound(big, k) {
+    try {
+      const sfx = window.app && window.app.sound; if (!sfx || !sfx.enabled) return;
+      sfx.init(); const ctx = sfx.ctx; if (!ctx) return;
+      const out = ctx.createGain(); out.gain.value = .9; out.connect(sfx.out || ctx.destination);
+      const t0 = ctx.currentTime + .05, mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+      const tone = (m, at, dur, type, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = mtof(m);
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(v, at + .015); g.gain.exponentialRampToValueAtTime(.0008, at + dur);
+        o.connect(g); g.connect(out); o.start(at); o.stop(at + dur + .05); };
+      const base = 60 + Math.min(k, 6);
+      if (!big) { [0, 4, 7, 12].forEach((s, i) => tone(base + 12 + s, t0 + i * .07, .5, 'triangle', .12)); return; }
+      const sw = ctx.createOscillator(), sg = ctx.createGain(), lp = ctx.createBiquadFilter(); sw.type = 'sawtooth';
+      sw.frequency.setValueAtTime(180, t0); sw.frequency.exponentialRampToValueAtTime(1400, t0 + .55);
+      lp.type = 'lowpass'; lp.frequency.value = 1800;
+      sg.gain.setValueAtTime(0, t0); sg.gain.linearRampToValueAtTime(.06, t0 + .3); sg.gain.linearRampToValueAtTime(0, t0 + .6);
+      sw.connect(lp); lp.connect(sg); sg.connect(out); sw.start(t0); sw.stop(t0 + .65);
+      const f = t0 + .6;
+      [0, 7, 12].forEach((s, i) => { tone(base + s, f + i * .12, .25, 'sawtooth', .06); tone(base + s, f + i * .12, .25, 'square', .03); });
+      [0, 4, 7, 12, 16].forEach(s => { tone(base + s, f + .42, 1.6, 'sawtooth', .045); tone(base + s + 12, f + .42, 1.4, 'triangle', .05); });
+      tone(base - 12, f + .42, 1.6, 'sine', .25);
+      [24, 28, 31, 36, 40].forEach((s, i) => tone(base + s, f + .5 + i * .06, 1.2, 'sine', .07));
+    } catch (_) {}
+  }
+  function playPromotion(tier, big) {
+    const reduced = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } })();
+    document.getElementById('tier-promo')?.remove();
+    const wrap = document.createElement('div');
+    wrap.id = 'tier-promo'; wrap.className = 'tier-promo' + (big ? ' big' : ' small') + (reduced ? ' reduced' : '');
+    wrap.style.setProperty('--tier', tier.color);
+    wrap.setAttribute('role', 'status');
+    let parts = '';
+    if (big && !reduced) for (let i = 0; i < 26; i++) {
+      parts += `<i style="--a:${Math.round(Math.random() * 360)}deg;--d:${Math.round(90 + Math.random() * 120)}px;--dl:${(.55 + Math.random() * .3).toFixed(2)}s"></i>`;
+    }
+    wrap.innerHTML = `<div class="tp-burst"></div><div class="tp-parts">${parts}</div><div class="tp-emblem">${tierSymbol(tier.id, big ? 200 : 140, tier.division)}</div>`;
+    wrap.setAttribute('aria-label', tier.name);
+    const close = () => { wrap.classList.add('out'); setTimeout(() => wrap.remove(), 350); };
+    wrap.addEventListener('click', close);
+    document.body.append(wrap);
+    setTimeout(close, big ? 3600 : 2000);
+    promoSound(big, tier.index);
+  }
+
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
   const bridge = () => window.AndroidBridge;
@@ -107,7 +240,7 @@
     const t = TIERS[k], next = TIERS[k + 1];
     let division = '', divMin = t.min, divMax = next ? next.min : null;
     if (k <= 4) {
-      const span = (next.min - t.min) / 4, d = clamp(Math.floor((rating - t.min) / span), 0, 3);
+      const span = (next.min - t.min) / ROMAN.length, d = clamp(Math.floor((rating - t.min) / span), 0, ROMAN.length - 1);
       division = ROMAN[d]; divMin = t.min + span * d; divMax = divMin + span;
     }
     return { ...t, index: k, division, name: tr(t.ko) + (division ? ' ' + division : ''), divMin, divMax, next };
@@ -230,6 +363,9 @@
       if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
       else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
       setTimeout(() => this.showToast?.(msg, 3500), 900);
+      // 승급 연출: 결과 화면이 뜬 뒤 보여 줍니다.
+      if (after.index > beforeTier.index) setTimeout(() => playPromotion(after, true), 1200);
+      else if (after.index === beforeTier.index && after.divMin > beforeTier.divMin) setTimeout(() => playPromotion(after, false), 1200);
       this.renderRatingCard?.();
     } catch (e) { console.warn('rating', e); }
     return out;
@@ -269,7 +405,7 @@
     card.innerHTML = '';
     const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
     const head = el('div', 'rc-top');
-    const badge = el('div', 'rc-badge tier-' + t.id, t.ko[0] === '그' ? 'GM' : tr(t.ko).slice(0, 1));
+    const badge = el('div', 'rc-badge rc-symbol tier-' + t.id); badge.innerHTML = tierSymbol(t.id, 56, t.division);
     const info = el('div', 'rc-info');
     info.append(el('div', 'rc-tier', t.name), el('div', 'rc-rp', `${s.rating} RP · ${tr('최고')} ${s.peak}`));
     head.append(badge, info); card.append(el('h3', 'section-title', tr('난이도별 랭크')));
@@ -323,5 +459,5 @@
   // 언어가 바뀌면 다시 그립니다.
   new MutationObserver(() => window.app?.renderRatingCard?.()).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
-  window.SumdokuRating = { load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT, TIERS, KEY, DIFFS, MODES };
+  window.SumdokuRating = { tierSymbol, playPromotion, load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT, TIERS, KEY, DIFFS, MODES };
 })();

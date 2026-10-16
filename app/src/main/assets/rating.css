@@ -98,3 +98,77 @@
 .rl-seg .rl-lbl { position: relative; z-index: 1; }
 .rl-name { white-space: normal; word-break: keep-all; overflow: visible; line-height: 1.15; }
 .rl-row { grid-template-columns: 34px minmax(84px, 1.1fr) 2fr; }
+
+/* v1.1.26 · 티어 심볼 */
+.tier-symbol { display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.22)); }
+.rating-card .rc-badge.rc-symbol { width: 56px; height: 56px; background: none !important; box-shadow: none !important; border-radius: 0; }
+.rl-badge.rl-symbol { width: 38px; height: 38px; background: none; border-radius: 0; }
+.rl-row { grid-template-columns: 38px minmax(84px, 1.1fr) 2fr; }
+.ranking-grid .rk-cell { flex-direction: row; gap: 5px; }
+.ranking-grid .rk-sym:empty { display: none; }
+.ranking-grid .rk-sym { flex-shrink: 0; }
+.ranking-grid .rk-txt { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+
+/* v1.1.26 · 랭킹 탭 순위(Google Play 게임즈) */
+.ranking-board { margin: 0 0 16px; padding: 14px; border-radius: 16px; background: var(--bg-surface, #fff); border: 1px solid rgba(100,116,139,.18); }
+.ranking-board.hidden { display: none; }
+.ranking-board .section-title { margin: 0 0 10px; }
+.rb-me { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(37,99,235,.08); }
+.rb-me-label { font-size: 12px; font-weight: 800; opacity: .7; }
+.rb-me-rank { font-size: 22px; font-weight: 900; color: #2563eb; font-variant-numeric: tabular-nums; }
+.rb-me-score { margin-left: auto; font-size: 12.5px; font-weight: 800; opacity: .75; font-variant-numeric: tabular-nums; }
+.rb-note { margin: 8px 0 0; font-size: 12px; opacity: .7; word-break: keep-all; }
+.rb-btn { width: 100%; margin-top: 10px; }
+.rb-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rb-row { display: grid; grid-template-columns: 36px 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; }
+.rb-row:nth-child(-n+3) .rb-rank { color: #ca8a04; }
+.rb-row.me { background: rgba(37,99,235,.1); box-shadow: inset 0 0 0 1.5px #2563eb; }
+.rb-rank { font-size: 13px; font-weight: 900; text-align: center; font-variant-numeric: tabular-nums; }
+.rb-name { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-score { font-size: 12.5px; font-weight: 800; opacity: .8; font-variant-numeric: tabular-nums; }
+.theme-dark .ranking-board { background: rgba(30,41,59,.6); border-color: rgba(148,163,184,.2); }
+.theme-dark .rb-me-rank { color: #93c5fd; }
+
+/* v1.1.26 · 화려한 엠블럼 */
+.tier-symbol { overflow: visible; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+.tier-symbol .te-spark { transform-box: fill-box; transform-origin: center; animation: te-spark 2.6s ease-in-out infinite; }
+.tier-symbol.te-k5 .te-rays, .tier-symbol.te-k6 .te-rays { transform-origin: 50px 48px; animation: te-spin 14s linear infinite; }
+.tier-symbol.te-k5, .tier-symbol.te-k6 { animation: te-glow 2.4s ease-in-out infinite; }
+.tier-symbol .te-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: te-flame 1.4s ease-in-out infinite; }
+@keyframes te-spark { 0%,100% { opacity: 0; transform: scale(.3) rotate(0); } 40%,60% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes te-spin { to { transform: rotate(360deg); } }
+@keyframes te-glow { 0%,100% { filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); } 50% { filter: drop-shadow(0 0 8px var(--tier)) drop-shadow(0 3px 4px rgba(0,0,0,.3)); } }
+@keyframes te-flame { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.08) scaleX(.97); } }
+.rating-card .rc-badge.rc-symbol { width: 64px; height: 64px; }
+.rating-card .rc-badge.rc-symbol .tier-symbol { width: 64px; height: 64px; }
+
+/* v1.1.26 · 승급 연출 */
+.tier-promo { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tier) 35%, rgba(0,0,0,.55)), rgba(0,0,0,.82) 70%);
+  animation: tp-in .35s ease-out; cursor: pointer; }
+.tier-promo.out { animation: tp-out .35s ease-in forwards; }
+.tier-promo.small { background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tier) 25%, rgba(0,0,0,.4)), rgba(0,0,0,.6) 70%); }
+.tp-burst { position: absolute; left: 50%; top: 45%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--tier) 60%, #fff) 0 6deg, transparent 6deg 18deg);
+  mask: radial-gradient(circle, #000 20%, transparent 68%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%);
+  opacity: .55; animation: te-spin 9s linear infinite, tp-burst .9s ease-out; }
+.tier-promo.small .tp-burst { opacity: .3; }
+.tp-emblem { position: relative; animation: tp-emblem 1s cubic-bezier(.2,1.6,.4,1) both; }
+.tier-promo.big .tp-emblem { animation-delay: .45s; }
+.tp-emblem .tier-symbol { filter: drop-shadow(0 0 22px var(--tier)) drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.tp-title { position: relative; font-size: 34px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 14px var(--tier), 0 2px 4px rgba(0,0,0,.6);
+  animation: tp-text .6s ease-out both; animation-delay: .9s; }
+.tier-promo.small .tp-title { font-size: 24px; animation-delay: .3s; }
+.tp-name { position: relative; font-size: 18px; font-weight: 800; color: color-mix(in srgb, var(--tier) 40%, #fff); animation: tp-text .6s ease-out both; animation-delay: 1.05s; }
+.tier-promo.small .tp-name { animation-delay: .45s; }
+.tp-parts { position: absolute; left: 50%; top: 45%; width: 0; height: 0; pointer-events: none; }
+.tp-parts i { position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 2px; background: color-mix(in srgb, var(--tier) 40%, #fff);
+  box-shadow: 0 0 6px var(--tier); opacity: 0; animation: tp-part 1.3s ease-out var(--dl) forwards; }
+@keyframes tp-in { from { opacity: 0; } }
+@keyframes tp-out { to { opacity: 0; } }
+@keyframes tp-burst { from { transform: scale(.2); opacity: 0; } }
+@keyframes tp-emblem { 0% { transform: scale(0) rotate(-25deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes tp-text { from { transform: translateY(14px) scale(.9); opacity: 0; } }
+@keyframes tp-part { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(.4); } }
+.tier-promo.reduced, .tier-promo.reduced * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .tier-symbol, .tier-symbol * { animation: none !important; } }

@@ -5,4 +5,5 @@ public class Leaderboards {
  public boolean isConfigured(String key) { return false; }
  public void submit(String key, long score) {}
  public void show(String key) {}
+ public void load(String key, int max, boolean interactive) {}
 }

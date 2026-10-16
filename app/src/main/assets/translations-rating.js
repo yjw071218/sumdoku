@@ -10,6 +10,7 @@
  '마스터':['Master','マスター','大师','大師','Maestro','Maître','Meister'],
  '그랜드마스터':['Grandmaster','グランドマスター','宗师','宗師','Gran maestro','Grand maître','Großmeister'],
  '랭크':['Rank','ランク','段位','段位','Rango','Rang','Rang'],
+ '단계 상승':['Division up!','段階アップ！','段位提升！','段位提升！','¡Subes de división!','Division supérieure !','Stufe aufgestiegen!'],
  '다음 클리어 보너스':['Next clear bonus','次のクリアボーナス','下次通关奖励','下次通關獎勵','Próximo bonus','Prochain bonus','Nächster Bonus'],
  '이 난이도의 타임어택에서 기준보다 높은 점수를 내면 레이팅이 오릅니다.':['Score above the target in Time Attack at this difficulty to raise your rating.','この難易度のタイムアタックで基準を超えるスコアを出すとレーティングが上がります。','在该难度限时挑战中得分超过标准即可提升积分。','在該難度限時挑戰中得分超過標準即可提升積分。','Supera la puntuación objetivo en contrarreloj para subir tu rango.','Dépassez le score cible en contre-la-montre pour monter votre classement.','Übertriff im Zeitangriff die Zielpunktzahl, um deine Wertung zu erhöhen.'],
  '레이팅 유지':['Rating unchanged','レーティング維持','积分不变','積分不變','Rango sin cambios','Classement inchangé','Wertung unverändert'],
