@@ -183,7 +183,7 @@
     copied: ['방 번호를 복사했습니다.', 'Room code copied.', 'ルーム番号をコピーしました。', '已复制房间号。', '已複製房間號碼。', 'Código copiado.', 'Code copié.', 'Code kopiert.'],
     nameHint: ['비워 두면 Google Play 게임즈 이름을 사용합니다', 'Leave empty to use your Google Play Games name', '空欄にすると Google Play ゲームズの名前を使います', '留空则使用 Google Play 游戏名称', '留空則使用 Google Play 遊戲名稱', 'Déjalo vacío para usar tu nombre de Google Play Juegos', 'Laissez vide pour utiliser votre nom Google Play Jeux', 'Leer lassen, um deinen Google Play Spiele-Namen zu verwenden'],
     loginNeed: ['배틀은 Google Play 게임즈에 로그인해야 이용할 수 있습니다.', 'Sign in to Google Play Games to play battles.', 'バトルを遊ぶには Google Play ゲームズへのログインが必要です。', '登录 Google Play 游戏后才能进行对战。', '登入 Google Play 遊戲後才能進行對戰。', 'Inicia sesión en Google Play Juegos para jugar batallas.', 'Connectez-vous à Google Play Jeux pour jouer en duel.', 'Melde dich bei Google Play Spiele an, um Kämpfe zu spielen.'],
-    loginGithub: ['배틀은 Google Play 스토어 버전에서 Google Play 게임즈에 로그인한 뒤 이용할 수 있습니다.', 'Battles are available in the Google Play Store version after signing in to Google Play Games.', 'バトルは Google Play ストア版で Google Play ゲームズにログインすると利用できます。', '对战需要在 Google Play 商店版中登录 Google Play 游戏后使用。', '對戰需在 Google Play 商店版登入 Google Play 遊戲後使用。', 'Las batallas están en la versión de Google Play Store tras iniciar sesión en Google Play Juegos.', 'Les duels sont disponibles dans la version Google Play Store après connexion à Google Play Jeux.', 'Kämpfe gibt es in der Google-Play-Store-Version nach Anmeldung bei Google Play Spiele.'],
+    loginStoreOnly: ['배틀은 Google Play 스토어 버전에서 Google Play 게임즈에 로그인한 뒤 이용할 수 있습니다.', 'Battles are available in the Google Play Store version after signing in to Google Play Games.', 'バトルは Google Play ストア版で Google Play ゲームズにログインすると利用できます。', '对战需要在 Google Play 商店版中登录 Google Play 游戏后使用。', '對戰需在 Google Play 商店版登入 Google Play 遊戲後使用。', 'Las batallas están en la versión de Google Play Store tras iniciar sesión en Google Play Juegos.', 'Les duels sont disponibles dans la version Google Play Store après connexion à Google Play Jeux.', 'Kämpfe gibt es in der Google-Play-Store-Version nach Anmeldung bei Google Play Spiele.'],
     loginBusy: ['Google Play 게임즈에 로그인하는 중…', 'Signing in to Google Play Games…', 'Google Play ゲームズにログイン中…', '正在登录 Google Play 游戏…', '正在登入 Google Play 遊戲…', 'Iniciando sesión en Google Play Juegos…', 'Connexion à Google Play Jeux…', 'Anmeldung bei Google Play Spiele…'],
     unranked: ['배치 중', 'Placement', '配置中', '定级中', '定級中', 'Clasificación', 'Placement', 'Platzierung']
   };
@@ -397,7 +397,7 @@
       const err = this.canRun();
       if (err) { window.app?.showToast?.(err, 4500); return; }
       if (loginGateOn() && !ID.signedIn) {
-        ensurePlayLogin(true).then(ok => { if (ok) this.start(); else window.app?.showToast?.(ID.reason === 'unavailable' ? T('loginGithub') : T('loginNeed'), 4500); });
+        ensurePlayLogin(true).then(ok => { if (ok) this.start(); else window.app?.showToast?.(ID.reason === 'unavailable' ? T('loginStoreOnly') : T('loginNeed'), 4500); });
         return;
       }
       this.stop(true);
@@ -1381,14 +1381,14 @@
     P.openBattleLobby = function () {
       if (!loginGateOn() || ID.signedIn) return gatedOpen.apply(this, arguments);
       const args = arguments;
-      if (ID.checked && ID.reason === 'unavailable') { this.showToast?.(T('loginGithub'), 4500); return; }
+      if (ID.checked && ID.reason === 'unavailable') { this.showToast?.(T('loginStoreOnly'), 4500); return; }
       // 이미 로그인된 기기는 금방 끝나므로, 0.7초 넘게 걸릴 때만 '로그인 중' 안내를 띄웁니다.
       let settled = false;
       setTimeout(() => { if (!settled) this.showToast?.(T('loginBusy'), 2500); }, 700);
       ensurePlayLogin(true).then(ok => {
         settled = true;
         if (ok) gatedOpen.apply(this, args);
-        else this.showToast?.(ID.reason === 'unavailable' ? T('loginGithub') : T('loginNeed'), 4500);
+        else this.showToast?.(ID.reason === 'unavailable' ? T('loginStoreOnly') : T('loginNeed'), 4500);
       });
     };
 
