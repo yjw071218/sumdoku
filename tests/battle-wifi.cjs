@@ -10,17 +10,20 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
   const result=await page.evaluate(()=>{
    let prepared=0;app.setupHostRoom=()=>{prepared++;};
    const modal=app.dom.modalBattleLobby;
-   const click=()=>{modal.classList.add('hidden');app.dom.btnHomeBattle.click();return !modal.classList.contains('hidden');};
+   // v2.0.1: Wi-Fi가 없으면 로비를 막지 않고 '온라인' 탭으로 엽니다(같은 Wi-Fi 방은 준비하지 않음).
+   const onlineTab=()=>document.getElementById('tab-battle-online')?.classList.contains('active')&&!document.getElementById('battle-online-view').classList.contains('hidden');
+   const click=()=>{modal.classList.add('hidden');app.dom.btnHomeBattle.click();return !modal.classList.contains('hidden')&&!onlineTab();};
    let wifi=false;window.AndroidBridge={isWifiConnected:()=>wifi,getDeviceStatus:()=>JSON.stringify({wifi:false,cellular:true})};
-   const blocked=!click(),before=prepared,message=document.getElementById('toast').textContent;
+   localStorage.removeItem('sumdoku_last_battle_tab');
+   const blocked=!click(),online=onlineTab(),before=prepared,message=document.getElementById('toast').textContent;
    wifi=true;const connected=click();
    wifi=false;const disconnected=!click();
    window.AndroidBridge={getDeviceStatus:()=>JSON.stringify({wifi:false})};const fallback=!click();
    delete window.AndroidBridge;const browser=click();
-   return {blocked,before,message,connected,disconnected,fallback,browser,prepared};
+   return {blocked,online,before,message,connected,disconnected,fallback,browser,prepared};
   });
-  assert.deepEqual({...result,message:undefined},{blocked:true,before:0,message:undefined,connected:true,disconnected:true,fallback:true,browser:true,prepared:2});
-  assert.match(result.message,/Wi-Fi를 켜고 같은 Wi-Fi에 연결/);
-  console.log('PASS: disconnected warning, no room setup, reconnect, disconnect, native Wi-Fi over cellular status, browser fallback');
+  assert.deepEqual({...result,message:undefined},{blocked:true,online:true,before:0,message:undefined,connected:true,disconnected:true,fallback:true,browser:true,prepared:2});
+  assert.match(result.message,/Wi-Fi가 꺼져 있어 온라인 매칭만/);
+  console.log('PASS: Wi-Fi off opens online tab, disconnected warning, no room setup, reconnect, disconnect, native Wi-Fi over cellular status, browser fallback');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

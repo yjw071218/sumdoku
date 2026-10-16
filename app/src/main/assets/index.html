@@ -2,6 +2,29 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <!-- v2.0.1: 첫 화면 깜빡임 방지 — CSS·본문보다 먼저 저장된 테마/언어를 적용하고, 앱 초기화가 끝날 때까지 본문을 숨깁니다. -->
+  <script>
+  (function () {
+    var BG = { 'theme-light': '#f8fafc', 'theme-dark': '#0f172a', 'theme-sepia': '#faf5eb' };
+    var root = document.documentElement, theme = 'theme-light';
+    try {
+      var saved = localStorage.getItem('sumdoku_theme');
+      if (saved && BG[saved]) theme = saved;
+      var st = JSON.parse(localStorage.getItem('sumdoku_settings') || 'null');
+      if (st && st.darkTheme) theme = 'theme-dark';
+      var lang = localStorage.getItem('sumdoku_language');
+      if (lang) root.lang = lang;
+    } catch (e) {}
+    window.__SUMDOKU_BOOT_THEME = theme;
+    root.className += ' boot-pending boot-' + theme;
+    root.style.backgroundColor = BG[theme];
+  })();
+  </script>
+  <style>
+    html.boot-pending body { visibility: hidden !important; }
+    html.boot-theme-dark, html.boot-theme-dark body { background-color: #0f172a; }
+    html.boot-theme-sepia, html.boot-theme-sepia body { background-color: #faf5eb; }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Sumdoku (썸도쿠)</title>
   <link rel="stylesheet" href="style.css">
@@ -19,9 +42,11 @@
   <link rel="stylesheet" href="lunatic-horror.css">
   <link rel="stylesheet" href="rank-result.css">
   <link rel="stylesheet" href="season.css">
+  <link rel="stylesheet" href="online-match.css">
 </head>
 <body>
   <div id="app" class="app-root theme-light">
+  <script>document.getElementById('app').className = 'app-root ' + (window.__SUMDOKU_BOOT_THEME || 'theme-light');</script>
 
     <!-- ====================================================================
          1. 메인 뷰 (Main View - 홈 및 일일 도전 카드)
@@ -1883,5 +1908,7 @@
   <script src="share.js"></script>
   <script src="lunatic-horror.js"></script>
   <script src="bgm.js"></script>
+  <script src="online-match.js"></script>
+  <script src="boot-reveal.js"></script>
 </body>
 </html>

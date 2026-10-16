@@ -159,6 +159,15 @@ public class MainActivity extends Activity {
         applyImmersive();
 
         webView = new WebView(this);
+        // v2.0.1: 첫 화면 깜빡임 방지. 지난번 테마의 배경색으로 먼저 칠하고, 웹 앱이 저장된 테마·언어를
+        // 모두 적용했다고 알릴 때(onAppReady)까지 WebView를 투명하게 둡니다.
+        int bootBg = 0xFFF8FAFC;
+        try { bootBg = android.graphics.Color.parseColor(getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString("boot_bg", "#f8fafc")); } catch (Exception ignored) {}
+        rootLayout.setBackgroundColor(bootBg);
+        getWindow().getDecorView().setBackgroundColor(bootBg);
+        webView.setBackgroundColor(bootBg);
+        webView.setAlpha(0f);
+        mainHandler.postDelayed(this::revealWebView, 4000);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -291,6 +300,24 @@ public class MainActivity extends Activity {
     }
 
     private BattleServer battleServer;
+    private volatile MainlineDht dht;
+
+    private void postJs(final String js) {
+        mainHandler.post(() -> { if (webView != null) webView.evaluateJavascript(js, null); });
+    }
+
+    /** 자바 문자열을 JS 문자열 리터럴로 안전하게 바꿉니다. */
+    private static String jsStr(String v) {
+        if (v == null) return "null";
+        StringBuilder b = new StringBuilder("\"");
+        for (int i = 0; i < v.length(); i++) {
+            char ch = v.charAt(i);
+            if (ch == '"' || ch == '\\') b.append('\\').append(ch);
+            else if (ch < 0x20 || ch == 0x2028 || ch == 0x2029 || ch == '<' || ch == '>') b.append(String.format("\\u%04x", (int) ch));
+            else b.append(ch);
+        }
+        return b.append('"').toString();
+    }
     // 일부 기기는 이 잠금이 없으면 방장 쪽에서 브로드캐스트 패킷을 버립니다.
     private android.net.wifi.WifiManager.MulticastLock multicastLock;
     private android.net.wifi.WifiManager.WifiLock wifiLock;
@@ -322,11 +349,19 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    private boolean webViewRevealed = false;
+    private void revealWebView() {
+        if (webViewRevealed || webView == null) return;
+        webViewRevealed = true;
+        webView.animate().alpha(1f).setDuration(120).start();
+    }
+
     @Override
     protected void onDestroy() {
         if (battleServer != null) {
             battleServer.stop();
         }
+        if (dht != null) dht.stop();
         setMulticast(false);
         if (monetization != null) monetization.onDestroy();
         super.onDestroy();
@@ -560,6 +595,51 @@ public class MainActivity extends Activity {
                 "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"internet\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
                 level, charging, wifi, cellular, internet, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
         }
+
+        /** v2.0.1: 다음 실행 때 WebView 뒤 배경을 미리 같은 색으로 칠할 수 있도록 현재 테마 배경색을 저장합니다. */
+        @JavascriptInterface
+        public void setBootBackground(String hex) {
+            if (hex == null || !hex.matches("#[0-9a-fA-F]{6}")) return;
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString("boot_bg", hex).apply();
+            final int c = android.graphics.Color.parseColor(hex);
+            runOnUiThread(() -> { if (webView != null) { webView.setBackgroundColor(c); getWindow().getDecorView().setBackgroundColor(c); } });
+        }
+
+        /** v2.0.1: 웹 앱이 저장된 테마·언어 적용을 마쳤습니다. 이제 화면을 보여 줍니다. */
+        @JavascriptInterface
+        public void onAppReady() { runOnUiThread(MainActivity.this::revealWebView); }
+
+        // ---------------- v2.0.1 온라인 랜덤 매칭 (서버 없음) ----------------
+        /** 인터넷(외부) 매칭용: Wi-Fi 고정 없이 루프백(127.0.0.1)에서만 방 서버를 엽니다. 상대는 P2P 터널로만 접속합니다. */
+        @JavascriptInterface
+        public String startOnlineBattleServer(String mode, String diff, int timeLimitSec, String puzzleJson) {
+            bindToWifi(false);
+            if (battleServer != null) battleServer.stop();
+            battleServer = new BattleServer();
+            battleServer.configureRoom(mode, diff, timeLimitSec, puzzleJson);
+            boolean ok = battleServer.startLoopback(8888);
+            return String.format("{\"ok\":%b,\"ip\":\"127.0.0.1\",\"port\":8888}", ok);
+        }
+
+        /** Mainline DHT(BEP 5)에 info_hash(40자리 hex)로 참여해 같은 매칭 구역의 기기를 찾습니다. */
+        @JavascriptInterface
+        public boolean dhtStart(String infoHashHex, String selfId) {
+            bindToWifi(false);
+            synchronized (MainActivity.this) {
+                if (dht == null) dht = new MainlineDht(new MainlineDht.Listener() {
+                    @Override public void onPeer(String addr, String peerId) { postJs("window.onDhtPeer&&window.onDhtPeer(" + jsStr(addr) + "," + jsStr(peerId) + ")"); }
+                    @Override public void onMessage(String addr, String text) { postJs("window.onDhtMessage&&window.onDhtMessage(" + jsStr(addr) + "," + jsStr(text) + ")"); }
+                    @Override public void onStatus(String json) { postJs("window.onDhtStatus&&window.onDhtStatus(" + json + ")"); }
+                });
+            }
+            return dht.start(infoHashHex, selfId);
+        }
+
+        @JavascriptInterface
+        public void dhtSend(String addr, String text) { if (dht != null) dht.send(addr, text); }
+
+        @JavascriptInterface
+        public void dhtStop() { if (dht != null) dht.stop(); }
 
         @JavascriptInterface
         public String getLocalIpAddress() {

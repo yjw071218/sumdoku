@@ -103,11 +103,21 @@ public class BattleServer {
         resetRoom();
     }
 
+    /** v2.0.1 온라인 매칭: 127.0.0.1에서만 받습니다. 상대는 WebRTC P2P 터널을 거쳐 이 서버에 요청합니다. */
+    private boolean loopbackOnly = false;
+    public synchronized boolean startLoopback(int port) {
+        loopbackOnly = true;
+        return start(port);
+    }
+
     public synchronized boolean start(int port) {
         if (running) return true;
         this.port = port;
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = loopbackOnly
+                ? new ServerSocket(port, 16, InetAddress.getByName("127.0.0.1"))
+                : new ServerSocket(port);
+            serverSocket.setReuseAddress(true);
             running = true;
             clientPool = Executors.newFixedThreadPool(4);
             final ServerSocket listeningSocket = serverSocket;
@@ -123,6 +133,7 @@ public class BattleServer {
                 }
             });
             serverThread.start();
+            if (loopbackOnly) return true; // 온라인 방은 같은 Wi-Fi 브로드캐스트 탐색에 응답하지 않습니다.
             try {
                 discoverySocket = new java.net.DatagramSocket(null);
                 discoverySocket.setReuseAddress(true);
@@ -143,6 +154,7 @@ public class BattleServer {
 
     public synchronized void stop() {
         running = false;
+        loopbackOnly = false;
         try {
             if (serverSocket != null) serverSocket.close();
         } catch (Exception ignored) {}
