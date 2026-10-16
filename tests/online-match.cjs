@@ -9,18 +9,20 @@ const ZONE = process.env.ZONE || 'global';
 // ZONE_B를 다르게 주면 '구역 분리' 검사: 서로 다른 구역끼리는 매칭되면 안 됩니다.
 const ZONE_B = process.env.ZONE_B || ZONE;
 const SEPARATE = ZONE_B !== ZONE;
+// ROOM=1: A가 6자리 원격 방을 만들고 B가 번호로 참가합니다. LOGIN=0: B는 Play 게임즈 로그인 거부 → 배틀 진입 차단 확인.
+const ROOM = process.env.ROOM === '1';
+const NOLOGIN = process.env.LOGIN === '0';
 
 (async () => {
   const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
-  const open = async (name, zone, lang = 'ko') => {
+  const open = async (name, zone, lang = 'ko', login = true) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const p = await ctx.newPage();
     const errs = [];
     p.on('pageerror', e => errs.push(e.message));
     await p.route('https://api.github.com/**', r => r.fulfill({ json: {} }));
-    await p.addInitScript(({ zone, lang, nick }) => {
+    await p.addInitScript(({ zone, lang, nick, login }) => {
       localStorage.setItem('sumdoku_language', lang);
-      localStorage.setItem('sumdoku_online_name', nick);
       localStorage.setItem('sumdoku_theme', 'theme-dark');
       localStorage.setItem('sumdoku_online_zone', zone);
       localStorage.setItem('sumdoku_online_mode', 'race');
@@ -29,14 +31,26 @@ const SEPARATE = ZONE_B !== ZONE;
         getDistribution: () => 'github', isAdFree: () => true, setSecureScreen: () => {},
         isWifiConnected: () => false, setBattleNetwork: () => true,
         startOnlineBattleServer: () => JSON.stringify({ ok: true, ip: '127.0.0.1', port: 8888 }),
-        stopBattleServer: () => {}, dhtStart: () => false, dhtStop: () => {}, dhtSend: () => {}
+        stopBattleServer: () => {}, dhtStart: () => false, dhtStop: () => {}, dhtSend: () => {},
+        copyToClipboard: () => {},
+        // Google Play 게임즈 로그인 흉내: 표시 이름과 Play 계정 국가를 돌려줍니다.
+        requestPlayerProfile: interactive => setTimeout(() => window.onPlayerProfile(login
+          ? { signedIn: true, name: nick, id: 'g' + nick, cc: lang === 'ja' ? 'JP' : 'KR' }
+          : { signedIn: false, reason: interactive ? 'canceled' : 'signed_out' }), 50)
       };
-    }, { zone, lang, nick: 'Tester' + name });
+    }, { zone, lang, nick: 'Play' + name, login });
     await p.goto(INDEX);
     await p.waitForFunction(() => window.app && window.OnlineMatch && !document.documentElement.classList.contains('boot-pending'));
     return { p, errs, name };
   };
-  const A = await open('A', ZONE, 'ko'), B = await open('B', ZONE_B, 'ja');
+  const A = await open('A', ZONE, 'ko'), B = await open('B', ZONE_B, 'ja', !NOLOGIN);
+  if (NOLOGIN) {
+    await B.p.evaluate(() => app.openBattleLobby());
+    await B.p.waitForTimeout(800);
+    const blocked = await B.p.evaluate(() => document.getElementById('modal-battle-lobby').classList.contains('hidden') && /Google Play/.test(document.getElementById('toast').textContent));
+    console.log(blocked ? 'PASS: battle lobby blocked without Google Play Games sign-in' : 'FAIL: lobby opened without login');
+    await browser.close(); process.exit(blocked ? 0 : 1);
+  }
 
   // 부팅 깜빡임 수정 확인: 저장된 다크 테마가 공개 시점에 이미 적용되어 있어야 합니다.
   const themeA = await A.p.evaluate(() => document.getElementById('app').className);
@@ -44,8 +58,21 @@ const SEPARATE = ZONE_B !== ZONE;
 
   for (const X of [A, B]) {
     await X.p.evaluate(() => app.openBattleLobby());
+    await X.p.waitForSelector('#modal-battle-lobby:not(.hidden)');
     await X.p.click('#tab-battle-online');
-    await X.p.click('#battle-online-view .om-start');
+  }
+  if (ROOM) {
+    // 원격 방: 서로 다른 구역·모드여도 번호만 같으면 연결되어야 합니다(방장 설정을 따름).
+    await B.p.evaluate(() => { OnlineMatch.setMode('score'); OnlineMatch.setZone('americas'); });
+    for (const X of [A, B]) await X.p.click('#battle-online-view .om-kind[data-kind="room"]');
+    await A.p.click('#battle-online-view .om-room-create');
+    const code = await A.p.evaluate(() => OnlineMatch.roomCode);
+    const shown = await A.p.evaluate(() => document.querySelector('.om-room-code').textContent);
+    console.log('room code', code, 'shown', JSON.stringify(shown));
+    await B.p.fill('#battle-online-view .om-room-input', code);
+    await B.p.click('#battle-online-view .om-room-join');
+  } else {
+    for (const X of [A, B]) await X.p.click('#battle-online-view .om-start');
   }
   const t0 = Date.now();
   const deadline = t0 + (SEPARATE ? 30000 : 150000);
@@ -69,12 +96,18 @@ const SEPARATE = ZONE_B !== ZONE;
   // 닉네임·국기·티어 교환과 다국어 확인
   const prof = await Promise.all([A, B].map(X => X.p.evaluate(() => ({ p2: app.dom.battleP2Name.textContent, p1: app.dom.battleP1Name.textContent, tab: document.getElementById('tab-battle-online').textContent, partner: OnlineMatch.partnerProfile }))));
   console.log('profiles', JSON.stringify(prof));
-  const profOk = prof[0].p2.includes('TesterB') && prof[1].p2.includes('TesterA') && prof[1].tab.includes('オンライン') && prof[0].tab.includes('온라인');
-  console.log(profOk ? 'PASS: nicknames exchanged, HUD shows opponent, tab localized (ko/ja)' : 'FAIL: profile');
+  const profOk = prof[0].p2.includes('PlayB') && prof[1].p2.includes('PlayA') && prof[0].p2.includes('🇯🇵') && prof[1].p2.includes('🇰🇷') && prof[1].tab.includes('オンライン') && prof[0].tab.includes('온라인');
+  console.log(profOk ? 'PASS: Play Games names + Play country flags exchanged, HUD shows opponent, tab localized (ko/ja)' : 'FAIL: profile');
   const fin = await Promise.all([A, B].map(X => X.p.evaluate(() => ({ battle: !!app.isBattle, role: app.battleRole, url: app.battleHostUrl, sol: JSON.stringify(app.solution), rules: app.gameRules }))));
   const ok = fin[0].battle && fin[1].battle && fin[0].sol === fin[1].sol && fin[0].role !== fin[1].role;
   console.log('roles', fin.map(f => f.role), 'guest url', fin.find(f => f.role === 2)?.url);
   console.log('rules', JSON.stringify(fin[0].rules));
+  if (ROOM) {
+    const modes = await Promise.all([A, B].map(X => X.p.evaluate(() => app.battleMode)));
+    const roomOk = modes[0] === 'race' && modes[1] === 'race';
+    console.log(roomOk ? 'PASS: remote room by 6-digit code, guest followed host mode (race)' : 'FAIL: room mode ' + modes);
+    if (!roomOk) { await browser.close(); process.exit(1); }
+  }
   console.log(ok ? 'PASS: matched over public trackers, same puzzle on both sides' : 'FAIL');
   // 진행 동기화: 참가자 진행이 방장에게 전달되는지
   if (ok) {

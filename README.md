@@ -120,6 +120,14 @@ Android 앱 안에 배틀 서버가 포함되어 있어 별도 게임 서버를 
 - **한계**: TURN 중계 서버가 없으므로 양쪽 모두 대칭형 NAT(일부 통신사·회사망)이면 직접 연결이 실패할 수 있습니다. Wi-Fi가 꺼져 있으면 로비는 온라인 탭으로 열립니다.
 - 테스트: `tests/online-match.cjs` (실제 공개 트래커로 두 브라우저 매칭 → 같은 퍼즐로 경기 시작, `ZONE`/`ZONE_B`로 구역 분리 검사)
 
+#### v2.0.2 · 원격 방 번호 배틀 · Google Play 게임즈 신원
+
+- **원격 방 번호(🔢 방 번호)**: 같은 Wi-Fi가 아니어도 방장이 6자리 번호 방을 만들고, 친구가 번호를 입력하면 전 세계 어디서든 연결됩니다. `info_hash = SHA-1("sumdoku-room|프로토콜|번호")`로 트래커·DHT에 등록하며, 참가자(join)가 방장(create)에게 제안하고 방장만 수락합니다. 모드·난이도·규칙은 방장 설정을 따릅니다(랜덤 매칭만 공정 고정 규칙).
+- **배틀은 Google Play 게임즈 로그인 필수**: 같은 Wi-Fi 방·랜덤 매칭·원격 방 모두 로비 진입 전에 로그인을 확인하고, 필요하면 로그인 창을 띄웁니다. GitHub판에는 Play 게임즈가 없어 배틀을 이용할 수 없다는 안내를 표시합니다.
+- **닉네임**: 기본값은 Google Play 게임즈 표시 이름(`PlayersClient.getCurrentPlayer().getDisplayName()`). 직접 입력하면 그 이름을 쓰고, 비우면 다시 Play 이름을 따라갑니다.
+- **국기**: Google Play 계정 국가(`BillingClient.getBillingConfigAsync` → `BillingConfig.getCountryCode()`). 받을 수 없을 때만 기기 언어 지역으로 대체합니다.
+- 테스트: `ROOM=1 node tests/online-match.cjs`(원격 방), `LOGIN=0 …`(로그인 없으면 배틀 차단)
+
 ## 풀이를 돕는 기능
 
 | 기능 | 활용 방법 |

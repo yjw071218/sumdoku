@@ -464,6 +464,20 @@ public class MainActivity extends Activity {
     }
     private class AndroidBridgeInterface {
         @JavascriptInterface public boolean isCloudConfigured() { return BuildConfig.GAMES_CONFIGURED; }
+        /** v2.0.2 배틀 신원: Play 게임즈 이름·ID + Play 계정 국가 → window.onPlayerProfile({signedIn,name,id,cc,reason}) */
+        @JavascriptInterface public void requestPlayerProfile(final boolean interactive) {
+            if (cloudGames == null) { postJs("window.onPlayerProfile&&window.onPlayerProfile({\"signedIn\":false,\"reason\":\"unavailable\"})"); return; }
+            cloudGames.player(interactive, json -> {
+                org.json.JSONObject o;
+                try { o = new org.json.JSONObject(json); } catch (Exception e) { o = new org.json.JSONObject(); }
+                final org.json.JSONObject out = o;
+                if (!out.optBoolean("signedIn") || monetization == null) { postJs("window.onPlayerProfile&&window.onPlayerProfile(" + out + ")"); return; }
+                monetization.queryCountry(cc -> {
+                    try { out.put("cc", cc != null && cc.matches("[A-Z]{2}") ? cc : ""); } catch (Exception ignored) {}
+                    postJs("window.onPlayerProfile&&window.onPlayerProfile(" + out + ")");
+                });
+            });
+        }
         @JavascriptInterface public void cloudSignIn() { if(cloudGames!=null) cloudGames.signIn(); }
         @JavascriptInterface public void cloudSave(String data) { if(cloudGames!=null) cloudGames.save(data); }
         @JavascriptInterface public void cloudLoad() { if(cloudGames!=null) cloudGames.load(); }

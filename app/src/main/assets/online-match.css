@@ -88,3 +88,29 @@
 @media (prefers-reduced-motion: reduce) {
   .om-orbit, .om-radar span, .om-vs-x, .battle-lobby-tabs .online-tab::after { animation: none; }
 }
+
+/* v2.0.2 · 랜덤 / 방 번호 전환, 원격 방 번호 */
+.om-name-hint { margin-top: 5px; font-size: 11px; color: var(--ui-muted, var(--text-muted)); }
+.om-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; padding: 4px; border-radius: 14px; background: var(--ui-soft, #f1f5f9); border: 1px solid var(--ui-line, #e2e8f0); }
+.om-kind { min-height: 42px; border: 0; border-radius: 10px; background: transparent; color: var(--ui-muted, var(--text-secondary)); font-weight: 800; font-size: 13.5px; cursor: pointer; transition: background .15s, color .15s; }
+.om-kind.active { background: var(--bg-surface, #fff); color: var(--ui-ink, var(--text-primary)); box-shadow: 0 2px 8px #0f172a14; }
+.om-kind:disabled { opacity: .45; cursor: default; }
+.online-view .om-only-room { display: none; }
+.online-view.om-kind-room .om-only-room { display: block; }
+.online-view.om-kind-room .om-only-random { display: none; }
+.om-room-intro { margin-top: 10px; font-size: 12px; line-height: 1.55; color: var(--ui-muted, var(--text-secondary)); }
+.om-room-box { margin-top: 12px; }
+.om-room-live { text-align: center; padding: 14px; border-radius: 16px; border: 1.5px dashed var(--ui-accent, #2563eb); background: color-mix(in srgb, var(--ui-accent, #2563eb) 7%, transparent); }
+.om-room-live .om-label { margin-top: 0; }
+.om-room-code { display: block; width: 100%; margin: 4px 0 10px; border: 0; background: transparent; cursor: pointer;
+  font-size: clamp(34px, 11vw, 46px); font-weight: 900; letter-spacing: 4px; font-variant-numeric: tabular-nums; color: var(--ui-accent, #2563eb); }
+.om-room-copy { min-height: 40px; }
+.om-room-actions { display: flex; flex-direction: column; gap: 10px; }
+.om-room-create { min-height: 48px; }
+.om-room-join-row { display: flex; gap: 8px; }
+.om-room-input { flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--ui-line, #e2e8f0); background: var(--ui-soft, var(--bg-surface));
+  color: var(--ui-ink, var(--text-primary)); font-size: 20px; font-weight: 800; letter-spacing: 3px; text-align: center; font-variant-numeric: tabular-nums; }
+.om-room-input:focus { outline: 0; border-color: var(--ui-accent, #2563eb); }
+.om-room-input[aria-invalid="true"] { border-color: #ef4444; }
+.om-room-join { min-height: 48px; white-space: nowrap; }
+.online-view.om-joiner .om-modes, .online-view.om-joiner .om-diffs { opacity: .5; pointer-events: none; }

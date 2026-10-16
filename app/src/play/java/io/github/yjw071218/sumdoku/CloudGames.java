@@ -36,6 +36,29 @@ public class CloudGames {
    }).addOnFailureListener(this::fail);
   });
  }
+ /** v2.0.2 배틀 신원: Play 게임즈 로그인 상태와 표시 이름·플레이어 ID. interactive=false면 로그인 창을 띄우지 않습니다. */
+ public void player(boolean interactive, java.util.function.Consumer<String> cb) {
+  activity.runOnUiThread(()->{
+   if(!BuildConfig.GAMES_CONFIGURED) { cb.accept("{\"signedIn\":false,\"reason\":\"unconfigured\"}"); return; }
+   com.google.android.gms.games.GamesSignInClient client=PlayGames.getGamesSignInClient(activity);
+   Runnable load=()->PlayGames.getPlayersClient(activity).getCurrentPlayer()
+    .addOnSuccessListener(p->{
+     try { JSONObject o=new JSONObject(); o.put("signedIn",true); o.put("name",p.getDisplayName()); o.put("id",p.getPlayerId()); cb.accept(o.toString()); }
+     catch(Exception e){ cb.accept("{\"signedIn\":false,\"reason\":\"error\"}"); }
+    })
+    .addOnFailureListener(e->cb.accept("{\"signedIn\":false,\"reason\":\"error\"}"));
+   client.isAuthenticated().addOnCompleteListener(t->{
+    if(t.isSuccessful() && t.getResult()!=null && t.getResult().isAuthenticated()) { load.run(); return; }
+    if(!interactive) { cb.accept("{\"signedIn\":false,\"reason\":\"signed_out\"}"); return; }
+    client.signIn().addOnSuccessListener(r->{
+     if(r.isAuthenticated()) load.run(); else cb.accept("{\"signedIn\":false,\"reason\":\"canceled\"}");
+    }).addOnFailureListener(e->{
+     int code=e instanceof com.google.android.gms.common.api.ApiException?((com.google.android.gms.common.api.ApiException)e).getStatusCode():-1;
+     cb.accept("{\"signedIn\":false,\"reason\":\"error\",\"code\":"+code+"}");
+    });
+   });
+  });
+ }
  public void signIn() { activity.runOnUiThread(()->auth(()->{busy=false; emit("signed_in","");})); }
  public void save(String data) { activity.runOnUiThread(()->{
   byte[] bytes=data.getBytes(StandardCharsets.UTF_8);

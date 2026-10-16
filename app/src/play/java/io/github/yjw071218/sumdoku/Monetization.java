@@ -237,6 +237,20 @@ public class Monetization implements PurchasesUpdatedListener {
         }));
     }
 
+    /** v2.0.2: Google Play 계정의 국가(ISO 3166-1 alpha-2, 예: KR). 4초 안에 답이 없으면 빈 문자열. */
+    public void queryCountry(java.util.function.Consumer<String> cb) {
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final java.util.function.Consumer<String> once = v -> { if (done.compareAndSet(false, true)) main.post(() -> cb.accept(v == null ? "" : v.trim().toUpperCase(java.util.Locale.ROOT))); };
+        main.postDelayed(() -> once.accept(""), 4000);
+        if (billing == null) { once.accept(""); return; }
+        main.post(() -> connectBilling(() -> {
+            try {
+                billing.getBillingConfigAsync(com.android.billingclient.api.GetBillingConfigParams.newBuilder().build(),
+                    (result, config) -> once.accept(result.getResponseCode() == BillingClient.BillingResponseCode.OK && config != null ? config.getCountryCode() : ""));
+            } catch (Exception e) { once.accept(""); }
+        }));
+    }
+
     // ------------------------------------------------------------------ 결제
     private void startBilling() {
         billing = BillingClient.newBuilder(activity)

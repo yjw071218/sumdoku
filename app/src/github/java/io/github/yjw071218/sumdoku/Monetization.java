@@ -24,4 +24,5 @@ public class Monetization {
     public void onResume() {}
     public void onPause() {}
     public void onDestroy() {}
+    public void queryCountry(java.util.function.Consumer<String> cb) { cb.accept(""); }
 }

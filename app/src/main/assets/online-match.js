@@ -156,6 +156,35 @@
     youHost: ['내가 방장 · 퍼즐을 생성합니다', 'You host · generating the puzzle', 'あなたがホスト · パズル生成中', '你是房主 · 正在生成谜题', '你是房主 · 正在生成謎題', 'Eres el anfitrión · generando el puzle', 'Vous hébergez · génération de la grille', 'Du hostest · Rätsel wird erstellt'],
     youGuest: ['상대가 방장 · 퍼즐을 받는 중', 'Opponent hosts · receiving the puzzle', '相手がホスト · パズル受信中', '对手是房主 · 正在接收谜题', '對手是房主 · 正在接收謎題', 'El rival es anfitrión · recibiendo el puzle', 'L’adversaire héberge · réception de la grille', 'Gegner hostet · Rätsel wird empfangen'],
     wifiOff: ['Wi-Fi가 꺼져 있어 온라인 매칭만 사용할 수 있습니다.', 'Wi-Fi is off — only online matching is available.', 'Wi-Fi がオフのため、オンラインマッチのみ利用できます。', 'Wi-Fi 已关闭，只能使用在线匹配。', 'Wi-Fi 已關閉，只能使用線上配對。', 'El Wi-Fi está apagado: solo hay partidas en línea.', 'Wi-Fi désactivé : seul le match en ligne est disponible.', 'WLAN ist aus – nur Online-Matches verfügbar.'],
+    titleRoom: ['원격 방 배틀', 'Remote room battle', 'リモートルーム対戦', '远程房间对战', '遠端房間對戰', 'Batalla en sala remota', 'Duel en salle à distance', 'Remote-Raumkampf'],
+    roomClose: ['방 닫기', 'Close room', 'ルームを閉じる', '关闭房间', '關閉房間', 'Cerrar sala', 'Fermer la salle', 'Raum schließen'],
+    kindRandom: ['🎲 랜덤 매칭', '🎲 Random', '🎲 ランダム', '🎲 随机匹配', '🎲 隨機配對', '🎲 Aleatoria', '🎲 Aléatoire', '🎲 Zufällig'],
+    kindRoom: ['🔢 방 번호', '🔢 Room code', '🔢 ルーム番号', '🔢 房间号', '🔢 房間號碼', '🔢 Código de sala', '🔢 Code de salle', '🔢 Raumcode'],
+    roomIntro: [
+      '내부망이 아니어도 됩니다. 방을 만들고 6자리 번호를 친구에게 알려 주면, 전 세계 어디서든 번호로 접속해 배틀할 수 있습니다.',
+      'No shared Wi-Fi needed. Create a room and share the 6-digit code — your friend can join from anywhere in the world.',
+      '同じネットワークでなくても大丈夫。ルームを作って6桁の番号を伝えれば、世界中どこからでも参加できます。',
+      '无需同一网络。创建房间并把 6 位房间号告诉好友，好友在世界任何地方都能加入。',
+      '不必在同一網路。建立房間並把 6 位號碼告訴好友，好友在世界任何地方都能加入。',
+      'No hace falta la misma Wi-Fi. Crea una sala y comparte el código de 6 dígitos: tu amigo puede unirse desde cualquier lugar.',
+      'Pas besoin du même Wi-Fi. Créez une salle et partagez le code à 6 chiffres : votre ami peut rejoindre depuis n’importe où.',
+      'Kein gemeinsames WLAN nötig. Raum erstellen, 6-stelligen Code teilen – dein Freund kann von überall beitreten.'
+    ],
+    roomCreate: ['방 만들기', 'Create room', 'ルームを作成', '创建房间', '建立房間', 'Crear sala', 'Créer une salle', 'Raum erstellen'],
+    roomJoin: ['번호로 참가', 'Join', '番号で参加', '输入房间号加入', '輸入號碼加入', 'Unirse', 'Rejoindre', 'Beitreten'],
+    roomCodeLabel: ['방 번호', 'Room code', 'ルーム番号', '房间号', '房間號碼', 'Código', 'Code', 'Code'],
+    roomCodePh: ['6자리 번호', '6-digit code', '6桁の番号', '6 位数字', '6 位數字', 'Código de 6 dígitos', 'Code à 6 chiffres', '6-stelliger Code'],
+    roomWaiting: ['친구가 이 번호를 입력하면 바로 연결됩니다', 'Your friend can join with this code', '友達がこの番号を入力するとすぐにつながります', '好友输入此房间号即可立即连接', '好友輸入此號碼即可立即連線', 'Tu amigo puede unirse con este código', 'Votre ami peut rejoindre avec ce code', 'Dein Freund kann mit diesem Code beitreten'],
+    roomJoining: ['방을 찾는 중…', 'Looking for the room…', 'ルームを探しています…', '正在寻找房间…', '正在尋找房間…', 'Buscando la sala…', 'Recherche de la salle…', 'Suche den Raum…'],
+    roomNotFound: ['아직 방을 찾지 못했습니다. 번호를 확인하고 방장이 방을 열어 두었는지 확인해 주세요.', 'Room not found yet. Check the code and make sure the host keeps the room open.', 'まだルームが見つかりません。番号とホストがルームを開いているか確認してください。', '尚未找到房间。请确认房间号，并确保房主保持房间开启。', '尚未找到房間。請確認號碼，並確保房主保持房間開啟。', 'Aún no se encuentra la sala. Revisa el código y que el anfitrión la mantenga abierta.', 'Salle introuvable pour l’instant. Vérifiez le code et que l’hôte garde la salle ouverte.', 'Raum noch nicht gefunden. Code prüfen und sicherstellen, dass der Host den Raum offen hält.'],
+    roomBad: ['6자리 숫자를 입력해 주세요.', 'Enter the 6-digit code.', '6桁の数字を入力してください。', '请输入 6 位数字。', '請輸入 6 位數字。', 'Introduce el código de 6 dígitos.', 'Saisissez le code à 6 chiffres.', 'Gib den 6-stelligen Code ein.'],
+    roomRules: ['방장의 모드·난이도·규칙으로 진행합니다', 'Plays with the host’s mode, difficulty and rules', 'ホストのモード・難易度・ルームで対戦します', '使用房主的模式、难度和规则', '使用房主的模式、難度與規則', 'Se juega con el modo, la dificultad y las reglas del anfitrión', 'Se joue avec le mode, la difficulté et les règles de l’hôte', 'Gespielt wird mit Modus, Schwierigkeit und Regeln des Hosts'],
+    copy: ['번호 복사', 'Copy code', '番号をコピー', '复制房间号', '複製號碼', 'Copiar código', 'Copier le code', 'Code kopieren'],
+    copied: ['방 번호를 복사했습니다.', 'Room code copied.', 'ルーム番号をコピーしました。', '已复制房间号。', '已複製房間號碼。', 'Código copiado.', 'Code copié.', 'Code kopiert.'],
+    nameHint: ['비워 두면 Google Play 게임즈 이름을 사용합니다', 'Leave empty to use your Google Play Games name', '空欄にすると Google Play ゲームズの名前を使います', '留空则使用 Google Play 游戏名称', '留空則使用 Google Play 遊戲名稱', 'Déjalo vacío para usar tu nombre de Google Play Juegos', 'Laissez vide pour utiliser votre nom Google Play Jeux', 'Leer lassen, um deinen Google Play Spiele-Namen zu verwenden'],
+    loginNeed: ['배틀은 Google Play 게임즈에 로그인해야 이용할 수 있습니다.', 'Sign in to Google Play Games to play battles.', 'バトルを遊ぶには Google Play ゲームズへのログインが必要です。', '登录 Google Play 游戏后才能进行对战。', '登入 Google Play 遊戲後才能進行對戰。', 'Inicia sesión en Google Play Juegos para jugar batallas.', 'Connectez-vous à Google Play Jeux pour jouer en duel.', 'Melde dich bei Google Play Spiele an, um Kämpfe zu spielen.'],
+    loginGithub: ['배틀은 Google Play 스토어 버전에서 Google Play 게임즈에 로그인한 뒤 이용할 수 있습니다.', 'Battles are available in the Google Play Store version after signing in to Google Play Games.', 'バトルは Google Play ストア版で Google Play ゲームズにログインすると利用できます。', '对战需要在 Google Play 商店版中登录 Google Play 游戏后使用。', '對戰需在 Google Play 商店版登入 Google Play 遊戲後使用。', 'Las batallas están en la versión de Google Play Store tras iniciar sesión en Google Play Juegos.', 'Les duels sont disponibles dans la version Google Play Store après connexion à Google Play Jeux.', 'Kämpfe gibt es in der Google-Play-Store-Version nach Anmeldung bei Google Play Spiele.'],
+    loginBusy: ['Google Play 게임즈에 로그인하는 중…', 'Signing in to Google Play Games…', 'Google Play ゲームズにログイン中…', '正在登录 Google Play 游戏…', '正在登入 Google Play 遊戲…', 'Iniciando sesión en Google Play Juegos…', 'Connexion à Google Play Jeux…', 'Anmeldung bei Google Play Spiele…'],
     unranked: ['배치 중', 'Placement', '配置中', '定级中', '定級中', 'Clasificación', 'Placement', 'Platzierung']
   };
   const T = k => (STR[k] ? pickLang(STR[k]) : k);
@@ -237,12 +266,39 @@
       .replace(/\s+/g, ' ').trim();
     return Array.from(s).slice(0, 16).join('');
   }
+  // v2.0.2 · Google Play 게임즈 신원: 닉네임 기본값은 Play 게임즈 표시 이름, 국가는 Google Play 계정 국가.
+  const ID = { checked: false, signedIn: false, name: '', id: '', cc: '', reason: '', waiters: [] };
+  window.onPlayerProfile = function (p) {
+    p = p && typeof p === 'object' ? p : {};
+    ID.checked = true;
+    ID.signedIn = !!p.signedIn;
+    ID.name = cleanName(p.name || '');
+    ID.id = typeof p.id === 'string' ? p.id.slice(0, 64) : '';
+    ID.cc = /^[A-Z]{2}$/.test(p.cc || '') ? p.cc : (ID.signedIn ? ID.cc : '');
+    ID.reason = String(p.reason || '');
+    const w = ID.waiters.splice(0);
+    w.forEach(fn => { try { fn(ID.signedIn); } catch (_) {} });
+    try { UI.render(); } catch (_) {}
+  };
+  const loginGateOn = () => !!window.AndroidBridge?.requestPlayerProfile;
+  /** Play 게임즈 로그인을 확인합니다. interactive=true면 필요할 때 로그인 창을 띄웁니다. */
+  function ensurePlayLogin(interactive) {
+    if (!loginGateOn()) return Promise.resolve(true);
+    if (ID.signedIn) return Promise.resolve(true);
+    return new Promise(resolve => {
+      let done = false;
+      const fin = v => { if (!done) { done = true; resolve(v); } };
+      ID.waiters.push(fin);
+      setTimeout(() => fin(false), interactive ? 60000 : 8000);
+      try { window.AndroidBridge.requestPlayerProfile(!!interactive); } catch (_) { fin(false); }
+    });
+  }
+  function customName() { return cleanName(store.get('sumdoku_online_nick', '')); }
   function myName() {
-    let n = cleanName(store.get('sumdoku_online_name', ''));
-    if (!n) { n = 'Player-' + randId(4).toUpperCase(); store.set('sumdoku_online_name', n); }
-    return n;
+    return customName() || ID.name || ('Player-' + (ID.id || M.selfId || 'XXXX').slice(-4).toUpperCase());
   }
   function myCountry() {
+    if (ID.cc) return ID.cc;
     const langs = [].concat(navigator.languages || [], navigator.language || []);
     for (const l of langs) { const m = /^[a-z]{2,3}[-_]([A-Za-z]{2})\b/.exec(l || ''); if (m) return m[1].toUpperCase(); }
     return LANG_CC[(window.I18N && I18N.currentLang) || 'ko'] || '';
@@ -278,10 +334,15 @@
     return { n, cc, tier: cleanTier(p && p.tier) };
   }
 
+  try { const old = localStorage.getItem('sumdoku_online_name'); if (old && !/^Player-[A-Z0-9]{4}$/.test(old) && !localStorage.getItem('sumdoku_online_nick')) localStorage.setItem('sumdoku_online_nick', old); localStorage.removeItem('sumdoku_online_name'); } catch (_) {}
+
   // ---------------------------------------------------------------------------
   // 매칭 엔진
   // ---------------------------------------------------------------------------
   const M = {
+    kind: store.get('sumdoku_online_kind', 'random') === 'room' ? 'room' : 'random', // random | room
+    roomRole: '',             // room일 때 create | join
+    roomCode: '',
     state: 'idle',            // idle | searching | proposing | matched
     role: 0,                  // 1 방장 / 2 참가자
     selfId: '',
@@ -315,9 +376,30 @@
       return '';
     },
 
+    startRandom() {
+      this.kind = 'random'; this.roomRole = ''; this.roomCode = '';
+      this.start();
+    },
+
+    /** 원격 방: role='create'면 새 6자리 번호를 만들고, 'join'이면 받은 번호로 방장을 찾습니다. */
+    startRoom(role, code) {
+      if (role === 'create') {
+        const a = new Uint32Array(1);
+        try { crypto.getRandomValues(a); } catch (_) { a[0] = Math.floor(Math.random() * 1e9); }
+        code = String(100000 + (a[0] % 900000));
+      }
+      if (!/^\d{6}$/.test(code || '')) { window.app?.showToast?.(T('roomBad'), 3000); return; }
+      this.kind = 'room'; this.roomRole = role; this.roomCode = code;
+      this.start();
+    },
+
     start() {
       const err = this.canRun();
       if (err) { window.app?.showToast?.(err, 4500); return; }
+      if (loginGateOn() && !ID.signedIn) {
+        ensurePlayLogin(true).then(ok => { if (ok) this.start(); else window.app?.showToast?.(ID.reason === 'unavailable' ? T('loginGithub') : T('loginNeed'), 4500); });
+        return;
+      }
       this.stop(true);
       const app = window.app;
       // 기존 Wi-Fi 방/참가 상태를 정리합니다(내부 호출이므로 온라인 세션은 유지).
@@ -333,7 +415,10 @@
       this.selfId = randId(20);
       this.seen = new Set();
       this.dht = { nodes: 0, peers: 0, phase: '' };
-      const hb = sha1Bytes(`sumdoku-match|${PROTO}|${this.zone}|${this.mode}|${this.diff}`);
+      // 랜덤: 구역×모드×난이도마다 / 방 번호: 번호마다 서로 다른 info_hash를 씁니다.
+      const hb = this.kind === 'room'
+        ? sha1Bytes(`sumdoku-room|${PROTO}|${this.roomCode}`)
+        : sha1Bytes(`sumdoku-match|${PROTO}|${this.zone}|${this.mode}|${this.diff}`);
       this.hashBin = toBinStr(hb);
       this.hashHex = toHex(hb);
       this.startedAt = Date.now();
@@ -371,7 +456,11 @@
       this.partner = null;
       this.state = 'idle';
       this.role = 0;
-      if (!keepActive) this.active = false;
+      if (!keepActive) {
+        this.active = false;
+        this.mode = pick(MODES, store.get('sumdoku_online_mode', ''), 'race');
+        this.diff = pick(DIFFS, store.get('sumdoku_online_diff', ''), 'expert');
+      }
       UI.render();
     },
 
@@ -454,7 +543,7 @@
       peer.dc = dc;
       dc.onopen = () => {
         peer.open = true;
-        this.sendTo(peer, { t: 'hello', id: this.selfId, proto: PROTO, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) });
+        this.sendTo(peer, { t: 'hello', id: this.selfId, proto: PROTO, kind: this.kind, roomRole: this.roomRole, code: this.roomCode, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) });
         UI.render();
       };
       dc.onmessage = e => this.onData(peer, e.data);
@@ -535,7 +624,11 @@
     },
 
     onHello(peer, msg) {
-      if (msg.id !== peer.id || msg.proto !== PROTO || msg.zone !== this.zone || msg.mode !== this.mode || msg.diff !== this.diff) {
+      const okRandom = this.kind === 'random' && msg.kind !== 'room' && msg.zone === this.zone && msg.mode === this.mode && msg.diff === this.diff;
+      // 방 번호: 같은 번호이고, 한쪽은 방장(create)·한쪽은 참가자(join)여야 합니다.
+      const okRoom = this.kind === 'room' && msg.kind === 'room' && msg.code === this.roomCode && ['create', 'join'].includes(msg.roomRole) && msg.roomRole !== this.roomRole
+        && MODES.some(x => x.id === msg.mode) && DIFFS.some(x => x.id === msg.diff);
+      if (msg.id !== peer.id || msg.proto !== PROTO || !(okRandom || okRoom)) {
         this.closePeer(peer); this.peers.delete(peer.id); return;
       }
       peer.hello = msg;
@@ -547,7 +640,10 @@
     tryPropose() {
       if (this.state !== 'searching') return;
       const now = Date.now();
-      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && this.selfId < p.id && now - p.rejectedAt > 8000);
+      // 랜덤: 작은 ID가 제안 / 방 번호: 참가자가 방장에게 제안합니다.
+      if (this.kind === 'room' && this.roomRole !== 'join') return;
+      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && now - p.rejectedAt > 8000
+        && (this.kind === 'room' ? p.hello.roomRole === 'create' : this.selfId < p.id));
       if (!candidates.length) return;
       const target = candidates[0];
       this.state = 'proposing';
@@ -571,6 +667,14 @@
 
     onPropose(peer) {
       // 제안은 항상 작은 ID 쪽이 보냅니다. 나는 찾는 중일 때만 수락합니다.
+      if (this.kind === 'room') {
+        // 방장만 수락합니다. 먼저 온 참가자 한 명과 연결되고, 방장이 경기 호스트가 됩니다.
+        if (this.state === 'searching' && this.roomRole === 'create' && peer.hello?.roomRole === 'join') {
+          this.sendTo(peer, { t: 'accept' });
+          this.confirmMatch(peer, 1);
+        } else this.sendTo(peer, { t: 'reject' });
+        return;
+      }
       if (this.state === 'searching' && peer.id < this.selfId && peer.hello) {
         this.sendTo(peer, { t: 'accept' });
         this.confirmMatch(peer, 2);
@@ -580,6 +684,13 @@
     onAccept(peer) {
       if (this.state !== 'proposing' || this.proposeTarget !== peer.id) { this.sendTo(peer, { t: 'bye' }); return; }
       clearTimeout(this.proposeTimer);
+      if (this.kind === 'room') {
+        // 참가자: 방장이 고른 모드·난이도를 따릅니다(내 저장된 선택은 바꾸지 않음).
+        this.mode = pick(MODES, peer.hello?.mode, this.mode);
+        this.diff = pick(DIFFS, peer.hello?.diff, this.diff);
+        this.confirmMatch(peer, 2);
+        return;
+      }
       this.confirmMatch(peer, 1);
     },
 
@@ -611,7 +722,8 @@
         try { app.cancelRoomPreparation?.(); } finally { this.internalCancel = false; }
         app.battleMode = this.mode;
         app.battleDiff = this.diff;
-        const dummy = { difficulty: this.diff, rules: window.normalizedRules ? window.normalizedRules(FIXED_RULES, this.mode) : FIXED_RULES, online: true };
+        const rulesSrc = this.kind === 'room' ? (app.settings || FIXED_RULES) : FIXED_RULES;
+        const dummy = { difficulty: this.diff, rules: window.normalizedRules ? window.normalizedRules(rulesSrc, this.mode) : FIXED_RULES, online: true };
         const res = JSON.parse(window.AndroidBridge.startOnlineBattleServer(this.mode, this.diff, this.mode === 'score' ? 300 : 0, JSON.stringify(dummy)));
         if (!res.ok) throw new Error('server');
         app.battleRole = 1;
@@ -890,7 +1002,8 @@
   if (typeof window.normalizedRules === 'function') {
     const baseRules = window.normalizedRules;
     window.normalizedRules = function (settings, battleMode) {
-      if (M.active && (M.state === 'matched' || window.app?.isBattle)) return baseRules(FIXED_RULES, battleMode);
+      // 랜덤 매칭만 공정 고정 규칙. 방 번호 배틀은 같은 Wi-Fi 방처럼 방장 설정을 씁니다.
+      if (M.active && M.kind === 'random' && (M.state === 'matched' || window.app?.isBattle)) return baseRules(FIXED_RULES, battleMode);
       return baseRules(settings, battleMode);
     };
   }
@@ -927,14 +1040,36 @@
         </div>
         <label class="om-label" data-k="name" for="om-name-input"></label>
         <div class="om-name-row"><span class="om-name-flag"></span><input id="om-name-input" class="om-name-input" type="text" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="done"><span class="om-name-tier"></span></div>
-        <div class="om-label" data-k="zone"></div>
-        <div class="om-zones" role="radiogroup"></div>
-        <div class="om-zone-hint"></div>
+        <div class="om-name-hint"></div>
+        <div class="om-kinds" role="tablist">
+          <button type="button" class="om-kind" data-kind="random" role="tab"></button>
+          <button type="button" class="om-kind" data-kind="room" role="tab"></button>
+        </div>
+        <div class="om-only-room om-room-intro"></div>
+        <div class="om-only-random">
+          <div class="om-label" data-k="zone"></div>
+          <div class="om-zones" role="radiogroup"></div>
+          <div class="om-zone-hint"></div>
+        </div>
         <div class="om-label" data-k="mode"></div>
         <div class="om-chips om-modes" role="radiogroup"></div>
         <div class="om-label" data-k="diff"></div>
         <div class="om-chips om-diffs" role="radiogroup"></div>
         <div class="om-rules"></div>
+        <div class="om-only-room om-room-box">
+          <div class="om-room-live hidden">
+            <div class="om-label" data-k="roomCodeLabel"></div>
+            <button type="button" class="om-room-code" title=""></button>
+            <button type="button" class="btn btn-secondary om-room-copy"></button>
+          </div>
+          <div class="om-room-actions">
+            <button type="button" class="btn btn-primary om-room-create"></button>
+            <div class="om-room-join-row">
+              <input class="om-room-input" type="text" inputmode="numeric" maxlength="7" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="room code">
+              <button type="button" class="btn btn-secondary om-room-join"></button>
+            </div>
+          </div>
+        </div>
         <div class="om-status hidden" aria-live="polite">
           <div class="om-radar" aria-hidden="true"><span></span><span></span><span></span></div>
           <div class="om-status-text"></div>
@@ -956,7 +1091,12 @@
         statusText: view.querySelector('.om-status-text'), stats: view.querySelector('.om-stats'),
         slow: view.querySelector('.om-slow'), toGlobal: view.querySelector('.om-to-global'),
         matched: view.querySelector('.om-matched'), nat: view.querySelector('.om-nat'),
-        start: view.querySelector('.om-start')
+        start: view.querySelector('.om-start'),
+        nameHint: view.querySelector('.om-name-hint'),
+        kinds: view.querySelectorAll('.om-kind'), roomIntro: view.querySelector('.om-room-intro'),
+        roomLive: view.querySelector('.om-room-live'), roomCode: view.querySelector('.om-room-code'), roomCopy: view.querySelector('.om-room-copy'),
+        roomActions: view.querySelector('.om-room-actions'), roomCreate: view.querySelector('.om-room-create'),
+        roomInput: view.querySelector('.om-room-input'), roomJoin: view.querySelector('.om-room-join')
       };
 
       tab.addEventListener('click', () => { app.sound?.play?.('click'); this.show(); });
@@ -970,14 +1110,46 @@
 
       this.el.start.addEventListener('click', () => {
         app.sound?.play?.('click');
-        if (M.state === 'idle') M.start(); else { M.leave(); setTimeout(() => this.render(), 400); }
+        if (M.state === 'idle') M.startRandom(); else { M.leave(); setTimeout(() => this.render(), 400); }
       });
-      this.el.nameInput.value = myName();
+      // 닉네임: 비워 두거나 Play 이름과 같으면 Google Play 게임즈 이름을 계속 따라갑니다.
+      this.el.nameInput.value = customName();
       this.el.nameInput.addEventListener('change', () => {
         const v = cleanName(this.el.nameInput.value);
-        if (v) store.set('sumdoku_online_name', v);
-        this.el.nameInput.value = myName();
+        if (!v || v === ID.name) { try { localStorage.removeItem('sumdoku_online_nick'); } catch (_) {} }
+        else store.set('sumdoku_online_nick', v);
+        this.el.nameInput.value = customName();
+        this.render();
       });
+      this.el.kinds.forEach(b => b.addEventListener('click', () => {
+        if (M.state !== 'idle') return;
+        app.sound?.play?.('click');
+        M.kind = b.dataset.kind === 'room' ? 'room' : 'random';
+        store.set('sumdoku_online_kind', M.kind);
+        this.render();
+      }));
+      this.el.roomCreate.addEventListener('click', () => { app.sound?.play?.('click'); M.startRoom('create'); });
+      const join = () => {
+        app.sound?.play?.('click');
+        const code = String(this.el.roomInput.value || '').replace(/\D/g, '');
+        if (code.length !== 6) { this.el.roomInput.setAttribute('aria-invalid', 'true'); app.showToast?.(T('roomBad'), 2500); return; }
+        this.el.roomInput.removeAttribute('aria-invalid');
+        M.startRoom('join', code);
+      };
+      this.el.roomJoin.addEventListener('click', join);
+      this.el.roomInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') join(); });
+      this.el.roomInput.addEventListener('input', () => {
+        const d = this.el.roomInput.value.replace(/\D/g, '').slice(0, 6);
+        this.el.roomInput.value = d.length > 3 ? d.slice(0, 3) + ' ' + d.slice(3) : d;
+      });
+      const copy = async () => {
+        if (!M.roomCode) return;
+        let ok = false;
+        try { if (window.AndroidBridge?.copyToClipboard) { AndroidBridge.copyToClipboard(M.roomCode); ok = true; } else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(M.roomCode); ok = true; } } catch (_) {}
+        if (ok) app.showToast?.(T('copied') + ` (${M.roomCode})`, 2500);
+      };
+      this.el.roomCode.addEventListener('click', copy);
+      this.el.roomCopy.addEventListener('click', copy);
       this.el.toGlobal.addEventListener('click', () => { app.sound?.play?.('click'); M.setZone('global'); this.renderPickers(); });
       this.renderPickers();
       this.render();
@@ -1034,11 +1206,33 @@
       if (!this.built) return;
       const e = this.el;
       e.tab.textContent = T('tab');
-      e.title.textContent = T('title');
+      e.title.textContent = M.kind === 'room' ? T('titleRoom') : T('title');
       e.intro.textContent = T('intro');
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
-      e.rules.textContent = T('rules');
-      e.nameInput.placeholder = T('namePh');
+      e.rules.textContent = M.kind === 'room' ? T('roomRules') : T('rules');
+      e.nameHint.textContent = T('nameHint');
+      e.kinds.forEach(b => {
+        const on = b.dataset.kind === M.kind;
+        b.textContent = T(b.dataset.kind === 'room' ? 'kindRoom' : 'kindRandom');
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.disabled = M.state !== 'idle' && !on;
+      });
+      e.view.classList.toggle('om-kind-room', M.kind === 'room');
+      e.roomIntro.textContent = T('roomIntro');
+      e.roomCreate.textContent = '🏠 ' + T('roomCreate');
+      e.roomJoin.textContent = T('roomJoin');
+      e.roomInput.placeholder = T('roomCodePh');
+      e.roomCopy.textContent = '📋 ' + T('copy');
+      const live = M.kind === 'room' && M.roomRole === 'create' && M.state !== 'idle';
+      e.roomLive.classList.toggle('hidden', !live);
+      e.roomActions.classList.toggle('hidden', M.state !== 'idle');
+      if (live) e.roomCode.textContent = M.roomCode.slice(0, 3) + ' ' + M.roomCode.slice(3);
+      // 참가자: 방장의 모드·난이도를 따르므로 선택 칩을 잠급니다.
+      e.view.classList.toggle('om-joiner', M.kind === 'room' && M.roomRole === 'join' && M.state !== 'idle');
+      // Play 게임즈 이름을 기본값(placeholder)으로 보여 줍니다.
+      e.nameInput.placeholder = ID.name || T('namePh');
+      if (document.activeElement !== e.nameInput) e.nameInput.value = customName();
       e.nameInput.disabled = M.state !== 'idle';
       e.nameFlag.textContent = flagOf(myCountry());
       const mt = myTier(M.diff);
@@ -1053,6 +1247,9 @@
       e.view.classList.toggle('om-is-matched', M.state === 'matched');
       e.start.textContent = busy ? T('cancel') : T('start');
       e.start.className = `btn ${busy ? 'btn-secondary' : 'btn-primary'} om-start`;
+      // 방 번호 화면에서는 대기 전엔 '방 만들기/참가' 버튼을 쓰고, 진행 중일 때만 취소 버튼을 보입니다.
+      e.start.hidden = M.kind === 'room' && !busy;
+      if (busy && M.kind === 'room' && M.roomRole === 'create' && M.state !== 'matched') e.start.textContent = T('roomClose');
       e.status.classList.toggle('hidden', !busy || M.state === 'matched');
       e.matched.classList.toggle('hidden', M.state !== 'matched');
       [e.zones, e.modes, e.diffs].forEach(w => w.querySelectorAll('button').forEach(b => { b.disabled = M.state === 'matched'; }));
@@ -1062,7 +1259,8 @@
         const openTrackers = M.trackers.filter(t => t.open).length;
         const waiting = Math.max(0, ...M.trackers.map(t => t.waiting || 0));
         const z = ZONES.find(x => x.id === M.zone);
-        e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
+        if (M.kind === 'room') e.statusText.textContent = M.state === 'proposing' ? T('found') : (M.roomRole === 'create' ? T('roomWaiting') : T('roomJoining'));
+        else e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
         const stat = (k, v) => `<div class="om-stat"><span class="om-stat-v">${v}</span><span class="om-stat-k">${T(k)}</span></div>`;
         e.stats.innerHTML =
           stat('elapsed', `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`) +
@@ -1070,7 +1268,8 @@
           stat('dht', M.dht.nodes ? `${M.dht.nodes}` : '…') +
           stat('waiting', waiting ? String(waiting) : '–') +
           stat('peers', String(M.seen.size));
-        e.slow.classList.toggle('hidden', !(sec >= 60 && M.zone !== 'global'));
+        e.slow.classList.toggle('hidden', !(M.kind === 'random' && sec >= 60 && M.zone !== 'global'));
+        if (M.kind === 'room' && M.roomRole === 'join' && sec >= 45) e.statusText.textContent = T('roomNotFound');
       }
       if (M.state === 'matched') {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
@@ -1089,7 +1288,8 @@
         const x = document.createElement('span'); x.className = 'om-vs-x'; x.textContent = 'VS';
         vs.append(card(T('me'), myProfile(M.diff)), x, card(T('opp'), M.partnerProfile || cleanProfile(null, M.partner)));
         const meta = document.createElement('div'); meta.className = 'om-matched-meta';
-        meta.textContent = `${z.flag} ${L(z)} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
+        const where = M.kind === 'room' ? `🔢 ${M.roomCode}` : `${z.flag} ${L(z)}`;
+        meta.textContent = `${where} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
         e.matched.append(h, vs, meta);
       }
     }
@@ -1176,6 +1376,22 @@
       return r;
     };
 
+    // v2.0.2 · 배틀(같은 Wi-Fi 방 포함)은 Google Play 게임즈에 로그인한 사람만 이용할 수 있습니다.
+    const gatedOpen = P.openBattleLobby;
+    P.openBattleLobby = function () {
+      if (!loginGateOn() || ID.signedIn) return gatedOpen.apply(this, arguments);
+      const args = arguments;
+      if (ID.checked && ID.reason === 'unavailable') { this.showToast?.(T('loginGithub'), 4500); return; }
+      // 이미 로그인된 기기는 금방 끝나므로, 0.7초 넘게 걸릴 때만 '로그인 중' 안내를 띄웁니다.
+      let settled = false;
+      setTimeout(() => { if (!settled) this.showToast?.(T('loginBusy'), 2500); }, 700);
+      ensurePlayLogin(true).then(ok => {
+        settled = true;
+        if (ok) gatedOpen.apply(this, args);
+        else this.showToast?.(ID.reason === 'unavailable' ? T('loginGithub') : T('loginNeed'), 4500);
+      });
+    };
+
     // 결과 화면을 닫고 홈으로 가면 온라인 연결을 끝냅니다.
     const baseSwitch = P.switchView;
     P.switchView = function (name) {
@@ -1195,6 +1411,7 @@
   }
 
   install();
+  setTimeout(() => { if (loginGateOn()) ensurePlayLogin(false); }, 1200);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => UI.build());
   else UI.build();
   // window.app은 app.js의 DOMContentLoaded에서 만들어지므로, 아직 없으면 잠시 후 다시 시도합니다.
