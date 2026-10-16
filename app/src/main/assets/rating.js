@@ -28,7 +28,7 @@
  * 난이도 배율(v1.1.25): 난이도가 높을수록 RP 변화 폭(얻는 RP·잃는 RP 모두)이 커집니다.
  *   초급 ×1 · 중급 ×1.25 · 고급 ×1.5 · 전문가 ×2 · 루나틱 ×2.5   (타임어택 점수 기반 RP도 같은 배율)
  *
- * 티어: 브론즈 0~1399 · 실버 1400 · 골드 1900 · 플래티넘 2400 · 다이아몬드 2900 · 마스터 3400 · 그랜드마스터 3900 (브론즈~다이아몬드 V~I, 단계당 100 RP)
+ * 티어: 브론즈 0~1499 · 실버 1500 · 골드 2000 · 플래티넘 2500 · 다이아몬드 3000 · 마스터 3500 · 그랜드마스터 4000 (브론즈~다이아몬드 V~I, 단계당 100 RP)
  */
 (() => {
   if (typeof SumdokuApp === 'undefined') return;
@@ -53,14 +53,14 @@
   const OLD_CAP = { easy: 1200, medium: 1700, hard: 2200, expert: 2700, lunatic: 3200 }; // 이전 버전 기록 이전용
   const TIERS = [
     { id: 'bronze', ko: '브론즈', min: 0, color: '#b45309' },
-    { id: 'silver', ko: '실버', min: 1400, color: '#64748b' },
-    { id: 'gold', ko: '골드', min: 1900, color: '#ca8a04' },
-    { id: 'platinum', ko: '플래티넘', min: 2400, color: '#0d9488' },
-    { id: 'diamond', ko: '다이아몬드', min: 2900, color: '#2563eb' },
-    { id: 'master', ko: '마스터', min: 3400, color: '#9333ea' },
-    { id: 'grandmaster', ko: '그랜드마스터', min: 3900, color: '#dc2626' }
+    { id: 'silver', ko: '실버', min: 1500, color: '#64748b' },
+    { id: 'gold', ko: '골드', min: 2000, color: '#ca8a04' },
+    { id: 'platinum', ko: '플래티넘', min: 2500, color: '#0d9488' },
+    { id: 'diamond', ko: '다이아몬드', min: 3000, color: '#2563eb' },
+    { id: 'master', ko: '마스터', min: 3500, color: '#9333ea' },
+    { id: 'grandmaster', ko: '그랜드마스터', min: 4000, color: '#dc2626' }
   ];
-  const ROMAN = ['V', 'IV', 'III', 'II', 'I']; // v1.1.28: 5단계, 단계마다 100 RP (브론즈 V는 0~999)
+  const ROMAN = ['V', 'IV', 'III', 'II', 'I']; // 5단계(V→IV→III→II→I), 단계마다 100 RP (1000 RP = 브론즈 V 시작)
 
   /* v1.1.29 · PUBG 경쟁전 스타일 택티컬 엠블럼(SVG) — 다층 입체 금속 베젤 + 장갑 크레스트 + 단계(V~I)별 외형 진화
    *   언랭크       건메탈 육각 독태그 장갑판 + 전술 스텐실 '?' + 볼트
@@ -634,9 +634,11 @@
     const t = TIERS[k], next = TIERS[k + 1];
     let division = '', divMin = t.min, divMax = next ? next.min : null;
     if (k <= 4) {
-      // 다음 티어 시작점에서 100 RP씩 아래로 I, II, III, IV, V. 가장 아래 단계(V)는 티어 시작점까지 포함합니다.
+      // 다음 티어 시작점에서 100 RP씩 아래로 I, II, III, IV, V. 가장 아래 단계(V)는 1000 RP(1000 미만은 0)부터 시작합니다.
       const d = clamp(ROMAN.length - 1 - Math.floor((next.min - 1 - rating) / DIV_RP), 0, ROMAN.length - 1);
-      division = ROMAN[d]; divMax = next.min - (ROMAN.length - 1 - d) * DIV_RP; divMin = d === 0 ? t.min : divMax - DIV_RP;
+      division = ROMAN[d]; divMax = next.min - (ROMAN.length - 1 - d) * DIV_RP;
+      const baseMin = divMax - DIV_RP;
+      divMin = d === 0 && rating < baseMin ? t.min : baseMin;
     }
     return { ...t, index: k, division, name: tr(t.ko) + (division ? ' ' + division : ''), divMin, divMax, next };
   }

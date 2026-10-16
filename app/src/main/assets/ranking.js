@@ -108,7 +108,7 @@
         b.type = 'button'; b.className = 'rk-cell' + (m === curMode && d === curDiff ? ' on' : '') + (s.games ? '' : ' empty');
         b.style.setProperty('--tier', !unr && s.games ? tier.color : '#94a3b8');
         b.setAttribute('aria-label', `${diffName(d)} ${t(m)} ${unr ? tier.name : s.games ? tier.name + ' ' + s.rating + ' RP' : t('unplayed')}`);
-        const sym = cell('rk-sym'); sym.innerHTML = unr || s.games ? R.tierSymbol(tier.id, 26) : '';
+        const sym = cell('rk-sym'); sym.innerHTML = unr || s.games ? R.tierSymbol(tier.id, 26, tier.division) : '';
         const txt = cell('rk-txt'); txt.append(cell('rk-tier', unr || s.games ? tier.name : '—'), cell('rk-rp', unr ? `${tier.placementDone} / ${R.PLACEMENT}` : s.games ? `${s.rating} RP` : t('unplayed')));
         b.append(sym, txt);
         b.onclick = () => { this._rankMode = m; this._rankDiff = d; this.renderRankingView(); };
@@ -122,7 +122,7 @@
     renderStreak(R, R.ladder(all, curMode).byDiff[curDiff]);
   };
 
-  /* 랭크 단계 시각화: 위에서부터 그랜드마스터 → 브론즈. 단계가 있는 티어는 IV~I 네 칸으로 나누고,
+  /* 랭크 단계 시각화: 위에서부터 그랜드마스터 → 브론즈. 단계가 있는 티어는 V~I 다섯 칸으로 나누고,
      선택한 랭크가 있는 칸을 강조하고 정확한 위치에 '현재' 표시를 둡니다. */
   function renderLadder(R, s, mode, diff) {
     document.getElementById('ranking-ladder-title').textContent = t('ladder');
@@ -144,14 +144,15 @@
       const divided = !!next && idx <= 4;
       const parts = divided ? 5 : 1;
       for (let d = 0; d < parts; d++) {
-        // 단계마다 100 RP: 가장 아래 칸(V)만 티어 시작점부터
+        // 단계마다 100 RP: 가장 아래 칸(V)은 1000 RP(1000 미만은 0)부터 시작
         const hi = divided ? next.min - (parts - 1 - d) * 100 : (next ? next.min : tier.min + 500);
-        const lo = divided ? (d === 0 ? tier.min : hi - 100) : tier.min, span = hi - lo;
+        const lo = divided ? (d === 0 ? tier.min : hi - 100) : tier.min;
+        const pLo = divided && d === 0 && s.rating >= hi - 100 ? hi - 100 : lo, span = hi - pLo;
         const seg = mk('div', 'rl-seg'); seg.append(mk('span', 'rl-lbl', divided ? ['V', 'IV', 'III', 'II', 'I'][d] : ''));
         if (s.rating >= hi || idx < me.index) seg.classList.add('full');
         if (idx === me.index && s.rating >= lo && (s.rating < hi || !next)) {
           seg.classList.add('cur');
-          const pct = next ? Math.max(0, Math.min(100, (s.rating - lo) / span * 100)) : 100;
+          const pct = next ? Math.max(0, Math.min(100, (s.rating - pLo) / span * 100)) : 100;
           const fill = mk('i', 'rl-fill'); fill.style.width = pct.toFixed(1) + '%'; seg.append(fill);
           const pin = mk('b', 'rl-pin', t('you')); pin.style.left = `calc(${pct.toFixed(1)}% - 1px)`; seg.append(pin);
         }
