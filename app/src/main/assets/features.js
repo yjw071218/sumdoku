@@ -300,6 +300,8 @@
   ];
   const unlocked = load('sumdoku_achievements', {});
   const counters = Object.assign({ battleWins: 0 }, load('sumdoku_ach_counters', {}));
+  // v2.1.5: 개발자 모드(GitHub판)에서 업적을 일괄 해금할 수 있도록 노출합니다.
+  window.SumdokuAchievements = { list: ACH, unlocked, save: () => save('sumdoku_achievements', unlocked) };
   function evaluate(app, ctx, silent) {
     const fresh = [];
     ACH.forEach(a => {

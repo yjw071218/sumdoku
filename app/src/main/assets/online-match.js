@@ -40,10 +40,14 @@
     { urls: 'stun:global.stun.twilio.com:3478' }
   ];
   const OFFER_POOL = 5;            // announce 한 번에 실어 보내는 offer 수
-  const ANNOUNCE_MIN_SEC = 25;     // 트래커 재등록 최소 간격
+  const ANNOUNCE_MIN_SEC = 25;     // 트래커 재등록 최소 간격(트래커 권장값 하한)
+  const FAST_ANNOUNCE_SEC = 6;     // v2.1.5: 탐색 초반 90초는 6초마다 재등록해 서로를 빨리 발견합니다.
+  const FAST_WINDOW_MS = 90000;
+  const POOL_REFRESH_MS = 20000;   // offer 풀 재사용 시간
   const OFFER_TTL_MS = 55000;      // 응답 없는 offer 정리
-  const ICE_WAIT_MS = 2500;        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
-  const PROPOSE_TIMEOUT_MS = 6000;
+  const ICE_WAIT_MS = 1500;        // v2.1.5: 2.5초 → 1.5초 (srflx 후보가 모이면 더 일찍 끝냅니다)
+  const ICE_EARLY_MS = 250;        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
+  const PROPOSE_TIMEOUT_MS = 4000;
   const TUNNEL_TIMEOUT_MS = 9000;
   const HOST = 'p2p://host';
 
@@ -506,6 +510,9 @@
       this.hashBin = toBinStr(hb);
       this.hashHex = toHex(hb);
       this.startedAt = Date.now();
+      // v2.1.5: 트래커 연결과 동시에 offer 풀을 미리 만들어 첫 등록 지연을 없앱니다.
+      this._pool = null; this._poolBusy = null;
+      this.offerPool().catch(() => {});
       TRACKERS.forEach(url => this.openTracker(url));
       try { window.AndroidBridge?.dhtStart?.(this.hashHex, this.selfId); } catch (_) {}
       clearInterval(this.statusTimer);
@@ -570,10 +577,15 @@
     waitIce(pc) {
       if (pc.iceGatheringState === 'complete') return Promise.resolve();
       return new Promise(resolve => {
-        const done = () => { clearTimeout(timer); pc.removeEventListener('icegatheringstatechange', check); resolve(); };
+        let fired = false;
+        const done = () => { if (fired) return; fired = true; clearTimeout(timer); clearTimeout(early); pc.removeEventListener('icegatheringstatechange', check); pc.removeEventListener('icecandidate', onCand); resolve(); };
+        let early = null;
         const check = () => { if (pc.iceGatheringState === 'complete') done(); };
+        // 공인 주소(srflx) 후보를 하나라도 얻으면 짧게 더 모은 뒤 바로 보냅니다(인터넷 매칭에는 이것으로 충분합니다).
+        const onCand = e => { if (!early && e.candidate && / typ (srflx|relay) /.test(e.candidate.candidate || '')) early = setTimeout(done, ICE_EARLY_MS); };
         const timer = setTimeout(done, ICE_WAIT_MS);
         pc.addEventListener('icegatheringstatechange', check);
+        pc.addEventListener('icecandidate', onCand);
       });
     },
 
@@ -786,7 +798,7 @@
       const now = Date.now();
       // 랜덤: 작은 ID가 제안 / 방 번호: 참가자가 방장에게 제안합니다.
       if (this.kind === 'room' && this.roomRole !== 'join') return;
-      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && now - p.rejectedAt > 8000
+      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && now - p.rejectedAt > 4000
         && (this.kind === 'room' ? p.hello.roomRole === 'create' : this.selfId < p.id));
       if (!candidates.length) return;
       const target = candidates[0];
@@ -1057,7 +1069,7 @@
           UI.render();
           if (t.epoch !== this.epoch || this.state === 'matched' || this.state === 'idle') return;
           t.fails++;
-          t.timer = setTimeout(connect, Math.min(30000, 2000 * Math.pow(2, t.fails)));
+          t.timer = setTimeout(connect, Math.min(15000, 1000 * Math.pow(2, t.fails)));
         };
       };
       connect();
@@ -1072,12 +1084,13 @@
       const msg = { action: 'announce', info_hash: this.hashBin, peer_id: this.selfId, numwant: OFFER_POOL, uploaded: 0, downloaded: 0, left: 1, offers: offers.map(o => ({ offer_id: o.id, offer: { type: 'offer', sdp: o.sdp } })) };
       if (first) msg.event = 'started';
       try { t.ws.send(JSON.stringify(msg)); } catch (_) {}
-      t.timer = setTimeout(() => this.announce(t, false), t.interval * 1000);
+      const fast = Date.now() - (this.startedAt || 0) < FAST_WINDOW_MS;
+      t.timer = setTimeout(() => this.announce(t, false), (fast ? FAST_ANNOUNCE_SEC : t.interval) * 1000);
     },
 
     async offerPool() {
       const now = Date.now();
-      if (this._pool && now - this._poolAt < (ANNOUNCE_MIN_SEC - 3) * 1000) return this._pool;
+      if (this._pool && now - this._poolAt < POOL_REFRESH_MS) return this._pool;
       if (this._poolBusy) return this._poolBusy;
       this._poolBusy = (async () => {
         const list = [];
@@ -2292,7 +2305,8 @@
     };
     // 기존 '상대가 재도전 신청 → 자동 복귀' 폴링을 끕니다(수락 절차로 대체).
     const baseEnd = P.handleBattleEnd;
-    P.handleBattleEnd = function () {
+    P.handleBattleEnd = function (argVictory) {
+      this.battleResult = argVictory ? 'win' : 'lose';
       if (M.active || M.state !== 'idle') {
         M.state = 'postgame';
         M.roomLaunching = false;
@@ -2305,7 +2319,7 @@
         if (!M.partnerPeer()) M.rematch = { left: true };
         // v2.1.2: 온라인 랜덤 매칭 중에서도 '경쟁전(ranked)'일 때만 랭크전 점수를 반영합니다. 일반전(normal)과 방 번호 배틀은 점수가 변동되지 않습니다.
         if (M.active && M.kind === 'random' && M.queue === 'ranked' && window.SumdokuRating?.recordBattleEnd) {
-          const isVictory = this.isWin || this.battleResult === 'win';
+          const isVictory = this.battleResult === 'win';
           const reason = this.resultReason || '';
           const oppRp = M.partnerProfile?.tier?.rp || 1000;
           const ch = window.SumdokuRating.recordBattleEnd(this, isVictory, reason, oppRp);
@@ -2318,7 +2332,7 @@
         }
         try {
           window.SumdokuSeason?.applyCosmetics?.();
-          const isVictory = this.isWin || this.battleResult === 'win';
+          const isVictory = this.battleResult === 'win';
           if (isVictory) {
             window.SumdokuSeason?.applyVictoryBannerSkin?.(this, { status: 'win' }, document.getElementById('battle-result-banner'));
           }

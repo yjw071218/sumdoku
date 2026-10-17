@@ -2585,8 +2585,11 @@ class SumdokuApp {
 
   handleBattleEnd(isVictory, reason) {
     if (!this.isBattle) return;
-    this.resultReason = /기권/.test(reason) ? 'forfeit' : 'battle';
-    if (this.score < 0 && isVictory) { isVictory = false; reason = '점수가 음수여서 실패 처리되었습니다.'; }
+    // v2.1.5: 내 기권(forfeit)과 상대 기권/이탈(opp_forfeit)을 구분합니다. 상대가 기권하면 내 점수와 무관하게 승리입니다.
+    const oppQuit = !!isVictory && /상대방/.test(reason || '') && /기권|연결이 끊어|방을 나갔/.test(reason || '');
+    this.resultReason = oppQuit ? 'opp_forfeit' : (/기권/.test(reason) ? 'forfeit' : 'battle');
+    if (this.score < 0 && isVictory && !oppQuit) { isVictory = false; reason = '점수가 음수여서 실패 처리되었습니다.'; }
+    this.battleResult = isVictory ? 'win' : 'lose';
     this.closeForfeitModal();
     this.stopTimer();
     clearInterval(this.battlePollInterval);

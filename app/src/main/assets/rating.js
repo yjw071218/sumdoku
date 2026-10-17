@@ -752,7 +752,8 @@
       const diff = DIFFS.includes(app.battleDiff) ? app.battleDiff : 'expert';
       const battleMode = app.battleMode || 'race';
       const win = !!isWin;
-      const isForfeit = reason === 'forfeit' || reason === 'opponent_left' || reason === 'disconnect';
+      const isForfeit = !win && (reason === 'forfeit' || reason === 'opponent_left' || reason === 'disconnect');
+      const oppQuit = win && reason === 'opp_forfeit';
       const all = loadAll();
       const lad = ladder(all, 'battle');
       const s = lad.byDiff[diff];
@@ -764,6 +765,15 @@
       s.bestStreak = Math.max(s.bestStreak || 0, s.streak);
 
       let delta = calc.delta;
+      // v2.1.5: 상대 기권승 — 현재 판 점수(진행도)에 비례해 RP가 오릅니다. 시작 직후 기권이어도 최소 +5 RP.
+      //   배율 = 0.4 + 0.6 × min(1, 내 점수 / 기준점수), 기준점수는 난이도별 완주 점수 근사치입니다.
+      if (oppQuit) {
+        const ref = { easy: 4000, medium: 6000, hard: 8000, expert: 10000, lunatic: 12000 }[diff] || 8000;
+        const ratio = Math.max(0, Math.min(1, (Number(app.score) || 0) / ref));
+        const factor = 0.4 + 0.6 * ratio;
+        delta = Math.max(5, Math.round((calc.base + (calc.streakBonus || 0)) * factor));
+        calc.forfeitWinFactor = factor;
+      }
       const bonus = calc.streakBonus || 0;
       const bonusRate = delta > 0 ? streakBonus(s.streak) : 0;
 
@@ -818,7 +828,7 @@
       if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
       else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
 
-      const change = { mode: 'battle', battleMode, streak: s.streak, bonus, difficulty: diff, before, after: s.rating, delta, tier: after, beforeTier, season, oppRating, msg };
+      const change = { mode: 'battle', battleMode, oppForfeit: oppQuit, forfeitWinFactor: calc.forfeitWinFactor || null, streak: s.streak, bonus, difficulty: diff, before, after: s.rating, delta, tier: after, beforeTier, season, oppRating, msg };
       app.lastBattleRatingChange = change;
       app.renderRatingCard?.();
       return change;

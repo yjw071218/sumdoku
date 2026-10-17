@@ -34,8 +34,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 36
-        versionCode 156
-        versionName '2.1.4'
+        versionCode 157
+        versionName '2.1.5'
     }
 
     buildFeatures {
@@ -155,6 +155,10 @@ def stripGithub = { String name, String t ->
             break
         case 'translations-extra.js':
             t = rx(t, /(?m)^.*GitHub.*\R/, '')
+            break
+        case 'dev-mode.js':
+            // v2.1.5: 개발자 모드는 외부 배포판 전용입니다. Play판에는 코드 자체를 넣지 않습니다.
+            t = '/* 개발자 모드: Play판에서는 제외됩니다. */'
             break
         case 'style.css':
             t = rx(t, /(?s)\.github-link \{.*?\}\s*/, '')

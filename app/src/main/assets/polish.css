@@ -415,3 +415,12 @@ body.integrity-veiled #view-game .battle-hud { visibility: hidden !important; op
 #host-config-stage.room-live.collapsed > :not(.host-config-toggle) { display: none !important; }
 #host-config-stage.room-live.collapsed { padding-bottom: 0; }
 #host-config-stage.room-live.collapsed .host-config-toggle { margin-bottom: 10px; }
+
+/* v2.1.5 · 다크 모드 가독성: 루트가 테마 글자색을 상속하도록 합니다(랭킹·설정·업적 등에서 남색 글자가 남던 문제). */
+.app-root { color: var(--text-primary); }
+.app-root.theme-dark .badge { color: #0f172a; }
+.app-root.theme-dark .rl-name, .app-root.theme-dark .cos-tx b { filter: brightness(1.5); }
+.app-root.theme-dark .om-room-status.om-ok, .app-root.theme-dark .om-rematch-box.ok { color: #4ade80; }
+.app-root.theme-dark .rating-card .rc-protect { color: #38bdf8; }
+.app-root.theme-dark .rating-card .rc-chip.up { color: #4ade80; }
+.app-root.theme-dark .rb-me-rank { color: #60a5fa; }
