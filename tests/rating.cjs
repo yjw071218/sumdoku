@@ -109,6 +109,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       R.saveAll(allRatings);
       app.isBattle = true;
       app.battleDiff = 'hard';
+      // v2.1.9: 보상은 '지난 시즌 배틀 최종 티어' 기준 → 지난 시즌을 다이아(3100 RP)로 마친 상태를 흉내 냅니다.
+      const _rti = R.rewardTierIndex; R.rewardTierIndex = () => R.tierOf(3100).index;
       const skin = S ? S.getVictoryBannerSkinTier(app) : null;
       o.skinTier = skin ? skin.id : null;
 
@@ -117,6 +119,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         S.applyVictoryBannerSkin(app, { status: 'win' }, banner);
         o.bannerHasSkin = banner.classList.contains('tier-banner-skin');
         o.bannerSkinClass = banner.className;
+        R.rewardTierIndex = _rti;
       }
       S?.applyCosmetics?.();
       o.cosmeticsApplied = true;

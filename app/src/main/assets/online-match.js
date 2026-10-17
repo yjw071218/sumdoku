@@ -393,11 +393,29 @@
     c = c && typeof c === 'object' ? c : {};
     return { card: ['diamond', 'master', 'grandmaster'].includes(c.card) ? c.card : '', plate: COS_IDS.includes(c.plate) ? c.plate : '' };
   }
-  function myProfile(diff) { return { n: myName(), cc: myCountry(), tier: myTier(diff), cos: myCos() }; }
+  // v2.1.9: 이름 옆 배지 = 지난 시즌 배틀 최종 티어 엠블럼 + 그 시즌 심볼(구버전은 ps 필드를 무시합니다)
+  function myPrev() { try { const f = window.SumdokuRating?.lastSeasonFinal?.(window.SumdokuRating.loadAll()); return f ? { t: f.tier, s: f.season } : null; } catch (_) { return null; } }
+  function cleanPrev(p) {
+    if (!p || typeof p !== 'object') return null;
+    const ids = ((window.SumdokuRating && SumdokuRating.TIERS) || []).map(x => x.id);
+    const sn = Number(p.s);
+    return ids.includes(p.t) && Number.isInteger(sn) && sn >= 0 && sn < 1000 ? { t: p.t, s: sn } : null;
+  }
+  function nameBadge(ps) {
+    const R = window.SumdokuRating; if (!ps || !R) return null;
+    const b = document.createElement('span'); b.className = 'nm-badge';
+    try { b.innerHTML = R.tierSymbol(ps.t, 20) + (R.seasonSymbol ? R.seasonSymbol(ps.s, 15) : ''); } catch (_) { return null; }
+    const def = R.TIERS.find(x => x.id === ps.t); const tr = window.I18N && typeof I18N.text === 'function' ? I18N.text : (x => x);
+    b.title = (ps.s ? 'S' + ps.s : 'PS') + ' · ' + (def ? tr(def.ko) : ps.t);
+    return b;
+  }
+  window.SumdokuNameBadge = { mine: () => nameBadge(myPrev()), of: ps => nameBadge(cleanPrev(ps)) };
+  function setName(el, text, ps) { el.textContent = text; const b = nameBadge(ps); if (b) el.prepend(b); }
+  function myProfile(diff) { return { n: myName(), cc: myCountry(), tier: myTier(diff), cos: myCos(), ps: myPrev() }; }
   function cleanProfile(p, fallbackId) {
     const n = cleanName(p && p.n) || ('Player-' + String(fallbackId || '').slice(0, 4).toUpperCase());
     const cc = p && /^[A-Z]{2}$/.test(p.cc || '') ? p.cc : '';
-    return { n, cc, tier: cleanTier(p && p.tier), cos: cleanCos(p && p.cos) };
+    return { n, cc, tier: cleanTier(p && p.tier), cos: cleanCos(p && p.cos), ps: cleanPrev(p && p.ps) };
   }
 
   // v2.0.5 · 방 번호 배틀: 방장이 방 안에서 바꾸는 설정(모드·난이도·목숨·힌트·자동 메모·턴 시간)
@@ -1713,7 +1731,7 @@
       const tr = document.createElement('div'); tr.className = 'om-player-tier';
       if (prof) {
         em.innerHTML = tierSvg(prof.tier, 48);
-        nm.textContent = `${flagOf(prof.cc)} ${prof.n}`;
+        setName(nm, `${flagOf(prof.cc)} ${prof.n}`, prof.ps);
         tr.textContent = tierLabel(prof.tier) + (prof.tier.rp ? ` · ${prof.tier.rp} RP` : '');
         const cos = prof.cos || {};
         if (cos.card) c.classList.add('om-aura', 'om-aura-' + cos.card);
@@ -2385,13 +2403,13 @@
       try { UI.render(); } catch (_) {}
       try {
         if (M.active && M.partnerProfile && this.dom.battleP2Name) {
-          this.dom.battleP2Name.textContent = `${flagOf(M.partnerProfile.cc)} ${M.partnerProfile.n}`;
+          setName(this.dom.battleP2Name, `${flagOf(M.partnerProfile.cc)} ${M.partnerProfile.n}`, M.partnerProfile.ps);
           // v2.1.6: 상대 닉네임 플레이트를 경기 화면에도 표시
           this.dom.battleP2Name.classList.remove(...COS_IDS.map(x => 'nm-plate-' + x), 'nm-plate');
           if (M.partnerProfile.cos?.plate) this.dom.battleP2Name.classList.add('nm-plate', 'nm-plate-' + M.partnerProfile.cos.plate);
           this.dom.battleP2Name.title = tierLabel(M.partnerProfile.tier);
         }
-        if (M.active && this.dom.battleP1Name) this.dom.battleP1Name.textContent = `${flagOf(myCountry())} ${myName()}`;
+        if (M.active && this.dom.battleP1Name) setName(this.dom.battleP1Name, `${flagOf(myCountry())} ${myName()}`, myPrev());
         if (M.active && this.dom.battleP1Name) { const pl = myCos().plate; this.dom.battleP1Name.classList.remove(...COS_IDS.map(x => 'nm-plate-' + x), 'nm-plate'); if (pl) this.dom.battleP1Name.classList.add('nm-plate', 'nm-plate-' + pl); }
       } catch (_) {}
       return r;

@@ -50,6 +50,7 @@
     standard: ['일반', 'Standard', '通常', '普通', '一般', 'Normal', 'Normal', 'Normal'],
     timeattack: ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'],
     games: ['{0}판', '{0} games', '{0}試合', '{0}局', '{0}局', '{0} partidas', '{0} parties', '{0} Spiele'],
+    prevSeason: ['지난 시즌 최종 티어', 'Last season final tier', '前シーズン最終ティア', '上赛季最终段位', '上賽季最終段位', 'Rango final anterior', 'Rang final précédent', 'Finaler Rang Vorsaison'],
     bad: ['RP는 0~9999 사이 숫자로 입력해 주세요.', 'Enter RP between 0 and 9999.', 'RPは0〜9999で入力してください。', '请输入 0~9999 之间的 RP。', '請輸入 0~9999 之間的 RP。', 'Introduce un RP entre 0 y 9999.', 'Saisissez un RP entre 0 et 9999.', 'RP zwischen 0 und 9999 eingeben.']
   };
   const t = (k, ...a) => { let s = (T[k] && (T[k][L()] || T[k][1])) || k; a.forEach((v, i) => { s = s.split('{' + i + '}').join(String(v)); }); return s; };
@@ -69,6 +70,8 @@
       const k = base.call(this, all);
       return cosUnlocked() ? Math.max(k, R.TIERS.length - 1) : k;
     };
+    // v2.1.9: 시즌 보상 판정도 개발자 해금을 따릅니다.
+    if (R.rewardTierIndex) { const base2 = R.rewardTierIndex; R.rewardTierIndex = function (all) { const k = base2.call(this, all); return cosUnlocked() ? Math.max(k, R.TIERS.length - 1) : k; }; }
   }
 
   function refreshAll() {
@@ -221,7 +224,14 @@
     };
     const achLockBtn = mk('button', 'btn btn-secondary dev-btn', t('achLock')); achLockBtn.type = 'button';
     achLockBtn.onclick = () => { if (!A) return; Object.keys(A.unlocked).forEach(k => delete A.unlocked[k]); A.save(); refreshAll(); toast(t('achLocked')); };
-    sec2.append(cosRow, achBtn, achLockBtn);
+    // v2.1.9: 지난 시즌 최종 티어(테스트) — 시즌 보상·이름 옆 엠블럼/시즌 심볼 확인용
+    const prevRow = mk('label', 'dev-row'); const prevSel = mk('select', 'dev-input');
+    { const o = mk('option', '', '—'); o.value = ''; prevSel.append(o); }
+    R.TIERS.forEach(x => { const o = mk('option', '', R.tierOf(x.min).name.replace(/ [IV]+$/, '')); o.value = x.id; prevSel.append(o); });
+    try { prevSel.value = (JSON.parse(localStorage.getItem('sumdoku_dev_prev_season') || 'null') || {}).t || ''; } catch (_) {}
+    prevSel.onchange = () => { try { if (prevSel.value) localStorage.setItem('sumdoku_dev_prev_season', JSON.stringify({ t: prevSel.value, s: Math.max(0, R.seasonOf() - 1) })); else localStorage.removeItem('sumdoku_dev_prev_season'); localStorage.removeItem('sumdoku_rank_reward_claimed'); } catch (_) {} refreshAll(); };
+    prevRow.append(mk('span', 'dev-lbl', t('prevSeason')), prevSel);
+    sec2.append(prevRow, cosRow, achBtn, achLockBtn);
     box.append(sec2);
 
     // 3. 초기화 · 끄기
@@ -231,7 +241,7 @@
     resetBtn.onclick = () => { resetRating(selMode.value, selDiff.value); syncStatus(); toast(t('resetDone')); };
     const exitBtn = mk('button', 'btn btn-secondary dev-btn dev-exit', t('exit')); exitBtn.type = 'button';
     exitBtn.onclick = () => {
-      try { localStorage.removeItem(DEV_KEY); localStorage.removeItem(COS_KEY); } catch (_) {}
+      try { localStorage.removeItem(DEV_KEY); localStorage.removeItem(COS_KEY); localStorage.removeItem('sumdoku_dev_prev_season'); } catch (_) {}
       renderPanel(); refreshAll(); toast(t('off'));
     };
     sec3.append(resetBtn, exitBtn);

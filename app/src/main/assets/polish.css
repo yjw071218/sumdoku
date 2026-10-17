@@ -436,9 +436,10 @@ body.integrity-veiled #view-game .battle-hud { visibility: hidden !important; op
 #modal-battle-lobby .modal-footer,
 .om-footer {
   margin-top: 10px; padding: 10px 0 calc(6px + env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, transparent, var(--bg-surface) 14px);
+  /* v2.1.9: 카드 배경을 그대로 이어받아 버튼 뒤에 네모난 띠가 생기지 않게 합니다(테마별 --bg-surface 와 카드 색이 다름). */
+  background: var(--ui-panel, var(--bg-surface));
 }
-.om-room-start { box-shadow: 0 -10px 14px -6px var(--bg-surface); }
+.om-footer { background: var(--ui-panel, var(--bg-surface)); }
 
 /* v2.1.7 · 선택 칸 선 통일: 3×3 경계 칸 여부와 상관없이 같은 위치·두께로 그립니다. */
 #view-game .cell.selected { box-shadow: none; outline-offset: -2.5px; }

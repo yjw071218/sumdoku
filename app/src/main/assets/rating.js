@@ -617,7 +617,10 @@
       s.placement = PLACEMENT; s.seasonGames = 0; s.seasonBest = 0; s.series = null; s.protect = 0; s.boost = 0; s.streak = 0;
     }));
     all.hof = all.hof.slice(0, 80);
-    if (!first && bestIdx >= 0) all.seasonReward = { season: all.season, tier: TIERS[bestIdx].id, seen: false };
+    // v2.1.9: 보상은 배틀(경쟁전) 최종 티어 기준입니다(프리시즌 → 시즌 1 포함).
+    { const prevS = first ? 0 : all.season; let fin = -1; all.hof.forEach(h => { if (h && h.season === prevS && h.mode === 'battle' && Number.isFinite(h.final)) fin = Math.max(fin, h.final); });
+      if (fin >= 0) all.seasonReward = { season: prevS, tier: tierOf(fin).id, seen: false }; else delete all.seasonReward; }
+    void bestIdx;
     all.season = cur;
     return true;
   }
@@ -637,6 +640,57 @@
       }
     }));
     return k;
+  }
+
+  /* ---------- v2.1.9 · 시즌 보상 ----------
+   * 티어 보상은 '직전 시즌의 배틀(경쟁전) 최종 티어'로 다음 시즌 한 시즌 동안만 쓸 수 있습니다(매 시즌 초기화).
+   *  - 최종 티어 = 시즌이 끝날 때의 RP(final) 중 가장 높은 난이도 기록
+   *  - 시즌 1은 프리시즌 기록으로 보상을 받습니다. 프리시즌 동안에는 받을 보상이 없습니다.
+   *  - 이름 옆에는 같은 기록의 티어 엠블럼과 그 시즌 심볼이 표시됩니다. */
+  function lastSeasonFinal(all) {
+    const cur = seasonOf();
+    try {
+      const dev = window.SumdokuDevMode?.isOn?.() && JSON.parse(localStorage.getItem('sumdoku_dev_prev_season') || 'null');
+      if (dev && TIERS.some(t => t.id === dev.t)) return { season: Math.max(0, dev.s | 0), tier: dev.t, index: TIERS.findIndex(t => t.id === dev.t), rp: dev.rp || TIERS.find(t => t.id === dev.t).min };
+    } catch (_) {}
+    if (!cur) return null;
+    const prev = cur - 1;
+    let best = null;
+    (all.hof || []).forEach(h => {
+      if (!h || h.season !== prev || h.mode !== 'battle' || !Number.isFinite(h.final)) return;
+      if (!best || h.final > best.rp) best = { season: prev, rp: h.final };
+    });
+    if (!best) return null;
+    const t = tierOf(best.rp);
+    return { season: prev, tier: t.id, index: t.index, rp: best.rp };
+  }
+  function rewardTierIndex(all) { const f = lastSeasonFinal(all); return f ? f.index : -1; }
+  // 이번 시즌이 지금 끝나면 받을 티어(배치를 마친 배틀 난이도 중 현재 RP 최고)
+  function currentSeasonFinal(all) {
+    let rp = -1;
+    DIFFS.forEach(d => { const s = ladder(all, 'battle')?.byDiff?.[d]; if (s && !(s.placement > 0) && ((s.seasonGames || 0) > 0 || (s.games || 0) > 0)) rp = Math.max(rp, s.rating || 0); });
+    if (rp < 0) return null;
+    const t = tierOf(rp); return { tier: t.id, index: t.index, rp };
+  }
+  // 시즌 심볼: 시즌마다 색과 모양(육각·방패·마름모·원 순환)이 다른 작은 배지. 0 = 프리시즌
+  const SEASON_HUES = [210, 330, 160, 35, 265, 0, 190, 95];
+  function seasonSymbol(n, size = 18) {
+    n = Math.max(0, n | 0);
+    const hue = n ? SEASON_HUES[(n - 1) % SEASON_HUES.length] : 220, sat = n ? 80 : 12;
+    const c1 = `hsl(${hue},${sat}%,62%)`, c2 = `hsl(${hue},${sat}%,34%)`, id = 'ss' + n + '_' + Math.random().toString(36).slice(2, 7);
+    const shapes = [
+      'M12 1.5l9.1 5.25v10.5L12 22.5l-9.1-5.25V6.75z',
+      'M12 1.5l9 3.3v6.4c0 5.4-3.8 9.6-9 11.3-5.2-1.7-9-5.9-9-11.3V4.8z',
+      'M12 1l11 11-11 11L1 12z',
+      'M12 1.5a10.5 10.5 0 1 1 0 21 10.5 10.5 0 0 1 0-21z'
+    ];
+    const d = shapes[n ? (n - 1) % shapes.length : 0];
+    const label = n ? String(n) : 'P';
+    const fs = label.length > 1 ? 8.5 : 10.5;
+    return `<svg class="season-sym" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false">`
+      + `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`
+      + `<path d="${d}" fill="url(#${id})" stroke="rgba(255,255,255,.75)" stroke-width="1.3"/>`
+      + `<text x="12" y="${12 + fs * 0.36}" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="${fs}" fill="#fff">${label}</text></svg>`;
   }
   function tierOf(rating) {
     let k = 0; for (let i = 0; i < TIERS.length; i++) if (rating >= TIERS[i].min) k = i;
@@ -1468,7 +1522,7 @@
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
   window.SumdokuRating = {
-    shownTier, seasonOf, seasonEnd, bestTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
+    shownTier, seasonOf, seasonEnd, bestTierIndex, lastSeasonFinal, rewardTierIndex, currentSeasonFinal, seasonSymbol, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
     load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT,
     TIERS, KEY, DIFFS, MODES,
     getAbandonableOngoingGame, previewAbandonPenalty, applyAbandonPenalty, showAbandonWarningModal,

@@ -312,3 +312,23 @@ html.tt-grandmaster, html.tt-grandmaster body { background: #160404; }
 .app-root[class*="tt-"] .menu-btn .btn-icon, .app-root[class*="tt-"] .menu-btn svg { color: var(--tt-a); }
 .app-root[class*="tt-"] .bottom-nav { background: color-mix(in srgb, var(--bg-primary) 92%, var(--tt-a)) !important; }
 .sd-share-ico { display: inline-flex; align-items: center; justify-content: center; gap: 2px; } .sd-share-ico svg { flex: 0 0 auto; }
+
+/* ==========================================================================
+   v2.1.9 · 시즌 보상 · 이름 옆 지난 시즌 엠블럼/시즌 심볼
+   ========================================================================== */
+.nm-badge { display: inline-flex; align-items: center; gap: 1px; margin-right: 5px; vertical-align: middle; flex: 0 0 auto; }
+.nm-badge svg { display: block; filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); }
+.nm-badge .season-sym { margin-left: -5px; margin-top: 8px; }
+.nm-plate .nm-badge { margin-left: -4px; }
+.om-player-name:has(.nm-badge), .battle-player-name:has(.nm-badge) { display: inline-flex; align-items: center; justify-content: center; }
+.cos-season-title { display: inline-flex; align-items: center; gap: 6px; }
+.cos-season-title svg { flex: 0 0 auto; }
+.cos-source { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; font-size: 12.5px;
+  background: color-mix(in srgb, var(--tier, #64748b) 14%, transparent); border: 1px solid color-mix(in srgb, var(--tier, #64748b) 40%, transparent); color: var(--text-secondary); }
+.cos-source b { color: var(--text-primary); }
+.cos-src-em svg, .cos-src-sym svg { display: block; }
+.cos-src-sym { margin-left: -8px; margin-top: 10px; }
+.cos-card .cos-lock.coming { color: #16a34a; }
+.theme-dark .cos-card .cos-lock.coming { color: #4ade80; }
+.rkc-unlock-sym { margin-top: -26px; margin-left: 74px; position: relative; z-index: 2; }
+.rkc-unlock-sym svg { width: 30px; height: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }

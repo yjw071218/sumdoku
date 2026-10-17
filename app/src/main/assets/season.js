@@ -29,14 +29,14 @@
       '5 Platzierungsspiele (unplatziert) · Aufstieg Best of 3 · 3 Spiele Schutz nach Aufstieg · +25% RP für 5 Spiele'],
     reset: ['시즌이 끝나면 RP가 1000 쪽으로 절반 압축되고 다시 배치 경기를 치릅니다.', 'At season end, RP is pulled halfway toward 1000 and placements restart.', 'シーズン終了時、RPは1000に向けて半分に圧縮され、再び配置試合を行います。', '赛季结束时RP向1000压缩一半，并重新进行定级赛。', '賽季結束時RP向1000壓縮一半，並重新進行定級賽。', 'Al final de temporada el RP se acerca a 1000 a la mitad y se repiten las clasificatorias.', 'En fin de saison, le RP est rapproché de moitié vers 1000 et les placements recommencent.', 'Am Saisonende wird RP zur Hälfte Richtung 1000 gezogen, dann neue Platzierungsspiele.'],
     rewardTitle: ['지난 시즌 보상', 'Last season reward', '前シーズン報酬', '上赛季奖励', '上賽季獎勵', 'Recompensa anterior', 'Récompense de saison', 'Saisonbelohnung'],
-    rewardText: ['시즌 {0} 최고 티어: {1}. 아래 티어 보상이 해금되었습니다.', 'Season {0} best tier: {1}. Tier rewards below are unlocked.', 'シーズン{0}最高ティア：{1}。下のティア報酬が解放されました。', '赛季{0}最高段位：{1}。下方段位奖励已解锁。', '賽季{0}最高段位：{1}。下方段位獎勵已解鎖。', 'Mejor rango de la temporada {0}: {1}. Recompensas desbloqueadas abajo.', 'Meilleur rang saison {0} : {1}. Récompenses débloquées ci-dessous.', 'Bester Rang Saison {0}: {1}. Belohnungen unten freigeschaltet.'],
+    rewardText: ['시즌 {0} 최종 티어: {1}. 이번 시즌 동안 아래 티어 보상을 쓸 수 있습니다.', 'Season {0} final tier: {1}. The tier rewards below are yours for this season.', 'シーズン{0}最終ティア：{1}。今シーズンは下のティア報酬を使えます。', '赛季{0}最终段位：{1}。本赛季可使用下方段位奖励。', '賽季{0}最終段位：{1}。本賽季可使用下方段位獎勵。', 'Rango final de la temporada {0}: {1}. Puedes usar estas recompensas esta temporada.', 'Rang final saison {0} : {1}. Ces récompenses sont à vous cette saison.', 'Finaler Rang Saison {0}: {1}. Diese Belohnungen gelten diese Saison.'],
     ok: ['확인', 'OK', 'OK', '确定', '確定', 'OK', 'OK', 'OK'],
     hof: ['명예의 전당', 'Hall of fame', '殿堂', '名人堂', '名人堂', 'Salón de la fama', 'Panthéon', 'Ruhmeshalle'],
     hofEmpty: ['시즌이 끝나면 그 시즌 최고 티어가 여기에 영구히 남습니다.', 'Each season\'s best tier is kept here forever when the season ends.', 'シーズン終了時、その最高ティアがここに永久に残ります。', '赛季结束后，该赛季最高段位会永久保存在这里。', '賽季結束後，該賽季最高段位會永久保存在這裡。', 'Al terminar cada temporada su mejor rango queda aquí para siempre.', 'À la fin de chaque saison, son meilleur rang reste ici.', 'Am Saisonende bleibt der beste Rang hier dauerhaft.'],
     startsIn: ['시즌 1 시작까지 {0}일', 'Season 1 starts in {0} days', 'シーズン1開始まで{0}日', '距赛季1开始还有{0}天', '距賽季1開始還有{0}天', 'La temporada 1 empieza en {0} días', 'Saison 1 dans {0} jours', 'Saison 1 beginnt in {0} Tagen'],
     pre: ['프리시즌', 'Preseason', 'プレシーズン', '季前赛', '季前賽', 'Pretemporada', 'Présaison', 'Vorsaison'],
     rewards: ['티어 보상', 'Tier rewards', 'ティア報酬', '段位奖励', '段位獎勵', 'Recompensas', 'Récompenses', 'Belohnungen'],
-    rewardsNote: ['지금까지 도달한 최고 티어로 영구 해금됩니다. 켜고 끌 수 있습니다.', 'Unlocked forever by your best tier ever. Toggle them freely.', 'これまでの最高ティアで永久解放。オン/オフできます。', '按历史最高段位永久解锁，可随时开关。', '依歷史最高段位永久解鎖，可隨時開關。', 'Se desbloquean para siempre según tu mejor rango. Puedes activarlas.', 'Débloquées à vie selon votre meilleur rang. Activables.', 'Dauerhaft durch deinen besten Rang freigeschaltet. Ein-/ausschaltbar.'],
+    rewardsNote: ['지난 시즌 배틀 최종 티어에 따라 이번 시즌 동안 쓸 수 있는 보상입니다. 시즌이 바뀌면 초기화됩니다.', 'Rewards for this season, based on your final ranked battle tier last season. They reset every season.', '前シーズンのバトル最終ティアに応じて今シーズン使える報酬です。シーズンごとにリセットされます。', '根据上赛季对战最终段位，本赛季可使用的奖励。每赛季重置。', '依上賽季對戰最終段位，本賽季可使用的獎勵。每賽季重設。', 'Recompensas de esta temporada según tu rango final de batalla anterior. Se reinician cada temporada.', 'Récompenses de la saison selon votre rang final en duel la saison passée. Réinitialisées à chaque saison.', 'Belohnungen dieser Saison nach deinem finalen Kampfrang der Vorsaison. Werden jede Saison zurückgesetzt.'],
     r_gold: ['금빛 보드 테두리', 'Gold board frame', '金の盤面枠', '金色棋盘边框', '金色棋盤邊框', 'Marco dorado', 'Cadre doré', 'Goldrahmen'],
     r_platinum: ['청록 보드 테두리', 'Platinum board frame', 'プラチナ盤面枠', '铂金棋盘边框', '白金棋盤邊框', 'Marco platino', 'Cadre platine', 'Platinrahmen'],
     r_diamond: ['보석 색 입력 숫자 · 다이아 승리 배너', 'Gem digits · Diamond victory banner', '宝石色の数字・ダイヤ勝利バナー', '宝石色数字 · 钻石胜利横幅', '寶石色數字 · 鑽石勝利橫幅', 'Dígitos joya · banner diamante', 'Chiffres gemme · bannière diamant', 'Edelstein-Ziffern · Diamant-Banner'],
@@ -58,15 +58,17 @@
   const CKEY = 'sumdoku_rank_cosmetics';
   const loadC = () => { try { return JSON.parse(localStorage.getItem(CKEY)) || {}; } catch (_) { return {}; } };
   const saveC = c => { try { localStorage.setItem(CKEY, JSON.stringify(c)); } catch (_) {} };
-  const unlockedIdx = () => R.bestTierIndex(R.loadAll());
+  // v2.1.9: 보상 = 직전 시즌 배틀 최종 티어(매 시즌 초기화). 개발자 모드는 rewardTierIndex 를 덮어씁니다.
+  const unlockedIdx = () => (R.rewardTierIndex ? R.rewardTierIndex(R.loadAll()) : R.bestTierIndex(R.loadAll()));
 
   // 다이아몬드(4) · 마스터(5) · 그랜드마스터(6) 중 해금 및 활성화된 가장 높은 승리 배너 스킨 티어 반환
   function getVictoryBannerSkinTier(app) {
     const all = R.loadAll();
-    let k = R.bestTierIndex(all);
+    let k = unlockedIdx();
+    void all;
     // 현재 난이도·모드의 최고 기록(peak)이나 현재 레이팅으로 다이아 이상 달성한 경우도 함께 인정
     const diff = (app && (app.isBattle || app.gameMode === 'battle') ? app.battleDiff : app?.difficulty) || app?.difficulty;
-    if (app && R.DIFFS.includes(diff)) {
+    if (false && app && R.DIFFS.includes(diff)) {
       const m = (app.isBattle || app.gameMode === 'battle') ? 'battle' : (app.gameMode === 'timeattack' && !app.isDaily ? 'timeattack' : 'standard');
       const s = R.ladder(all, m).byDiff[diff];
       if (s && !(s.placement > 0) && s.games > 0) {
@@ -105,7 +107,11 @@
   }
 
   function applyCosmetics() {
-    const k = unlockedIdx(), c = loadC(), b = document.body;
+    const k = unlockedIdx(), b = document.body;
+    let c = loadC();
+    // v2.1.9: 시즌이 바뀌면 장착 상태를 초기화합니다(새 시즌 보상은 다시 자동 장착).
+    const sn = R.seasonOf();
+    if (c._season !== sn) c = { _season: sn };
     // v2.1.7: 티어 보상은 하나만 장착합니다(여러 개가 켜지면 테두리·배너가 겹쳤습니다).
     //   새로 해금된 보상은 자동 장착, 기존 저장값에 여러 개가 켜져 있으면 가장 높은 것만 남깁니다.
     let fresh = '';
