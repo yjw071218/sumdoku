@@ -114,3 +114,7 @@
 .om-room-input[aria-invalid="true"] { border-color: #ef4444; }
 .om-room-join { min-height: 48px; white-space: nowrap; }
 .online-view.om-joiner .om-modes, .online-view.om-joiner .om-diffs { opacity: .5; pointer-events: none; }
+
+/* v2.0.4 · 같은 Wi-Fi 방 삭제: 로비에는 온라인 화면만 표시 */
+#modal-battle-lobby .battle-lobby-tabs, #battle-host-view, #battle-join-view { display: none !important; }
+#battle-online-view.hidden { display: block !important; }

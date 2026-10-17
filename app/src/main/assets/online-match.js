@@ -1313,35 +1313,21 @@
       return r;
     };
 
-    // Wi-Fi가 없어도 로비를 열고 온라인 탭을 보여 줍니다. 마지막으로 쓴 탭을 기억합니다.
-    const baseOpen = P.openBattleLobby;
+    // v2.0.4 · 같은 Wi-Fi 방(로컬 브로드캐스트)은 삭제했습니다. 온라인 방식이 같은 Wi-Fi에서도 똑같이 동작하므로
+    // 배틀 로비는 항상 온라인 화면(랜덤 매칭 · 방 번호)만 엽니다.
     P.openBattleLobby = function () {
-      let wifi;
-      try {
-        const b = window.AndroidBridge;
-        if (b?.isWifiConnected) wifi = b.isWifiConnected();
-        else if (b?.getDeviceStatus) wifi = JSON.parse(b.getDeviceStatus()).wifi;
-      } catch (_) {}
-      if (wifi === false) {
-        this.isRematchActive = false;
-        this.dom.modalBattleLobby.classList.remove('hidden');
-        this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(p => { p.open = false; });
-        const tabs = this.dom.battleLobbyTabs || document.querySelector('.battle-lobby-tabs');
-        if (tabs) tabs.classList.remove('hidden');
-        UI.show(false);
-        this.showToast?.(T('wifiOff'), 3500);
-        return;
-      }
-      const r = baseOpen.apply(this, arguments);
-      if (store.get('sumdoku_last_battle_tab', '') === 'online') UI.show(false);
-      else if (UI.built) { UI.el.tab.classList.remove('active'); UI.el.view.classList.add('hidden'); }
-      return r;
+      this.isRematchActive = false;
+      try { this.cancelRoomPreparation?.(); } catch (_) {}
+      this.dom.modalBattleLobby.classList.remove('hidden');
+      this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(p => { p.open = false; });
+      UI.show(false);
     };
 
     // 재대결 로비: 온라인 경기라면 Wi-Fi 방 UI 대신 자동으로 다시 준비합니다.
     const baseReturn = P.returnToBattleLobby;
     if (baseReturn) P.returnToBattleLobby = function () {
       const r = baseReturn.apply(this, arguments);
+      if (!(M.active && M.partner)) { clearInterval(this.hostPollTimer); this.dom.modalBattleLobby.classList.remove('hidden'); UI.show(false); }
       if (M.active && M.partner) {
         UI.show(false);
         UI.render();

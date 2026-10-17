@@ -61,7 +61,8 @@ const DIST = process.env.DIST || 'play';
   for (const X of [A, B]) {
     await X.p.evaluate(() => app.openBattleLobby());
     await X.p.waitForSelector('#modal-battle-lobby:not(.hidden)');
-    await X.p.click('#tab-battle-online');
+    // v2.0.4: 로비가 바로 온라인 화면으로 열립니다(탭 없음).
+    await X.p.waitForSelector('#battle-online-view .om-start');
   }
   if (ROOM) {
     // 원격 방: 서로 다른 구역·모드여도 번호만 같으면 연결되어야 합니다(방장 설정을 따름).
