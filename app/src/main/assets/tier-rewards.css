@@ -163,31 +163,59 @@ body.rkc-silver:not(.rkc-gold):not(.rkc-platinum):not(.rkc-master):not(.rkc-gran
 /* ==========================================================================
    v2.1.7 · 닉네임 플레이트 (매칭 카드 · 경기 화면 이름, 상대에게도 보임)
    ========================================================================== */
+/* v2.1.7 · 티어가 오를수록 모양이 화려해지는 플레이트. 모든 애니메이션은 시작=끝 프레임이라 끊김 없이 반복됩니다. */
 .nm-plate {
-  position: relative; display: inline-block; max-width: 100%; padding: 2px 12px; border-radius: 8px;
-  font-weight: 900; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
-  text-shadow: 0 1px 2px rgba(0,0,0,.45); isolation: isolate;
+  --nm-dur: 3s; position: relative; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  padding: 2px 12px; border-radius: 8px; font-weight: 900; color: #fff; white-space: nowrap; vertical-align: middle;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5); isolation: isolate; overflow: hidden; text-overflow: ellipsis;
+  background-repeat: repeat-x; background-size: 200% 100%;
 }
-.nm-plate::after { /* 금속 광택 */
-  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 48%, transparent 62%); transform: translateX(-130%);
-  animation: nm-sheen 3.8s ease-in-out infinite;
+/* 광택: 이동 거리 전체를 linear로 흘려 보내 처음·끝이 화면 밖에서 이어집니다 */
+.nm-plate::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.45), transparent);
+  animation: nm-sheen var(--nm-dur) linear infinite;
 }
-@keyframes nm-sheen { 0%, 50% { transform: translateX(-130%); } 80%, 100% { transform: translateX(130%); } }
-.nm-plate-silver { background: linear-gradient(180deg, #e2e8f0, #94a3b8 55%, #64748b); color: #0f172a; text-shadow: 0 1px 0 rgba(255,255,255,.6);
+@keyframes nm-sheen { from { transform: translateX(0); } to { transform: translateX(400%); } }
+/* 흐르는 그라데이션: 크기 200% + 위치 200% 이동 = 정확히 한 타일 → 이음매 없음(그라데이션 처음·끝 색이 같아야 함) */
+@keyframes nm-flow { from { background-position: 0 0; } to { background-position: 200% 0; } }
+.nm-plate::before { flex: 0 0 auto; font-size: .85em; line-height: 1; }
+
+/* 실버: 단정한 금속 바 */
+.nm-plate-silver { --nm-dur: 4s; color: #0f172a; text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  background-image: linear-gradient(180deg, #f1f5f9, #94a3b8 55%, #64748b); background-size: 100% 100%;
   box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #475569; }
-.nm-plate-gold { background: linear-gradient(180deg, #fde68a, #eab308 50%, #a16207); color: #422006; text-shadow: 0 1px 0 rgba(255,255,255,.5);
-  box-shadow: inset 0 1px 0 #fef9c3, 0 0 0 1px #713f12, 0 0 8px rgba(234,179,8,.45); }
-.nm-plate-platinum { background: linear-gradient(120deg, #0f766e, #2dd4bf 45%, #67e8f9 60%, #0d9488); box-shadow: 0 0 0 1px #134e4a, 0 0 10px rgba(45,212,191,.55); }
-.nm-plate-diamond { background: linear-gradient(120deg, #1e3a8a, #3b82f6 35%, #a5b4fc 55%, #60a5fa 70%, #4338ca);
-  box-shadow: 0 0 0 1px #1e3a8a, 0 0 12px rgba(96,165,250,.65); background-size: 220% 100%; animation: nm-prism 4s linear infinite; }
-.nm-plate-master { background: linear-gradient(120deg, #3b0764, #9333ea 40%, #e879f9 55%, #7e22ce);
-  box-shadow: 0 0 0 1px #581c87, 0 0 14px rgba(192,132,252,.75); background-size: 220% 100%; animation: nm-prism 3.2s linear infinite; }
-.nm-plate-grandmaster { background: linear-gradient(120deg, #7f1d1d, #dc2626 30%, #f59e0b 50%, #fde047 58%, #dc2626 75%, #7f1d1d);
-  color: #fff7ed; box-shadow: 0 0 0 1.5px #f59e0b, 0 0 16px rgba(239,68,68,.8), 0 0 28px rgba(245,158,11,.4);
-  background-size: 240% 100%; animation: nm-prism 2.4s linear infinite; }
-.nm-plate-diamond::after, .nm-plate-master::after, .nm-plate-grandmaster::after { animation-duration: 2.6s; }
-@keyframes nm-prism { to { background-position: 220% 0; } }
+/* 골드: 각인 테두리 + 별 장식 */
+.nm-plate-gold { --nm-dur: 3.6s; color: #422006; text-shadow: 0 1px 0 rgba(255,255,255,.55); border-radius: 4px;
+  background-image: linear-gradient(90deg, #ca8a04, #fde68a 25%, #eab308 50%, #fde68a 75%, #ca8a04); animation: nm-flow 6s linear infinite;
+  box-shadow: inset 0 0 0 1px #fef3c7, inset 0 0 0 2.5px #a16207, 0 0 0 1px #713f12, 0 0 8px rgba(234,179,8,.5); }
+.nm-plate-gold::before { content: '✦'; color: #92400e; }
+/* 플래티넘: 양끝이 각진 오로라 배지 + 문양 */
+.nm-plate-platinum { --nm-dur: 3.2s; padding: 2px 16px; border-radius: 3px 14px 3px 14px;
+  background-image: linear-gradient(90deg, #0f766e, #2dd4bf 25%, #67e8f9 50%, #2dd4bf 75%, #0f766e); animation: nm-flow 5s linear infinite;
+  box-shadow: inset 0 0 0 1px rgba(204,251,241,.7), 0 0 0 1.5px #134e4a, 0 0 12px rgba(45,212,191,.6); }
+.nm-plate-platinum::before { content: '❖'; color: #ccfbf1; }
+/* 다이아: 이중 테두리 + 보석 장식 + 프리즘 */
+.nm-plate-diamond { --nm-dur: 2.8s; padding: 2px 16px; border-radius: 14px 4px 14px 4px; outline: 1.5px solid #93c5fd; outline-offset: 2px;
+  background-image: linear-gradient(90deg, #1e3a8a, #3b82f6 20%, #a5b4fc 40%, #e0e7ff 50%, #a5b4fc 60%, #3b82f6 80%, #1e3a8a); animation: nm-flow 4s linear infinite;
+  box-shadow: inset 0 0 0 1px rgba(224,231,255,.6), 0 0 14px rgba(96,165,250,.7); margin: 3px; }
+.nm-plate-diamond::before { content: '◆'; color: #e0e7ff; text-shadow: 0 0 6px #60a5fa; }
+/* 마스터: 숨쉬는 오라 링 + 룬 장식 */
+.nm-plate-master { --nm-dur: 2.4s; padding: 2px 18px; border-radius: 999px; outline: 1.5px solid #e879f9; outline-offset: 2px; margin: 3px;
+  background-image: linear-gradient(90deg, #3b0764, #9333ea 25%, #f0abfc 50%, #9333ea 75%, #3b0764); animation: nm-flow 3.2s linear infinite, nm-breathe 2.4s ease-in-out infinite;
+  box-shadow: inset 0 0 0 1px rgba(250,232,255,.55), 0 0 14px rgba(192,132,252,.75); }
+.nm-plate-master::before { content: '✧'; color: #fae8ff; text-shadow: 0 0 6px #e879f9; }
+@keyframes nm-breathe { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(250,232,255,.55), 0 0 12px rgba(192,132,252,.6); }
+  50% { box-shadow: inset 0 0 0 1px rgba(250,232,255,.8), 0 0 22px rgba(232,121,249,.95); } }
+/* 그랜드마스터: 왕관 + 금 이중 테두리 + 불꽃 그라데이션 + 맥동 */
+.nm-plate-grandmaster { --nm-dur: 2s; padding: 3px 18px; border-radius: 4px 16px 4px 16px; color: #fff7ed; margin: 3px;
+  outline: 2px solid #fbbf24; outline-offset: 2px;
+  background-image: linear-gradient(90deg, #7f1d1d, #dc2626 18%, #f59e0b 36%, #fde047 50%, #f59e0b 64%, #dc2626 82%, #7f1d1d);
+  animation: nm-flow 2.6s linear infinite, nm-fire 2s ease-in-out infinite;
+  box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 16px rgba(239,68,68,.8); }
+.nm-plate-grandmaster::before { content: '👑'; font-size: .95em; filter: drop-shadow(0 0 4px #fbbf24); }
+@keyframes nm-fire { 0%, 100% { box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 14px rgba(239,68,68,.75), 0 0 24px rgba(245,158,11,.3); }
+  50% { box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 22px rgba(239,68,68,.95), 0 0 40px rgba(245,158,11,.55); } }
 .om-player-name.nm-plate { font-size: 13px; }
 .battle-player-name.nm-plate { padding: 1px 8px; font-size: 12px; }
 .cos-plate-prev { display: flex; justify-content: center; padding: 6px 0 2px; }

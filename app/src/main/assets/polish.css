@@ -424,3 +424,33 @@ body.integrity-veiled #view-game .battle-hud { visibility: hidden !important; op
 .app-root.theme-dark .rating-card .rc-protect { color: #38bdf8; }
 .app-root.theme-dark .rating-card .rc-chip.up { color: #4ade80; }
 .app-root.theme-dark .rb-me-rank { color: #60a5fa; }
+
+/* v2.1.7 · 시작 버튼 하단 고정: 싱글(난이도 선택)·배틀(방 만들기/참가)·온라인 매칭 모두 스크롤과 무관하게 아래에 보입니다. */
+#modal-difficulty .modal-footer,
+#modal-battle-lobby .modal-footer,
+.om-footer,
+.om-room-start {
+  position: sticky; bottom: 0; z-index: 6;
+}
+#modal-difficulty .modal-footer,
+#modal-battle-lobby .modal-footer,
+.om-footer {
+  margin-top: 10px; padding: 10px 0 calc(6px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--bg-surface) 14px);
+}
+.om-room-start { box-shadow: 0 -10px 14px -6px var(--bg-surface); }
+
+/* v2.1.7 · 선택 칸 선 통일: 3×3 경계 칸 여부와 상관없이 같은 위치·두께로 그립니다. */
+#view-game .cell.selected { box-shadow: none; outline-offset: -2.5px; }
+
+/* v2.1.7 · 티어 보상 테두리(최대 6px + 빛)가 화면 좌우에서 잘리지 않도록 보드를 조금 줄입니다. */
+body[class*="rkc-"]:not(.battle-active) #view-game .board-frame {
+  width: min(calc(100vw - 48px), 420px, 48vh) !important;
+  height: min(calc(100vw - 48px), 420px, 48vh) !important;
+}
+body[class*="rkc-"].battle-active #view-game .board-frame {
+  width: calc(var(--battle-board-size, 200px) - 20px) !important;
+  height: calc(var(--battle-board-size, 200px) - 20px) !important;
+}
+body[class*="rkc-"] #view-game .board-frame-wrapper,
+body[class*="rkc-"] #view-game .board-column { overflow: visible; }

@@ -103,8 +103,10 @@
     for (let i = REWARDS.length - 1; i >= 0; i--) {
       const id = REWARDS[i], idx = R.TIERS.findIndex(x => x.id === id);
       if (k < idx || c[id] === false) continue;
-      if (!plate) plate = id;
-      if (!card && ['diamond', 'master', 'grandmaster'].includes(id)) card = id;
+      if (c[id] !== true) continue;
+      plate = id;
+      if (['diamond', 'master', 'grandmaster'].includes(id)) card = id;
+      break;
     }
     return { card, plate };
   }
@@ -251,7 +253,7 @@
         const row = mk('label', 'cos-toggle');
         const sw = mk('span', 'toggle-switch');
         const cb = mk('input'); cb.type = 'checkbox'; cb.checked = c[id] !== false;
-        cb.onchange = () => { const cc = ctx.loadC(); cc[id] = cb.checked; ctx.saveC(cc); ctx.applyCosmetics(); };
+        cb.onchange = () => { const cc = ctx.loadC(); REWARDS.forEach(x => { if (cc[x] !== undefined) cc[x] = false; }); cc[id] = cb.checked; ctx.saveC(cc); ctx.applyCosmetics(); cos.closest('#season-cos') ? (cos.innerHTML = '', render(cos, ctx)) : cos.querySelectorAll('.cos-card').forEach(el => { const i2 = el.querySelector('.cos-toggle input'); if (i2) i2.checked = el.dataset.reward === id && cb.checked; }); };
         sw.append(cb, mk('span', 'slider'));
         row.append(mk('span', 'cos-owned', '✓ ' + t('owned')), sw);
         foot.append(row);

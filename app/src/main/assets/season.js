@@ -106,11 +106,16 @@
 
   function applyCosmetics() {
     const k = unlockedIdx(), c = loadC(), b = document.body;
+    // v2.1.7: 티어 보상은 하나만 장착합니다(여러 개가 켜지면 테두리·배너가 겹쳤습니다).
+    //   새로 해금된 보상은 자동 장착, 기존 저장값에 여러 개가 켜져 있으면 가장 높은 것만 남깁니다.
+    let fresh = '';
+    REWARDS.forEach(id => { const idx = R.TIERS.findIndex(x => x.id === id); if (k >= idx && c[id] === undefined) fresh = id; });
+    const owned = REWARDS.filter(id => k >= R.TIERS.findIndex(x => x.id === id));
+    let pickId = fresh || [...owned].reverse().find(id => c[id] === true) || '';
     REWARDS.forEach(id => {
       const idx = R.TIERS.findIndex(x => x.id === id);
-      // 처음 해금되면 기본으로 켭니다.
-      if (k >= idx && c[id] === undefined) c[id] = true;
-      b.classList.toggle('rkc-' + id, k >= idx && !!c[id]);
+      if (k >= idx) c[id] = id === pickId;
+      b.classList.toggle('rkc-' + id, k >= idx && id === pickId);
     });
     saveC(c);
     // v2.1.6: 홈 화면 그랜드마스터 엠블럼은 제거했습니다(이전 버전이 남긴 요소도 정리).
