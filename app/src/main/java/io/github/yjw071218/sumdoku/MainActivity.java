@@ -158,6 +158,7 @@ public class MainActivity extends Activity {
         // WindowInsetsController는 창의 DecorView가 생성된 뒤에 접근해야 합니다.
         applyImmersive();
 
+        watchCellularGeneration();
         webView = new WebView(this);
         // v2.0.1: 첫 화면 깜빡임 방지. 지난번 테마의 배경색으로 먼저 칠하고, 웹 앱이 저장된 테마·언어를
         // 모두 적용했다고 알릴 때(onAppReady)까지 WebView를 투명하게 둡니다.
@@ -347,6 +348,31 @@ public class MainActivity extends Activity {
                 if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
             }
         } catch (Exception ignored) {}
+    }
+
+    /** v2.0.5: 상태바의 모바일 데이터 세대(5G/LTE/3G). Android 12+에서는 권한 없이 TelephonyDisplayInfo로 받습니다. */
+    private volatile String cellularGeneration = "";
+    private void watchCellularGeneration() {
+        if (android.os.Build.VERSION.SDK_INT < 31) return;
+        try {
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+            if (tm == null) return;
+            tm.registerTelephonyCallback(getMainExecutor(), new CellGenCallback());
+        } catch (Throwable ignored) {}
+    }
+    @android.annotation.TargetApi(31)
+    private class CellGenCallback extends android.telephony.TelephonyCallback implements android.telephony.TelephonyCallback.DisplayInfoListener {
+        @Override public void onDisplayInfoChanged(android.telephony.TelephonyDisplayInfo info) {
+            int o = info.getOverrideNetworkType(), n = info.getNetworkType();
+            String g;
+            if (o == android.telephony.TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA || o == android.telephony.TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED || n == android.telephony.TelephonyManager.NETWORK_TYPE_NR) g = "5G";
+            else if (o == android.telephony.TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO || o == android.telephony.TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_CA) g = "LTE+";
+            else if (n == android.telephony.TelephonyManager.NETWORK_TYPE_LTE || n == android.telephony.TelephonyManager.NETWORK_TYPE_IWLAN) g = "LTE";
+            else if (n == android.telephony.TelephonyManager.NETWORK_TYPE_HSPAP || n == android.telephony.TelephonyManager.NETWORK_TYPE_HSPA || n == android.telephony.TelephonyManager.NETWORK_TYPE_HSDPA || n == android.telephony.TelephonyManager.NETWORK_TYPE_HSUPA || n == android.telephony.TelephonyManager.NETWORK_TYPE_UMTS) g = "3G";
+            else if (n == android.telephony.TelephonyManager.NETWORK_TYPE_EDGE || n == android.telephony.TelephonyManager.NETWORK_TYPE_GPRS) g = "2G";
+            else g = "";
+            cellularGeneration = g;
+        }
     }
 
     private boolean webViewRevealed = false;
@@ -573,18 +599,32 @@ public class MainActivity extends Activity {
                     charging = plugged && (st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL);
                 }
             } catch (Exception ignored) {}
-            boolean wifi = false, cellular = false, internet = false;
+            boolean wifi = false, cellular = false, internet = false, ethernet = false;
             try {
                 android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
                 if (cm != null) {
-                    android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(cm.getActiveNetwork());
-                    if (nc != null) {
-                        wifi = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
-                        cellular = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR);
-                        internet = nc.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                    // v2.0.5: VPN이 켜져 있으면 활성 망이 VPN으로만 보이므로, 실제로 연결된 모든 망을 살펴 Wi-Fi·모바일 데이터·이더넷을 찾습니다.
+                    android.net.NetworkCapabilities act = cm.getNetworkCapabilities(cm.getActiveNetwork());
+                    if (act != null) internet = act.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                    java.util.List<android.net.NetworkCapabilities> caps = new java.util.ArrayList<>();
+                    if (act != null) caps.add(act);
+                    for (android.net.Network n : cm.getAllNetworks()) {
+                        android.net.NetworkCapabilities c = cm.getNetworkCapabilities(n);
+                        if (c != null && c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)) caps.add(c);
                     }
+                    boolean hasPhysical = false;
+                    for (android.net.NetworkCapabilities c : caps) {
+                        if (c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) && !c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) && !c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) && !c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) continue;
+                        hasPhysical = true;
+                        wifi |= c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
+                        cellular |= c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR);
+                        ethernet |= c.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET);
+                        internet |= c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                    }
+                    if (!hasPhysical) internet = false;
                 }
             } catch (Exception ignored) {}
+            String cellGen = cellularGeneration;
             String ringer = "normal"; boolean dnd = false;
             try {
                 android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
@@ -606,8 +646,8 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
             boolean is24 = android.text.format.DateFormat.is24HourFormat(MainActivity.this);
             return String.format(java.util.Locale.ROOT,
-                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"internet\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
-                level, charging, wifi, cellular, internet, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
+                "{\"level\":%d,\"charging\":%b,\"wifi\":%b,\"cellular\":%b,\"ethernet\":%b,\"cellGen\":\"%s\",\"internet\":%b,\"airplane\":%b,\"ringer\":\"%s\",\"dnd\":%b,\"is24\":%b,\"safeTop\":%.1f,\"cutLeft\":%.1f,\"cutRight\":%.1f}",
+                level, charging, wifi, cellular, ethernet, cellGen, internet, airplane, ringer, dnd, is24, safeTopDp, cutoutLeftDp, cutoutRightDp);
         }
 
         /** v2.0.1: 다음 실행 때 WebView 뒤 배경을 미리 같은 색으로 칠할 수 있도록 현재 테마 배경색을 저장합니다. */

@@ -54,3 +54,7 @@ body.has-app-statusbar .toast { margin-top: var(--sb-h); }
 #app-statusbar .sb-net span:empty { display: none; }
 #app-statusbar .sb-offline { display:flex; align-items:center; }
 #app-statusbar .sb-cellular, #app-statusbar .sb-airplane, #app-statusbar .sb-wifi { display: flex; align-items: center; }
+
+/* v2.0.5 모바일 데이터 세대 */
+#app-statusbar .sb-cellular { gap: 2px; }
+#app-statusbar .sb-gen { font-size: 10.5px; font-weight: 800; letter-spacing: -.2px; line-height: 1; }

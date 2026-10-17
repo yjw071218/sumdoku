@@ -69,6 +69,12 @@ const DIST = process.env.DIST || 'play';
     await B.p.evaluate(() => { OnlineMatch.setMode('score'); OnlineMatch.setZone('americas'); });
     for (const X of [A, B]) await X.p.click('#battle-online-view .om-kind[data-kind="room"]');
     await A.p.click('#battle-online-view .om-room-create');
+    // v2.0.5: 방 화면이 새 전체 화면으로 뜨고, 방장이 그 안에서 설정을 바꿉니다.
+    await A.p.waitForSelector('#om-room-screen:not(.hidden)');
+    await A.p.click('#om-room-screen .om-r-modes .om-chip:nth-child(3)');   // 서바이벌
+    await A.p.click('#om-room-screen .om-r-lives .om-chip:nth-child(2)');   // 목숨 2
+    await A.p.click('#om-room-screen .om-r-hints .om-chip:nth-child(2)');   // 힌트 1
+    await A.p.click('#om-room-screen .om-r-auto .om-chip:nth-child(2)');    // 자동 메모 끔
     const code = await A.p.evaluate(() => OnlineMatch.roomCode);
     const shown = await A.p.evaluate(() => document.querySelector('.om-room-code').textContent);
     console.log('room code', code, 'shown', JSON.stringify(shown));
@@ -79,7 +85,7 @@ const DIST = process.env.DIST || 'play';
   }
   const t0 = Date.now();
   const deadline = t0 + (SEPARATE ? 30000 : 150000);
-  let last = '';
+  let last = '', startedByHost = false;
   while (Date.now() < deadline) {
     const s = await Promise.all([A, B].map(X => X.p.evaluate(() => ({
       st: OnlineMatch.state, role: OnlineMatch.role, peers: OnlineMatch.peers.size,
@@ -88,6 +94,18 @@ const DIST = process.env.DIST || 'play';
     const line = JSON.stringify(s);
     if (line !== last) { console.log(((Date.now() - t0) / 1000).toFixed(1) + 's', line); last = line; }
     if (s[0].battle && s[1].battle) break;
+    if (ROOM && s[0].st === 'matched' && !s[0].battle && !startedByHost) {
+      const joined = await A.p.evaluate(() => !!app.guestJoined);
+      if (joined) {
+        await new Promise(r => setTimeout(r, 3000));
+        const auto = await A.p.evaluate(() => !!app.isBattle);
+        const guestUi = await B.p.evaluate(() => ({ open: !document.getElementById('om-room-screen').classList.contains('hidden'), ro: document.querySelector('#om-room-screen .om-r-modes .om-chip').disabled, mode: OnlineMatch.roomCfg.mode }));
+        console.log(!auto ? 'PASS: room did not auto-start after guest joined' : 'FAIL: room auto-started');
+        console.log(guestUi.open && guestUi.ro && guestUi.mode === 'survival' ? 'PASS: guest sees room screen with read-only host settings' : 'FAIL: guest room ui ' + JSON.stringify(guestUi));
+        await A.p.click('#om-room-screen .om-room-start');
+        startedByHost = true;
+      }
+    }
     await new Promise(r => setTimeout(r, 1000));
   }
   if (SEPARATE) {
@@ -107,10 +125,12 @@ const DIST = process.env.DIST || 'play';
   console.log('rules', JSON.stringify(fin[0].rules));
   if (ROOM) {
     const modes = await Promise.all([A, B].map(X => X.p.evaluate(() => app.battleMode)));
-    const roomOk = modes[0] === 'race' && modes[1] === 'race';
-    console.log(roomOk ? 'PASS: remote room by 6-digit code, guest followed host mode (race)' : 'FAIL: room mode ' + modes);
+    const r = fin[0].rules || {};
+    const roomOk = modes[0] === 'survival' && modes[1] === 'survival' && r.maxLives === '2' && r.initialHints === '1' && r.allowAutoNotes === false && JSON.stringify(fin[1].rules) === JSON.stringify(r);
+    console.log(roomOk ? 'PASS: room settings (survival, 2 lives, 1 hint, auto-notes off) applied on both devices' : 'FAIL: room settings ' + modes + ' ' + JSON.stringify(fin.map(f => f.rules)));
     if (!roomOk) { await browser.close(); process.exit(1); }
   }
+  if (!ROOM) console.log(fin[0].rules?.allowAutoNotes === false && fin[1].rules?.allowAutoNotes === false ? 'PASS: random match has auto-notes off' : 'FAIL: random auto-notes ' + JSON.stringify(fin[0].rules));
   console.log(ok ? 'PASS: matched over public trackers, same puzzle on both sides' : 'FAIL');
   // 진행 동기화: 참가자 진행이 방장에게 전달되는지
   if (ok) {
@@ -118,7 +138,29 @@ const DIST = process.env.DIST || 'play';
     const opp = await Promise.all([A, B].map(X => X.p.evaluate(() => JSON.stringify(app.oppState))));
     console.log('oppState', opp);
   }
+  // v2.0.5 재대결: 신청 → 거절 표시 → 다시 신청 → 수락 → 둘 다 대기실로
+  let rmOk = false;
+  if (ok) {
+    const rm = X => X.p.evaluate(() => JSON.stringify(OnlineMatch.rematch));
+    await A.p.evaluate(() => app.requestBattleRematch());
+    await B.p.waitForFunction(() => OnlineMatch.rematch && OnlineMatch.rematch.in, null, { timeout: 8000 });
+    await B.p.evaluate(() => OnlineMatch.rejectRematch());
+    await A.p.waitForFunction(() => OnlineMatch.rematch && OnlineMatch.rematch.rejected, null, { timeout: 8000 });
+    console.log('PASS: rematch declined → requester sees', await rm(A));
+    await A.p.evaluate(() => { OnlineMatch.rematch = null; app.requestBattleRematch(); });
+    await B.p.waitForFunction(() => OnlineMatch.rematch && OnlineMatch.rematch.in, null, { timeout: 8000 });
+    await B.p.evaluate(() => OnlineMatch.acceptRematch());
+    await Promise.all([A, B].map(X => X.p.waitForFunction(() => !app.isBattle && OnlineMatch.rematch === null, null, { timeout: 10000 })));
+    if (ROOM) {
+      await A.p.waitForFunction(() => !document.getElementById('om-room-screen').classList.contains('hidden') && app.guestJoined, null, { timeout: 15000 });
+      await A.p.click('#om-room-screen .om-room-start');
+    }
+    await Promise.all([A, B].map(X => X.p.waitForFunction(() => app.isBattle, null, { timeout: 60000 })));
+    const sols = await Promise.all([A, B].map(X => X.p.evaluate(() => JSON.stringify(app.solution))));
+    rmOk = sols[0] === sols[1] && sols[0] !== fin[0].sol;
+    console.log(rmOk ? 'PASS: rematch accepted → new game on both devices' : 'FAIL: rematch');
+  }
   console.log('errors', A.errs, B.errs);
   await browser.close();
-  process.exit(ok && profOk ? 0 : 1);
+  process.exit(ok && rmOk && (profOk || DIST === 'github') ? 0 : 1);
 })();

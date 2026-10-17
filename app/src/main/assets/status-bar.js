@@ -55,6 +55,9 @@
     offline: () => svg('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c-4 4-4 14 0 18M12 3c2 2 3 5 3 8M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>', OFFLINE_LABELS[lang()]),
     wifi: () => svg('<g><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></g>', L().wifi),
     cellular: () => svg('<path d="M3 15h2.5v4H3v-4zm4.5-4H10v8H7.5v-8zm4.5-4H14.5v12H12V7zm4.5-4H19v16h-2.5V3z" fill="currentColor"/>', L().cellular),
+    // v2.0.5: 이더넷, 모바일 데이터 세대(5G/LTE) 표시
+    ethernet: () => svg('<path d="M7 3h10v4h3v8h-4v6H8v-6H4V7h3V3zm2 6v4M12 9v4M15 9v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>', 'Ethernet'),
+    cellData: gen => `<span class="sb-gen" aria-hidden="true">${/^(5G|LTE\+?|3G|2G)$/.test(gen || '') ? gen : '⇅'}</span>` + svg('<path d="M3 15h2.5v4H3v-4zm4.5-4H10v8H7.5v-8zm4.5-4H14.5v12H12V7zm4.5-4H19v16h-2.5V3z" fill="currentColor"/>', L().cellular),
     airplane: () => svg('<path d="M10.18 9L3 13.5V15l7.18-2.16V18L8 19.5V21l4-1 4 1v-1.5L13.82 18v-5.16L21 15v-1.5L13.82 9V3.5a1.82 1.82 0 0 0-3.64 0V9z" fill="currentColor"/>', L().airplane),
     dnd: () => svg('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M7.5 12h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>', L().dnd),
     vibrate: () => svg('<rect x="8" y="4" width="8" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 8v8M20 8v8M1.5 10v4M22.5 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', L().vibrate),
@@ -89,23 +92,17 @@
     // 네트워크: 비행기 모드 > Wi-Fi > 모바일 데이터 우선순위 (Wi-Fi 활성 시 모바일 데이터 숨김)
     if (st.airplane) {
       setHtmlIfChanged(bar.querySelector('.sb-airplane'), ICON.airplane());
-      setHtmlIfChanged(bar.querySelector('.sb-cellular'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-wifi'), '');
-    } else if (st.wifi) {
-      setHtmlIfChanged(bar.querySelector('.sb-airplane'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-cellular'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-wifi'), ICON.wifi());
-    } else if (st.cellular) {
-      setHtmlIfChanged(bar.querySelector('.sb-airplane'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-cellular'), ICON.cellular());
-      setHtmlIfChanged(bar.querySelector('.sb-wifi'), '');
+      // 비행기 모드에서도 Wi-Fi·이더넷을 켜 두었다면 함께 보여 줍니다.
+      setHtmlIfChanged(bar.querySelector('.sb-cellular'), st.ethernet ? ICON.ethernet() : '');
+      setHtmlIfChanged(bar.querySelector('.sb-wifi'), !st.ethernet && st.wifi ? ICON.wifi() : '');
     } else {
       setHtmlIfChanged(bar.querySelector('.sb-airplane'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-cellular'), '');
-      setHtmlIfChanged(bar.querySelector('.sb-wifi'), '');
+      // 이더넷 > Wi-Fi > 모바일 데이터. 모바일 데이터는 5G/LTE 같은 세대 글자와 막대를 함께 보입니다.
+      setHtmlIfChanged(bar.querySelector('.sb-cellular'), st.ethernet ? ICON.ethernet() : (!st.wifi && st.cellular ? ICON.cellData(st.cellGen) : ''));
+      setHtmlIfChanged(bar.querySelector('.sb-wifi'), !st.ethernet && st.wifi ? ICON.wifi() : '');
     }
 
-    const offline = typeof st.internet === 'boolean' ? !st.internet : st.wifi === false && st.cellular === false;
+    const offline = typeof st.internet === 'boolean' ? !st.internet : st.wifi === false && st.cellular === false && !st.ethernet;
     setHtmlIfChanged(bar.querySelector('.sb-offline'), offline ? ICON.offline() : '');
     const lv = st.level >= 0 ? st.level : null;
     const batt = bar.querySelector('.sb-batt');
@@ -116,8 +113,9 @@
 
     const extra = [
       st.airplane && L().airplane,
-      !st.airplane && st.wifi && L().wifi,
-      !st.airplane && !st.wifi && st.cellular && L().cellular,
+      !st.airplane && st.ethernet && 'Ethernet',
+      !st.airplane && !st.ethernet && st.wifi && L().wifi,
+      !st.airplane && !st.ethernet && !st.wifi && st.cellular && L().cellular + (st.cellGen ? ' ' + st.cellGen : ''),
       offline && OFFLINE_LABELS[lang()],
       st.dnd && L().dnd,
       st.ringer === 'vibrate' && L().vibrate,

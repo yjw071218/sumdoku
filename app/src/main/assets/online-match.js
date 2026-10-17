@@ -47,7 +47,7 @@
   const TUNNEL_TIMEOUT_MS = 9000;
   const HOST = 'p2p://host';
 
-  const FIXED_RULES = { mistakeLimit: true, maxLives: '3', livesExhaustedAction: 'game_over', initialHints: '3', hintExhaustedAction: 'allow_penalty', allowAutoNotes: true, turnSeconds: 30 };
+  const FIXED_RULES = { mistakeLimit: true, maxLives: '3', livesExhaustedAction: 'game_over', initialHints: '3', hintExhaustedAction: 'allow_penalty', allowAutoNotes: false, turnSeconds: 30 };
 
   // ---------------------------------------------------------------------------
   // 다국어: 앱이 지원하는 8개 언어 [ko, en, ja, zh, zh-TW, es, fr, de]
@@ -79,32 +79,12 @@
   const STR = {
     tab: ['🌐 온라인', '🌐 Online', '🌐 オンライン', '🌐 在线', '🌐 線上', '🌐 En línea', '🌐 En ligne', '🌐 Online'],
     title: ['전 세계 랜덤 매칭', 'Worldwide random match', '世界ランダムマッチ', '全球随机匹配', '全球隨機配對', 'Partida aleatoria mundial', 'Match aléatoire mondial', 'Weltweites Zufallsmatch'],
-    intro: [
-      '서버 없이 BitTorrent 트래커와 Mainline DHT로 같은 구역의 플레이어를 찾아 1:1로 직접 연결합니다.',
-      'Finds players in the same zone through BitTorrent trackers and the Mainline DHT, then connects you directly — no game server.',
-      'サーバーなしで BitTorrent トラッカーと Mainline DHT を使い、同じ地域のプレイヤーを見つけて 1対1 で直接つなぎます。',
-      '无需服务器，通过 BitTorrent Tracker 和 Mainline DHT 寻找同一区域的玩家，并直接 1 对 1 连接。',
-      '無需伺服器，透過 BitTorrent Tracker 與 Mainline DHT 尋找同一區域的玩家，並直接 1 對 1 連線。',
-      'Sin servidor: encuentra jugadores de tu zona mediante trackers BitTorrent y la DHT Mainline y te conecta directamente 1 contra 1.',
-      'Sans serveur : trouve des joueurs de votre zone via les trackers BitTorrent et la DHT Mainline, puis vous connecte en direct en 1 contre 1.',
-      'Ohne Server: findet Spieler in deiner Zone über BitTorrent-Tracker und die Mainline-DHT und verbindet euch direkt 1 gegen 1.'
-    ],
     zone: ['매칭 구역', 'Match zone', 'マッチ地域', '匹配区域', '配對區域', 'Zona de partida', 'Zone de match', 'Match-Zone'],
     zoneAuto: ['기기 시간대 기준 추천', 'Suggested from your time zone', '端末のタイムゾーンからのおすすめ', '根据设备时区推荐', '依裝置時區推薦', 'Sugerida según tu zona horaria', 'Suggérée selon votre fuseau horaire', 'Empfohlen nach deiner Zeitzone'],
     mode: ['배틀 모드', 'Battle mode', 'バトルモード', '对战模式', '對戰模式', 'Modo de batalla', 'Mode de duel', 'Kampfmodus'],
     diff: ['난이도', 'Difficulty', '難易度', '难度', '難度', 'Dificultad', 'Difficulté', 'Schwierigkeit'],
     name: ['내 닉네임', 'My nickname', 'ニックネーム', '我的昵称', '我的暱稱', 'Mi apodo', 'Mon pseudo', 'Mein Spitzname'],
     namePh: ['상대에게 보일 이름', 'Name shown to your opponent', '相手に表示される名前', '对手看到的名字', '對手看到的名稱', 'Nombre que verá tu rival', 'Nom vu par votre adversaire', 'Name, den dein Gegner sieht'],
-    rules: [
-      '온라인 공정 규칙 · 목숨 3 · 힌트 3 · 자동 메모 허용 · 턴 30초',
-      'Fair online rules · 3 lives · 3 hints · auto-notes on · 30 s turns',
-      'オンライン公平ルール · ライフ3 · ヒント3 · 自動メモ可 · ターン30秒',
-      '在线公平规则 · 3 条命 · 3 次提示 · 允许自动笔记 · 每回合 30 秒',
-      '線上公平規則 · 3 條命 · 3 次提示 · 允許自動筆記 · 每回合 30 秒',
-      'Reglas justas en línea · 3 vidas · 3 pistas · notas automáticas · turnos de 30 s',
-      'Règles équitables en ligne · 3 vies · 3 indices · notes auto · tours de 30 s',
-      'Faire Online-Regeln · 3 Leben · 3 Hinweise · Auto-Notizen an · 30-s-Züge'
-    ],
     start: ['랜덤 매칭 시작', 'Find a match', 'マッチング開始', '开始随机匹配', '開始隨機配對', 'Buscar partida', 'Trouver un match', 'Match suchen'],
     cancel: ['매칭 취소', 'Cancel', 'キャンセル', '取消匹配', '取消配對', 'Cancelar', 'Annuler', 'Abbrechen'],
     searching: ['같은 구역의 상대를 찾는 중…', 'Looking for an opponent in this zone…', '同じ地域の対戦相手を探しています…', '正在寻找同一区域的对手…', '正在尋找同一區域的對手…', 'Buscando rival en esta zona…', 'Recherche d’un adversaire dans cette zone…', 'Suche Gegner in dieser Zone…'],
@@ -160,16 +140,6 @@
     roomClose: ['방 닫기', 'Close room', 'ルームを閉じる', '关闭房间', '關閉房間', 'Cerrar sala', 'Fermer la salle', 'Raum schließen'],
     kindRandom: ['🎲 랜덤 매칭', '🎲 Random', '🎲 ランダム', '🎲 随机匹配', '🎲 隨機配對', '🎲 Aleatoria', '🎲 Aléatoire', '🎲 Zufällig'],
     kindRoom: ['🔢 방 번호', '🔢 Room code', '🔢 ルーム番号', '🔢 房间号', '🔢 房間號碼', '🔢 Código de sala', '🔢 Code de salle', '🔢 Raumcode'],
-    roomIntro: [
-      '내부망이 아니어도 됩니다. 방을 만들고 6자리 번호를 친구에게 알려 주면, 전 세계 어디서든 번호로 접속해 배틀할 수 있습니다.',
-      'No shared Wi-Fi needed. Create a room and share the 6-digit code — your friend can join from anywhere in the world.',
-      '同じネットワークでなくても大丈夫。ルームを作って6桁の番号を伝えれば、世界中どこからでも参加できます。',
-      '无需同一网络。创建房间并把 6 位房间号告诉好友，好友在世界任何地方都能加入。',
-      '不必在同一網路。建立房間並把 6 位號碼告訴好友，好友在世界任何地方都能加入。',
-      'No hace falta la misma Wi-Fi. Crea una sala y comparte el código de 6 dígitos: tu amigo puede unirse desde cualquier lugar.',
-      'Pas besoin du même Wi-Fi. Créez une salle et partagez le code à 6 chiffres : votre ami peut rejoindre depuis n’importe où.',
-      'Kein gemeinsames WLAN nötig. Raum erstellen, 6-stelligen Code teilen – dein Freund kann von überall beitreten.'
-    ],
     roomCreate: ['방 만들기', 'Create room', 'ルームを作成', '创建房间', '建立房間', 'Crear sala', 'Créer une salle', 'Raum erstellen'],
     roomJoin: ['번호로 참가', 'Join', '番号で参加', '输入房间号加入', '輸入號碼加入', 'Unirse', 'Rejoindre', 'Beitreten'],
     roomCodeLabel: ['방 번호', 'Room code', 'ルーム番号', '房间号', '房間號碼', 'Código', 'Code', 'Code'],
@@ -178,13 +148,59 @@
     roomJoining: ['방을 찾는 중…', 'Looking for the room…', 'ルームを探しています…', '正在寻找房间…', '正在尋找房間…', 'Buscando la sala…', 'Recherche de la salle…', 'Suche den Raum…'],
     roomNotFound: ['아직 방을 찾지 못했습니다. 번호를 확인하고 방장이 방을 열어 두었는지 확인해 주세요.', 'Room not found yet. Check the code and make sure the host keeps the room open.', 'まだルームが見つかりません。番号とホストがルームを開いているか確認してください。', '尚未找到房间。请确认房间号，并确保房主保持房间开启。', '尚未找到房間。請確認號碼，並確保房主保持房間開啟。', 'Aún no se encuentra la sala. Revisa el código y que el anfitrión la mantenga abierta.', 'Salle introuvable pour l’instant. Vérifiez le code et que l’hôte garde la salle ouverte.', 'Raum noch nicht gefunden. Code prüfen und sicherstellen, dass der Host den Raum offen hält.'],
     roomBad: ['6자리 숫자를 입력해 주세요.', 'Enter the 6-digit code.', '6桁の数字を入力してください。', '请输入 6 位数字。', '請輸入 6 位數字。', 'Introduce el código de 6 dígitos.', 'Saisissez le code à 6 chiffres.', 'Gib den 6-stelligen Code ein.'],
-    roomRules: ['방장의 모드·난이도·규칙으로 진행합니다', 'Plays with the host’s mode, difficulty and rules', 'ホストのモード・難易度・ルームで対戦します', '使用房主的模式、难度和规则', '使用房主的模式、難度與規則', 'Se juega con el modo, la dificultad y las reglas del anfitrión', 'Se joue avec le mode, la difficulté et les règles de l’hôte', 'Gespielt wird mit Modus, Schwierigkeit und Regeln des Hosts'],
     copy: ['번호 복사', 'Copy code', '番号をコピー', '复制房间号', '複製號碼', 'Copiar código', 'Copier le code', 'Code kopieren'],
     copied: ['방 번호를 복사했습니다.', 'Room code copied.', 'ルーム番号をコピーしました。', '已复制房间号。', '已複製房間號碼。', 'Código copiado.', 'Code copié.', 'Code kopiert.'],
     nameHint: ['비워 두면 Google Play 게임즈 이름을 사용합니다', 'Leave empty to use your Google Play Games name', '空欄にすると Google Play ゲームズの名前を使います', '留空则使用 Google Play 游戏名称', '留空則使用 Google Play 遊戲名稱', 'Déjalo vacío para usar tu nombre de Google Play Juegos', 'Laissez vide pour utiliser votre nom Google Play Jeux', 'Leer lassen, um deinen Google Play Spiele-Namen zu verwenden'],
     loginNeed: ['배틀은 Google Play 게임즈에 로그인해야 이용할 수 있습니다.', 'Sign in to Google Play Games to play battles.', 'バトルを遊ぶには Google Play ゲームズへのログインが必要です。', '登录 Google Play 游戏后才能进行对战。', '登入 Google Play 遊戲後才能進行對戰。', 'Inicia sesión en Google Play Juegos para jugar batallas.', 'Connectez-vous à Google Play Jeux pour jouer en duel.', 'Melde dich bei Google Play Spiele an, um Kämpfe zu spielen.'],
     loginStoreOnly: ['배틀은 Google Play 스토어 버전에서 Google Play 게임즈에 로그인한 뒤 이용할 수 있습니다.', 'Battles are available in the Google Play Store version after signing in to Google Play Games.', 'バトルは Google Play ストア版で Google Play ゲームズにログインすると利用できます。', '对战需要在 Google Play 商店版中登录 Google Play 游戏后使用。', '對戰需在 Google Play 商店版登入 Google Play 遊戲後使用。', 'Las batallas están en la versión de Google Play Store tras iniciar sesión en Google Play Juegos.', 'Les duels sont disponibles dans la version Google Play Store après connexion à Google Play Jeux.', 'Kämpfe gibt es in der Google-Play-Store-Version nach Anmeldung bei Google Play Spiele.'],
     loginBusy: ['Google Play 게임즈에 로그인하는 중…', 'Signing in to Google Play Games…', 'Google Play ゲームズにログイン中…', '正在登录 Google Play 游戏…', '正在登入 Google Play 遊戲…', 'Iniciando sesión en Google Play Juegos…', 'Connexion à Google Play Jeux…', 'Anmeldung bei Google Play Spiele…'],
+    // ---------------- v2.0.5 ----------------
+    rulesChips: [
+      ['목숨 3', '힌트 3', '자동 메모 끔', '턴 30초'],
+      ['3 lives', '3 hints', 'No auto-notes', '30 s turns'],
+      ['ライフ3', 'ヒント3', '自動メモなし', 'ターン30秒'],
+      ['3 条命', '3 次提示', '禁用自动笔记', '每回合 30 秒'],
+      ['3 條命', '3 次提示', '停用自動筆記', '每回合 30 秒'],
+      ['3 vidas', '3 pistas', 'Sin notas auto', 'Turnos de 30 s'],
+      ['3 vies', '3 indices', 'Sans notes auto', 'Tours de 30 s'],
+      ['3 Leben', '3 Hinweise', 'Keine Auto-Notizen', '30-s-Züge']
+    ],
+    rulesTitle: ['공정 규칙', 'Fair rules', '公平ルール', '公平规则', '公平規則', 'Reglas justas', 'Règles équitables', 'Faire Regeln'],
+    roomLead: ['6자리 번호로 친구와 1:1 대전합니다.', 'Play 1:1 with a friend using a 6-digit code.', '6桁の番号で友達と1対1で対戦します。', '用 6 位房间号与好友 1 对 1 对战。', '用 6 位號碼與好友 1 對 1 對戰。', 'Juega 1:1 con un amigo con un código de 6 dígitos.', 'Jouez en 1:1 avec un ami grâce à un code à 6 chiffres.', 'Spiele 1:1 mit einem Freund per 6-stelligem Code.'],
+    or: ['또는', 'or', 'または', '或', '或', 'o', 'ou', 'oder'],
+    roomTitle: ['배틀 방', 'Battle room', 'バトルルーム', '对战房间', '對戰房間', 'Sala de batalla', 'Salle de duel', 'Kampfraum'],
+    leave: ['나가기', 'Leave', '退出', '退出', '離開', 'Salir', 'Quitter', 'Verlassen'],
+    roomSettings: ['방 설정', 'Room settings', 'ルーム設定', '房间设置', '房間設定', 'Ajustes de sala', 'Réglages de la salle', 'Raumeinstellungen'],
+    hostOnly: ['방장만 바꿀 수 있습니다', 'Only the host can change these', 'ホストのみ変更できます', '仅房主可以更改', '僅房主可以變更', 'Solo el anfitrión puede cambiarlos', 'Seul l’hôte peut les modifier', 'Nur der Host kann das ändern'],
+    lives: ['목숨', 'Lives', 'ライフ', '生命', '生命', 'Vidas', 'Vies', 'Leben'],
+    hints: ['힌트', 'Hints', 'ヒント', '提示', '提示', 'Pistas', 'Indices', 'Hinweise'],
+    autoNotes: ['자동 메모', 'Auto-notes', '自動メモ', '自动笔记', '自動筆記', 'Notas auto', 'Notes auto', 'Auto-Notizen'],
+    turnTime: ['턴 시간', 'Turn time', 'ターン時間', '回合时间', '回合時間', 'Tiempo de turno', 'Durée du tour', 'Zugzeit'],
+    on: ['허용', 'On', '許可', '允许', '允許', 'Sí', 'Oui', 'An'],
+    off: ['끔', 'Off', 'オフ', '关闭', '關閉', 'No', 'Non', 'Aus'],
+    sec: ['초', 's', '秒', '秒', '秒', 's', 's', 's'],
+    livesFree: ['레이스·타임어택은 목숨 무제한입니다', 'Race and Time attack have unlimited lives', 'レース・タイムアタックはライフ無制限です', '竞速赛和计时赛生命无限', '競速賽與計時賽生命無限', 'Carrera y Contrarreloj tienen vidas ilimitadas', 'Course et Contre-la-montre : vies illimitées', 'Rennen und Zeitangriff: unbegrenzte Leben'],
+    startGame: ['게임 시작', 'Start game', 'ゲーム開始', '开始游戏', '開始遊戲', 'Empezar', 'Lancer la partie', 'Spiel starten'],
+    waitGuest: ['상대가 들어오기를 기다리는 중…', 'Waiting for your opponent to join…', '相手の参加を待っています…', '正在等待对手加入…', '正在等待對手加入…', 'Esperando a que se una tu rival…', 'En attente de l’adversaire…', 'Warte auf den Gegner…'],
+    guestIn: ['상대가 들어왔습니다. 설정을 확인하고 시작하세요', 'Opponent joined. Check the settings and start', '相手が参加しました。設定を確認して開始してください', '对手已加入。确认设置后开始', '對手已加入。確認設定後開始', 'Tu rival se unió. Revisa los ajustes y empieza', 'Adversaire arrivé. Vérifiez les réglages puis lancez', 'Gegner ist da. Einstellungen prüfen und starten'],
+    waitHost: ['방장이 게임을 시작하기를 기다리는 중…', 'Waiting for the host to start…', 'ホストの開始を待っています…', '正在等待房主开始…', '正在等待房主開始…', 'Esperando a que el anfitrión empiece…', 'En attente du lancement par l’hôte…', 'Warte auf den Start durch den Host…'],
+    roomNoGuest: ['상대가 아직 들어오지 않았습니다.', 'Your opponent hasn’t joined yet.', '相手がまだ参加していません。', '对手尚未加入。', '對手尚未加入。', 'Tu rival aún no se ha unido.', 'L’adversaire n’a pas encore rejoint.', 'Der Gegner ist noch nicht beigetreten.'],
+    waitingSlot: ['대기 중', 'Waiting', '待機中', '等待中', '等待中', 'Esperando', 'En attente', 'Wartet'],
+    host: ['방장', 'Host', 'ホスト', '房主', '房主', 'Anfitrión', 'Hôte', 'Host'],
+    // 재대결
+    rmSent: ['재도전을 신청했습니다. 상대의 응답을 기다리는 중…', 'Rematch requested. Waiting for your opponent…', '再戦を申し込みました。相手の返事を待っています…', '已申请重赛，正在等待对手回应…', '已申請重賽，正在等待對手回應…', 'Revancha solicitada. Esperando a tu rival…', 'Revanche demandée. En attente de l’adversaire…', 'Revanche angefragt. Warte auf den Gegner…'],
+    rmIncoming: ['상대가 재도전을 신청했습니다', 'Your opponent wants a rematch', '相手が再戦を申し込みました', '对手申请重赛', '對手申請重賽', 'Tu rival quiere la revancha', 'L’adversaire demande une revanche', 'Der Gegner will eine Revanche'],
+    rmAccept: ['수락', 'Accept', '受ける', '接受', '接受', 'Aceptar', 'Accepter', 'Annehmen'],
+    rmReject: ['거절', 'Decline', '断る', '拒绝', '拒絕', 'Rechazar', 'Refuser', 'Ablehnen'],
+    rmRejected: ['상대가 재도전을 거절했습니다.', 'Your opponent declined the rematch.', '相手が再戦を断りました。', '对手拒绝了重赛。', '對手拒絕了重賽。', 'Tu rival rechazó la revancha.', 'L’adversaire a refusé la revanche.', 'Der Gegner hat die Revanche abgelehnt.'],
+    rmYouRejected: ['재도전 요청을 거절했습니다.', 'You declined the rematch.', '再戦を断りました。', '你拒绝了重赛。', '你拒絕了重賽。', 'Rechazaste la revancha.', 'Vous avez refusé la revanche.', 'Du hast die Revanche abgelehnt.'],
+    rmLeft: ['상대가 나갔습니다. 재도전할 수 없습니다.', 'Your opponent left. Rematch unavailable.', '相手が退出しました。再戦できません。', '对手已离开，无法重赛。', '對手已離開，無法重賽。', 'Tu rival se fue. No hay revancha.', 'L’adversaire est parti. Revanche impossible.', 'Der Gegner ist gegangen. Keine Revanche möglich.'],
+    rmAccepted: ['재도전 수락! 대기실로 이동합니다', 'Rematch accepted! Back to the room', '再戦成立！ルームへ戻ります', '重赛已接受！返回房间', '重賽已接受！返回房間', '¡Revancha aceptada! Volviendo a la sala', 'Revanche acceptée ! Retour à la salle', 'Revanche angenommen! Zurück zum Raum'],
+    // 배틀 모드 설명
+    descRace: ['같은 퍼즐을 각자 풉니다. 먼저 완성하면 경기가 끝나고, 완주 보너스를 포함해 점수가 높은 쪽이 이깁니다. 목숨은 무제한이지만 오답마다 크게 감점됩니다.', 'You both solve the same puzzle. The game ends when someone finishes; the higher score (with the finish bonus) wins. Unlimited lives, but each mistake costs a lot of points.', '同じパズルをそれぞれ解きます。誰かが完成すると終了し、完走ボーナスを含めて得点が高い方の勝ち。ライフは無制限ですが、ミスごとに大きく減点されます。', '双方解同一个谜题。有人完成即结束，含完赛奖励分数更高者获胜。生命无限，但每次出错都会大幅扣分。', '雙方解同一個謎題。有人完成即結束，含完賽獎勵分數較高者獲勝。生命無限，但每次出錯都會大幅扣分。', 'Ambos resolvéis el mismo puzle. Termina cuando alguien acaba; gana la mayor puntuación (con bonus). Vidas ilimitadas, pero cada error resta mucho.', 'Vous résolvez la même grille. La partie s’arrête dès qu’un joueur finit ; le meilleur score (bonus compris) gagne. Vies illimitées, mais chaque erreur coûte cher.', 'Ihr löst dasselbe Rätsel. Wer zuerst fertig ist, beendet das Spiel; die höhere Punktzahl (mit Bonus) gewinnt. Unbegrenzte Leben, aber Fehler kosten viele Punkte.'],
+    descScore: ['제한 시간(5분) 안에 정답과 콤보로 점수를 쌓습니다. 시간이 끝났을 때 점수가 높은 쪽이 이깁니다.', 'Build points with correct entries and combos within 5 minutes. Highest score when time runs out wins.', '制限時間（5分）内に正解とコンボで得点を稼ぎます。時間切れ時に得点が高い方の勝ち。', '在 5 分钟内通过正确输入和连击累积分数，时间结束时分数高者获胜。', '在 5 分鐘內透過正確輸入與連擊累積分數，時間結束時分數高者獲勝。', 'Suma puntos con aciertos y combos en 5 minutos. Gana la puntuación más alta al acabar el tiempo.', 'Marquez des points avec bonnes réponses et combos en 5 minutes. Le meilleur score à la fin gagne.', 'Sammle in 5 Minuten Punkte mit richtigen Eingaben und Combos. Die höchste Punktzahl gewinnt.'],
+    descSurvival: ['남은 생존 시간을 관리하며 풉니다. 상대가 진행할수록 내 시간이 줄고, 시간이 다 되면 목숨과 점수를 잃습니다. 먼저 완성하거나 상대가 탈락할 때까지 버티세요.', 'Manage your survival time. Your clock drains as your opponent progresses; when it runs out you lose a life and points. Finish first or outlast your opponent.', '残りの生存時間を管理しながら解きます。相手が進むほど時間が減り、尽きるとライフと得点を失います。先に完成するか、相手の脱落まで耐えましょう。', '管理剩余生存时间。对手进度越快你的时间减少越多，时间耗尽会失去生命和分数。先完成或坚持到对手淘汰。', '管理剩餘生存時間。對手進度越快你的時間減少越多，時間耗盡會失去生命與分數。先完成或撐到對手淘汰。', 'Gestiona tu tiempo de supervivencia. Se agota cuando tu rival avanza; si llega a cero pierdes una vida y puntos. Termina antes o aguanta más.', 'Gérez votre temps de survie. Il fond quand l’adversaire progresse ; à zéro, vous perdez une vie et des points. Finissez avant ou tenez plus longtemps.', 'Verwalte deine Überlebenszeit. Sie sinkt, wenn der Gegner vorankommt; bei null verlierst du Leben und Punkte. Sei schneller oder halte länger durch.'],
+    descTurn: ['하나의 공용 판에 번갈아 숫자를 입력합니다. 오답이거나 턴 시간이 지나면 차례가 넘어가고, 판이 완성되면 점수를 비교합니다. 힌트·실행 취소는 쓸 수 없습니다.', 'Take turns placing numbers on one shared board. A mistake or timeout passes the turn; when the board is complete, scores are compared. No hints or undo.', '1つの共有盤に交互に数字を入れます。ミスか時間切れで手番が移り、盤が完成したら得点を比べます。ヒント・元に戻すは使えません。', '在同一个公用盘上轮流填数。出错或超时则换人，盘面完成后比较分数。不能使用提示和撤销。', '在同一個共用盤上輪流填數。出錯或逾時則換人，盤面完成後比較分數。不能使用提示與復原。', 'Por turnos en un tablero compartido. Un error o agotar el tiempo pasa el turno; al completarlo se comparan puntos. Sin pistas ni deshacer.', 'Chacun son tour sur une grille commune. Une erreur ou un temps écoulé passe la main ; à la fin, on compare les scores. Ni indices ni annulation.', 'Abwechselnd auf einem gemeinsamen Brett. Fehler oder Zeitablauf geben den Zug ab; am Ende zählen die Punkte. Keine Hinweise oder Rückgängig.'],
     unranked: ['배치 중', 'Placement', '配置中', '定级中', '定級中', 'Clasificación', 'Placement', 'Platzierung']
   };
   const T = k => (STR[k] ? pickLang(STR[k]) : k);
@@ -337,6 +353,24 @@
     return { n, cc, tier: cleanTier(p && p.tier) };
   }
 
+  // v2.0.5 · 방 번호 배틀: 방장이 방 안에서 바꾸는 설정(모드·난이도·목숨·힌트·자동 메모·턴 시간)
+  const LIVES_OPTS = [1, 2, 3], HINT_OPTS = [0, 1, 2, 3], TURN_OPTS = [15, 30, 60];
+  function cleanCfg(c) {
+    c = c && typeof c === 'object' ? c : {};
+    return {
+      mode: pick(MODES, c.mode, 'race'),
+      diff: pick(DIFFS, c.diff, 'expert'),
+      lives: LIVES_OPTS.includes(+c.lives) ? +c.lives : 3,
+      hints: HINT_OPTS.includes(+c.hints) ? +c.hints : 3,
+      autoNotes: c.autoNotes !== false,
+      turn: TURN_OPTS.includes(+c.turn) ? +c.turn : 30
+    };
+  }
+  function loadRoomCfg() { try { return cleanCfg(JSON.parse(store.get('sumdoku_room_cfg', '{}'))); } catch (_) { return cleanCfg(null); } }
+  function roomRules(c) {
+    return { mistakeLimit: true, maxLives: String(c.lives), livesExhaustedAction: 'game_over', initialHints: String(c.hints), hintExhaustedAction: 'allow_penalty', allowAutoNotes: !!c.autoNotes, turnSeconds: c.turn };
+  }
+
   try { const old = localStorage.getItem('sumdoku_online_name'); if (old && !/^Player-[A-Z0-9]{4}$/.test(old) && !localStorage.getItem('sumdoku_online_nick')) localStorage.setItem('sumdoku_online_nick', old); localStorage.removeItem('sumdoku_online_name'); } catch (_) {}
 
   // ---------------------------------------------------------------------------
@@ -346,6 +380,8 @@
     kind: store.get('sumdoku_online_kind', 'random') === 'room' ? 'room' : 'random', // random | room
     roomRole: '',             // room일 때 create | join
     roomCode: '',
+    roomCfg: loadRoomCfg(),
+    rematch: null,            // 재대결 상태: {out}|{in}|{rejected}|{youRejected}|{left}|{accepted}
     state: 'idle',            // idle | searching | proposing | matched
     role: 0,                  // 1 방장 / 2 참가자
     selfId: '',
@@ -386,6 +422,12 @@
 
     /** 원격 방: role='create'면 새 6자리 번호를 만들고, 'join'이면 받은 번호로 방장을 찾습니다. */
     startRoom(role, code) {
+      if (role === 'create-same' && /^\d{6}$/.test(code || '')) {
+        this.kind = 'room'; this.roomRole = 'create'; this.roomCode = code;
+        this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
+        this.start();
+        return;
+      }
       if (role === 'create') {
         const a = new Uint32Array(1);
         try { crypto.getRandomValues(a); } catch (_) { a[0] = Math.floor(Math.random() * 1e9); }
@@ -393,6 +435,7 @@
       }
       if (!/^\d{6}$/.test(code || '')) { window.app?.showToast?.(T('roomBad'), 3000); return; }
       this.kind = 'room'; this.roomRole = role; this.roomCode = code;
+      if (role === 'create') { this.roomCfg = loadRoomCfg(); this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff; }
       this.start();
     },
 
@@ -583,6 +626,19 @@
         return;
       }
       if (!this.active) return;
+      if (app?.dom?.modalBattleResult && !app.dom.modalBattleResult.classList.contains('hidden')) {
+        this.partner = null;
+        this.rematch = { left: true };
+        UI.renderRematch();
+        return;
+      }
+      if (this.kind === 'room' && this.roomRole === 'create') {
+        // 방장: 상대가 나가도 방은 그대로 두고 다시 기다립니다.
+        app?.showToast?.(T('lost'), 3000);
+        const code = this.roomCode;
+        this.startRoom('create-same', code);
+        return;
+      }
       app?.showToast?.(T('lost'), 3500);
       this.start();
     },
@@ -623,6 +679,11 @@
         case 'req': return this.onTunnelRequest(peer, msg);
         case 'res': return this.onTunnelResponse(msg);
         case 'bye': return this.onPeerGone(peer);
+        case 'cfg': return this.onCfg(peer, msg);
+        case 'rq': return this.onRematchRequest(peer);
+        case 'ra': return this.onRematchAccept(peer);
+        case 'rn': return this.onRematchReject(peer);
+        case 'rgo': return this.onRematchGo(peer);
       }
     },
 
@@ -725,7 +786,8 @@
         try { app.cancelRoomPreparation?.(); } finally { this.internalCancel = false; }
         app.battleMode = this.mode;
         app.battleDiff = this.diff;
-        const rulesSrc = this.kind === 'room' ? (app.settings || FIXED_RULES) : FIXED_RULES;
+        if (this.kind === 'room') { this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff; app.battleMode = this.mode; app.battleDiff = this.diff; }
+        const rulesSrc = this.kind === 'room' ? roomRules(this.roomCfg) : FIXED_RULES;
         const dummy = { difficulty: this.diff, rules: window.normalizedRules ? window.normalizedRules(rulesSrc, this.mode) : FIXED_RULES, online: true };
         const res = JSON.parse(window.AndroidBridge.startOnlineBattleServer(this.mode, this.diff, this.mode === 'score' ? 300 : 0, JSON.stringify(dummy)));
         if (!res.ok) throw new Error('server');
@@ -739,6 +801,7 @@
         app.battlePuzzleData = null;
         await fetch('http://127.0.0.1:8888/api/ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: 1, ready: true }) });
         if (epoch !== this.epoch) return;
+        if (this.kind === 'room') this.sendTo(peer, { t: 'cfg', cfg: this.roomCfg });
         this.sendTo(peer, { t: 'room' });
         this.hostStarted = false;
         clearInterval(this.hostPoll);
@@ -749,6 +812,7 @@
             app.guestJoined = !!st.guestJoined;
             app.hostP1Ready = !!st.p1Ready;
             app.hostP2Ready = !!st.p2Ready;
+            if (this.kind === 'room') { UI.render(); return; } // 방장이 '게임 시작'을 눌러야 시작합니다.
             if (st.guestJoined && st.p2Ready && !this.hostStarted && !app.battleStarting) {
               this.hostStarted = true;
               clearInterval(this.hostPoll);
@@ -769,6 +833,7 @@
       try {
         this.internalCancel = true;
         try { app.cancelRoomPreparation?.(); } finally { this.internalCancel = false; }
+        if (this.kind === 'room') { this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff; }
         app.battleMode = this.mode;
         app.battleDiff = this.diff;
         app.battleRole = 2;
@@ -981,6 +1046,125 @@
       if (s && typeof s === 'object') { this.dht = { nodes: s.nodes | 0, peers: s.peers | 0, phase: String(s.phase || '') }; UI.render(); }
     },
 
+    // ----- v2.0.5 방 설정 -----
+    setRoomCfg(patch) {
+      if (!(this.kind === 'room' && this.roomRole === 'create')) return;
+      this.roomCfg = cleanCfg({ ...this.roomCfg, ...patch });
+      store.set('sumdoku_room_cfg', JSON.stringify(this.roomCfg));
+      this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
+      const app = window.app;
+      const peer = this.partner && this.peers.get(this.partner);
+      if (peer) this.sendTo(peer, { t: 'cfg', cfg: this.roomCfg });
+      if (this.role === 1 && app && !app.isBattle) {
+        app.battleMode = this.mode; app.battleDiff = this.diff;
+        try {
+          const dummy = { difficulty: this.diff, rules: window.normalizedRules(roomRules(this.roomCfg), this.mode), online: true };
+          window.AndroidBridge?.updateBattleServer?.(this.mode, this.diff, this.mode === 'score' ? 300 : 0, JSON.stringify(dummy));
+        } catch (_) {}
+      }
+      UI.render();
+    },
+
+    onCfg(peer, msg) {
+      if (peer.id !== this.partner || this.kind !== 'room' || this.roomRole !== 'join') return;
+      this.roomCfg = cleanCfg(msg.cfg);
+      this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
+      const app = window.app;
+      if (app && !app.isBattle) { app.battleMode = this.mode; app.battleDiff = this.diff; }
+      UI.render();
+    },
+
+    /** 방장: 상대가 들어온 뒤 '게임 시작'을 눌렀을 때만 경기를 시작합니다. */
+    async roomStart() {
+      const app = window.app;
+      if (this.kind !== 'room' || this.role !== 1 || this.state !== 'matched' || this.hostStarted || app.battleStarting) return;
+      const peer = this.partner && this.peers.get(this.partner);
+      if (!peer || !peer.open || !app.guestJoined) { app.showToast?.(T('roomNoGuest'), 2500); return; }
+      const c = this.roomCfg;
+      this.mode = c.mode; this.diff = c.diff;
+      app.battleMode = c.mode; app.battleDiff = c.diff;
+      try {
+        const dummy = { difficulty: c.diff, rules: window.normalizedRules(roomRules(c), c.mode), online: true };
+        window.AndroidBridge?.updateBattleServer?.(c.mode, c.diff, c.mode === 'score' ? 300 : 0, JSON.stringify(dummy));
+      } catch (_) {}
+      this.sendTo(peer, { t: 'cfg', cfg: c });
+      const post = body => fetch('http://127.0.0.1:8888/api/ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+      await post({ player: 1, ready: true });
+      await post({ player: 2, ready: true });
+      app.hostRoomCreated = true; app.guestJoined = true; app.hostP1Ready = true; app.hostP2Ready = true;
+      this.hostStarted = true;
+      clearInterval(this.hostPoll);
+      UI.render();
+      app.startBattleAsHost();
+    },
+
+    // ----- v2.0.5 재대결: 신청 → 상대 수락/거절 -----
+    partnerPeer() { const p = this.partner && this.peers.get(this.partner); return p && p.open ? p : null; },
+    requestRematch() {
+      const peer = this.partnerPeer();
+      if (!peer) { this.rematch = { left: true }; UI.renderRematch(); return; }
+      if (this.rematch?.in) { this.acceptRematch(); return; }
+      this.rematch = { out: true };
+      this.sendTo(peer, { t: 'rq' });
+      UI.renderRematch();
+    },
+    onRematchRequest(peer) {
+      if (peer.id !== this.partner) return;
+      if (this.rematch?.out) { this.acceptRematch(); return; } // 동시에 신청하면 바로 성사
+      this.rematch = { in: true };
+      window.app?.sound?.play?.('click');
+      try { navigator.vibrate?.(40); } catch (_) {}
+      UI.renderRematch();
+    },
+    acceptRematch() {
+      const peer = this.partnerPeer();
+      if (!peer) { this.rematch = { left: true }; UI.renderRematch(); return; }
+      this.sendTo(peer, { t: 'ra' });
+      this.doRematch();
+    },
+    rejectRematch() {
+      const peer = this.partnerPeer();
+      if (peer) this.sendTo(peer, { t: 'rn' });
+      this.rematch = { youRejected: true };
+      UI.renderRematch();
+    },
+    onRematchAccept(peer) {
+      if (peer.id !== this.partner || !(this.rematch?.out || this.rematch?.in)) return;
+      this.doRematch();
+    },
+    onRematchReject(peer) {
+      if (peer.id !== this.partner) return;
+      this.rematch = { rejected: true };
+      window.app?.showToast?.(T('rmRejected'), 3000);
+      UI.renderRematch();
+    },
+    /** 재대결 성사: 방장이 서버를 재대결 대기 상태로 바꾼 뒤 참가자에게 'rgo'를 보냅니다. */
+    async doRematch() {
+      const app = window.app;
+      this.rematch = { accepted: true };
+      UI.renderRematch();
+      clearInterval(app.rematchCheckTimer);
+      if (this.role !== 1) return; // 참가자는 방장의 'rgo'를 기다립니다.
+      try { await fetch('http://127.0.0.1:8888/api/rematch', { method: 'POST' }); } catch (_) {}
+      const peer = this.partnerPeer();
+      if (peer) this.sendTo(peer, { t: 'rgo' });
+      this.enterRematchLobby();
+    },
+    onRematchGo(peer) {
+      if (peer.id !== this.partner || this.role !== 2) return;
+      this.enterRematchLobby();
+    },
+    enterRematchLobby() {
+      const app = window.app;
+      if (!app) return;
+      clearInterval(app.rematchCheckTimer);
+      this.rematch = null;
+      this.hostStarted = false;
+      app.dom.modalBattleResult.classList.add('hidden');
+      app.isRematchActive = true;
+      app.returnToBattleLobby();
+    },
+
     setZone(z) { if (ZONES.some(x => x.id === z)) { this.zone = z; store.set('sumdoku_online_zone', z); this.restartIfSearching(); } },
     setMode(m) { if (MODES.some(x => x.id === m)) { this.mode = m; store.set('sumdoku_online_mode', m); this.restartIfSearching(); } },
     setDiff(d) { if (DIFFS.some(x => x.id === d)) { this.diff = d; store.set('sumdoku_online_diff', d); this.restartIfSearching(); } },
@@ -1007,6 +1191,7 @@
     window.normalizedRules = function (settings, battleMode) {
       // 랜덤 매칭만 공정 고정 규칙. 방 번호 배틀은 같은 Wi-Fi 방처럼 방장 설정을 씁니다.
       if (M.active && M.kind === 'random' && (M.state === 'matched' || window.app?.isBattle)) return baseRules(FIXED_RULES, battleMode);
+      if (M.active && M.kind === 'room' && (M.state === 'matched' || window.app?.isBattle)) return baseRules(roomRules(M.roomCfg), battleMode || M.roomCfg.mode);
       return baseRules(settings, battleMode);
     };
   }
@@ -1027,6 +1212,7 @@
       if (!app || !app.dom || !app.dom.tabBattleHost || !tabs || !joinView) return false;
       this.built = true;
 
+      // 예전 탭 버튼(숨김). 테스트·다른 모듈 호환용으로 id만 유지합니다.
       const tab = document.createElement('button');
       tab.id = 'tab-battle-online';
       tab.className = 'battle-tab-btn online-tab';
@@ -1035,84 +1221,107 @@
 
       const view = document.createElement('div');
       view.id = 'battle-online-view';
-      view.className = 'battle-view-section online-view hidden';
+      view.className = 'battle-view-section online-view';
       view.innerHTML = `
-        <div class="om-hero">
-          <div class="om-globe" aria-hidden="true"><span class="om-orbit"></span><span class="om-orbit o2"></span><span class="om-core">🌐</span></div>
-          <div class="om-hero-text"><strong class="om-title"></strong><p class="om-intro"></p></div>
-        </div>
         <label class="om-label" data-k="name" for="om-name-input"></label>
         <div class="om-name-row"><span class="om-name-flag"></span><input id="om-name-input" class="om-name-input" type="text" maxlength="16" autocomplete="nickname" spellcheck="false" enterkeyhint="done"><span class="om-name-tier"></span></div>
         <div class="om-name-hint"></div>
+
         <div class="om-kinds" role="tablist">
           <button type="button" class="om-kind" data-kind="random" role="tab"></button>
           <button type="button" class="om-kind" data-kind="room" role="tab"></button>
         </div>
-        <div class="om-only-room om-room-intro"></div>
-        <div class="om-only-random">
+
+        <section class="om-only-random">
           <div class="om-label" data-k="zone"></div>
           <div class="om-zones" role="radiogroup"></div>
           <div class="om-zone-hint"></div>
-        </div>
-        <div class="om-label" data-k="mode"></div>
-        <div class="om-chips om-modes" role="radiogroup"></div>
-        <div class="om-label" data-k="diff"></div>
-        <div class="om-chips om-diffs" role="radiogroup"></div>
-        <div class="om-rules"></div>
-        <div class="om-only-room om-room-box">
-          <div class="om-room-live hidden">
-            <div class="om-label" data-k="roomCodeLabel"></div>
-            <button type="button" class="om-room-code" title=""></button>
-            <button type="button" class="btn btn-secondary om-room-copy"></button>
+          <div class="om-label" data-k="mode"></div>
+          <div class="om-modes om-grid2" role="radiogroup"></div>
+          <p class="om-mode-desc"></p>
+          <div class="om-label" data-k="diff"></div>
+          <div class="om-diffs om-grid5" role="radiogroup"></div>
+          <div class="om-rules"><span class="om-rules-title"></span><span class="om-rules-chips"></span></div>
+          <div class="om-status hidden" aria-live="polite">
+            <div class="om-radar" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="om-status-text"></div>
+            <div class="om-stats"></div>
+            <div class="om-slow hidden"><span></span><button type="button" class="btn btn-secondary om-to-global"></button></div>
           </div>
-          <div class="om-room-actions">
-            <button type="button" class="btn btn-primary om-room-create"></button>
-            <div class="om-room-join-row">
-              <input class="om-room-input" type="text" inputmode="numeric" maxlength="7" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="room code">
-              <button type="button" class="btn btn-secondary om-room-join"></button>
-            </div>
+          <div class="om-matched hidden"></div>
+          <p class="om-nat"></p>
+          <div class="om-footer"><button type="button" class="btn btn-primary om-start"></button></div>
+        </section>
+
+        <section class="om-only-room">
+          <p class="om-room-lead"></p>
+          <button type="button" class="btn btn-primary om-room-create"></button>
+          <div class="om-or"><span></span></div>
+          <div class="om-room-join-row">
+            <input class="om-room-input" type="text" inputmode="numeric" maxlength="7" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="room code">
+            <button type="button" class="btn btn-secondary om-room-join"></button>
           </div>
-        </div>
-        <div class="om-status hidden" aria-live="polite">
-          <div class="om-radar" aria-hidden="true"><span></span><span></span><span></span></div>
-          <div class="om-status-text"></div>
-          <div class="om-stats"></div>
-          <div class="om-slow hidden"><span></span><button type="button" class="btn btn-secondary om-to-global"></button></div>
-        </div>
-        <div class="om-matched hidden"></div>
-        <p class="om-nat"></p>
-        <div class="modal-footer"><button type="button" class="btn btn-primary om-start"></button></div>`;
+          <p class="om-nat om-nat-room"></p>
+        </section>`;
       joinView.after(view);
 
+      // 방 화면: 로비 위에 전체 화면으로 뜹니다.
+      const room = document.createElement('div');
+      room.id = 'om-room-screen';
+      room.className = 'om-room-screen hidden';
+      room.setAttribute('role', 'dialog');
+      room.setAttribute('aria-modal', 'true');
+      room.innerHTML = `
+        <div class="om-room-inner">
+          <header class="om-room-head">
+            <button type="button" class="om-room-leave"></button>
+            <strong class="om-room-title"></strong>
+            <span class="om-room-head-gap"></span>
+          </header>
+          <div class="om-code-card">
+            <div class="om-code-label"></div>
+            <button type="button" class="om-room-code"></button>
+            <button type="button" class="btn btn-secondary om-room-copy"></button>
+          </div>
+          <div class="om-room-status" aria-live="polite"></div>
+          <div class="om-room-players"></div>
+          <section class="om-room-settings">
+            <div class="om-room-settings-head"><strong data-k="roomSettings"></strong><span class="om-host-only"></span></div>
+            <div class="om-set"><div class="om-set-label" data-k="mode"></div><div class="om-r-modes om-grid2"></div><p class="om-mode-desc om-r-desc"></p></div>
+            <div class="om-set"><div class="om-set-label" data-k="diff"></div><div class="om-r-diffs om-grid5"></div></div>
+            <div class="om-set"><div class="om-set-label" data-k="lives"></div><div class="om-r-lives om-seg"></div><p class="om-set-note om-lives-note"></p></div>
+            <div class="om-set"><div class="om-set-label" data-k="hints"></div><div class="om-r-hints om-seg"></div></div>
+            <div class="om-set"><div class="om-set-label" data-k="autoNotes"></div><div class="om-r-auto om-seg"></div></div>
+            <div class="om-set om-set-turn"><div class="om-set-label" data-k="turnTime"></div><div class="om-r-turn om-seg"></div></div>
+          </section>
+          <footer class="om-room-foot">
+            <button type="button" class="btn btn-primary om-room-start"></button>
+            <div class="om-room-wait"></div>
+          </footer>
+        </div>`;
+      (document.getElementById('app') || document.body).append(room);
+
+      const q = sel => view.querySelector(sel), r = sel => room.querySelector(sel);
       this.el = {
-        tab, view,
-        nameInput: view.querySelector('.om-name-input'), nameFlag: view.querySelector('.om-name-flag'), nameTier: view.querySelector('.om-name-tier'),
-        title: view.querySelector('.om-title'), intro: view.querySelector('.om-intro'),
-        zones: view.querySelector('.om-zones'), zoneHint: view.querySelector('.om-zone-hint'),
-        modes: view.querySelector('.om-modes'), diffs: view.querySelector('.om-diffs'),
-        rules: view.querySelector('.om-rules'), status: view.querySelector('.om-status'),
-        statusText: view.querySelector('.om-status-text'), stats: view.querySelector('.om-stats'),
-        slow: view.querySelector('.om-slow'), toGlobal: view.querySelector('.om-to-global'),
-        matched: view.querySelector('.om-matched'), nat: view.querySelector('.om-nat'),
-        start: view.querySelector('.om-start'),
-        nameHint: view.querySelector('.om-name-hint'),
-        kinds: view.querySelectorAll('.om-kind'), roomIntro: view.querySelector('.om-room-intro'),
-        roomLive: view.querySelector('.om-room-live'), roomCode: view.querySelector('.om-room-code'), roomCopy: view.querySelector('.om-room-copy'),
-        roomActions: view.querySelector('.om-room-actions'), roomCreate: view.querySelector('.om-room-create'),
-        roomInput: view.querySelector('.om-room-input'), roomJoin: view.querySelector('.om-room-join')
+        tab, view, room,
+        nameInput: q('.om-name-input'), nameFlag: q('.om-name-flag'), nameTier: q('.om-name-tier'), nameHint: q('.om-name-hint'),
+        kinds: view.querySelectorAll('.om-kind'),
+        zones: q('.om-zones'), zoneHint: q('.om-zone-hint'), modes: q('.om-modes'), modeDesc: q('.om-only-random .om-mode-desc'), diffs: q('.om-diffs'),
+        rulesTitle: q('.om-rules-title'), rulesChips: q('.om-rules-chips'),
+        status: q('.om-status'), statusText: q('.om-status-text'), stats: q('.om-stats'),
+        slow: q('.om-slow'), toGlobal: q('.om-to-global'), matched: q('.om-matched'), nats: view.querySelectorAll('.om-nat'), start: q('.om-start'),
+        roomLead: q('.om-room-lead'), roomCreate: q('.om-room-create'), or: q('.om-or span'), roomInput: q('.om-room-input'), roomJoin: q('.om-room-join'),
+        rLeave: r('.om-room-leave'), rTitle: r('.om-room-title'), rCodeCard: r('.om-code-card'), rCodeLabel: r('.om-code-label'), rCode: r('.om-room-code'), rCopy: r('.om-room-copy'),
+        rStatus: r('.om-room-status'), rPlayers: r('.om-room-players'), rHostOnly: r('.om-host-only'),
+        rModes: r('.om-r-modes'), rDesc: r('.om-r-desc'), rDiffs: r('.om-r-diffs'), rLives: r('.om-r-lives'), rLivesNote: r('.om-lives-note'),
+        rHints: r('.om-r-hints'), rAuto: r('.om-r-auto'), rTurn: r('.om-r-turn'), rTurnSet: r('.om-set-turn'),
+        rStart: r('.om-room-start'), rWait: r('.om-room-wait')
       };
 
-      tab.addEventListener('click', () => { app.sound?.play?.('click'); this.show(); });
-      // 기존 탭을 누르면 온라인 화면을 숨기고 매칭을 끝냅니다.
-      [app.dom.tabBattleHost, app.dom.tabBattleJoin].forEach(b => b && b.addEventListener('click', () => {
-        if (M.active) M.leave();
-        tab.classList.remove('active');
-        view.classList.add('hidden');
-        store.set('sumdoku_last_battle_tab', b === app.dom.tabBattleHost ? 'host' : 'join');
-      }, true));
-
+      // ---------------- 이벤트 ----------------
+      const click = () => app.sound?.play?.('click');
       this.el.start.addEventListener('click', () => {
-        app.sound?.play?.('click');
+        click();
         if (M.state === 'idle') M.startRandom(); else { M.leave(); setTimeout(() => this.render(), 400); }
       });
       // 닉네임: 비워 두거나 Play 이름과 같으면 Google Play 게임즈 이름을 계속 따라갑니다.
@@ -1126,17 +1335,18 @@
       });
       this.el.kinds.forEach(b => b.addEventListener('click', () => {
         if (M.state !== 'idle') return;
-        app.sound?.play?.('click');
+        click();
         M.kind = b.dataset.kind === 'room' ? 'room' : 'random';
         store.set('sumdoku_online_kind', M.kind);
         this.render();
       }));
-      this.el.roomCreate.addEventListener('click', () => { app.sound?.play?.('click'); M.startRoom('create'); });
+      this.el.roomCreate.addEventListener('click', () => { click(); M.startRoom('create'); });
       const join = () => {
-        app.sound?.play?.('click');
+        click();
         const code = String(this.el.roomInput.value || '').replace(/\D/g, '');
         if (code.length !== 6) { this.el.roomInput.setAttribute('aria-invalid', 'true'); app.showToast?.(T('roomBad'), 2500); return; }
         this.el.roomInput.removeAttribute('aria-invalid');
+        this.el.roomInput.blur();
         M.startRoom('join', code);
       };
       this.el.roomJoin.addEventListener('click', join);
@@ -1151,68 +1361,213 @@
         try { if (window.AndroidBridge?.copyToClipboard) { AndroidBridge.copyToClipboard(M.roomCode); ok = true; } else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(M.roomCode); ok = true; } } catch (_) {}
         if (ok) app.showToast?.(T('copied') + ` (${M.roomCode})`, 2500);
       };
-      this.el.roomCode.addEventListener('click', copy);
-      this.el.roomCopy.addEventListener('click', copy);
-      this.el.toGlobal.addEventListener('click', () => { app.sound?.play?.('click'); M.setZone('global'); this.renderPickers(); });
+      this.el.rCode.addEventListener('click', copy);
+      this.el.rCopy.addEventListener('click', copy);
+      this.el.rLeave.addEventListener('click', () => { click(); M.leave(); setTimeout(() => this.render(), 400); });
+      this.el.rStart.addEventListener('click', () => { click(); M.roomStart(); });
+      this.el.toGlobal.addEventListener('click', () => { click(); M.setZone('global'); this.renderPickers(); });
+      // 안드로이드 뒤로 가기 등으로 로비가 닫히면 방 화면도 닫습니다.
       this.renderPickers();
       this.render();
       return true;
     },
 
-    /** remember=false: Wi-Fi가 없어 자동으로 연 경우처럼 사용자가 고르지 않은 전환은 기억하지 않습니다. */
-    show(remember = true) {
+    show() {
       if (!this.build()) return;
       const app = window.app;
-      const host = app.dom.battleHostView, join = app.dom.battleJoinView;
       if (!M.active) {
-        // 열려 있던 Wi-Fi 방은 닫습니다.
         M.internalCancel = true;
         try { app.cancelRoomPreparation?.(); } finally { M.internalCancel = false; }
       }
-      app.dom.tabBattleHost.classList.remove('active');
-      app.dom.tabBattleJoin.classList.remove('active');
-      this.el.tab.classList.add('active');
-      host.classList.add('hidden');
-      join.classList.add('hidden');
       this.el.view.classList.remove('hidden');
       document.getElementById('battle-mobile-data-warning')?.remove();
-      if (remember) store.set('sumdoku_last_battle_tab', 'online');
       this.renderPickers();
       this.render();
     },
 
+    // 칩 목록을 그립니다. disabled=true면 읽기 전용(참가자).
+    chips(wrap, list, cur, onPick, labelFn, disabled) {
+      const key = JSON.stringify([list.map(x => x.id), cur, disabled, langIdx()]);
+      if (wrap.dataset.key === key) return;
+      wrap.dataset.key = key;
+      wrap.innerHTML = '';
+      wrap.setAttribute('role', 'radiogroup');
+      for (const it of list) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'om-chip' + (it.id === cur ? ' active' : '');
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', it.id === cur ? 'true' : 'false');
+        b.disabled = !!disabled;
+        b.textContent = labelFn(it);
+        b.addEventListener('click', () => { window.app?.sound?.play?.('click'); onPick(it.id); });
+        wrap.append(b);
+      }
+    },
+
     renderPickers() {
       if (!this.built) return;
-      const mk = (wrap, list, cur, cls, onPick, labelFn) => {
-        wrap.innerHTML = '';
-        for (const it of list) {
+      const locked = M.state === 'matched';
+      const zw = this.el.zones;
+      const zkey = JSON.stringify([M.zone, locked, langIdx()]);
+      if (zw.dataset.key !== zkey) {
+        zw.dataset.key = zkey;
+        zw.innerHTML = '';
+        for (const z of ZONES) {
           const b = document.createElement('button');
           b.type = 'button';
-          b.className = cls + (it.id === cur ? ' active' : '');
+          b.className = 'om-zone' + (z.id === M.zone ? ' active' : '');
           b.setAttribute('role', 'radio');
-          b.setAttribute('aria-checked', it.id === cur ? 'true' : 'false');
-          b.innerHTML = labelFn(it);
-          b.addEventListener('click', () => { window.app?.sound?.play?.('click'); onPick(it.id); this.renderPickers(); });
-          wrap.append(b);
+          b.setAttribute('aria-checked', z.id === M.zone ? 'true' : 'false');
+          b.disabled = locked;
+          const f = document.createElement('span'); f.className = 'om-zone-flag'; f.textContent = z.flag;
+          const n = document.createElement('span'); n.className = 'om-zone-name'; n.textContent = L(z);
+          b.append(f, n);
+          b.addEventListener('click', () => { window.app?.sound?.play?.('click'); M.setZone(z.id); this.renderPickers(); });
+          zw.append(b);
         }
-      };
-      const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-      mk(this.el.zones, ZONES, M.zone, 'om-zone', z => M.setZone(z), z => `<span class="om-zone-flag">${z.flag}</span><span class="om-zone-name">${esc(L(z))}</span>`);
-      mk(this.el.modes, MODES, M.mode, 'om-chip', m => M.setMode(m), m => esc(L(m)));
-      mk(this.el.diffs, DIFFS, M.diff, 'om-chip', d => M.setDiff(d), d => esc(L(d)));
-      const g = guessZone();
-      const gz = ZONES.find(z => z.id === g);
+      }
+      this.chips(this.el.modes, MODES, M.mode, id => { M.setMode(id); this.renderPickers(); }, L, locked);
+      this.chips(this.el.diffs, DIFFS, M.diff, id => { M.setDiff(id); this.renderPickers(); }, L, locked);
+      this.el.modeDesc.textContent = modeDesc(M.mode);
+      const gz = ZONES.find(z => z.id === guessZone());
       this.el.zoneHint.textContent = `${T('zoneAuto')}: ${gz.flag} ${L(gz)}`;
+    },
+
+    renderRoomSettings() {
+      const c = M.roomCfg, ro = M.roomRole !== 'create';
+      const set = patch => M.setRoomCfg(patch);
+      this.chips(this.el.rModes, MODES, c.mode, id => set({ mode: id }), L, ro);
+      this.chips(this.el.rDiffs, DIFFS, c.diff, id => set({ diff: id }), L, ro);
+      const freeLives = c.mode === 'race' || c.mode === 'score';
+      this.chips(this.el.rLives, LIVES_OPTS.map(n => ({ id: n })), c.lives, id => set({ lives: id }), x => String(x.id), ro || freeLives);
+      this.el.rLives.classList.toggle('om-dim', freeLives);
+      this.el.rLivesNote.textContent = freeLives ? T('livesFree') : '';
+      const noHints = c.mode === 'turn'; // 턴제는 힌트를 쓸 수 없습니다.
+      this.chips(this.el.rHints, HINT_OPTS.map(n => ({ id: n })), c.hints, id => set({ hints: id }), x => String(x.id), ro || noHints);
+      this.el.rHints.classList.toggle('om-dim', noHints);
+      this.chips(this.el.rAuto, [{ id: 'on' }, { id: 'off' }], c.autoNotes ? 'on' : 'off', id => set({ autoNotes: id === 'on' }), x => T(x.id), ro);
+      this.chips(this.el.rTurn, TURN_OPTS.map(n => ({ id: n })), c.turn, id => set({ turn: id }), x => x.id + T('sec'), ro);
+      this.el.rTurnSet.hidden = c.mode !== 'turn';
+      this.el.rDesc.textContent = modeDesc(c.mode);
+      this.el.rHostOnly.textContent = ro ? T('hostOnly') : '';
+    },
+
+    playerCard(who, prof, extraClass) {
+      const c = document.createElement('div'); c.className = 'om-player ' + (extraClass || '');
+      const wh = document.createElement('div'); wh.className = 'om-player-who'; wh.textContent = who;
+      const em = document.createElement('div'); em.className = 'om-player-emblem';
+      const nm = document.createElement('div'); nm.className = 'om-player-name';
+      const tr = document.createElement('div'); tr.className = 'om-player-tier';
+      if (prof) {
+        em.innerHTML = tierSvg(prof.tier, 48);
+        nm.textContent = `${flagOf(prof.cc)} ${prof.n}`;
+        tr.textContent = tierLabel(prof.tier) + (prof.tier.rp ? ` · ${prof.tier.rp} RP` : '');
+      } else {
+        em.innerHTML = '<span class="om-slot-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+        nm.textContent = T('waitingSlot');
+      }
+      c.append(wh, em, nm, tr);
+      return c;
+    },
+
+    renderRoom() {
+      const e = this.el;
+      const lobby = window.app?.dom?.modalBattleLobby;
+      const open = M.kind === 'room' && M.state !== 'idle' && !(window.app && window.app.isBattle) && !!lobby && !lobby.classList.contains('hidden');
+      e.room.classList.toggle('hidden', !open);
+      document.documentElement.classList.toggle('om-room-open', open);
+      if (!open) return;
+      const host = M.roomRole === 'create';
+      const matched = M.state === 'matched';
+      const app = window.app;
+      e.rLeave.textContent = '← ' + T('leave');
+      e.rTitle.textContent = T('roomTitle');
+      e.rCodeLabel.textContent = T('roomCodeLabel');
+      e.rCode.textContent = M.roomCode.slice(0, 3) + ' ' + M.roomCode.slice(3);
+      e.rCopy.textContent = '📋 ' + T('copy');
+      e.rCopy.hidden = !host;
+      e.room.querySelectorAll('[data-k]').forEach(l => { l.textContent = T(l.dataset.k); });
+
+      // 플레이어 카드
+      const players = document.createElement('div'); players.className = 'om-vs';
+      const me = this.playerCard(host ? T('host') : T('me'), myProfile(M.roomCfg.diff), 'me');
+      const opp = matched ? this.playerCard(host ? T('opp') : T('host'), M.partnerProfile || cleanProfile(null, M.partner), 'opp') : this.playerCard(T('opp'), null, 'empty');
+      const x = document.createElement('span'); x.className = 'om-vs-x'; x.textContent = 'VS';
+      players.append(host ? me : opp, x, host ? opp : me);
+      const pkey = JSON.stringify([host, matched, M.partner, M.partnerProfile, myName(), langIdx(), M.roomCfg.diff]);
+      if (e.rPlayers.dataset.key !== pkey) { e.rPlayers.dataset.key = pkey; e.rPlayers.replaceChildren(players); }
+
+      // 상태 문구
+      let status;
+      if (host) status = !matched ? T('waitGuest') : (app?.battleStarting || M.hostStarted ? T('matched') : T('guestIn'));
+      else status = !matched ? (Date.now() - M.startedAt > 45000 ? T('roomNotFound') : T('roomJoining')) : T('waitHost');
+      e.rStatus.textContent = status;
+      e.rStatus.classList.toggle('om-ok', matched);
+
+      this.renderRoomSettings();
+      e.rStart.hidden = !host;
+      e.rStart.textContent = '▶ ' + T('startGame');
+      e.rStart.disabled = !(host && matched && app?.guestJoined && !M.hostStarted && !app?.battleStarting);
+      e.rWait.hidden = host;
+      e.rWait.textContent = matched ? T('waitHost') : T('roomJoining');
+    },
+
+    renderRematch() {
+      const app = window.app;
+      const modal = app?.dom?.modalBattleResult;
+      if (!modal) return;
+      let box = document.getElementById('om-rematch-box');
+      const actions = modal.querySelector('.battle-result-actions');
+      if (!M.active) { if (box) box.hidden = true; return; }
+      if (!box && actions) {
+        box = document.createElement('div');
+        box.id = 'om-rematch-box';
+        box.className = 'om-rematch-box';
+        box.setAttribute('aria-live', 'polite');
+        actions.before(box);
+      }
+      if (!box) return;
+      const st = M.rematch || {};
+      const btn = app.dom.btnBattleRematch;
+      box.replaceChildren();
+      box.hidden = !M.rematch;
+      box.className = 'om-rematch-box';
+      if (st.out) { box.textContent = '⏳ ' + T('rmSent'); box.classList.add('wait'); }
+      else if (st.in) {
+        box.classList.add('incoming');
+        const t = document.createElement('div'); t.className = 'om-rm-title'; t.textContent = '⚔️ ' + T('rmIncoming');
+        const row = document.createElement('div'); row.className = 'om-rm-row';
+        const no = document.createElement('button'); no.type = 'button'; no.className = 'btn btn-secondary'; no.textContent = T('rmReject');
+        const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'btn btn-primary'; yes.textContent = T('rmAccept');
+        no.addEventListener('click', () => { app.sound?.play?.('click'); M.rejectRematch(); });
+        yes.addEventListener('click', () => { app.sound?.play?.('click'); M.acceptRematch(); });
+        row.append(no, yes);
+        box.append(t, row);
+      }
+      else if (st.rejected) { box.textContent = '🙅 ' + T('rmRejected'); box.classList.add('bad'); }
+      else if (st.youRejected) { box.textContent = T('rmYouRejected'); box.classList.add('muted'); }
+      else if (st.left) { box.textContent = '🚪 ' + T('rmLeft'); box.classList.add('bad'); }
+      else if (st.accepted) { box.textContent = '✅ ' + T('rmAccepted'); box.classList.add('ok'); }
+      if (btn) {
+        const blocked = !!(st.out || st.in || st.rejected || st.youRejected || st.left || st.accepted);
+        btn.hidden = !!st.in;
+        btn.disabled = blocked;
+      }
     },
 
     render() {
       if (!this.built) return;
       const e = this.el;
       e.tab.textContent = T('tab');
-      e.title.textContent = M.kind === 'room' ? T('titleRoom') : T('title');
-      e.intro.textContent = T('intro');
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
-      e.rules.textContent = M.kind === 'room' ? T('roomRules') : T('rules');
+      const chips = T('rulesChips');
+      e.rulesTitle.textContent = '⚖️ ' + T('rulesTitle');
+      const ckey = JSON.stringify(chips);
+      if (e.rulesChips.dataset.key !== ckey) {
+        e.rulesChips.dataset.key = ckey;
+        e.rulesChips.replaceChildren(...chips.map(c => { const s = document.createElement('span'); s.className = 'om-rule-chip'; s.textContent = c; return s; }));
+      }
       e.nameHint.textContent = T('nameHint');
       e.kinds.forEach(b => {
         const on = b.dataset.kind === M.kind;
@@ -1222,48 +1577,38 @@
         b.disabled = M.state !== 'idle' && !on;
       });
       e.view.classList.toggle('om-kind-room', M.kind === 'room');
-      e.roomIntro.textContent = T('roomIntro');
+      e.roomLead.textContent = T('roomLead');
       e.roomCreate.textContent = '🏠 ' + T('roomCreate');
+      e.or.textContent = T('or');
       e.roomJoin.textContent = T('roomJoin');
       e.roomInput.placeholder = T('roomCodePh');
-      e.roomCopy.textContent = '📋 ' + T('copy');
-      const live = M.kind === 'room' && M.roomRole === 'create' && M.state !== 'idle';
-      e.roomLive.classList.toggle('hidden', !live);
-      e.roomActions.classList.toggle('hidden', M.state !== 'idle');
-      if (live) e.roomCode.textContent = M.roomCode.slice(0, 3) + ' ' + M.roomCode.slice(3);
-      // 참가자: 방장의 모드·난이도를 따르므로 선택 칩을 잠급니다.
-      e.view.classList.toggle('om-joiner', M.kind === 'room' && M.roomRole === 'join' && M.state !== 'idle');
-      // Play 게임즈 이름을 기본값(placeholder)으로 보여 줍니다.
+      e.nats.forEach(n => { n.textContent = T('nat'); });
       e.nameInput.placeholder = ID.name || T('namePh');
       if (document.activeElement !== e.nameInput) e.nameInput.value = customName();
       e.nameInput.disabled = M.state !== 'idle';
       e.nameFlag.textContent = flagOf(myCountry());
       const mt = myTier(M.diff);
-      e.nameTier.innerHTML = tierSvg(mt, 30);
+      const tkey = JSON.stringify(mt);
+      if (e.nameTier.dataset.key !== tkey) { e.nameTier.dataset.key = tkey; e.nameTier.innerHTML = tierSvg(mt, 30); }
       e.nameTier.title = tierLabel(mt);
-      e.nat.textContent = T('nat');
       e.toGlobal.textContent = T('toGlobal');
       e.slow.querySelector('span').textContent = T('slow');
 
-      const busy = M.state !== 'idle';
+      const busy = M.state !== 'idle' && M.kind === 'random';
       e.view.classList.toggle('om-busy', busy);
       e.view.classList.toggle('om-is-matched', M.state === 'matched');
       e.start.textContent = busy ? T('cancel') : T('start');
       e.start.className = `btn ${busy ? 'btn-secondary' : 'btn-primary'} om-start`;
-      // 방 번호 화면에서는 대기 전엔 '방 만들기/참가' 버튼을 쓰고, 진행 중일 때만 취소 버튼을 보입니다.
-      e.start.hidden = M.kind === 'room' && !busy;
-      if (busy && M.kind === 'room' && M.roomRole === 'create' && M.state !== 'matched') e.start.textContent = T('roomClose');
       e.status.classList.toggle('hidden', !busy || M.state === 'matched');
-      e.matched.classList.toggle('hidden', M.state !== 'matched');
-      [e.zones, e.modes, e.diffs].forEach(w => w.querySelectorAll('button').forEach(b => { b.disabled = M.state === 'matched'; }));
+      e.matched.classList.toggle('hidden', !(busy && M.state === 'matched'));
+      this.renderPickers();
 
       if (busy && M.state !== 'matched') {
         const sec = Math.floor((Date.now() - M.startedAt) / 1000);
         const openTrackers = M.trackers.filter(t => t.open).length;
         const waiting = Math.max(0, ...M.trackers.map(t => t.waiting || 0));
         const z = ZONES.find(x => x.id === M.zone);
-        if (M.kind === 'room') e.statusText.textContent = M.state === 'proposing' ? T('found') : (M.roomRole === 'create' ? T('roomWaiting') : T('roomJoining'));
-        else e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
+        e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
         const stat = (k, v) => `<div class="om-stat"><span class="om-stat-v">${v}</span><span class="om-stat-k">${T(k)}</span></div>`;
         e.stats.innerHTML =
           stat('elapsed', `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`) +
@@ -1271,32 +1616,23 @@
           stat('dht', M.dht.nodes ? `${M.dht.nodes}` : '…') +
           stat('waiting', waiting ? String(waiting) : '–') +
           stat('peers', String(M.seen.size));
-        e.slow.classList.toggle('hidden', !(M.kind === 'random' && sec >= 60 && M.zone !== 'global'));
-        if (M.kind === 'room' && M.roomRole === 'join' && sec >= 45) e.statusText.textContent = T('roomNotFound');
+        e.slow.classList.toggle('hidden', !(sec >= 60 && M.zone !== 'global'));
       }
-      if (M.state === 'matched') {
+      if (busy && M.state === 'matched') {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
         e.matched.innerHTML = '';
         const h = document.createElement('div'); h.className = 'om-matched-title'; h.textContent = '⚔️ ' + T('matched');
         const vs = document.createElement('div'); vs.className = 'om-vs';
-        const card = (who, prof) => {
-          const c = document.createElement('div'); c.className = 'om-player';
-          const wh = document.createElement('div'); wh.className = 'om-player-who'; wh.textContent = who;
-          const em = document.createElement('div'); em.className = 'om-player-emblem'; em.innerHTML = tierSvg(prof.tier, 54);
-          const nm = document.createElement('div'); nm.className = 'om-player-name'; nm.textContent = `${flagOf(prof.cc)} ${prof.n}`;
-          const tr = document.createElement('div'); tr.className = 'om-player-tier'; tr.textContent = tierLabel(prof.tier) + (prof.tier.rp ? ` · ${prof.tier.rp} RP` : '');
-          c.append(wh, em, nm, tr);
-          return c;
-        };
         const x = document.createElement('span'); x.className = 'om-vs-x'; x.textContent = 'VS';
-        vs.append(card(T('me'), myProfile(M.diff)), x, card(T('opp'), M.partnerProfile || cleanProfile(null, M.partner)));
+        vs.append(this.playerCard(T('me'), myProfile(M.diff)), x, this.playerCard(T('opp'), M.partnerProfile || cleanProfile(null, M.partner)));
         const meta = document.createElement('div'); meta.className = 'om-matched-meta';
-        const where = M.kind === 'room' ? `🔢 ${M.roomCode}` : `${z.flag} ${L(z)}`;
-        meta.textContent = `${where} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
+        meta.textContent = `${z.flag} ${L(z)} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
         e.matched.append(h, vs, meta);
       }
+      this.renderRoom();
     }
   };
+  const modeDesc = m => T({ race: 'descRace', score: 'descScore', survival: 'descSurvival', turn: 'descTurn' }[m] || 'descRace');
 
   // ---------------------------------------------------------------------------
   // 기존 배틀 흐름과 연결
@@ -1343,6 +1679,7 @@
             try {
               const st = await (await fetch('http://127.0.0.1:8888/api/status')).json();
               this.guestJoined = !!st.guestJoined; this.hostP2Ready = !!st.p2Ready;
+              if (M.kind === 'room') { UI.render(); return; }
               if (st.guestJoined && st.p2Ready && !this.battleStarting) { M.hostStarted = true; clearInterval(M.hostPoll); this.startBattleAsHost(); }
             } catch (_) {}
           }, 600);
@@ -1351,10 +1688,28 @@
       return r;
     };
 
+    // v2.0.5 · 재대결은 상대가 수락해야 성사됩니다.
+    const baseRematch = P.requestBattleRematch;
+    P.requestBattleRematch = function () {
+      if (M.active && (M.partner || M.rematch)) { M.requestRematch(); return; }
+      return baseRematch.apply(this, arguments);
+    };
+    // 기존 '상대가 재도전 신청 → 자동 복귀' 폴링을 끕니다(수락 절차로 대체).
+    const baseEnd = P.handleBattleEnd;
+    P.handleBattleEnd = function () {
+      const r = baseEnd.apply(this, arguments);
+      if (M.active) { clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0); UI.renderRematch(); }
+      return r;
+    };
+
     // 온라인 경기 HUD: '상대 (Host/Guest)' 대신 상대 국기와 닉네임을 표시합니다.
     const baseStartMatch = P.startBattleMatch;
     if (baseStartMatch) P.startBattleMatch = function () {
+      M.rematch = null;
+      // 방 번호 참가자는 방장에게 받은 방 설정의 모드로 시작합니다(서버 설정 반영이 늦어도 어긋나지 않게).
+      if (M.active && M.kind === 'room' && arguments[0] === 2) arguments[2] = M.roomCfg.mode;
       const r = baseStartMatch.apply(this, arguments);
+      try { UI.render(); } catch (_) {}
       try {
         if (M.active && M.partnerProfile && this.dom.battleP2Name) {
           this.dom.battleP2Name.textContent = `${flagOf(M.partnerProfile.cc)} ${M.partnerProfile.n}`;
