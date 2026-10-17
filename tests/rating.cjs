@@ -90,16 +90,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       const modal = document.getElementById('modal-abandon-confirm');
       o.noAbandonModalInSingle = !modal || modal.classList.contains('hidden');
 
-      // 4. 하단 랭킹 화면에 '배틀' 탭 포함 및 렌더링 확인
+      // 4. 하단 랭킹 화면에서 일반·타임어택 티어가 제거되고 '난이도'·'배틀' 2열만 남았는지 확인
       app.switchView('ranking');
       await new Promise(res => setTimeout(res, 80));
       const grid = document.getElementById('ranking-grid');
       o.gridHeaders = Array.from(grid?.querySelectorAll('.rk-h') || []).map(e => e.textContent.trim());
       o.hasBattleHeader = o.gridHeaders.includes('배틀');
-
-      // 랭킹 카드 모드 전환 버튼에 배틀 포함 확인
-      const modeBtns = Array.from(document.querySelectorAll('.rc-modes .rc-mode') || []).map(b => b.dataset.mode || b.textContent.trim());
-      o.modeBtns = modeBtns;
+      o.noSingleHeaders = !o.gridHeaders.includes('일반') && !o.gridHeaders.includes('타임어택');
+      o.ratingModes = R.MODES.slice();
+      o.rcModeBtnsCount = document.querySelectorAll('.rc-modes .rc-mode').length;
 
       // 5. 랭크 시즌제 및 티어 꾸미기 보상 / 배틀 승리 배너 스킨 검증
       const S = window.SumdokuSeason;
@@ -122,6 +121,60 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       S?.applyCosmetics?.();
       o.cosmeticsApplied = true;
 
+      // 6. 온라인 배틀 로비: 경쟁전(ranked) / 일반전(normal) 분리, 매칭 해시 분리, 경쟁전 매칭 시 랜덤 모드 룰렛 모션 확인
+      app.isBattle = false;
+      const OM = window.OnlineMatch;
+      window.onPlayerProfile?.({ signedIn: true, name: 'Tester', id: 'gTester', cc: 'KR' });
+      window.AndroidBridge.startOnlineBattleServer = () => JSON.stringify({ ok: true });
+      OM.ui.show();
+      OM.setQueue('ranked');
+      OM.setDiff('expert');
+      o.rankedModePickerHidden = document.querySelector('.om-mode-picker-wrap')?.classList.contains('hidden');
+      o.rankedRandomBoxVisible = !document.querySelector('.om-random-mode-box')?.classList.contains('hidden');
+      OM.startRandom();
+      const rankedHash = OM.hashHex;
+      OM.stop(false);
+
+      OM.setQueue('normal');
+      OM.setMode('turn');
+      OM.setDiff('expert');
+      o.normalModePickerVisible = !document.querySelector('.om-mode-picker-wrap')?.classList.contains('hidden');
+      o.normalRandomBoxHidden = document.querySelector('.om-random-mode-box')?.classList.contains('hidden');
+      OM.startRandom();
+      const normalHash = OM.hashHex;
+      OM.stop(false);
+      o.hashesSeparated = !!rankedHash && !!normalHash && rankedHash !== normalHash;
+
+      // 경쟁전 매칭 성사 시 모드 랜덤 선택 및 룰렛 모션 UI 검증
+      OM.setQueue('ranked');
+      OM.setDiff('hard');
+      OM.startRandom();
+      OM.selfId = 'AAAAAAAAAAAAAAAAAAAA';
+      const fakePeer = {
+        id: 'ZZZZZZZZZZZZZZZZZZZZ',
+        open: true,
+        rejectedAt: 0,
+        hello: { id: 'ZZZZZZZZZZZZZZZZZZZZ', proto: 'sd-online-2', kind: 'random', queue: 'ranked', zone: OM.zone, mode: 'race', diff: 'hard', free: true },
+        profile: { n: 'Rival', cc: 'KR', tier: { id: 'gold', div: 'II', rp: 1650 } },
+        dc: { readyState: 'open', send: () => {} },
+        pc: { close: () => {} }
+      };
+      OM.peers.set(fakePeer.id, fakePeer);
+      OM.tryPropose();
+      o.proposedState = OM.state;
+      o.pickedRandomModeValid = ['race', 'score', 'survival', 'turn'].includes(OM.mode);
+      // setupHost가 로컬 8888에 요청하여 실패 처리(start() 재호출)하지 않도록 setupHost를 가로챕니다.
+      const origSetupHost = OM.setupHost;
+      OM.setupHost = () => {};
+      OM.onAccept(fakePeer, { t: 'accept', mode: OM.mode });
+      OM.setupHost = origSetupHost;
+      await new Promise(res => setTimeout(res, 150));
+      const fx = document.getElementById('om-match-fx');
+      o.fxVisible = fx?.classList.contains('on');
+      o.fxHasRoulette = !!fx?.querySelector('.om-fx-roulette');
+      o.fxRouletteCards = fx?.querySelectorAll('.om-fx-r-card').length || 0;
+      OM.stop(false);
+
       return o;
     });
 
@@ -135,12 +188,21 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert(r.ch1Recorded && r.bGames === 1 && r.bRatingAfterWin > 1000, 'battle rating recorded properly');
     assert(r.noAbandonModalInSingle, 'singleplayer has no abandon modal (stress-free)');
     assert(r.hasBattleHeader, 'ranking grid must include battle mode header');
+    assert(r.noSingleHeaders, 'ranking grid must not include standard or timeattack headers');
+    assert.deepEqual(r.ratingModes, ['battle'], 'SumdokuRating.MODES must only include battle');
+    assert.equal(r.rcModeBtnsCount, 0, 'rating card mode buttons must be removed');
     assert(r.hasSeason, 'SumdokuSeason must be available');
     assert.equal(r.skinTier, 'diamond', '3100 RP should resolve to diamond banner skin');
     assert(r.bannerHasSkin, 'battle victory banner must have tier-banner-skin class');
     assert(r.bannerSkinClass.includes('skin-diamond'), 'banner skin must include skin-diamond class');
+    assert(r.rankedModePickerHidden && r.rankedRandomBoxVisible, 'competitive queue hides manual mode picker and shows random pool box');
+    assert(r.normalModePickerVisible && r.normalRandomBoxHidden, 'normal queue shows manual mode picker and hides random pool box');
+    assert(r.hashesSeparated, 'competitive and normal queues must use distinct info_hash values');
+    assert.equal(r.proposedState, 'proposing', 'competitive peer should enter proposing state');
+    assert(r.pickedRandomModeValid, 'competitive match must pick a valid random mode');
+    assert(r.fxVisible && r.fxHasRoulette && r.fxRouletteCards === 4, 'competitive match found must show 4-mode roulette spin animation');
     assert.deepEqual(errors, []);
-    console.log('PASS: Battle rating, singleplayer stress-free, and rank season cosmetics verified');
+    console.log('PASS: Ranking cleanup, Competitive/Normal battle split, and random mode roulette verified');
   } finally {
     await b.close();
   }

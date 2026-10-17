@@ -351,7 +351,7 @@
     card.classList.add('has-rank');
     panel.classList.remove('hidden');
     const label = isBattle
-      ? `${t('battleRank')} · ${modeName(ch.battleMode || ch.mode)} · ${diffName(ch.difficulty)}`
+      ? `${t('battleRank')} · ${diffName(ch.difficulty)}`
       : `${t('label')} · ${ch.mode === 'timeattack' ? t('ta') + ' ' : ''}${diffName(ch.difficulty)}`;
     panel.querySelector('.rr-label').textContent = label;
     const d = panel.querySelector('.rr-delta');

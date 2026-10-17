@@ -214,7 +214,17 @@
     descScore: ['제한 시간(5분) 안에 정답과 콤보로 점수를 쌓습니다. 시간이 끝났을 때 점수가 높은 쪽이 이깁니다.', 'Build points with correct entries and combos within 5 minutes. Highest score when time runs out wins.', '制限時間（5分）内に正解とコンボで得点を稼ぎます。時間切れ時に得点が高い方の勝ち。', '在 5 分钟内通过正确输入和连击累积分数，时间结束时分数高者获胜。', '在 5 分鐘內透過正確輸入與連擊累積分數，時間結束時分數高者獲勝。', 'Suma puntos con aciertos y combos en 5 minutos. Gana la puntuación más alta al acabar el tiempo.', 'Marquez des points avec bonnes réponses et combos en 5 minutes. Le meilleur score à la fin gagne.', 'Sammle in 5 Minuten Punkte mit richtigen Eingaben und Combos. Die höchste Punktzahl gewinnt.'],
     descSurvival: ['남은 생존 시간을 관리하며 풉니다. 상대가 진행할수록 내 시간이 줄고, 시간이 다 되면 목숨과 점수를 잃습니다. 먼저 완성하거나 상대가 탈락할 때까지 버티세요.', 'Manage your survival time. Your clock drains as your opponent progresses; when it runs out you lose a life and points. Finish first or outlast your opponent.', '残りの生存時間を管理しながら解きます。相手が進むほど時間が減り、尽きるとライフと得点を失います。先に完成するか、相手の脱落まで耐えましょう。', '管理剩余生存时间。对手进度越快你的时间减少越多，时间耗尽会失去生命和分数。先完成或坚持到对手淘汰。', '管理剩餘生存時間。對手進度越快你的時間減少越多，時間耗盡會失去生命與分數。先完成或撐到對手淘汰。', 'Gestiona tu tiempo de supervivencia. Se agota cuando tu rival avanza; si llega a cero pierdes una vida y puntos. Termina antes o aguanta más.', 'Gérez votre temps de survie. Il fond quand l’adversaire progresse ; à zéro, vous perdez une vie et des points. Finissez avant ou tenez plus longtemps.', 'Verwalte deine Überlebenszeit. Sie sinkt, wenn der Gegner vorankommt; bei null verlierst du Leben und Punkte. Sei schneller oder halte länger durch.'],
     descTurn: ['하나의 공용 판에 번갈아 숫자를 입력합니다. 오답이거나 턴 시간이 지나면 차례가 넘어가고, 판이 완성되면 점수를 비교합니다. 힌트·실행 취소는 쓸 수 없습니다.', 'Take turns placing numbers on one shared board. A mistake or timeout passes the turn; when the board is complete, scores are compared. No hints or undo.', '1つの共有盤に交互に数字を入れます。ミスか時間切れで手番が移り、盤が完成したら得点を比べます。ヒント・元に戻すは使えません。', '在同一个公用盘上轮流填数。出错或超时则换人，盘面完成后比较分数。不能使用提示和撤销。', '在同一個共用盤上輪流填數。出錯或逾時則換人，盤面完成後比較分數。不能使用提示與復原。', 'Por turnos en un tablero compartido. Un error o agotar el tiempo pasa el turno; al completarlo se comparan puntos. Sin pistas ni deshacer.', 'Chacun son tour sur une grille commune. Une erreur ou un temps écoulé passe la main ; à la fin, on compare les scores. Ni indices ni annulation.', 'Abwechselnd auf einem gemeinsamen Brett. Fehler oder Zeitablauf geben den Zug ab; am Ende zählen die Punkte. Keine Hinweise oder Rückgängig.'],
-    unranked: ['배치 중', 'Placement', '配置中', '定级中', '定級中', 'Clasificación', 'Placement', 'Platzierung']
+    unranked: ['배치 중', 'Placement', '配置中', '定级中', '定級中', 'Clasificación', 'Placement', 'Platzierung'],
+    // v2.1.2 · 경쟁전 / 일반전 분리 및 랜덤 모드 룰렛
+    queueLabel: ['매칭 방식', 'Match type', 'マッチ方式', '匹配方式', '配對方式', 'Tipo de partida', 'Type de match', 'Match-Typ'],
+    queueRanked: ['🏆 경쟁전', '🏆 Competitive', '🏆 ランク戦', '🏆 排位赛', '🏆 排位賽', '🏆 Competitivo', '🏆 Compétitif', '🏆 Rangliste'],
+    queueNormal: ['🎮 일반전', '🎮 Normal', '🎮 ノーマル戦', '🎮 普通赛', '🎮 一般賽', '🎮 Normal', '🎮 Normal', '🎮 Normal'],
+    queueRankedDesc: ['경쟁전끼리 매칭 · 난이도별 랭크 RP 반영 · 매칭 성사 시 4가지 배틀 모드 중 랜덤 결정', 'Competitive queue · Rank RP by difficulty · Battle mode randomly picked on match', 'ランク戦同士でマッチ · 難易度別ランクRP反映 · マッチ成立時に4モードからランダム決定', '排位赛专属匹配 · 按难度计算段位RP · 匹配成功后4种模式随机决定', '排位賽專屬配對 · 依難度計算段位RP · 配對成功後4種模式隨機決定', 'Cola competitiva · RP por dificultad · Modo elegido al azar al emparejar', 'File compétitive · RP par difficulté · Mode tiré au sort au match', 'Ranglisten-Warteschlange · RP nach Schwierigkeit · Zufälliger Modus beim Match'],
+    queueNormalDesc: ['일반전끼리 매칭 · 원하는 배틀 모드 직접 선택 · 랭크 점수 변동 없음', 'Normal queue · Choose your battle mode freely · No rank RP change', 'ノーマル戦同士でマッチ · 好きなバトルモードを選択 · ランクRP変動なし', '普通赛专属匹配 · 自由选择对战模式 · 段位分数不变', '一般賽專屬配對 · 自由選擇對戰模式 · 段位分數不變', 'Cola normal · Elige el modo libremente · Sin cambio de RP', 'File normale · Choisissez librement le mode · Aucun changement de RP', 'Normale Warteschlange · Modus frei wählbar · Keine RP-Änderung'],
+    rankedModeBadge: ['🎲 매칭 완료 후 4가지 모드 중 랜덤 결정', '🎲 Mode randomly selected from 4 modes on match', '🎲 マッチ完了後に4つのモードからランダム決定', '🎲 匹配完成后从4种模式中随机决定', '🎲 配對完成後從4種模式中隨機決定', '🎲 Modo elegido al azar entre los 4 al emparejar', '🎲 Mode tiré au sort parmi les 4 au match', '🎲 Modus wird nach dem Match zufällig aus 4 Modi gewählt'],
+    rouletteSpinning: ['🎲 배틀 모드 랜덤 추첨 중…', '🎲 Selecting random battle mode…', '🎲 バトルモード抽選中…', '🎲 正在随机抽取对战模式…', '🎲 正在隨機抽取對戰模式…', '🎲 Sorteando modo de batalla…', '🎲 Tirage au sort du mode…', '🎲 Zufälliger Kampfmodus wird ausgelost…'],
+    rouletteLocked: ['✨ 배틀 모드 확정!', '✨ Battle mode locked!', '✨ バトルモード決定！', '✨ 对战模式已确定！', '✨ 對戰模式已確定！', '✨ ¡Modo confirmado!', '✨ Mode verrouillé !', '✨ Kampfmodus festgelegt!'],
+    rulesRankedNote: ['공통 공정 규칙 (목숨 3 · 힌트 3 · 자동 메모 끔 · 턴 30초, 모드별 세부 적용)', 'Standard fair rules (3 lives · 3 hints · No auto-notes · 30 s turns, applied per mode)', '共通公平ルール（ライフ3・ヒント3・自動メモなし・ターン30秒、モード別適用）', '通用公平规则（3条命 · 3次提示 · 禁用自动笔记 · 30秒回合，按模式适用）', '通用公平規則（3條命 · 3次提示 · 停用自動筆記 · 30秒回合，依模式適用）', 'Reglas justas (3 vidas · 3 pistas · Sin notas auto · Turnos 30 s)', 'Règles équitables (3 vies · 3 indices · Sans notes auto · Tours 30 s)', 'Faire Regeln (3 Leben · 3 Hinweise · Keine Auto-Notizen · 30-s-Züge)']
   };
   const T = k => (STR[k] ? pickLang(STR[k]) : k);
   const L = o => pickLang(o.names);
@@ -282,6 +292,11 @@
   };
 
   const pick = (list, v, d) => (list.some(x => x.id === v) ? v : d);
+  function pickRandomMode() {
+    const a = new Uint32Array(1);
+    try { crypto.getRandomValues(a); } catch (_) { a[0] = Math.floor(Math.random() * 1e9); }
+    return MODES[a[0] % MODES.length].id;
+  }
 
   // ---------------------------------------------------------------------------
   // 내 프로필(닉네임 · 국가 · 랭크 티어) — 매칭 상대에게 hello로 보여 줍니다.
@@ -391,6 +406,7 @@
   // ---------------------------------------------------------------------------
   const M = {
     kind: store.get('sumdoku_online_kind', 'random') === 'room' ? 'room' : 'random', // random | room
+    queue: store.get('sumdoku_online_queue', 'ranked') === 'normal' ? 'normal' : 'ranked', // ranked | normal
     roomRole: '',             // room일 때 create | join
     roomCode: '',
     roomCfg: loadRoomCfg(),
@@ -410,6 +426,7 @@
     proposeTimer: null,
     statusTimer: null,
     startedAt: 0,
+    matchedAt: 0,
     dht: { nodes: 0, peers: 0, phase: '' },
     seen: new Set(),
     epoch: 0,
@@ -476,10 +493,12 @@
       this.selfId = randId(20);
       this.seen = new Set();
       this.dht = { nodes: 0, peers: 0, phase: '' };
-      // 랜덤: 구역×모드×난이도마다 / 방 번호: 번호마다 서로 다른 info_hash를 씁니다.
+      // 경쟁전(ranked): 구역×난이도 (모드는 매칭 후 랜덤 결정) / 일반전(normal): 구역×모드×난이도 / 방 번호: 번호마다 서로 다른 info_hash를 씁니다.
       const hb = this.kind === 'room'
         ? sha1Bytes(`sumdoku-room|${PROTO}|${this.roomCode}`)
-        : sha1Bytes(`sumdoku-match|${PROTO}|${this.zone}|${this.mode}|${this.diff}`);
+        : (this.queue === 'ranked'
+          ? sha1Bytes(`sumdoku-match|${PROTO}|ranked|${this.zone}|${this.diff}`)
+          : sha1Bytes(`sumdoku-match|${PROTO}|normal|${this.zone}|${this.mode}|${this.diff}`));
       this.hashBin = toBinStr(hb);
       this.hashHex = toHex(hb);
       this.startedAt = Date.now();
@@ -604,7 +623,7 @@
       peer.dc = dc;
       dc.onopen = () => {
         peer.open = true;
-        this.sendTo(peer, { t: 'hello', id: this.selfId, proto: PROTO, kind: this.kind, roomRole: this.roomRole, code: this.roomCode, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) });
+        this.sendTo(peer, { t: 'hello', id: this.selfId, proto: PROTO, kind: this.kind, queue: this.queue, roomRole: this.roomRole, code: this.roomCode, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) });
         UI.render();
       };
       dc.onmessage = e => this.onData(peer, e.data);
@@ -688,8 +707,8 @@
       }
       switch (msg.t) {
         case 'hello': return this.onHello(peer, msg);
-        case 'propose': return this.onPropose(peer);
-        case 'accept': return this.onAccept(peer);
+        case 'propose': return this.onPropose(peer, msg);
+        case 'accept': return this.onAccept(peer, msg);
         case 'reject': return this.onReject(peer);
         case 'room': return this.onRoomReady(peer);
         case 'req': return this.onTunnelRequest(peer, msg);
@@ -700,7 +719,7 @@
         case 'rq': return this.onRematchRequest(peer);
         case 'ra': return this.onRematchAccept(peer);
         case 'rn': return this.onRematchReject(peer);
-        case 'rgo': return this.onRematchGo(peer);
+        case 'rgo': return this.onRematchGo(peer, msg);
         case 'ping': return this.sendTo(peer, { t: 'pong', ts: msg.ts });
         case 'pong': return this.onPong(msg);
         case 'go': return this.onGo(peer, msg);
@@ -708,7 +727,12 @@
     },
 
     onHello(peer, msg) {
-      const okRandom = this.kind === 'random' && msg.kind !== 'room' && msg.zone === this.zone && msg.mode === this.mode && msg.diff === this.diff;
+      const peerQueue = msg.queue === 'normal' ? 'normal' : 'ranked';
+      const okRandom = this.kind === 'random' && msg.kind !== 'room'
+        && peerQueue === this.queue
+        && msg.zone === this.zone
+        && msg.diff === this.diff
+        && (this.queue === 'ranked' || msg.mode === this.mode);
       // 방 번호: 같은 번호이고, 한쪽은 방장(create)·한쪽은 참가자(join)여야 합니다.
       const okRoom = this.kind === 'room' && msg.kind === 'room' && msg.code === this.roomCode && ['create', 'join'].includes(msg.roomRole) && msg.roomRole !== this.roomRole
         && MODES.some(x => x.id === msg.mode) && DIFFS.some(x => x.id === msg.diff);
@@ -732,7 +756,10 @@
       const target = candidates[0];
       this.state = 'proposing';
       this.proposeTarget = target.id;
-      this.sendTo(target, { t: 'propose', id: this.selfId });
+      if (this.kind === 'random' && this.queue === 'ranked') {
+        this.mode = pickRandomMode();
+      }
+      this.sendTo(target, { t: 'propose', id: this.selfId, mode: this.mode, queue: this.queue });
       clearTimeout(this.proposeTimer);
       this.proposeTimer = setTimeout(() => {
         if (this.state === 'proposing' && this.proposeTarget === target.id) { target.rejectedAt = Date.now(); this.backToSearching(); }
@@ -749,7 +776,7 @@
       setTimeout(() => this.tryPropose(), 300);
     },
 
-    onPropose(peer) {
+    onPropose(peer, msg) {
       // 제안은 항상 작은 ID 쪽이 보냅니다. 나는 찾는 중일 때만 수락합니다.
       if (this.kind === 'room') {
         // 방장만 수락합니다. 먼저 온 참가자 한 명과 연결되고, 방장이 경기 호스트가 됩니다.
@@ -760,12 +787,15 @@
         return;
       }
       if (this.state === 'searching' && peer.id < this.selfId && peer.hello) {
-        this.sendTo(peer, { t: 'accept' });
+        if (this.queue === 'ranked') {
+          this.mode = MODES.some(x => x.id === msg?.mode) ? msg.mode : pickRandomMode();
+        }
+        this.sendTo(peer, { t: 'accept', mode: this.mode });
         this.confirmMatch(peer, 2);
       } else this.sendTo(peer, { t: 'reject' });
     },
 
-    onAccept(peer) {
+    onAccept(peer, msg) {
       if (this.state !== 'proposing' || this.proposeTarget !== peer.id) { this.sendTo(peer, { t: 'bye' }); return; }
       clearTimeout(this.proposeTimer);
       if (this.kind === 'room') {
@@ -774,6 +804,9 @@
         this.diff = pick(DIFFS, peer.hello?.diff, this.diff);
         this.confirmMatch(peer, 2);
         return;
+      }
+      if (this.queue === 'ranked' && MODES.some(x => x.id === msg?.mode)) {
+        this.mode = msg.mode;
       }
       this.confirmMatch(peer, 1);
     },
@@ -812,6 +845,7 @@
       setTimeout(() => this.measureRtt(), 300);
       this.guestReady = false;
       this.state = 'matched';
+      this.matchedAt = Date.now();
       this.role = role;
       this.partner = peer.id;
       this.partnerProfile = peer.profile || cleanProfile(null, peer.id);
@@ -860,6 +894,8 @@
             app.hostP1Ready = !!st.p1Ready;
             app.hostP2Ready = !!st.p2Ready;
             if (this.kind === 'room') { UI.render(); return; } // 방장이 '게임 시작'을 눌러야 시작합니다.
+            // 경쟁전에서는 매칭 후 랜덤 모드 룰렛 연출(약 1.8초)이 끝난 뒤 경기를 시작합니다.
+            if (this.kind === 'random' && this.queue === 'ranked' && (Date.now() - (this.matchedAt || 0)) < 1850) return;
             if (st.guestJoined && st.p2Ready && !this.hostStarted && !app.battleStarting) {
               this.hostStarted = true;
               clearInterval(this.hostPoll);
@@ -1196,13 +1232,25 @@
       UI.renderRematch();
       clearInterval(app.rematchCheckTimer);
       if (this.role !== 1) return; // 참가자는 방장의 'rgo'를 기다립니다.
+      if (this.kind === 'random' && this.queue === 'ranked') {
+        this.mode = pickRandomMode();
+        if (app) app.battleMode = this.mode;
+        try {
+          const dummy = { difficulty: this.diff, rules: window.normalizedRules ? window.normalizedRules(FIXED_RULES, this.mode) : FIXED_RULES, online: true };
+          window.AndroidBridge?.updateBattleServer?.(this.mode, this.diff, this.mode === 'score' ? 300 : 0, JSON.stringify(dummy));
+        } catch (_) {}
+      }
       try { await fetch('http://127.0.0.1:8888/api/rematch', { method: 'POST' }); } catch (_) {}
       const peer = this.partnerPeer();
-      if (peer) this.sendTo(peer, { t: 'rgo' });
+      if (peer) this.sendTo(peer, { t: 'rgo', mode: this.mode });
       this.enterRematchLobby();
     },
-    onRematchGo(peer) {
+    onRematchGo(peer, msg) {
       if (peer.id !== this.partner || this.role !== 2) return;
+      if (this.kind === 'random' && this.queue === 'ranked' && MODES.some(x => x.id === msg?.mode)) {
+        this.mode = msg.mode;
+        if (window.app) window.app.battleMode = this.mode;
+      }
       this.enterRematchLobby();
     },
     /** 참가자: 준비 완료/취소 */
@@ -1229,12 +1277,21 @@
       this.rematch = null;
       this.hostStarted = false;
       this.guestReady = false; // 재대결도 참가자가 다시 준비해야 시작합니다.
+      this.matchedAt = Date.now();
       this.measureRtt();
       app.dom.modalBattleResult.classList.add('hidden');
       app.isRematchActive = true;
       app.returnToBattleLobby();
     },
 
+    setQueue(q) {
+      const nq = q === 'normal' ? 'normal' : 'ranked';
+      if (this.queue !== nq) {
+        this.queue = nq;
+        store.set('sumdoku_online_queue', nq);
+        this.restartIfSearching();
+      }
+    },
     setZone(z) { if (ZONES.some(x => x.id === z)) { this.zone = z; store.set('sumdoku_online_zone', z); this.restartIfSearching(); } },
     setMode(m) { if (MODES.some(x => x.id === m)) { this.mode = m; store.set('sumdoku_online_mode', m); this.restartIfSearching(); } },
     setDiff(d) { if (DIFFS.some(x => x.id === d)) { this.diff = d; store.set('sumdoku_online_diff', d); this.restartIfSearching(); } },
@@ -1304,9 +1361,21 @@
 
         <section class="om-only-random">
           <div class="om-zone-auto"></div>
+          <div class="om-label" data-k="queueLabel"></div>
+          <div class="om-queues" role="radiogroup">
+            <button type="button" class="om-queue" data-queue="ranked" role="radio"></button>
+            <button type="button" class="om-queue" data-queue="normal" role="radio"></button>
+          </div>
+          <p class="om-queue-desc"></p>
           <div class="om-label" data-k="mode"></div>
-          <div class="om-modes om-grid2" role="radiogroup"></div>
-          <p class="om-mode-desc"></p>
+          <div class="om-mode-picker-wrap">
+            <div class="om-modes om-grid2" role="radiogroup"></div>
+            <p class="om-mode-desc"></p>
+          </div>
+          <div class="om-random-mode-box hidden">
+            <div class="om-random-mode-head"></div>
+            <div class="om-random-mode-pool"></div>
+          </div>
           <div class="om-label" data-k="diff"></div>
           <div class="om-diffs om-grid5" role="radiogroup"></div>
           <div class="om-rules"><span class="om-rules-title"></span><span class="om-rules-chips"></span></div>
@@ -1374,6 +1443,9 @@
         tab, view, room,
         nameInput: q('.om-name-input'), nameFlag: q('.om-name-flag'), nameTier: q('.om-name-tier'), nameHint: q('.om-name-hint'),
         kinds: view.querySelectorAll('.om-kind'),
+        queues: view.querySelectorAll('.om-queue'), queueDesc: q('.om-queue-desc'),
+        modePickerWrap: q('.om-mode-picker-wrap'), randomModeBox: q('.om-random-mode-box'),
+        randomModeHead: q('.om-random-mode-head'), randomModePool: q('.om-random-mode-pool'),
         zoneAuto: q('.om-zone-auto'), modes: q('.om-modes'), modeDesc: q('.om-only-random .om-mode-desc'), diffs: q('.om-diffs'),
         rulesTitle: q('.om-rules-title'), rulesChips: q('.om-rules-chips'),
         status: q('.om-status'), statusText: q('.om-status-text'), stats: q('.om-stats'),
@@ -1407,6 +1479,11 @@
         M.kind = b.dataset.kind === 'room' ? 'room' : 'random';
         store.set('sumdoku_online_kind', M.kind);
         this.render();
+      }));
+      this.el.queues.forEach(b => b.addEventListener('click', () => {
+        if (M.state === 'matched') return;
+        click();
+        M.setQueue(b.dataset.queue);
       }));
       this.el.roomCreate.addEventListener('click', () => { click(); M.startRoom('create'); });
       const join = () => {
@@ -1476,9 +1553,29 @@
     renderPickers() {
       if (!this.built) return;
       const locked = M.state === 'matched';
-      this.chips(this.el.modes, MODES, M.mode, id => { M.setMode(id); this.renderPickers(); }, L, locked);
+      const isRanked = M.queue === 'ranked';
+      this.el.queues.forEach(b => {
+        const on = b.dataset.queue === M.queue;
+        b.textContent = T(b.dataset.queue === 'normal' ? 'queueNormal' : 'queueRanked');
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+        b.disabled = locked;
+      });
+      this.el.queueDesc.textContent = T(isRanked ? 'queueRankedDesc' : 'queueNormalDesc');
+      this.el.modePickerWrap.classList.toggle('hidden', isRanked);
+      this.el.randomModeBox.classList.toggle('hidden', !isRanked);
+      if (isRanked) {
+        this.el.randomModeHead.textContent = T('rankedModeBadge');
+        const pkey = String(langIdx());
+        if (this.el.randomModePool.dataset.key !== pkey) {
+          this.el.randomModePool.dataset.key = pkey;
+          this.el.randomModePool.innerHTML = MODES.map(m => `<span class="om-random-pill" data-mode="${m.id}">${L(m)}</span>`).join('');
+        }
+      } else {
+        this.chips(this.el.modes, MODES, M.mode, id => { M.setMode(id); this.renderPickers(); }, L, locked);
+        this.el.modeDesc.textContent = modeDesc(M.mode);
+      }
       this.chips(this.el.diffs, DIFFS, M.diff, id => { M.setDiff(id); this.renderPickers(); }, L, locked);
-      this.el.modeDesc.textContent = modeDesc(M.mode);
       M.zone = guessZone();
       const gz = ZONES.find(z => z.id === M.zone);
       this.el.zoneAuto.textContent = `${gz.flag} ${T('zoneAuto')} · ${L(gz)}`;
@@ -1624,14 +1721,15 @@
       const e = this.el;
       e.tab.textContent = T('tab');
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
-      // v2.0.8: 공정 규칙은 선택한 배틀 모드에 따라 달라집니다(normalizedRules와 같은 기준).
+      // v2.1.2: 경쟁전은 매칭 전에 모드가 정해지지 않으므로 공통 공정 규칙을 표시하고, 일반전·매칭 완료 후에는 모드별 세부 규칙을 표시합니다.
       const base = T('rulesChips'); // [목숨 3, 힌트 3, 자동 메모 끔, 턴 30초]
-      const chips = {
+      const showModeRules = M.queue === 'normal' || M.state === 'matched';
+      const chips = showModeRules ? ({
         race: [T('rcLivesInf'), base[1], base[2]],
         score: [T('rcTime5'), T('rcLivesInf'), base[1], base[2]],
         survival: [base[0], base[1], base[2]],
         turn: [base[0], T('rcNoHints'), base[2], base[3]]
-      }[M.mode] || base;
+      }[M.mode] || base) : base;
       e.rulesTitle.textContent = '⚖️ ' + T('rulesTitle');
       const ckey = JSON.stringify(chips);
       if (e.rulesChips.dataset.key !== ckey) {
@@ -1673,22 +1771,21 @@
 
       if (busy && M.state !== 'matched') {
         const sec = Math.floor((Date.now() - M.startedAt) / 1000);
-        const openTrackers = M.trackers.filter(t => t.open).length;
-        const waiting = Math.max(0, ...M.trackers.map(t => t.waiting || 0));
         const z = ZONES.find(x => x.id === M.zone);
-        e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
-        const stat = (k, v) => `<div class="om-stat"><span class="om-stat-v">${v}</span><span class="om-stat-k">${T(k)}</span></div>`;
+        const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
+        e.statusText.textContent = `${qBadge} · ` + (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
         e.stats.innerHTML = `<div class="om-elapsed">${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</div>`;
       }
       if (busy && M.state === 'matched') {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
+        const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         e.matched.innerHTML = '';
         const h = document.createElement('div'); h.className = 'om-matched-title'; h.textContent = '⚔️ ' + T('matched');
         const vs = document.createElement('div'); vs.className = 'om-vs';
         const x = document.createElement('span'); x.className = 'om-vs-x'; x.textContent = 'VS';
         vs.append(this.playerCard(T('me'), myProfile(M.diff)), x, this.playerCard(T('opp'), M.partnerProfile || cleanProfile(null, M.partner)));
         const meta = document.createElement('div'); meta.className = 'om-matched-meta';
-        meta.textContent = `${z.flag} ${L(z)} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
+        meta.textContent = `${qBadge} · ${z.flag} ${L(z)} · ${L(mo)} · ${L(di)} · ${M.role === 1 ? T('youHost') : T('youGuest')}`;
         e.matched.append(h, vs, meta);
       }
       this.renderRoom();
@@ -1696,9 +1793,80 @@
     }
   };
 
-  // v2.0.9 · 랜덤 매칭 성사 시 전체 화면 VS 연출. 경기 판이 뜨면 사라집니다.
+  // v2.0.9 / v2.1.2 · 랜덤 매칭 성사 시 전체 화면 VS 연출 + 경쟁전 랜덤 모드 슬롯/룰렛 추첨 모션
   const MatchFx = {
-    el: null, key: '', watch: null,
+    el: null, key: '', watch: null, spinTimer: null, audioCtx: null,
+    playTick(final) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!this.audioCtx) this.audioCtx = new AC();
+        if (this.audioCtx.state === 'suspended') this.audioCtx.resume().catch(() => {});
+        const now = this.audioCtx.currentTime;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = final ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(final ? 880 : 520, now);
+        if (final) osc.frequency.exponentialRampToValueAtTime(1320, now + 0.18);
+        gain.gain.setValueAtTime(final ? 0.14 : 0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (final ? 0.24 : 0.055));
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + (final ? 0.25 : 0.06));
+      } catch (_) {}
+    },
+    spinRoulette(wrap, targetModeId) {
+      clearTimeout(this.spinTimer);
+      const cards = Array.from(wrap.querySelectorAll('.om-fx-r-card'));
+      const slotText = wrap.querySelector('.om-fx-r-slot-text');
+      const statusEl = wrap.querySelector('.om-fx-r-status');
+      if (!cards.length) return;
+      const targetIdx = Math.max(0, MODES.findIndex(m => m.id === targetModeId));
+      const reduced = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } })();
+      if (reduced) {
+        cards.forEach((c, idx) => {
+          c.classList.toggle('is-active', idx === targetIdx);
+          c.classList.toggle('is-locked', idx === targetIdx);
+        });
+        if (slotText) slotText.textContent = L(MODES[targetIdx]);
+        if (statusEl) statusEl.textContent = T('rouletteLocked');
+        wrap.classList.add('is-locked');
+        return;
+      }
+      // 최소 3바퀴(12스텝) 이상 돌고 targetIdx에 정확히 멈추도록 총 스텝 계산
+      const totalSteps = 12 + targetIdx;
+      let step = 0;
+      const tick = () => {
+        if (!this.el || !this.el.classList.contains('on')) return;
+        const curIdx = step % MODES.length;
+        const curMode = MODES[curIdx];
+        cards.forEach((c, idx) => {
+          c.classList.toggle('is-active', idx === curIdx);
+          c.classList.remove('is-locked');
+        });
+        if (slotText) {
+          slotText.textContent = L(curMode);
+          slotText.classList.remove('om-fx-r-flip');
+          void slotText.offsetWidth;
+          slotText.classList.add('om-fx-r-flip');
+        }
+        if (step >= totalSteps) {
+          cards[targetIdx]?.classList.add('is-locked');
+          wrap.classList.add('is-locked');
+          if (statusEl) statusEl.textContent = T('rouletteLocked');
+          this.playTick(true);
+          try { navigator.vibrate?.([30, 40, 90]); } catch (_) {}
+          return;
+        }
+        this.playTick(false);
+        step++;
+        const progress = step / totalSteps;
+        const delay = Math.round(55 + Math.pow(progress, 2.1) * 165);
+        this.spinTimer = setTimeout(tick, delay);
+      };
+      tick();
+    },
     show() {
       if (window.app?.isBattle) { this.hide(); return; }
       if (!this.el) {
@@ -1708,17 +1876,33 @@
         this.el.setAttribute('role', 'status');
         (document.getElementById('app') || document.body).append(this.el);
       }
-      const key = JSON.stringify([M.partner, M.partnerProfile, langIdx()]);
+      const key = JSON.stringify([M.partner, M.partnerProfile, M.queue, M.mode, M.diff, M.matchedAt, langIdx()]);
       if (this.key !== key) {
         this.key = key;
-        const mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
+        const mo = MODES.find(x => x.id === M.mode) || MODES[0], di = DIFFS.find(x => x.id === M.diff) || DIFFS[0];
+        const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         const t = document.createElement('div'); t.className = 'om-fx-title'; t.textContent = T('matchFound');
         const row = document.createElement('div'); row.className = 'om-fx-row';
         const x = document.createElement('div'); x.className = 'om-fx-vs'; x.textContent = 'VS';
         row.append(UI.playerCard(T('me'), myProfile(M.diff), 'om-fx-me'), x, UI.playerCard(T('opp'), M.partnerProfile || cleanProfile(null, M.partner), 'om-fx-opp'));
-        const meta = document.createElement('div'); meta.className = 'om-fx-meta'; meta.textContent = `${L(mo)} · ${L(di)}`;
+        const meta = document.createElement('div'); meta.className = 'om-fx-meta';
         const sub = document.createElement('div'); sub.className = 'om-fx-sub'; sub.textContent = T('matched');
-        this.el.replaceChildren(t, row, meta, sub);
+        if (M.queue === 'ranked') {
+          meta.textContent = `${qBadge} · ${L(di)}`;
+          const roulette = document.createElement('div');
+          roulette.className = 'om-fx-roulette';
+          roulette.innerHTML = `
+            <div class="om-fx-r-status">${T('rouletteSpinning')}</div>
+            <div class="om-fx-r-slot"><span class="om-fx-r-slot-text">${L(MODES[0])}</span></div>
+            <div class="om-fx-r-grid">
+              ${MODES.map(m => `<div class="om-fx-r-card" data-mode="${m.id}">${L(m)}</div>`).join('')}
+            </div>`;
+          this.el.replaceChildren(t, row, meta, roulette, sub);
+          this.spinRoulette(roulette, M.mode);
+        } else {
+          meta.textContent = `${qBadge} · ${L(mo)} · ${L(di)}`;
+          this.el.replaceChildren(t, row, meta, sub);
+        }
       }
       if (this.el.classList.contains('on')) return;
       this.el.classList.add('on');
@@ -1728,6 +1912,7 @@
     },
     hide() {
       clearInterval(this.watch);
+      clearTimeout(this.spinTimer);
       if (this.el) { this.el.classList.remove('on'); this.key = ''; }
     }
   };
@@ -1783,6 +1968,7 @@
               const st = await (await fetch('http://127.0.0.1:8888/api/status')).json();
               this.guestJoined = !!st.guestJoined; this.hostP2Ready = !!st.p2Ready;
               if (M.kind === 'room') { UI.render(); return; }
+              if (M.kind === 'random' && M.queue === 'ranked' && (Date.now() - (M.matchedAt || 0)) < 1850) return;
               if (st.guestJoined && st.p2Ready && !this.battleStarting) { M.hostStarted = true; clearInterval(M.hostPoll); this.startBattleAsHost(); }
             } catch (_) {}
           }, 600);
@@ -1804,8 +1990,8 @@
       if (M.active || M.state !== 'idle') {
         clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0);
         if (!M.partnerPeer()) M.rematch = { left: true };
-        // v2.1.0: 온라인 랜덤 매칭(공정 고정 규칙)일 때만 랭크전 점수를 반영합니다.
-        if (M.active && M.kind === 'random' && window.SumdokuRating?.recordBattleEnd) {
+        // v2.1.2: 온라인 랜덤 매칭 중에서도 '경쟁전(ranked)'일 때만 랭크전 점수를 반영합니다. 일반전(normal)과 방 번호 배틀은 점수가 변동되지 않습니다.
+        if (M.active && M.kind === 'random' && M.queue === 'ranked' && window.SumdokuRating?.recordBattleEnd) {
           const isVictory = this.isWin || this.battleResult === 'win';
           const reason = this.resultReason || '';
           const oppRp = M.partnerProfile?.tier?.rp || 1000;
@@ -1814,6 +2000,8 @@
             ch._shown = true;
             window.SumdokuRating?.runBattleResult?.(this, ch);
           }
+        } else {
+          this.lastBattleRatingChange = null;
         }
         try {
           window.SumdokuSeason?.applyCosmetics?.();

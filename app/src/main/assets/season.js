@@ -171,7 +171,7 @@
         const c = mk('div', 'hof-item'); c.style.setProperty('--tier', tier.color);
         const em = mk('div', 'hof-em'); em.innerHTML = R.tierSymbol(tier.id, 52, tier.division);
         c.append(em, mk('b', 'hof-s', h.season ? `${t('season')} ${h.season}` : t('pre')),
-          mk('span', 'hof-d', `${modeName(h.mode)} ${diffName(h.diff)}`.trim()), mk('span', 'hof-t', `${tier.name} · ${h.best}`));
+          mk('span', 'hof-d', `${diffName(h.diff)}`.trim()), mk('span', 'hof-t', `${tier.name} · ${h.best}`));
         grid.append(c);
       });
       hof.append(grid);

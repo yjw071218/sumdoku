@@ -98,36 +98,34 @@
     const grid = document.getElementById('ranking-grid');
     grid.innerHTML = '';
     const cell = (cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; };
-    grid.append(cell('rk-h', t('difficulty')), cell('rk-h', t('battle')), cell('rk-h', t('standard')), cell('rk-h', t('timeattack')));
-    const curMode = this._rankMode || all.lastMode || 'battle';
-    const curDiff = this._rankDiff || R.ladder(all, curMode).lastDiff || 'easy';
+    grid.append(cell('rk-h', t('difficulty')), cell('rk-h', t('battle')));
+    this._rankMode = 'battle';
+    const curDiff = this._rankDiff || R.ladder(all, 'battle').lastDiff || 'easy';
     R.DIFFS.forEach(d => {
       grid.append(cell('rk-diff', diffName(d)));
-      R.MODES.forEach(m => {
-        const s = R.ladder(all, m).byDiff[d], tier = R.shownTier(s), unr = tier.id === 'unranked';
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'rk-cell' + (m === curMode && d === curDiff ? ' on' : '') + (s.games ? '' : ' empty');
-        b.style.setProperty('--tier', !unr && s.games ? tier.color : '#94a3b8');
-        b.setAttribute('aria-label', `${diffName(d)} ${t(m)} ${unr ? tier.name : s.games ? tier.name + ' ' + s.rating + ' RP' : t('unplayed')}`);
-        const sym = cell('rk-sym'); sym.innerHTML = unr || s.games ? R.tierSymbol(tier.id, 26, tier.division) : '';
-        const txt = cell('rk-txt'); txt.append(cell('rk-tier', unr || s.games ? tier.name : '—'), cell('rk-rp', unr ? `${tier.placementDone} / ${R.PLACEMENT}` : s.games ? `${s.rating} RP` : t('unplayed')));
-        b.append(sym, txt);
-        b.onclick = () => { this._rankMode = m; this._rankDiff = d; this.renderRankingView(); };
-        grid.append(b);
-      });
+      const s = R.ladder(all, 'battle').byDiff[d], tier = R.shownTier(s), unr = tier.id === 'unranked';
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'rk-cell' + (d === curDiff ? ' on' : '') + (s.games ? '' : ' empty');
+      b.style.setProperty('--tier', !unr && s.games ? tier.color : '#94a3b8');
+      b.setAttribute('aria-label', `${diffName(d)} ${unr ? tier.name : s.games ? tier.name + ' ' + s.rating + ' RP' : t('unplayed')}`);
+      const sym = cell('rk-sym'); sym.innerHTML = unr || s.games ? R.tierSymbol(tier.id, 26, tier.division) : '';
+      const txt = cell('rk-txt'); txt.append(cell('rk-tier', unr || s.games ? tier.name : '—'), cell('rk-rp', unr ? `${tier.placementDone} / ${R.PLACEMENT}` : s.games ? `${s.rating} RP` : t('unplayed')));
+      b.append(sym, txt);
+      b.onclick = () => { this._rankMode = 'battle'; this._rankDiff = d; this.renderRankingView(); };
+      grid.append(b);
     });
     this._rkBusy = true;
     try { this.renderRatingCard?.(); } finally { this._rkBusy = false; }
-    renderLadder(R, R.ladder(all, curMode).byDiff[curDiff], curMode, curDiff);
-    renderBoard(curMode, curDiff, R.ladder(all, curMode).byDiff[curDiff]);
-    renderStreak(R, R.ladder(all, curMode).byDiff[curDiff]);
+    renderLadder(R, R.ladder(all, 'battle').byDiff[curDiff], 'battle', curDiff);
+    renderBoard('battle', curDiff, R.ladder(all, 'battle').byDiff[curDiff]);
+    renderStreak(R, R.ladder(all, 'battle').byDiff[curDiff]);
   };
 
   /* 랭크 단계 시각화: 위에서부터 그랜드마스터 → 브론즈. 단계가 있는 티어는 V~I 다섯 칸으로 나누고,
      선택한 랭크가 있는 칸을 강조하고 정확한 위치에 '현재' 표시를 둡니다. */
   function renderLadder(R, s, mode, diff) {
     document.getElementById('ranking-ladder-title').textContent = t('ladder');
-    document.getElementById('ranking-ladder-sub').textContent = `${t('ladderSub')} · ${diffName(diff)} ${t(mode)} · ${s.rating} RP`;
+    document.getElementById('ranking-ladder-sub').textContent = `${t('ladderSub')} · ${diffName(diff)} · ${s.rating} RP`;
     const list = document.getElementById('ranking-ladder-list');
     list.innerHTML = '';
     const me = R.shownTier(s);
@@ -170,14 +168,14 @@
   const isPlay = () => { try { return bridge()?.getDistribution?.() === 'play' && typeof bridge().loadLeaderboardRanks === 'function'; } catch (_) { return false; } };
   const rankCache = {}; // key → { at, data }
   let pendingKey = null;
-  const boardKey = (mode, diff) => (mode === 'timeattack' ? 'ta_rating_' : 'rating_') + diff;
+  const boardKey = (mode, diff) => 'rating_' + diff;
 
   function renderBoard(mode, diff, s, force = false) {
     const sec = document.getElementById('ranking-board');
     if (!sec) return;
     if (!isPlay()) { sec.classList.add('hidden'); return; }
     sec.classList.remove('hidden');
-    document.getElementById('ranking-board-title').textContent = `${t('board')} · ${diffName(diff)} ${t(mode)}`;
+    document.getElementById('ranking-board-title').textContent = `${t('board')} · ${diffName(diff)}`;
     const key = boardKey(mode, diff);
     let configured = false; try { configured = !!bridge().isLeaderboardConfigured(key); } catch (_) {}
     if (!configured) return paintBoard(key, { status: 'unconfigured' });

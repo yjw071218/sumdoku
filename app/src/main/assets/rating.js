@@ -577,9 +577,9 @@
     if (ensureSeason(all)) saveAll(all);
     return all;
   };
-  const MODES = ['battle', 'standard', 'timeattack'];
-  // 모드별 사다리: 배틀은 all.battle, 타임어택은 all.ta, 일반은 all
-  const ladder = (all, mode) => mode === 'battle' ? all.battle : (mode === 'timeattack' ? all.ta : all);
+  const MODES = ['battle'];
+  // 경쟁전 랭크 사다리: 난이도별 배틀 랭크(all.battle)만 사용합니다.
+  const ladder = (all, mode) => (mode === 'timeattack' && all.ta ? all.ta : (mode === 'standard' && all.byDiff ? all : all.battle));
   const saveAll = all => { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (_) {} };
   const load = d => loadAll().battle.byDiff[DIFFS.includes(d) ? d : 'expert'];
 
@@ -630,8 +630,8 @@
   function bestTierIndex(all) {
     let k = -1;
     (all.hof || []).forEach(h => { if (h && Number.isFinite(h.best)) k = Math.max(k, tierOf(h.best).index); });
-    MODES.forEach(m => DIFFS.forEach(d => {
-      const s = ladder(all, m).byDiff[d];
+    ['battle', 'standard', 'timeattack'].forEach(m => DIFFS.forEach(d => {
+      const s = ladder(all, m)?.byDiff?.[d];
       if (s && !(s.placement > 0) && ((s.seasonGames || 0) > 0 || (s.games || 0) > 0)) {
         k = Math.max(k, tierOf(Math.max(s.seasonBest || 0, s.peak || 0, s.rating || 0)).index);
       }
@@ -961,11 +961,11 @@
       if (rankHost) rankHost.append(card); else host.insertBefore(card, anchor || host.firstChild);
     }
     const all = loadAll();
-    const mode = MODES.includes(this._rankMode) ? this._rankMode : (all.lastMode || 'battle');
+    const mode = 'battle';
     const lad = ladder(all, mode);
     const cur = DIFFS.includes(this._rankDiff) ? this._rankDiff : (lad.lastDiff || 'easy');
     let lost = 0;
-    MODES.forEach(m => DIFFS.forEach(d => { const x = applyDecay(ladder(all, m).byDiff[d]); if (m === mode && d === cur) lost = x; }));
+    DIFFS.forEach(d => { const x = applyDecay(lad.byDiff[d]); if (d === cur) lost = x; });
     saveAll(all);
     const s = lad.byDiff[cur];
     const t = shownTier(s), unr = t.id === 'unranked';
@@ -980,23 +980,14 @@
     const info = el('div', 'rc-info');
     info.append(el('div', 'rc-tier', t.name), el('div', 'rc-rp', unr ? `${tr('배치 경기')} ${t.placementDone} / ${PLACEMENT}` : `${s.rating} RP · ${tr('최고')} ${s.peak}`));
     head.append(badge, info); card.append(el('h3', 'section-title', tr('난이도별 랭크')));
-    // 난이도 탭: 이름과 그 난이도의 티어(티어 색 밑줄)를 함께 보여 줍니다.
-    // 모드 전환(배틀 / 일반 / 타임어택)
-    const modes = el('div', 'rc-modes'); modes.setAttribute('role', 'tablist');
-    MODES.forEach(m => {
-      const b = el('button', 'rc-mode' + (m === mode ? ' on' : ''), modeName(m));
-      b.type = 'button'; b.dataset.mode = m; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', m === mode ? 'true' : 'false');
-      b.onclick = () => { this._rankMode = m; this._rankDiff = ladder(loadAll(), m).lastDiff || this._rankDiff; this.renderRatingCard(); };
-      modes.append(b);
-    });
-    card.append(modes);
+    // 난이도 탭: 이름과 그 난이도의 티어(티어 색 밑줄)를 함께 보여 줍니다. (일반·타임어택 모드는 제외하고 난이도별 경쟁전 티어만 표시)
     const tabs = el('div', 'rc-tabs'); tabs.setAttribute('role', 'tablist');
     DIFFS.forEach(d => {
       const ds = lad.byDiff[d], dt = shownTier(ds), b = el('button', 'rc-tab' + (d === cur ? ' on' : ''));
       b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', d === cur ? 'true' : 'false');
       b.style.setProperty('--tab-tier', ds.games ? dt.color : '#94a3b8');
       b.append(el('span', 'rc-tab-name', diffName(d)), el('span', 'rc-tab-tier', ds.games ? dt.name : '—'));
-      b.onclick = () => { this._rankDiff = d; this.renderRatingCard(); };
+      b.onclick = () => { this._rankMode = 'battle'; this._rankDiff = d; this.renderRatingCard(); };
       tabs.append(b);
     });
     card.append(tabs, head);
@@ -1007,8 +998,7 @@
     if (s.boost > 0) card.append(el('div', 'rc-boost', `⚡ ${tr('시즌 초반 가속')} +25% · ${s.boost}${tr('판')}`));
     if (unr) card.append(el('div', 'rc-next', `${tr('배치 경기')} ${PLACEMENT - t.placementDone}${tr('판')} ${tr('남음')} · ${tr('얻는 RP')} ×1.5`));
     else card.append(el('div', 'rc-next', t.divMax ? `${tr('다음 단계까지')} ${Math.ceil(t.divMax - s.rating)} RP` : tr('최고 티어입니다')));
-    if (mode === 'timeattack') card.append(el('div', 'rc-note', `${tr('상승 기준 점수')} ${Math.ceil(taExpected(s.rating) / (TA_WEIGHT[cur] || 1)).toLocaleString()}`));
-    if (!s.games) card.append(el('div', 'rc-note', tr(mode === 'timeattack' ? '이 난이도의 타임어택에서 기준보다 높은 점수를 내면 레이팅이 오릅니다.' : '이 난이도의 일반 게임이나 일일 도전을 클리어하면 레이팅이 쌓입니다.')));
+    if (!s.games) card.append(el('div', 'rc-note', tr('이 난이도의 경쟁전 배틀에서 승리하면 레이팅이 오릅니다.')));
     else if (s.rating > DECAY_FLOOR) card.append(el('div', 'rc-note' + (decayIn <= 2 ? ' warn' : ''),
       decayIn > 0 ? `${tr('비활동 감소까지')} ${decayIn}${({ ko: '일', ja: '日', zh: '天', 'zh-TW': '天' })[window.I18N?.currentLang || 'ko'] ?? ' d'}` : tr('비활동으로 레이팅이 매일 감소하고 있습니다')));
     if (lost) card.append(el('div', 'rc-note warn', `${tr('비활동 감소')} −${lost} RP`));
@@ -1020,7 +1010,7 @@
     }
     if (bridge()?.getDistribution?.() === 'play') {
       const row = el('div', 'rc-actions');
-      [['랭킹 보기', (() => { const pre = mode === 'timeattack' ? 'ta_rating' : 'rating'; return lbReady(pre + '_' + cur) ? pre + '_' + cur : pre; })()], ['전체 리더보드', '']].forEach(([label, key]) => {
+      [['랭킹 보기', lbReady('rating_' + cur) ? 'rating_' + cur : 'rating'], ['전체 리더보드', '']].forEach(([label, key]) => {
         const b = el('button', 'btn btn-secondary', tr(label)); b.type = 'button';
         b.onclick = () => { try { bridge().showLeaderboard(key); } catch (_) { window.onLeaderboardResult('error'); } };
         row.append(b);
