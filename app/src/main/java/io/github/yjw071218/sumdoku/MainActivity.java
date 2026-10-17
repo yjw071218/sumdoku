@@ -489,6 +489,11 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
     private class AndroidBridgeInterface {
+        /** v2.0.6: 기기(= Google Play 스토어) 언어 태그, 예: ko-KR, zh-Hant-TW */
+        @JavascriptInterface public String getDeviceLocale() {
+            try { return android.content.res.Resources.getSystem().getConfiguration().getLocales().get(0).toLanguageTag(); }
+            catch (Exception e) { return java.util.Locale.getDefault().toLanguageTag(); }
+        }
         @JavascriptInterface public boolean isCloudConfigured() { return BuildConfig.GAMES_CONFIGURED; }
         /** v2.0.2 배틀 신원: Play 게임즈 이름·ID + Play 계정 국가 → window.onPlayerProfile({signedIn,name,id,cc,reason}) */
         @JavascriptInterface public void requestPlayerProfile(final boolean interactive) {

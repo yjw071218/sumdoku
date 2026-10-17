@@ -80,7 +80,7 @@
     tab: ['🌐 온라인', '🌐 Online', '🌐 オンライン', '🌐 在线', '🌐 線上', '🌐 En línea', '🌐 En ligne', '🌐 Online'],
     title: ['전 세계 랜덤 매칭', 'Worldwide random match', '世界ランダムマッチ', '全球随机匹配', '全球隨機配對', 'Partida aleatoria mundial', 'Match aléatoire mondial', 'Weltweites Zufallsmatch'],
     zone: ['매칭 구역', 'Match zone', 'マッチ地域', '匹配区域', '配對區域', 'Zona de partida', 'Zone de match', 'Match-Zone'],
-    zoneAuto: ['기기 시간대 기준 추천', 'Suggested from your time zone', '端末のタイムゾーンからのおすすめ', '根据设备时区推荐', '依裝置時區推薦', 'Sugerida según tu zona horaria', 'Suggérée selon votre fuseau horaire', 'Empfohlen nach deiner Zeitzone'],
+    zoneAuto: ['매칭 구역은 기기 시간대로 자동 선택', 'Match zone auto-selected from your time zone', 'マッチ地域は端末のタイムゾーンで自動選択', '匹配区域按设备时区自动选择', '配對區域依裝置時區自動選擇', 'Zona elegida según tu zona horaria', 'Zone choisie selon votre fuseau horaire', 'Zone automatisch nach Zeitzone'],
     mode: ['배틀 모드', 'Battle mode', 'バトルモード', '对战模式', '對戰模式', 'Modo de batalla', 'Mode de duel', 'Kampfmodus'],
     diff: ['난이도', 'Difficulty', '難易度', '难度', '難度', 'Dificultad', 'Difficulté', 'Schwierigkeit'],
     name: ['내 닉네임', 'My nickname', 'ニックネーム', '我的昵称', '我的暱稱', 'Mi apodo', 'Mon pseudo', 'Mein Spitzname'],
@@ -385,7 +385,7 @@
     state: 'idle',            // idle | searching | proposing | matched
     role: 0,                  // 1 방장 / 2 참가자
     selfId: '',
-    zone: pick(ZONES, store.get('sumdoku_online_zone', ''), guessZone()),
+    zone: guessZone(),        // v2.0.6: 구역은 고르지 않고 기기 시간대로 자동 결정합니다.
     mode: pick(MODES, store.get('sumdoku_online_mode', ''), 'race'),
     diff: pick(DIFFS, store.get('sumdoku_online_diff', ''), 'expert'),
     hashBin: '', hashHex: '',
@@ -458,6 +458,7 @@
       this.role = 0;
       this.partner = null;
       this.hostStarted = false;
+      if (this.kind === 'random') this.zone = guessZone();
       this.selfId = randId(20);
       this.seen = new Set();
       this.dht = { nodes: 0, peers: 0, phase: '' };
@@ -1233,9 +1234,7 @@
         </div>
 
         <section class="om-only-random">
-          <div class="om-label" data-k="zone"></div>
-          <div class="om-zones" role="radiogroup"></div>
-          <div class="om-zone-hint"></div>
+          <div class="om-zone-auto"></div>
           <div class="om-label" data-k="mode"></div>
           <div class="om-modes om-grid2" role="radiogroup"></div>
           <p class="om-mode-desc"></p>
@@ -1246,7 +1245,6 @@
             <div class="om-radar" aria-hidden="true"><span></span><span></span><span></span></div>
             <div class="om-status-text"></div>
             <div class="om-stats"></div>
-            <div class="om-slow hidden"><span></span><button type="button" class="btn btn-secondary om-to-global"></button></div>
           </div>
           <div class="om-matched hidden"></div>
           <p class="om-nat"></p>
@@ -1306,10 +1304,10 @@
         tab, view, room,
         nameInput: q('.om-name-input'), nameFlag: q('.om-name-flag'), nameTier: q('.om-name-tier'), nameHint: q('.om-name-hint'),
         kinds: view.querySelectorAll('.om-kind'),
-        zones: q('.om-zones'), zoneHint: q('.om-zone-hint'), modes: q('.om-modes'), modeDesc: q('.om-only-random .om-mode-desc'), diffs: q('.om-diffs'),
+        zoneAuto: q('.om-zone-auto'), modes: q('.om-modes'), modeDesc: q('.om-only-random .om-mode-desc'), diffs: q('.om-diffs'),
         rulesTitle: q('.om-rules-title'), rulesChips: q('.om-rules-chips'),
         status: q('.om-status'), statusText: q('.om-status-text'), stats: q('.om-stats'),
-        slow: q('.om-slow'), toGlobal: q('.om-to-global'), matched: q('.om-matched'), nats: view.querySelectorAll('.om-nat'), start: q('.om-start'),
+        matched: q('.om-matched'), nats: view.querySelectorAll('.om-nat'), start: q('.om-start'),
         roomLead: q('.om-room-lead'), roomCreate: q('.om-room-create'), or: q('.om-or span'), roomInput: q('.om-room-input'), roomJoin: q('.om-room-join'),
         rLeave: r('.om-room-leave'), rTitle: r('.om-room-title'), rCodeCard: r('.om-code-card'), rCodeLabel: r('.om-code-label'), rCode: r('.om-room-code'), rCopy: r('.om-room-copy'),
         rStatus: r('.om-room-status'), rPlayers: r('.om-room-players'), rHostOnly: r('.om-host-only'),
@@ -1365,7 +1363,6 @@
       this.el.rCopy.addEventListener('click', copy);
       this.el.rLeave.addEventListener('click', () => { click(); M.leave(); setTimeout(() => this.render(), 400); });
       this.el.rStart.addEventListener('click', () => { click(); M.roomStart(); });
-      this.el.toGlobal.addEventListener('click', () => { click(); M.setZone('global'); this.renderPickers(); });
       // 안드로이드 뒤로 가기 등으로 로비가 닫히면 방 화면도 닫습니다.
       this.renderPickers();
       this.render();
@@ -1408,30 +1405,12 @@
     renderPickers() {
       if (!this.built) return;
       const locked = M.state === 'matched';
-      const zw = this.el.zones;
-      const zkey = JSON.stringify([M.zone, locked, langIdx()]);
-      if (zw.dataset.key !== zkey) {
-        zw.dataset.key = zkey;
-        zw.innerHTML = '';
-        for (const z of ZONES) {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'om-zone' + (z.id === M.zone ? ' active' : '');
-          b.setAttribute('role', 'radio');
-          b.setAttribute('aria-checked', z.id === M.zone ? 'true' : 'false');
-          b.disabled = locked;
-          const f = document.createElement('span'); f.className = 'om-zone-flag'; f.textContent = z.flag;
-          const n = document.createElement('span'); n.className = 'om-zone-name'; n.textContent = L(z);
-          b.append(f, n);
-          b.addEventListener('click', () => { window.app?.sound?.play?.('click'); M.setZone(z.id); this.renderPickers(); });
-          zw.append(b);
-        }
-      }
       this.chips(this.el.modes, MODES, M.mode, id => { M.setMode(id); this.renderPickers(); }, L, locked);
       this.chips(this.el.diffs, DIFFS, M.diff, id => { M.setDiff(id); this.renderPickers(); }, L, locked);
       this.el.modeDesc.textContent = modeDesc(M.mode);
-      const gz = ZONES.find(z => z.id === guessZone());
-      this.el.zoneHint.textContent = `${T('zoneAuto')}: ${gz.flag} ${L(gz)}`;
+      M.zone = guessZone();
+      const gz = ZONES.find(z => z.id === M.zone);
+      this.el.zoneAuto.textContent = `${gz.flag} ${T('zoneAuto')} · ${L(gz)}`;
     },
 
     renderRoomSettings() {
@@ -1591,8 +1570,6 @@
       const tkey = JSON.stringify(mt);
       if (e.nameTier.dataset.key !== tkey) { e.nameTier.dataset.key = tkey; e.nameTier.innerHTML = tierSvg(mt, 30); }
       e.nameTier.title = tierLabel(mt);
-      e.toGlobal.textContent = T('toGlobal');
-      e.slow.querySelector('span').textContent = T('slow');
 
       const busy = M.state !== 'idle' && M.kind === 'random';
       e.view.classList.toggle('om-busy', busy);
@@ -1616,7 +1593,6 @@
           stat('dht', M.dht.nodes ? `${M.dht.nodes}` : '…') +
           stat('waiting', waiting ? String(waiting) : '–') +
           stat('peers', String(M.seen.size));
-        e.slow.classList.toggle('hidden', !(sec >= 60 && M.zone !== 'global'));
       }
       if (busy && M.state === 'matched') {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);

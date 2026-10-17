@@ -13,7 +13,12 @@
       var st = JSON.parse(localStorage.getItem('sumdoku_settings') || 'null');
       if (st && st.darkTheme) theme = 'theme-dark';
       var lang = localStorage.getItem('sumdoku_language');
-      if (lang) root.lang = lang;
+      if (!lang) { // 첫 실행: 기기(Play 스토어) 언어
+        var dl = String((window.AndroidBridge && AndroidBridge.getDeviceLocale && AndroidBridge.getDeviceLocale()) || navigator.language || 'ko').replace('_', '-');
+        var b = dl.split('-')[0].toLowerCase();
+        lang = b === 'zh' ? (/-(TW|HK|MO)|Hant/i.test(dl) ? 'zh-TW' : 'zh') : (['ko','en','ja','es','fr','de'].indexOf(b) >= 0 ? b : 'en');
+      }
+      root.lang = lang;
     } catch (e) {}
     window.__SUMDOKU_BOOT_THEME = theme;
     root.className += ' boot-pending boot-' + theme;

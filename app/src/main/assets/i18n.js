@@ -1098,9 +1098,25 @@
     init() {
       let saved = null;
       try { saved = localStorage.getItem(STORAGE_KEY); } catch (_) {}
-      this.currentLang = saved && translations[saved] ? saved : 'ko';
+      // v2.0.6: 처음 설치해 저장된 언어가 없으면 기기(= Google Play 스토어) 언어를 따릅니다.
+      this.currentLang = saved && translations[saved] ? saved : this.deviceLang();
+      if (!saved) { try { localStorage.setItem(STORAGE_KEY, this.currentLang); } catch (_) {} }
       document.documentElement.lang = this.currentLang;
       this.applyToDOM();
+    },
+
+    /** 기기 언어 → 앱 지원 언어. 중국어는 번체 지역(TW·HK·MO·Hant)이면 zh-TW, 지원하지 않는 언어는 영어. */
+    deviceLang() {
+      let list = [];
+      try { const n = window.AndroidBridge?.getDeviceLocale?.(); if (n) list.push(n); } catch (_) {}
+      list = list.concat(navigator.languages || [], navigator.language || []);
+      for (const raw of list) {
+        const l = String(raw || '').replace('_', '-');
+        const base = l.split('-')[0].toLowerCase();
+        if (base === 'zh') return /-(TW|HK|MO)|Hant/i.test(l) ? 'zh-TW' : 'zh';
+        if (['ko', 'en', 'ja', 'es', 'fr', 'de'].includes(base)) return base;
+      }
+      return list.length ? 'en' : 'ko';
     },
 
     t(key, fallback = '') {
