@@ -199,3 +199,29 @@ html.om-room-open body { overflow: hidden; }
 .om-room-players .om-player.is-ready { border-color: #16a34a; box-shadow: 0 0 0 2px #16a34a33; }
 .om-room-ready { width: 100%; min-height: 54px; font-size: 16.5px; font-weight: 900; white-space: nowrap; }
 .om-room-ready[hidden], .om-room-start[hidden], .om-room-wait[hidden] { display: none; }
+
+/* v2.0.9 · 매칭 성사 전체 화면 연출 */
+.om-stats { display: block; }
+.om-elapsed { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ui-accent, #2563eb); }
+.om-match-fx { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px 16px;
+  color: #fff; background: radial-gradient(circle at 50% 45%, #4f46e5 0%, #1e1b4b 60%, #0b0820 100%); opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; overflow: hidden; }
+.om-match-fx.on { opacity: 1; visibility: visible; }
+.om-match-fx::before { content: ""; position: absolute; inset: -50%; background: conic-gradient(from 0deg, #ffffff00, #ffffff14, #ffffff00 30%); animation: om-fx-spin 6s linear infinite; }
+.om-match-fx > * { position: relative; }
+.om-fx-title { font-size: clamp(26px, 8vw, 38px); font-weight: 900; letter-spacing: 1px; text-shadow: 0 4px 18px #000a; }
+.om-match-fx.on .om-fx-title { animation: om-fx-drop .5s cubic-bezier(.2,1.5,.4,1) both; }
+.om-fx-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 440px; }
+.om-fx-row .om-player { background: #ffffff1c; border: 1px solid #ffffff33; padding: 14px 6px; color: #fff; }
+.om-fx-row .om-player-emblem, .om-fx-row .om-player-emblem svg { width: 64px; height: 64px; }
+.om-match-fx.on .om-fx-me { animation: om-fx-left .55s cubic-bezier(.2,1.2,.4,1) .15s both; }
+.om-match-fx.on .om-fx-opp { animation: om-fx-right .55s cubic-bezier(.2,1.2,.4,1) .15s both; }
+.om-fx-vs { flex: none; font-size: 40px; font-weight: 900; font-style: italic; color: #facc15; text-shadow: 0 0 22px #f59e0b; }
+.om-match-fx.on .om-fx-vs { animation: om-fx-slam .45s cubic-bezier(.2,1.8,.4,1) .55s both; }
+.om-fx-meta { font-size: 14px; font-weight: 800; opacity: .9; }
+.om-fx-sub { font-size: 13px; opacity: .75; animation: om-dot 1.4s infinite; }
+@keyframes om-fx-spin { to { transform: rotate(360deg); } }
+@keyframes om-fx-drop { from { transform: translateY(-40px) scale(1.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes om-fx-left { from { transform: translateX(-120%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes om-fx-right { from { transform: translateX(120%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes om-fx-slam { from { transform: scale(3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .om-match-fx *, .om-match-fx::before { animation: none !important; } }

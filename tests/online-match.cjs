@@ -175,6 +175,18 @@ const DIST = process.env.DIST || 'play';
     rmOk = sols[0] === sols[1] && sols[0] !== fin[0].sol;
     console.log(rmOk ? 'PASS: rematch accepted → new game on both devices' : 'FAIL: rematch');
   }
+  // v2.0.9: 경기 중 상대가 나가면 → 결과 화면에 재도전 버튼 대신 '상대가 나갔습니다', 로비 재진입 시 멈춘 VS 없음
+  if (rmOk) {
+    await B.p.evaluate(() => { const p = OnlineMatch.partnerPeer(); OnlineMatch.sendTo(p, { t: 'bye' }); OnlineMatch.closePeer(p); });
+    await A.p.waitForFunction(() => !app.dom.modalBattleResult.classList.contains('hidden') || (OnlineMatch.rematch && OnlineMatch.rematch.left), null, { timeout: 20000 }).catch(() => {});
+    await A.p.evaluate(() => { if (app.isBattle) app.handleBattleEnd(true, 'left'); });
+    const st = await A.p.evaluate(() => ({ left: !!(OnlineMatch.rematch && OnlineMatch.rematch.left), btnHidden: app.dom.btnBattleRematch.hidden }));
+    await A.p.evaluate(() => app.requestBattleRematch());
+    await A.p.evaluate(() => { app.dom.modalBattleResult.classList.add('hidden'); app.openBattleLobby(); });
+    const after = await A.p.evaluate(() => ({ state: OnlineMatch.state, fx: !!document.querySelector('#om-match-fx.on') }));
+    const leaveOk = st.left && st.btnHidden && after.state === 'idle' && !after.fx;
+    console.log(leaveOk ? 'PASS: opponent left → no rematch, lobby reopens clean' : 'FAIL: leave ' + JSON.stringify([st, after]));
+  }
   console.log('errors', A.errs, B.errs);
   await browser.close();
   process.exit(ok && rmOk && (profOk || DIST === 'github') ? 0 : 1);

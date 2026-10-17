@@ -158,6 +158,7 @@
     rcLivesInf: ['목숨 무제한', 'Unlimited lives', 'ライフ無制限', '生命无限', '生命無限', 'Vidas ilimitadas', 'Vies illimitées', 'Unbegrenzte Leben'],
     rcNoHints: ['힌트 없음', 'No hints', 'ヒントなし', '无提示', '無提示', 'Sin pistas', 'Sans indices', 'Keine Hinweise'],
     rcTime5: ['제한 시간 5분', '5-minute limit', '制限時間5分', '限时 5 分钟', '限時 5 分鐘', 'Límite de 5 min', 'Limite de 5 min', '5-Minuten-Limit'],
+    matchFound: ['매칭 성공!', 'Match found!', 'マッチング成功！', '匹配成功！', '配對成功！', '¡Rival encontrado!', 'Adversaire trouvé !', 'Gegner gefunden!'],
     rulesChips: [
       ['목숨 3', '힌트 3', '자동 메모 끔', '턴 30초'],
       ['3 lives', '3 hints', 'No auto-notes', '30 s turns'],
@@ -637,6 +638,7 @@
         // 방장: 참가자 이탈로 처리(기권승). 참가자: 기존 배틀 로직이 방장 응답 없음을 처리합니다.
         if (this.role === 1) fetch('http://127.0.0.1:8888/api/leave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: 2 }) }).catch(() => {});
         this.partner = null;
+        this.rematch = { left: true }; // v2.0.9: 결과 화면에서 재도전 대신 '상대가 나갔습니다'
         return;
       }
       if (!this.active) return;
@@ -1580,7 +1582,7 @@
       if (!modal) return;
       let box = document.getElementById('om-rematch-box');
       const actions = modal.querySelector('.battle-result-actions');
-      if (!M.active) { if (box) box.hidden = true; return; }
+      if (!M.active && !M.rematch) { if (box) box.hidden = true; return; }
       if (!box && actions) {
         box = document.createElement('div');
         box.id = 'om-rematch-box';
@@ -1612,7 +1614,7 @@
       else if (st.accepted) { box.textContent = '✅ ' + T('rmAccepted'); box.classList.add('ok'); }
       if (btn) {
         const blocked = !!(st.out || st.in || st.rejected || st.youRejected || st.left || st.accepted);
-        btn.hidden = !!st.in;
+        btn.hidden = !!st.in || !!st.left;
         btn.disabled = blocked;
       }
     },
@@ -1676,12 +1678,7 @@
         const z = ZONES.find(x => x.id === M.zone);
         e.statusText.textContent = (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
         const stat = (k, v) => `<div class="om-stat"><span class="om-stat-v">${v}</span><span class="om-stat-k">${T(k)}</span></div>`;
-        e.stats.innerHTML =
-          stat('elapsed', `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`) +
-          stat('trackers', `${openTrackers}/${TRACKERS.length}`) +
-          stat('dht', M.dht.nodes ? `${M.dht.nodes}` : '…') +
-          stat('waiting', waiting ? String(waiting) : '–') +
-          stat('peers', String(M.seen.size));
+        e.stats.innerHTML = `<div class="om-elapsed">${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</div>`;
       }
       if (busy && M.state === 'matched') {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
@@ -1695,6 +1692,43 @@
         e.matched.append(h, vs, meta);
       }
       this.renderRoom();
+      if (busy && M.state === 'matched') MatchFx.show(); else if (M.state !== 'matched') MatchFx.hide();
+    }
+  };
+
+  // v2.0.9 · 랜덤 매칭 성사 시 전체 화면 VS 연출. 경기 판이 뜨면 사라집니다.
+  const MatchFx = {
+    el: null, key: '', watch: null,
+    show() {
+      if (window.app?.isBattle) { this.hide(); return; }
+      if (!this.el) {
+        this.el = document.createElement('div');
+        this.el.id = 'om-match-fx';
+        this.el.className = 'om-match-fx';
+        this.el.setAttribute('role', 'status');
+        (document.getElementById('app') || document.body).append(this.el);
+      }
+      const key = JSON.stringify([M.partner, M.partnerProfile, langIdx()]);
+      if (this.key !== key) {
+        this.key = key;
+        const mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
+        const t = document.createElement('div'); t.className = 'om-fx-title'; t.textContent = T('matchFound');
+        const row = document.createElement('div'); row.className = 'om-fx-row';
+        const x = document.createElement('div'); x.className = 'om-fx-vs'; x.textContent = 'VS';
+        row.append(UI.playerCard(T('me'), myProfile(M.diff), 'om-fx-me'), x, UI.playerCard(T('opp'), M.partnerProfile || cleanProfile(null, M.partner), 'om-fx-opp'));
+        const meta = document.createElement('div'); meta.className = 'om-fx-meta'; meta.textContent = `${L(mo)} · ${L(di)}`;
+        const sub = document.createElement('div'); sub.className = 'om-fx-sub'; sub.textContent = T('matched');
+        this.el.replaceChildren(t, row, meta, sub);
+      }
+      if (this.el.classList.contains('on')) return;
+      this.el.classList.add('on');
+      try { navigator.vibrate?.([40, 60, 80]); } catch (_) {}
+      clearInterval(this.watch);
+      this.watch = setInterval(() => { if (window.app?.isBattle || M.state !== 'matched') this.hide(); }, 100);
+    },
+    hide() {
+      clearInterval(this.watch);
+      if (this.el) { this.el.classList.remove('on'); this.key = ''; }
     }
   };
   const modeDesc = m => T({ race: 'descRace', score: 'descScore', survival: 'descSurvival', turn: 'descTurn' }[m] || 'descRace');
@@ -1718,6 +1752,9 @@
     // 배틀 로비는 항상 온라인 화면(랜덤 매칭 · 방 번호)만 엽니다.
     P.openBattleLobby = function () {
       this.isRematchActive = false;
+      if (M.state !== 'idle' && !M.partnerPeer()) M.stop(false);
+      M.rematch = null;
+      MatchFx.hide();
       try { this.cancelRoomPreparation?.(); } catch (_) {}
       this.dom.modalBattleLobby.classList.remove('hidden');
       this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(p => { p.open = false; });
@@ -1727,6 +1764,7 @@
     // 재대결 로비: 온라인 경기라면 Wi-Fi 방 UI 대신 자동으로 다시 준비합니다.
     const baseReturn = P.returnToBattleLobby;
     if (baseReturn) P.returnToBattleLobby = function () {
+      if (M.state !== 'idle' && !M.partnerPeer()) M.stop(false);
       const r = baseReturn.apply(this, arguments);
       if (!(M.active && M.partner)) { clearInterval(this.hostPollTimer); this.dom.modalBattleLobby.classList.remove('hidden'); UI.show(false); }
       if (M.active && M.partner) {
@@ -1756,14 +1794,18 @@
     // v2.0.5 · 재대결은 상대가 수락해야 성사됩니다.
     const baseRematch = P.requestBattleRematch;
     P.requestBattleRematch = function () {
-      if (M.active && (M.partner || M.rematch)) { M.requestRematch(); return; }
+      if (M.active || M.state !== 'idle' || M.rematch) { M.requestRematch(); return; }
       return baseRematch.apply(this, arguments);
     };
     // 기존 '상대가 재도전 신청 → 자동 복귀' 폴링을 끕니다(수락 절차로 대체).
     const baseEnd = P.handleBattleEnd;
     P.handleBattleEnd = function () {
       const r = baseEnd.apply(this, arguments);
-      if (M.active) { clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0); UI.renderRematch(); }
+      if (M.active || M.state !== 'idle') {
+        clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0);
+        if (!M.partnerPeer()) M.rematch = { left: true };
+        UI.renderRematch();
+      }
       return r;
     };
 
