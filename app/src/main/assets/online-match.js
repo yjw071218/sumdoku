@@ -339,7 +339,7 @@
   function myTier(diff) {
     try {
       const R = window.SumdokuRating;
-      const s = R.ladder(R.loadAll(), 'standard').byDiff[diff];
+      const s = R.ladder(R.loadAll(), 'battle').byDiff[diff];
       const t = R.shownTier(s);
       return { id: t.id, div: t.division || '', rp: s && !(s.placement > 0) ? Math.round(s.rating) : 0 };
     } catch (_) { return { id: 'unranked', div: '', rp: 0 }; }
@@ -1804,6 +1804,17 @@
       if (M.active || M.state !== 'idle') {
         clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0);
         if (!M.partnerPeer()) M.rematch = { left: true };
+        // v2.1.0: 온라인 랜덤 매칭(공정 고정 규칙)일 때만 랭크전 점수를 반영합니다.
+        if (M.active && M.kind === 'random' && window.SumdokuRating?.recordBattleEnd) {
+          const isVictory = this.isWin || this.battleResult === 'win';
+          const reason = this.resultReason || '';
+          const oppRp = M.partnerProfile?.tier?.rp || 1000;
+          const ch = window.SumdokuRating.recordBattleEnd(this, isVictory, reason, oppRp);
+          if (ch && !ch._shown) {
+            ch._shown = true;
+            window.SumdokuRating?.runBattleResult?.(this, ch);
+          }
+        }
         UI.renderRematch();
       }
       return r;

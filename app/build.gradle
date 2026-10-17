@@ -34,8 +34,8 @@ android {
         applicationId 'io.github.yjw071218.sumdoku'
         minSdk 26
         targetSdk 36
-        versionCode 151
-        versionName '2.0.9'
+        versionCode 152
+        versionName '2.1.0'
     }
 
     buildFeatures {

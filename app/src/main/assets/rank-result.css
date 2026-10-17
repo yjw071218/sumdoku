@@ -36,7 +36,9 @@
 .rr-note { font-size: 11.5px; font-weight: 800; color: #fdba74; min-height: 0; }
 .rr-note:empty { display: none; }
 
-.modal-game-result-card.has-rank { max-height: 94vh; overflow-y: auto; }
+.modal-game-result-card.has-rank, .modal-battle-card.has-rank { max-height: 94vh; overflow-y: auto; }
+.modal-battle-card .rr-panel { margin: 10px 0 14px; padding: 14px 12px; border-radius: 16px; width: 100%; box-sizing: border-box; }
+.modal-battle-card .rr-emblem { min-height: 108px; }
 
 /* 태블릿: 왼쪽 큰 엠블럼 + 오른쪽 결과 */
 @media (min-width: 760px) {
@@ -45,6 +47,12 @@
   .modal-game-result-card.has-rank > .rr-panel { grid-column: 1; grid-row: 1 / span 6; align-self: stretch; justify-content: center; margin: 0; padding: 22px 16px; }
   .modal-game-result-card.has-rank .rr-emblem { min-height: 204px; }
   .modal-game-result-card.has-rank .rr-tier { font-size: 26px; }
+
+  .modal-battle-card.has-rank { max-width: 820px; width: 92%; display: grid; grid-template-columns: 280px minmax(0, 1fr); column-gap: 20px; align-items: start; }
+  .modal-battle-card.has-rank > * { grid-column: 2; }
+  .modal-battle-card.has-rank > .battle-result-banner { grid-column: 1 / span 2; }
+  .modal-battle-card.has-rank > .rr-panel { grid-column: 1; grid-row: 2 / span 6; align-self: stretch; justify-content: center; margin: 0; padding: 20px 14px; }
+  .modal-battle-card.has-rank .rr-emblem { min-height: 180px; }
 }
 
 /* 가운데 승급 연출: PUBG 경쟁전 스타일 아머 파쇄 → 메탈 포징 조립 */

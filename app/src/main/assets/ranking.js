@@ -11,6 +11,7 @@
     nav: ['랭킹', 'Ranking', 'ランキング', '排名', '排名', 'Ranking', 'Classement', 'Rangliste'],
     title: ['랭킹', 'Ranking', 'ランキング', '排名', '排名', 'Ranking', 'Classement', 'Rangliste'],
     summary: ['전체 랭크', 'All ranks', '全ランク', '全部段位', '全部段位', 'Todos los rangos', 'Tous les rangs', 'Alle Ränge'],
+    battle: ['배틀', 'Battle', 'バトル', '对战', '對戰', 'Batalla', 'Duel', 'Kampf'],
     standard: ['일반', 'Standard', '通常', '普通', '一般', 'Normal', 'Normal', 'Normal'],
     timeattack: ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'],
     difficulty: ['난이도', 'Difficulty', '難易度', '难度', '難度', 'Dificultad', 'Difficulté', 'Schwierigkeit'],
@@ -97,8 +98,8 @@
     const grid = document.getElementById('ranking-grid');
     grid.innerHTML = '';
     const cell = (cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; };
-    grid.append(cell('rk-h', t('difficulty')), cell('rk-h', t('standard')), cell('rk-h', t('timeattack')));
-    const curMode = this._rankMode || all.lastMode || 'standard';
+    grid.append(cell('rk-h', t('difficulty')), cell('rk-h', t('battle')), cell('rk-h', t('standard')), cell('rk-h', t('timeattack')));
+    const curMode = this._rankMode || all.lastMode || 'battle';
     const curDiff = this._rankDiff || R.ladder(all, curMode).lastDiff || 'easy';
     R.DIFFS.forEach(d => {
       grid.append(cell('rk-diff', diffName(d)));

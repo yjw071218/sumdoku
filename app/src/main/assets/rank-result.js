@@ -22,11 +22,20 @@
     reveal: ['배치 완료', 'Placement done', '配置完了', '定级完成', '定級完成', 'Clasificación lista', 'Placement terminé', 'Platzierung fertig'],
     promoted: ['TIER PROMOTED', 'TIER PROMOTED', 'TIER PROMOTED', '段位晋升', '段位晉升', 'ASCENSO DE RANGO', 'PROMOTION DE RANG', 'RANGAUFSTIEG'],
     divUp: ['DIVISION UP', 'DIVISION UP', 'DIVISION UP', '阶段提升', '階段提升', 'SUBIDA DE DIVISIÓN', 'DIVISION SUPÉRIEURE', 'DIVISIONS-AUFSTIEG'],
-    streak: ['{0}연속 클리어 보너스 +{1}', '{0}-win streak bonus +{1}', '{0}連続クリアボーナス +{1}', '连续通关{0}次奖励 +{1}', '連續通關{0}次獎勵 +{1}', 'Bonus racha {0}: +{1}', 'Bonus série {0} : +{1}', '{0}er-Serienbonus +{1}']
+    streak: ['{0}연속 클리어 보너스 +{1}', '{0}-win streak bonus +{1}', '{0}連続クリアボーナス +{1}', '连续通关{0}次奖励 +{1}', '連續通關{0}次獎勵 +{1}', 'Bonus racha {0}: +{1}', 'Bonus série {0} : +{1}', '{0}er-Serienbonus +{1}'],
+    battleRank: ['배틀 랭크', 'Battle Rank', 'バトルランク', '对战段位', '對戰段位', 'Rango de batalla', 'Rang de duel', 'Kampf-Rang'],
+    battleStreak: ['{0}연승 보너스 +{1}', '{0}-win streak bonus +{1}', '{0}連勝ボーナス +{1}', '{0}连胜奖励 +{1}', '{0}連勝獎勵 +{1}', 'Bonus racha {0}: +{1}', 'Bonus série {0} : +{1}', '{0}er-Siegesserie-Bonus +{1}']
   };
   const t = k => T[k][L()] || T[k][1];
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
   const diffName = d => (window.SumdokuDiffNames && SumdokuDiffNames[d] && SumdokuDiffNames[d][L()]) || d;
+  const MODES_NAMES = {
+    race: ['⚡ 스피드 레이스', '⚡ Speed race', '⚡ スピードレース', '⚡ 竞速赛', '⚡ 競速賽', '⚡ Carrera', '⚡ Course', '⚡ Wettrennen'],
+    score: ['⏱️ 타임어택', '⏱️ Time attack', '⏱️ タイムアタック', '⏱️ 计时赛', '⏱️ 計時賽', '⏱️ Contrarreloj', '⏱️ Contre-la-montre', '⏱️ Zeitangriff'],
+    survival: ['🛡️ 서바이벌', '🛡️ Survival', '🛡️ サバイバル', '🛡️ 生存赛', '🛡️ 生存賽', '🛡️ Supervivencia', '🛡️ Survie', '🛡️ Überleben'],
+    turn: ['♟️ 턴제', '♟️ Turn-based', '♟️ ターン制', '♟️ 回合制', '♟️ 回合制', '♟️ Por turnos', '♟️ Tour par tour', '♟️ Rundenbasiert']
+  };
+  const modeName = m => (MODES_NAMES[m] && (MODES_NAMES[m][L()] || MODES_NAMES[m][1])) || m;
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const tierKo = tier => tr(tier.ko);
@@ -246,7 +255,23 @@
   R.playPromotion = playPromotion;
 
   /* ---------- 결과 창 랭크 패널 ---------- */
-  function ensurePanel() {
+  function ensurePanel(isBattle) {
+    if (isBattle) {
+      const card = document.querySelector('#modal-battle-result .modal-battle-card');
+      if (!card) return null;
+      let panel = document.getElementById('rr-battle-panel');
+      if (!panel) {
+        panel = document.createElement('section');
+        panel.id = 'rr-battle-panel'; panel.className = 'rr-panel rr-battle-panel';
+        panel.innerHTML = '<div class="rr-emblem"></div><div class="rr-info"><div class="rr-label"></div>' +
+          '<div class="rr-tier"><span class="rr-name"></span><span class="rr-div"></span></div>' +
+          '<div class="rr-bar"><i></i></div><div class="rr-rp"><b class="rr-val"></b><span class="rr-unit">RP</span><span class="rr-delta"></span></div>' +
+          '<div class="rr-note"></div><div class="rr-season"></div></div>';
+        const banner = card.querySelector('#battle-result-banner');
+        if (banner) banner.after(panel); else card.prepend(panel);
+      }
+      return { card, panel };
+    }
     const card = document.querySelector('#modal-game-result .modal-game-result-card');
     if (!card) return null;
     let panel = document.getElementById('rr-panel');
@@ -273,17 +298,17 @@
     const pct = tier.divMax ? Math.max(0, Math.min(100, (rating - tier.divMin) / (tier.divMax - tier.divMin) * 100)) : 100;
     panel.querySelector('.rr-bar i').style.width = pct.toFixed(1) + '%';
   }
-  const emblemSize = () => (matchMedia('(min-width: 760px)').matches ? 196 : 126);
-  function setEmblem(panel, tier) {
+  const emblemSize = isBattle => (isBattle ? (matchMedia('(min-width: 760px)').matches ? 140 : 108) : (matchMedia('(min-width: 760px)').matches ? 196 : 126));
+  function setEmblem(panel, tier, isBattle) {
     const box = panel.querySelector('.rr-emblem');
-    box.innerHTML = R.tierSymbol(tier.id, emblemSize(), tier.division);
+    box.innerHTML = R.tierSymbol(tier.id, emblemSize(isBattle), tier.division);
     box.dataset.key = tier.id + tier.division;
     return box.querySelector('svg');
   }
   // 단계(V→IV→III→II→I) 승급: PUBG 스타일 메탈 스탬프 락인 + 상단 별 점등 + 미니 쇼크웨이브
-  function flipDivision(panel, tier, up) {
+  function flipDivision(panel, tier, up, isBattle) {
     const box = panel.querySelector('.rr-emblem');
-    const svg = setEmblem(panel, tier);
+    const svg = setEmblem(panel, tier, isBattle);
     const plate = svg.querySelector('.te-plate') || svg.querySelector('text');
     const stars = svg.querySelector('.te-div-stars');
     if (!reduced()) {
@@ -319,17 +344,21 @@
     if (up) R.promoSound?.(false, tier.index);
   }
 
-  async function runPanel(app, ch) {
-    const nodes = ensurePanel(); if (!nodes) return;
+  async function runPanel(app, ch, isBattle) {
+    isBattle = !!(isBattle || ch?.ladder === 'battle' || ch?.isBattle || app?.isBattle);
+    const nodes = ensurePanel(isBattle); if (!nodes) return;
     const { card, panel } = nodes;
     card.classList.add('has-rank');
     panel.classList.remove('hidden');
-    const label = `${t('label')} · ${ch.mode === 'timeattack' ? t('ta') + ' ' : ''}${diffName(ch.difficulty)}`;
+    const label = isBattle
+      ? `${t('battleRank')} · ${modeName(ch.battleMode || ch.mode)} · ${diffName(ch.difficulty)}`
+      : `${t('label')} · ${ch.mode === 'timeattack' ? t('ta') + ' ' : ''}${diffName(ch.difficulty)}`;
     panel.querySelector('.rr-label').textContent = label;
     const d = panel.querySelector('.rr-delta');
     d.className = 'rr-delta' + (ch.delta > 0 ? ' up' : ch.delta < 0 ? ' down' : '');
     d.textContent = ch.delta ? `${ch.delta > 0 ? '+' : '−'}${Math.abs(ch.delta)} RP` : t('keep');
-    panel.querySelector('.rr-note').textContent = ch.bonus ? t('streak').replace('{0}', ch.streak).replace('{1}', ch.bonus) : '';
+    const streakFmt = isBattle ? t('battleStreak') : t('streak');
+    panel.querySelector('.rr-note').textContent = ch.bonus ? streakFmt.replace('{0}', ch.streak).replace('{1}', ch.bonus) : '';
     // ---- 시즌 정보(배치·승급전·보호·가속) ----
     const se = ch.season || {};
     let chips = panel.querySelector('.rr-season');
@@ -347,7 +376,7 @@
     const paintUnranked = done => {
       const u = unrankedOf(done);
       panel.style.setProperty('--tier', u.color);
-      setEmblem(panel, u);
+      setEmblem(panel, u, isBattle);
       panel.querySelector('.rr-name').textContent = u.name;
       panel.querySelector('.rr-div').textContent = '';
       panel.querySelector('.rr-val').textContent = '?';
@@ -370,14 +399,14 @@
       d.className = 'rr-delta'; d.textContent = '';
       const end = R.tierOf(ch.after);
       if (!reduced()) { await wait(700); if (token !== app._rrToken) return; await playPromotion(u, end); }
-      setEmblem(panel, end); paint(panel, ch.after, end);
+      setEmblem(panel, end, isBattle); paint(panel, ch.after, end);
       return;
     }
     let cur = R.tierOf(ch.before);
-    setEmblem(panel, cur);
+    setEmblem(panel, cur, isBattle);
     paint(panel, ch.before, cur);
     if (!ch.delta) return;
-    if (reduced()) { const end = R.tierOf(ch.after); setEmblem(panel, end); paint(panel, ch.after, end); return; }
+    if (reduced()) { const end = R.tierOf(ch.after); setEmblem(panel, end, isBattle); paint(panel, ch.after, end); return; }
     await wait(650);
     // RP를 한 칸씩 세며 단계·티어 변화를 반영합니다.
     const dur = Math.min(1600, 500 + Math.abs(ch.delta) * 14);
@@ -405,13 +434,13 @@
         // 티어 승급: 패널은 잠시 멈추고 가운데에서 재조립 연출
         paint(panel, Math.ceil(v), cur);
         await playPromotion(cur, vt);
-        setEmblem(panel, vt);
+        setEmblem(panel, vt, isBattle);
         panel.querySelector('.rr-emblem').animate([{ transform: 'scale(.7)', opacity: .3 }, { transform: 'scale(1)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,1.4,.4,1)' });
       } else if (vt.index < cur.index) {
-        setEmblem(panel, vt);
+        setEmblem(panel, vt, isBattle);
         panel.querySelector('.rr-emblem').animate([{ transform: 'translateY(-6px)', filter: 'grayscale(1)' }, { transform: 'none', filter: 'grayscale(0)' }], { duration: 500 });
       } else if (vt.division !== cur.division) {
-        flipDivision(panel, vt, vt.divMin > cur.divMin);
+        flipDivision(panel, vt, vt.divMin > cur.divMin, isBattle);
       }
       cur = vt;
       paint(panel, v, cur);
@@ -421,13 +450,35 @@
     }
   }
 
+  R.runBattleResult = function (app, ch) {
+    if (app && ch) runPanel(app, ch, true);
+  };
+
+  const origHandleBattleEnd = P.handleBattleEnd;
+  P.handleBattleEnd = function (...args) {
+    const r = origHandleBattleEnd.apply(this, args);
+    try {
+      const ch = this.lastBattleRatingChange;
+      const card = document.querySelector('#modal-battle-result .modal-battle-card');
+      if (ch && !ch._shown) {
+        ch._shown = true;
+        runPanel(this, ch, true);
+      } else if (!ch) {
+        this._rrToken = (this._rrToken || 0) + 1;
+        document.getElementById('rr-battle-panel')?.classList.add('hidden');
+        card?.classList.remove('has-rank');
+      }
+    } catch (e) { console.warn('rank-result battle', e); }
+    return r;
+  };
+
   const show = P.showGameResultModal;
   P.showGameResultModal = function (data, ...rest) {
     const r = show.call(this, data, ...rest);
     try {
       const ch = this.lastRatingChange;
       const card = document.querySelector('#modal-game-result .modal-game-result-card');
-      if (ch && !ch._shown && !this.isBattle) { ch._shown = true; runPanel(this, ch); }
+      if (ch && !ch._shown && !this.isBattle) { ch._shown = true; runPanel(this, ch, false); }
       else { this._rrToken = (this._rrToken || 0) + 1; document.getElementById('rr-panel')?.classList.add('hidden'); card?.classList.remove('has-rank'); }
     } catch (e) { console.warn('rank-result', e); }
     return r;

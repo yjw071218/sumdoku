@@ -570,14 +570,18 @@
     if (!all.ta || typeof all.ta !== 'object') all.ta = { lastDiff: null, byDiff: {} };
     if (!all.ta.byDiff) all.ta.byDiff = {};
     DIFFS.forEach(d => { all.ta.byDiff[d] = fix(all.ta.byDiff[d]); });
+    // v2.1.0: 온라인 배틀 랜덤 매칭 전용 래더 (난이도별 배틀 RP/티어)
+    if (!all.battle || typeof all.battle !== 'object') all.battle = { lastDiff: null, byDiff: {} };
+    if (!all.battle.byDiff) all.battle.byDiff = {};
+    DIFFS.forEach(d => { all.battle.byDiff[d] = fix(all.battle.byDiff[d]); });
     if (ensureSeason(all)) saveAll(all);
     return all;
   };
-  const MODES = ['standard', 'timeattack'];
-  // 모드별 사다리: 일반은 최상위 byDiff/lastDiff, 타임어택은 all.ta
-  const ladder = (all, mode) => mode === 'timeattack' ? all.ta : all;
+  const MODES = ['battle', 'standard', 'timeattack'];
+  // 모드별 사다리: 배틀은 all.battle, 타임어택은 all.ta, 일반은 all
+  const ladder = (all, mode) => mode === 'battle' ? all.battle : (mode === 'timeattack' ? all.ta : all);
   const saveAll = all => { try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (_) {} };
-  const load = d => loadAll().byDiff[DIFFS.includes(d) ? d : 'easy'];
+  const load = d => loadAll().battle.byDiff[DIFFS.includes(d) ? d : 'expert'];
 
   const DIV_RP = 100;
 
@@ -684,12 +688,14 @@
   }
 
   const MODE_NAMES = {
+    battle: ['배틀', 'Battle', 'バトル', '对战', '對戰', 'Batalla', 'Duel', 'Kampf'],
     standard: ['일반', 'Standard', '通常', '普通', '一般', 'Normal', 'Normal', 'Normal'],
     timeattack: ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff']
   };
   const modeName = m => {
     const langs = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
-    return MODE_NAMES[m][Math.max(0, langs.indexOf((window.I18N && I18N.currentLang) || 'ko'))];
+    const names = MODE_NAMES[m] || MODE_NAMES.battle;
+    return names[Math.max(0, langs.indexOf((window.I18N && I18N.currentLang) || 'ko'))];
   };
   const diffName = d => {
     const N = window.SumdokuDiffNames, langs = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
@@ -705,6 +711,117 @@
     if (msg) window.app?.showToast(tr(msg), 3500);
   };
 
+  /* ---------- v2.1.0 온라인 배틀 전용 ELO 랭크 계산 ---------- */
+  function computeBattleDelta(s, oppRating, isWin, isForfeit, diff, battleMode) {
+    const myR = (s && s.rating) || 1000;
+    const oppR = typeof oppRating === 'number' && oppRating > 0 ? oppRating : 1000;
+    const expected = 1 / (1 + Math.pow(10, (oppR - myR) / 400));
+    const k = 32 * (RP_MULT[diff] || 1);
+    let base = 0, bonus = 0, forfeitPenalty = 0;
+    if (isWin) {
+      base = Math.max(10, Math.min(64, Math.round(k * (1 - expected))));
+      const nextStreak = (s && typeof s.streak === 'number' ? s.streak : 0) + 1;
+      const rate = streakBonus(nextStreak);
+      bonus = rate > 0 ? Math.max(1, Math.round(base * rate)) : 0;
+    } else if (isForfeit) {
+      base = -Math.max(12, Math.min(56, Math.round(k * expected * 0.75)));
+      forfeitPenalty = Math.max(10, Math.round(k * 0.35));
+    } else {
+      base = -Math.max(8, Math.min(56, Math.round(k * expected * 0.75)));
+    }
+    const delta = isWin ? (base + bonus) : (base - forfeitPenalty);
+    return {
+      delta,
+      base,
+      streakBonus: bonus,
+      forfeitPenalty,
+      expected,
+      valueOf() { return delta; },
+      toString() { return String(delta); }
+    };
+  }
+
+  function recordBattleEnd(app, isWin, reason, oppRating) {
+    try {
+      if (!app) return null;
+      const diff = DIFFS.includes(app.battleDiff) ? app.battleDiff : 'expert';
+      const battleMode = app.battleMode || 'race';
+      const win = !!isWin;
+      const isForfeit = reason === 'forfeit' || reason === 'opponent_left' || reason === 'disconnect';
+      const all = loadAll();
+      const lad = ladder(all, 'battle');
+      const s = lad.byDiff[diff];
+      applyDecay(s);
+
+      const before = s.rating, beforeTier = tierOf(before);
+      const calc = computeBattleDelta(s, oppRating, win, isForfeit && !win, diff, battleMode);
+      s.streak = win ? (s.streak || 0) + 1 : 0;
+      s.bestStreak = Math.max(s.bestStreak || 0, s.streak);
+
+      let delta = calc.delta;
+      const bonus = calc.streakBonus || 0;
+      const bonusRate = delta > 0 ? streakBonus(s.streak) : 0;
+
+      const rawDelta = delta, placing = s.placement > 0, hadSeries = !!s.series;
+      let seriesResult = null, protectedHit = false, revealed = false, boosted = false;
+
+      if (placing) {
+        if (delta > 0) delta = Math.round(delta * 1.5);
+        s.placement--;
+        if (!s.placement) { revealed = true; s.boost = BOOST_GAMES; }
+      } else {
+        if (s.boost > 0) { if (delta > 0) { delta = Math.round(delta * 1.25); boosted = true; } s.boost--; }
+        const bt = tierOf(s.rating);
+        if (s.series) {
+          if (win) s.series.w++; else s.series.l++;
+          if (s.series.w >= 2) { delta = s.series.target - s.rating; s.series = null; seriesResult = 'won'; s.protect = 3; }
+          else if (s.series.l >= 2) { delta = Math.min(0, delta); s.series = null; seriesResult = 'lost'; }
+          else { delta = 0; seriesResult = 'progress'; }
+        } else if (delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index) {
+          delta = bt.next.min - 1 - s.rating;
+          s.series = { w: 0, l: 0, target: bt.next.min, tier: bt.next.id };
+          seriesResult = 'start';
+        }
+        if (delta < 0 && s.protect > 0 && seriesResult !== 'won') {
+          const floor = TIERS[Math.max(0, bt.index)].min;
+          if (s.rating + delta < floor) { delta = floor - s.rating; protectedHit = true; }
+        }
+        if (s.protect > 0 && seriesResult !== 'won') s.protect--;
+      }
+
+      s.seasonGames = (s.seasonGames || 0) + 1;
+      const season = { placing, revealed, placementDone: PLACEMENT - (s.placement || 0), series: s.series ? { ...s.series } : null,
+        seriesResult, protectedHit, protect: s.protect || 0, boosted, boost: s.boost || 0, hadSeries };
+
+      s.rating = Math.max(0, s.rating + delta);
+      s.peak = Math.max(s.peak, s.rating);
+      s.games++; s.lastActive = Date.now(); s.lastDecay = 0;
+      if (!s.placement) s.seasonBest = Math.max(s.seasonBest || 0, s.rating);
+      s.history.unshift({ t: Date.now(), d: delta, bonus, streak: s.streak, diff, mode: 'battle', battleMode, win });
+      s.history = s.history.slice(0, 30);
+      lad.lastDiff = diff;
+      all.lastMode = 'battle';
+      saveAll(all);
+
+      app._rankDiff = diff;
+      app._rankMode = 'battle';
+      const after = tierOf(s.rating);
+      const sign = delta > 0 ? '+' : '';
+      let msg = `${diffName(diff)} · ${sign}${delta} RP · ${after.name} (${s.rating})`;
+      if (bonus) msg += ` · ${streakText(s.streak)} +${bonus} (+${Math.round(bonusRate * 100)}%)`;
+      if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
+      else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
+
+      const change = { mode: 'battle', battleMode, streak: s.streak, bonus, difficulty: diff, before, after: s.rating, delta, tier: after, beforeTier, season, oppRating, msg };
+      app.lastBattleRatingChange = change;
+      app.renderRatingCard?.();
+      return change;
+    } catch (e) {
+      console.warn('recordBattleEnd error', e);
+      return null;
+    }
+  }
+
   /* ---------- 게임 종료 연결 ---------- */
   const RATED_MODES = ['standard', 'daily', undefined, null, ''];
   const record = p.recordGameEnd;
@@ -712,6 +829,11 @@
     this.lastRatingChange = null;
     const out = record.call(this, isWin, ...rest);
     try {
+      // v2.1.0: 싱글플레이는 순수 두뇌 퍼즐(힐링 모드)로 운영하여 RP 변동을 없앱니다.
+      if (!this.isBattle) {
+        this.lastRatingChange = null;
+        return out;
+      }
       const mode = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
       if (this.isBattle || this.gameMode === 'battle' || (mode === 'standard' && !RATED_MODES.includes(this.gameMode) && !this.isDaily)) return out;
       if (this.resultReason === 'forfeit' || !this._ratingToken || this._ratedGameId === this._ratingToken) return out;
@@ -966,23 +1088,9 @@
     try { localStorage.setItem(QKEY, q === 'normal' ? 'normal' : 'ranked'); } catch (_) {}
   }
 
-  /* ---------- 진행 중인 랭크전 포기(새 게임 시작) 경고 & RP 차감 (일일 도전 제외) ---------- */
+  /* ---------- v2.1.0: 싱글플레이는 순수 힐링 모드로 운영하므로 탈주 감점 모달/차감을 완전히 비활성화합니다 ---------- */
   function getAbandonableOngoingGame(app) {
-    try {
-      if (app && app.currentView === 'game' && !app.isDaily && !app.isBattle && app.gameMode !== 'battle' && !app.isWin && !app.resultReason && Array.isArray(app.board) && app.board.length === 9) {
-        app.saveOngoingGame?.();
-      }
-      const raw = localStorage.getItem('sumdoku_ongoing_game');
-      if (!raw) return null;
-      const st = JSON.parse(raw);
-      if (!st || !Array.isArray(st.board) || st.isDaily || st.isBattle || st.gameMode === 'battle' || st.isWin || st.resultReason) return null;
-      if (window.SumdokuGameStateGuard?.invalidSaved?.(st)) return null;
-      if (st.isRanked === false) return null;
-      if (!DIFFS.includes(st.difficulty)) return null;
-      return st;
-    } catch (_) {
-      return null;
-    }
+    return null;
   }
 
   function previewAbandonPenalty(st) {
@@ -1171,156 +1279,38 @@
     });
   }
 
-  // 난이도 모달에 [🏆 랭크전 | 🎮 일반전] 선택 UI 주입 및 각 난이도 카드에 미니 티어 표시
+  // v2.1.0: 싱글플레이는 순수 힐링 모드로 운영되므로 난이도 모달의 큐 선택기 및 미니 티어 배지를 제거합니다.
   function ensureQueueSelector(app) {
-    const modal = document.getElementById('modal-difficulty');
-    if (!modal) return;
-    const card = modal.querySelector('.modal-card');
-    if (!card) return;
-    let wrap = document.getElementById('rank-queue-box');
-    const q = app?.isRanked === false ? 'normal' : getSavedQueue();
-    if (app && app.isRanked === undefined) app.isRanked = (q === 'ranked');
-
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'rank-queue-box';
-      wrap.className = 'rank-queue-box';
-      wrap.innerHTML =
-        `<div class="rq-label" id="rq-label"></div>` +
-        `<div class="rq-tabs" role="tablist">` +
-        `  <button type="button" class="rq-btn" data-queue="ranked" role="tab"></button>` +
-        `  <button type="button" class="rq-btn" data-queue="normal" role="tab"></button>` +
-        `</div>` +
-        `<div class="rq-desc" id="rq-desc"></div>`;
-      const modeBox = modal.querySelector('.play-mode-options')?.parentElement;
-      if (modeBox) modeBox.before(wrap);
-      else card.insertBefore(wrap, modal.querySelector('.difficulty-options'));
-
-      wrap.querySelectorAll('.rq-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          try { window.app?.sound?.play('click'); } catch (_) {}
-          const sel = btn.dataset.queue === 'normal' ? 'normal' : 'ranked';
-          setSavedQueue(sel);
-          if (window.app) window.app.isRanked = (sel === 'ranked');
-          syncQueueSelector(window.app);
-        });
-      });
-      // 플레이 모드(일반/타임어택) 버튼 클릭 시에도 카드의 미니 엠블럼을 즉시 갱신
-      modal.querySelectorAll('.mode-select-btn').forEach(b => {
-        b.addEventListener('click', () => setTimeout(() => syncQueueSelector(window.app), 0));
-      });
-    }
-    syncQueueSelector(app);
+    try {
+      document.getElementById('rank-queue-box')?.remove();
+      document.querySelectorAll('#modal-difficulty .diff-tier-mini').forEach(el => el.remove());
+      if (app) app.isRanked = false;
+    } catch (_) {}
   }
 
   function syncQueueSelector(app) {
-    const wrap = document.getElementById('rank-queue-box');
-    if (!wrap) return;
-    const isRanked = app ? app.isRanked !== false : getSavedQueue() === 'ranked';
-    const lbl = wrap.querySelector('#rq-label');
-    const desc = wrap.querySelector('#rq-desc');
-    if (lbl) lbl.textContent = qt('label');
-    if (desc) desc.textContent = qt(isRanked ? 'rankedDesc' : 'normalDesc');
-    wrap.querySelectorAll('.rq-btn').forEach(btn => {
-      const on = (btn.dataset.queue === 'ranked') === isRanked;
-      btn.classList.toggle('active', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-      btn.textContent = qt(btn.dataset.queue === 'normal' ? 'normal' : 'ranked');
-    });
-    // 난이도 선택 카드 옆에도 해당 난이도의 현재 티어 미니 배지를 표시 (랭크전일 때 강조)
-    const all = loadAll();
-    const activeModeBtn = document.querySelector('#modal-difficulty .mode-select-btn.active');
-    const mode = (activeModeBtn?.dataset?.mode || app?.gameMode) === 'timeattack' ? 'timeattack' : 'standard';
-    const lad = ladder(all, mode);
-    document.querySelectorAll('#modal-difficulty .diff-card-btn').forEach(cardBtn => {
-      const d = cardBtn.dataset.diff;
-      if (!DIFFS.includes(d)) return;
-      const header = cardBtn.querySelector('.diff-card-header');
-      if (!header) return;
-      let chip = header.querySelector('.diff-tier-mini');
-      if (!chip) {
-        chip = document.createElement('span');
-        chip.className = 'diff-tier-mini';
-        header.append(chip);
-      }
-      if (!isRanked) {
-        chip.classList.add('hidden');
-        return;
-      }
-      chip.classList.remove('hidden');
-      const s = lad.byDiff[d];
-      const t = shownTier(s);
-      const unr = t.id === 'unranked';
-      chip.style.setProperty('--tier', (!unr && s.games) ? t.color : '#64748b');
-      chip.innerHTML = `${tierSymbol(t.id, 18, t.division)}<span class="dtm-txt">${unr ? `${qt('placeShort')} ${t.placementDone}/${PLACEMENT}` : `${t.name} · ${s.rating} RP`}</span>`;
-    });
+    try {
+      document.getElementById('rank-queue-box')?.remove();
+      document.querySelectorAll('#modal-difficulty .diff-tier-mini').forEach(el => el.remove());
+      if (app) app.isRanked = false;
+    } catch (_) {}
   }
 
-  // 게임 상단 서브 헤더(.game-sub-bar .diff-item)에 실시간 미니 택티컬 엠블럼 + RP 배지 표시
+  // 게임 상단 서브 헤더: 싱글플레이에서는 랭크 배지를 숨깁니다.
   p.updateHeaderRankBadge = function () {
-    const subBar = document.querySelector('#view-game .game-sub-bar');
-    if (!subBar) return;
-    const diffItem = subBar.querySelector('.diff-item');
-    if (!diffItem) return;
-    let badge = document.getElementById('game-rank-hud-badge');
-    if (!badge) {
-      badge = document.createElement('button');
-      badge.type = 'button';
-      badge.id = 'game-rank-hud-badge';
-      badge.className = 'game-rank-hud-badge';
-      badge.addEventListener('click', () => {
-        const m = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
-        const all = loadAll(), s = ladder(all, m).byDiff[this.difficulty] || fresh();
-        const t = shownTier(s), unr = t.id === 'unranked';
-        if (this.isRanked === false && !this.isDaily) {
-          this.showToast?.(`🎮 ${qt('casualBadge')} · ${diffName(this.difficulty)}`, 2400);
-        } else {
-          const nxt = !unr && t.divMax ? ` · ${tr('다음 단계까지')} ${Math.ceil(t.divMax - s.rating)} RP` : '';
-          this.showToast?.(`🏆 ${diffName(this.difficulty)} · ${t.name} (${unr ? `${tr('배치 경기')} ${t.placementDone}/${PLACEMENT}` : `${s.rating} RP`})${nxt}`, 2800);
-        }
-      });
-      diffItem.after(badge);
-    }
-    if (this.isBattle || this.gameMode === 'battle' || !DIFFS.includes(this.difficulty)) {
-      badge.classList.add('hidden');
-      return;
-    }
-    badge.classList.remove('hidden');
-    const isRankedMatch = this.isDaily || this.isRanked !== false;
-    const mode = this.gameMode === 'timeattack' && !this.isDaily ? 'timeattack' : 'standard';
-    const all = loadAll(), s = ladder(all, mode).byDiff[this.difficulty] || fresh();
-    const t = shownTier(s), unr = t.id === 'unranked';
-
-    if (!isRankedMatch) {
-      badge.className = 'game-rank-hud-badge is-casual';
-      badge.style.setProperty('--tier', '#64748b');
-      badge.innerHTML = `<span class="grb-casual-dot">🎮</span><span class="grb-txt">${qt('casualBadge')}</span>`;
-      return;
-    }
-
-    badge.className = `game-rank-hud-badge is-ranked tier-${t.id}` + (t.index >= 4 ? ' high-tier' : '');
-    badge.style.setProperty('--tier', t.color);
-    const rpTxt = unr ? `${qt('placeShort')} ${t.placementDone}/${PLACEMENT}` : `${s.rating} RP`;
-    const streakFire = (s.streak || 0) >= 2 ? `<span class="grb-streak">🔥${s.streak}</span>` : '';
-    badge.innerHTML =
-      `<span class="grb-emblem">${tierSymbol(t.id, 24, t.division)}</span>` +
-      `<span class="grb-info"><b class="grb-tier">${t.name}</b><span class="grb-rp">${rpTxt}</span></span>` +
-      streakFire;
+    const badge = document.getElementById('game-rank-hud-badge');
+    if (badge) badge.classList.add('hidden');
   };
 
-  // recordGameEnd 에서 일반전(isRanked === false, 일일 도전 제외)이면 RP 변화를 건너뜁니다.
+  // recordGameEnd 에서 싱글플레이는 랭크 변화를 건너뜁니다.
   const rankedRecord = p.recordGameEnd;
   p.recordGameEnd = function (isWin, ...rest) {
-    if (this.isRanked === false && !this.isDaily) {
-      this.lastRatingChange = null;
-      const prevToken = this._ratingToken;
-      this._ratingToken = null;
-      try { return rankedRecord.call(this, isWin, ...rest); }
-      finally { this._ratingToken = prevToken; }
-    }
-    const r = rankedRecord.call(this, isWin, ...rest);
-    try { this.updateHeaderRankBadge?.(); } catch (_) {}
-    return r;
+    this.isRanked = false;
+    this.lastRatingChange = null;
+    const prevToken = this._ratingToken;
+    this._ratingToken = null;
+    try { return rankedRecord.call(this, isWin, ...rest); }
+    finally { this._ratingToken = prevToken; }
   };
 
   // openDifficultyModal, startNewGame, saveOngoingGame, restoreOngoingGame, updateModeDisplay, handleBackKey 훅 연결
@@ -1475,6 +1465,7 @@
     shownTier, seasonOf, seasonEnd, bestTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
     load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT,
     TIERS, KEY, DIFFS, MODES,
-    getAbandonableOngoingGame, previewAbandonPenalty, applyAbandonPenalty, showAbandonWarningModal
+    getAbandonableOngoingGame, previewAbandonPenalty, applyAbandonPenalty, showAbandonWarningModal,
+    computeBattleDelta, recordBattleEnd
   };
 })();

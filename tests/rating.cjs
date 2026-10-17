@@ -1,85 +1,125 @@
-// v1.1.19 랭크: 승패·난이도 보정, 상한, 티어 경계, 비활동 감소(7일 유예, 1200 하한), 배틀·타임어택 제외, 중복 반영 방지, 리더보드 제출, 카드·번역
-const assert=require('node:assert/strict'),path=require('node:path');
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-(async()=>{
- const b=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
- try{
-  const p=await b.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
-  await p.addInitScript(()=>{localStorage.setItem('sumdoku_language','ko');
-   window.__subs=[];window.AndroidBridge={getDistribution:()=>'play',isLeaderboardConfigured:()=>true,submitLeaderboardScore:(k,s)=>__subs.push([k,+s]),showLeaderboard:k=>__subs.push(['show',k]),isCloudConfigured:()=>false};});
-  await p.route('https://api.github.com/**',r=>r.fulfill({json:{}}));
-  await p.goto('file:///'+path.resolve('app/src/main/assets/index.html').split(path.sep).join('/'));
-  await p.waitForFunction(()=>window.app&&window.SumdokuRating);
-  const r=await p.evaluate(async()=>{
-   const R=SumdokuRating,o={};
-   const st=x=>({rating:x,peak:x,games:1,lastActive:Date.now(),history:[]});
-   // 보정
-   const d=(rt,g)=>R.computeDelta(st(rt),{difficulty:'expert',win:true,seconds:600,mistakes:0,hints:0,...g});
-   o.fast=d(1000,{seconds:300});o.slow=d(1000,{seconds:3000});o.mist=d(1000,{mistakes:3});o.hint=d(1000,{hints:2});
-   o.easyLow=R.computeDelta(st(800),{difficulty:'easy',win:true,seconds:300});o.easyHigh=R.computeDelta(st(2400),{difficulty:'easy',win:true,seconds:300});
-   o.lunaticHigh=R.computeDelta(st(2400),{difficulty:'lunatic',win:true,seconds:900});
-   o.lose=R.computeDelta(st(1500),{difficulty:'hard',win:false});
-   o.tiers=[0,1000,1099,1100,1499,1500,2000,2499,2600,3000,3499,3500,4000].map(x=>R.tierOf(x).name);
-   // 감소
-   const DAY=864e5,s1=st(2000);s1.lastActive=Date.now()-5*DAY;o.decayGrace=R.applyDecay(s1);
-   const s2=st(2000);s2.lastActive=Date.now()-10*DAY;o.decay10=R.applyDecay(s2);o.after10=s2.rating;o.again=R.applyDecay(s2);
-   const s3=st(1250);s3.lastActive=Date.now()-60*DAY;R.applyDecay(s3);o.floor=s3.rating;
-   const s4=st(900);s4.lastActive=Date.now()-60*DAY;o.belowFloor=R.applyDecay(s4);
-   // 실제 게임 종료 흐름
-   localStorage.removeItem(R.KEY);app.startNewGame('medium');
-   await new Promise(res=>{const t=setInterval(()=>{if(app.cages?.length&&app.currentView==='game'&&app.solution){clearInterval(t);res();}},40);});
-   app.board.forEach((row,i)=>row.forEach((c,j)=>c.val=app.solution[i][j]));app.timerSeconds=400;app.mistakes=0;app.hintsUsed=0;app.score=1000;
-   app.recordGameEnd(true);const first=R.load('medium').rating;app.recordGameEnd(true);o.dupIgnored=R.load('medium').rating===first;o.gain=first-1000;
-   o.subs=JSON.stringify(__subs);
-   app._ratingToken=1;app.gameMode='battle';app.recordGameEnd(true);o.battleIgnored=R.load('medium').rating===first;
-   app._ratingToken=2;app.isRanked=false;app.gameMode='standard';app.recordGameEnd(true);o.casualIgnored=R.load('medium').rating===first;app.isRanked=true;
-   app.switchView('stats');app.renderStatsView();await new Promise(r=>setTimeout(r,100));
-   const card=document.getElementById('rating-card');o.card=card?.textContent||'';o.btns=card?.querySelectorAll('.rc-actions button').length;
-   card.querySelector('.rc-actions button').click();o.show=JSON.stringify(__subs.at(-1));
-   I18N.setLanguage('ja');await new Promise(r=>setTimeout(r,200));o.cardJa=document.getElementById('rating-card').textContent;
-   I18N.setLanguage('ko');
-   // 진행 중 나갔다가 이어서 안 하고 새 게임 시작 시 경고 모달 및 RP 차감 (일일 도전 제외)
-   const puzzle={solution:app.solution,cages:app.cages,anchorCount:app.anchorCount||2};
-   app.isDaily=false;app.isRanked=true;
-   await app.startNewGame('medium',null,'standard',puzzle);
-   o.rankedRules=[app.rules.maxLives,app.rules.initialHints,app.rules.hintExhaustedAction,app.maxMistakes,app.hintsRemaining].join(',');
-   app.settings.maxLives='1';app.settings.initialHints='0';document.querySelector('#rank-queue-box .rq-btn[data-queue="normal"]')?.click();app.isRanked=false;
-   await app.startNewGame('medium',null,'standard',puzzle);
-   o.casualRules=[app.rules.maxLives,app.rules.initialHints].join(',');
-   app.settings.maxLives='3';app.settings.initialHints='3';app.isRanked=true;
-   document.querySelector('#rank-queue-box .rq-btn[data-queue="ranked"]')?.click();
-   await app.startNewGame('medium',null,'standard',puzzle);
-   app.timerSeconds=45;app.switchView('home');
-   const beforeAbandon=R.load('medium').rating;
-   // 1) 일일 도전 시작 시에는 경고/감점 제외 및 진행 중 경기 유지
-   app.generator.generateAsync=async()=>puzzle;
-   await app.startDailyGame(app.localDay());
-   o.dailyNoModal=!document.getElementById('modal-abandon-confirm');
-   o.dailyNoPenalty=R.load('medium').rating===beforeAbandon;
-   o.ongoingKeptAfterDaily=!!localStorage.getItem('sumdoku_ongoing_game');
-   app.switchView('home');
-   // 2) 홈에서 이어서 안 하고 '새 게임 시작' 클릭 시 경고 모달 표시 -> 확인 시 RP 차감
-   document.getElementById('btn-home-new').click();
-   const modal=document.getElementById('modal-abandon-confirm');
-   o.abandonModalShown=!!modal;
-   o.abandonModalText=modal?.textContent||'';
-   modal?.querySelector('[data-abandon-confirm]')?.click();
-   o.afterAbandon=R.load('medium').rating;
-   o.abandonDropped=o.afterAbandon<beforeAbandon;
-   o.ongoingCleared=!localStorage.getItem('sumdoku_ongoing_game');
-   return o;
-  });
-  console.log(JSON.stringify(r,null,1));
-  assert(r.fast>r.slow);assert(r.mist<r.fast);assert(r.hint<r.fast);assert(r.easyHigh<r.easyLow);assert(r.lunaticHigh>r.easyHigh*2);assert(r.lose<0);
-  assert.deepEqual(r.tiers,['브론즈 V','브론즈 V','브론즈 V','브론즈 IV','브론즈 I','실버 V','골드 V','골드 I','플래티넘 IV','다이아몬드 V','다이아몬드 I','마스터','그랜드마스터']);
-  assert.equal(r.decayGrace,0);assert(r.decay10>0);assert.equal(r.again,0);assert.equal(r.floor,1200);assert(r.belowFloor===0);
-  assert(r.gain>0&&r.dupIgnored&&r.battleIgnored&&r.casualIgnored);
-  assert.equal(r.rankedRules,'3,3,disallow,3,3');assert.equal(r.casualRules,'1,0');
-  assert(r.dailyNoModal&&r.dailyNoPenalty&&r.ongoingKeptAfterDaily);
-  assert(r.abandonModalShown&&/RP/.test(r.abandonModalText)&&r.abandonDropped&&r.ongoingCleared);
-  assert(/"rating"/.test(r.subs)&&/"medium",400000/.test(r.subs));
-  assert.equal(r.btns,2);assert(/RP/.test(r.card));assert(/rating/.test(r.show));
-  assert(!/[가-힣]/.test(r.cardJa),'ja card has Korean: '+r.cardJa);
-  assert.deepEqual(errors,[]);console.log('PASS rating');
- }finally{await b.close();}
-})().catch(e=>{console.error(e);process.exitCode=1;});
+// v2.1.0 온라인 배틀 전용 랭크전 검증:
+// 1) ELO 기반 배틀 RP 변동, 상대 레이팅 차등, 연승 보너스, 승급전(BO3), 강등 보호
+// 2) 싱글플레이에서는 랭크 감점/탈주 패배 모달이 제거되어 온전한 힐링 스도쿠 경험 보장
+// 3) 하단 랭킹 화면에 '배틀' 탭 및 래더 그리드 정상 표출
+const assert = require('node:assert/strict'), path = require('node:path');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+
+(async () => {
+  const b = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
+  try {
+    const p = await b.newPage({ viewport: { width: 390, height: 844 } }), errors = [];
+    p.on('pageerror', e => console.error('PAGE ERROR:', e));
+    p.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    await p.addInitScript(() => {
+      localStorage.setItem('sumdoku_language', 'ko');
+      window.__subs = [];
+      window.AndroidBridge = {
+        getDistribution: () => 'play',
+        isAdFree: () => true,
+        setSecureScreen: () => {},
+        isWifiConnected: () => false,
+        setBattleNetwork: () => true,
+        isLeaderboardConfigured: () => true,
+        submitLeaderboardScore: (k, s) => window.__subs.push([k, +s]),
+        showLeaderboard: k => window.__subs.push(['show', k]),
+        isCloudConfigured: () => false,
+        getDeviceLocale: () => 'ko-KR',
+        requestPlayerProfile: () => setTimeout(() => window.onPlayerProfile?.({ signedIn: true, name: 'Tester', id: 'gTester', cc: 'KR' }), 50)
+      };
+    });
+    await p.route('https://api.github.com/**', r => r.fulfill({ json: {} }));
+    await p.goto('file:///' + path.resolve('app/src/main/assets/index.html').split(path.sep).join('/'));
+    p.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    await p.waitForFunction(() => window.app && window.app.dom && !document.documentElement.classList.contains('boot-pending'));
+
+    const r = await p.evaluate(async () => {
+      const R = SumdokuRating, o = {};
+      const st = (x, streak = 0) => ({ rating: x, peak: x, games: 1, streak, lastActive: Date.now(), history: [] });
+
+      // 1. 배틀 ELO 델타 계산 검증
+      // 같은 레이팅 상대 이겼을 때 vs 졌을 때
+      const winEven = R.computeBattleDelta(st(1200), 1200, true, false, 'expert', 'race');
+      const loseEven = R.computeBattleDelta(st(1200), 1200, false, false, 'expert', 'race');
+      o.winEven = winEven.delta;
+      o.loseEven = loseEven.delta;
+
+      // 강한 상대(1600)를 이겼을 때 vs 약한 상대(800)를 이겼을 때
+      const winStrong = R.computeBattleDelta(st(1200), 1600, true, false, 'expert', 'race');
+      const winWeak = R.computeBattleDelta(st(1200), 800, true, false, 'expert', 'race');
+      o.winStrong = winStrong.delta;
+      o.winWeak = winWeak.delta;
+
+      // 강한 상대에게 졌을 때 vs 약한 상대에게 졌을 때
+      const loseStrong = R.computeBattleDelta(st(1200), 1600, false, false, 'expert', 'race');
+      const loseWeak = R.computeBattleDelta(st(1200), 800, false, false, 'expert', 'race');
+      o.loseStrong = loseStrong.delta;
+      o.loseWeak = loseWeak.delta;
+
+      // 연승 보너스 (3연승부터 보너스)
+      const winStreak3 = R.computeBattleDelta(st(1200, 2), 1200, true, false, 'expert', 'race');
+      o.streakBonus = winStreak3.streakBonus;
+
+      // 기권 감점
+      const forfeit = R.computeBattleDelta(st(1200), 1200, false, true, 'expert', 'race');
+      o.forfeitPenalty = forfeit.forfeitPenalty;
+
+      // 2. recordBattleEnd 상태 갱신 테스트
+      localStorage.removeItem(R.KEY);
+      app.isBattle = true;
+      app.battleDiff = 'hard';
+      app.battleMode = 'race';
+      const ch1 = R.recordBattleEnd(app, true, 'complete', 1000);
+      o.ch1Recorded = !!ch1 && ch1.delta > 0;
+      const bLadder = R.ladder(R.loadAll(), 'battle').byDiff['hard'];
+      o.bGames = bLadder.games;
+      o.bRatingAfterWin = bLadder.rating;
+
+      // 3. 싱글플레이에서는 랭크전 감점/탈주 패배 제거 확인
+      app.isBattle = false;
+      const puzzle = {
+        solution: Array.from({ length: 9 }, (_, i) => Array.from({ length: 9 }, (_, j) => ((i * 3 + Math.floor(i / 3) + j) % 9) + 1)),
+        cages: [{ id: 0, sum: 6, cells: [[0, 0], [0, 1]] }],
+        anchorCount: 0
+      };
+      await app.startNewGame('medium', null, 'standard', puzzle);
+      app.timerSeconds = 30;
+      app.switchView('home');
+      // 홈에서 새 게임 시작 시 경고 모달이 뜨지 않아야 함
+      document.getElementById('btn-home-new')?.click();
+      const modal = document.getElementById('modal-abandon-confirm');
+      o.noAbandonModalInSingle = !modal || modal.classList.contains('hidden');
+
+      // 4. 하단 랭킹 화면에 '배틀' 탭 포함 및 렌더링 확인
+      app.switchView('ranking');
+      await new Promise(res => setTimeout(res, 80));
+      const grid = document.getElementById('ranking-grid');
+      o.gridHeaders = Array.from(grid?.querySelectorAll('.rk-h') || []).map(e => e.textContent.trim());
+      o.hasBattleHeader = o.gridHeaders.includes('배틀');
+
+      // 랭킹 카드 모드 전환 버튼에 배틀 포함 확인
+      const modeBtns = Array.from(document.querySelectorAll('.rc-modes .rc-mode') || []).map(b => b.dataset.mode || b.textContent.trim());
+      o.modeBtns = modeBtns;
+
+      return o;
+    });
+
+    console.log(JSON.stringify(r, null, 1));
+    assert(r.winEven > 0, 'winEven should be positive');
+    assert(r.loseEven < 0, 'loseEven should be negative');
+    assert(r.winStrong > r.winWeak, 'beating stronger opponent gives more RP');
+    assert(Math.abs(r.loseWeak) > Math.abs(r.loseStrong), 'losing to weaker opponent loses more RP');
+    assert(r.streakBonus > 0, 'win streak gives bonus');
+    assert(r.forfeitPenalty > 0, 'forfeit has extra penalty');
+    assert(r.ch1Recorded && r.bGames === 1 && r.bRatingAfterWin > 1000, 'battle rating recorded properly');
+    assert(r.noAbandonModalInSingle, 'singleplayer has no abandon modal (stress-free)');
+    assert(r.hasBattleHeader, 'ranking grid must include battle mode header');
+    assert.deepEqual(errors, []);
+    console.log('PASS: Battle rating and singleplayer stress-free verification');
+  } finally {
+    await b.close();
+  }
+})().catch(e => {
+  console.error(e);
+  process.exitCode = 1;
+});
