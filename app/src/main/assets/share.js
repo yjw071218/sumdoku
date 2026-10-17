@@ -22,6 +22,7 @@
     ranked: ['랭크전', 'Ranked', 'ランク戦', '排位赛', '排位賽', 'Clasificatoria', 'Classé', 'Rangliste'],
     normal: ['일반전 · RP 무관', 'Normal · No RP', 'ノーマル · RPなし', '普通赛 · 无RP', '一般賽 · 無RP', 'Normal · Sin RP', 'Normal · Sans RP', 'Normal · Ohne RP'],
     daily: ['일일 도전', 'Daily Challenge', 'デイリー', '每日挑战', '每日挑戰', 'Desafío diario', 'Défi du jour', 'Tagesaufgabe'],
+    battle: ['경쟁전 배틀', 'Ranked Battle', 'ランク戦バトル', '排位对战', '排位對戰', 'Batalla clasificatoria', 'Duel classé', 'Ranglisten-Kampf'],
     timeattack: ['타임어택', 'Time Attack', 'タイムアタック', '计时赛', '計時賽', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'],
     standard: ['클래식', 'Classic', 'クラシック', '经典', '經典', 'Clásico', 'Classique', 'Klassisch'],
     best: ['최고 기록', 'Peak', '最高記録', '最高纪录', '最高紀錄', 'Récord', 'Record', 'Bestwert'],
@@ -142,9 +143,10 @@
 
   async function rankCard(app) {
     const r = R(); if (!r) return null;
-    const mode = app._rankMode === 'timeattack' ? 'timeattack' : 'standard';
+    // v2.1.6: 랭크는 온라인 배틀(경쟁전) 전용이므로 배틀 랭크를 공유합니다(기존엔 일반 모드 기록 → 브론즈로 공유되던 문제).
+    const mode = ['battle', 'standard', 'timeattack'].includes(app._rankMode) ? app._rankMode : 'battle';
     const all = r.loadAll(), lad = r.ladder(all, mode);
-    const diff = app._rankDiff || lad.lastDiff || 'medium';
+    const diff = app._rankDiff || lad.lastDiff || 'expert';
     const s = lad.byDiff[diff]; const tier = r.shownTier(s);
     const color = s.games ? tier.color : '#64748b';
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;

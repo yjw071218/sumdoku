@@ -44,6 +44,9 @@
   const FAST_ANNOUNCE_SEC = 6;     // v2.1.5: 탐색 초반 90초는 6초마다 재등록해 서로를 빨리 발견합니다.
   const FAST_WINDOW_MS = 90000;
   const POOL_REFRESH_MS = 20000;   // offer 풀 재사용 시간
+  const ROOM_ANNOUNCE_SEC = 3;     // v2.1.6: 방 번호 탐색은 상대가 정해져 있으므로 끝까지 3초 간격으로 등록합니다.
+  const SLOW_ANNOUNCE_SEC = 10;    // v2.1.6: 랜덤 탐색 90초 이후에도 트래커 권장값(최대 120초) 대신 10초 간격 유지
+  const PEER_OPEN_TIMEOUT_MS = 12000; // 열리지 않는 연결 정리(20초 → 12초)
   const OFFER_TTL_MS = 55000;      // 응답 없는 offer 정리
   const ICE_WAIT_MS = 1500;        // v2.1.5: 2.5초 → 1.5초 (srflx 후보가 모이면 더 일찍 끝냅니다)
   const ICE_EARLY_MS = 250;        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
@@ -352,6 +355,7 @@
   function myName() {
     return customName() || ID.name || ('Player-' + (ID.id || M.selfId || 'XXXX').slice(-4).toUpperCase());
   }
+  window.SumdokuMyName = () => { try { return myName(); } catch (_) { return 'Player'; } };
   function myCountry() {
     if (ID.cc) return ID.cc;
     const langs = [].concat(navigator.languages || [], navigator.language || []);
@@ -382,11 +386,18 @@
   function tierSvg(t, size) {
     try { return window.SumdokuRating.tierSymbol(t.id, size, t.div); } catch (_) { return ''; }
   }
-  function myProfile(diff) { return { n: myName(), cc: myCountry(), tier: myTier(diff) }; }
+  // v2.1.6: 티어 보상 중 상대에게 보이는 것(매칭 카드 오라·닉네임 플레이트)을 프로필에 담습니다. 구버전은 이 필드를 무시합니다.
+  const COS_IDS = ['silver', 'gold', 'platinum', 'diamond', 'master', 'grandmaster'];
+  function myCos() { try { const e = window.SumdokuTierRewards?.equipped?.() || {}; return { card: e.card || '', plate: e.plate || '' }; } catch (_) { return { card: '', plate: '' }; } }
+  function cleanCos(c) {
+    c = c && typeof c === 'object' ? c : {};
+    return { card: ['diamond', 'master', 'grandmaster'].includes(c.card) ? c.card : '', plate: COS_IDS.includes(c.plate) ? c.plate : '' };
+  }
+  function myProfile(diff) { return { n: myName(), cc: myCountry(), tier: myTier(diff), cos: myCos() }; }
   function cleanProfile(p, fallbackId) {
     const n = cleanName(p && p.n) || ('Player-' + String(fallbackId || '').slice(0, 4).toUpperCase());
     const cc = p && /^[A-Z]{2}$/.test(p.cc || '') ? p.cc : '';
-    return { n, cc, tier: cleanTier(p && p.tier) };
+    return { n, cc, tier: cleanTier(p && p.tier), cos: cleanCos(p && p.cos) };
   }
 
   // v2.0.5 · 방 번호 배틀: 방장이 방 안에서 바꾸는 설정(모드·난이도·목숨·힌트·자동 메모·턴 시간)
@@ -633,8 +644,8 @@
           peer.discTimer = setTimeout(() => { if (pc.connectionState === 'disconnected') this.onPeerGone(peer); }, 6000);
         }
       });
-      // 열리지 않는 연결은 20초 뒤 정리합니다.
-      setTimeout(() => { if (!peer.open && this.peers.get(remoteId) === peer) { this.closePeer(peer); this.peers.delete(remoteId); } }, 20000);
+      // 열리지 않는 연결은 12초 뒤 정리하고, 새 offer로 곧바로 다시 등록합니다(원거리·VPN에서 첫 연결이 실패한 경우).
+      setTimeout(() => { if (!peer.open && this.peers.get(remoteId) === peer) { this.closePeer(peer); this.peers.delete(remoteId); this.seen.delete(remoteId); this.kickAnnounce(); } }, PEER_OPEN_TIMEOUT_MS);
       return peer;
     },
 
@@ -665,6 +676,7 @@
       this.closePeer(peer);
       if (peer.id !== this.partner) {
         if (this.state === 'proposing' && this.proposeTarget === peer.id) this.backToSearching();
+        if (!peer.open) this.kickAnnounce(); // 연결 실패: 새 offer로 즉시 재시도
         return;
       }
       // 매칭된 상대가 끊겼습니다.
@@ -1085,7 +1097,8 @@
       if (first) msg.event = 'started';
       try { t.ws.send(JSON.stringify(msg)); } catch (_) {}
       const fast = Date.now() - (this.startedAt || 0) < FAST_WINDOW_MS;
-      t.timer = setTimeout(() => this.announce(t, false), (fast ? FAST_ANNOUNCE_SEC : t.interval) * 1000);
+      const every = this.kind === 'room' ? ROOM_ANNOUNCE_SEC : (fast ? FAST_ANNOUNCE_SEC : Math.min(t.interval, SLOW_ANNOUNCE_SEC));
+      t.timer = setTimeout(() => this.announce(t, false), every * 1000);
     },
 
     async offerPool() {
@@ -1105,6 +1118,17 @@
         return list;
       })();
       return this._poolBusy;
+    },
+
+    /** v2.1.6: 연결 실패 직후 offer 풀을 새로 만들고 모든 트래커에 즉시 다시 등록합니다(1초 디바운스). */
+    kickAnnounce() {
+      if (this.state !== 'searching' && this.state !== 'proposing') return;
+      clearTimeout(this._kickTimer);
+      this._kickTimer = setTimeout(() => {
+        if (this.state !== 'searching' && this.state !== 'proposing') return;
+        this._pool = null; this._poolAt = 0;
+        for (const t of this.trackers) if (t.open && t.epoch === this.epoch) this.announce(t, false);
+      }, 1000);
     },
 
     gcOffers() {
@@ -1691,6 +1715,9 @@
         em.innerHTML = tierSvg(prof.tier, 48);
         nm.textContent = `${flagOf(prof.cc)} ${prof.n}`;
         tr.textContent = tierLabel(prof.tier) + (prof.tier.rp ? ` · ${prof.tier.rp} RP` : '');
+        const cos = prof.cos || {};
+        if (cos.card) c.classList.add('om-aura', 'om-aura-' + cos.card);
+        if (cos.plate) nm.classList.add('nm-plate', 'nm-plate-' + cos.plate);
       } else {
         em.innerHTML = '<span class="om-slot-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
         nm.textContent = T('waitingSlot');
@@ -2359,9 +2386,13 @@
       try {
         if (M.active && M.partnerProfile && this.dom.battleP2Name) {
           this.dom.battleP2Name.textContent = `${flagOf(M.partnerProfile.cc)} ${M.partnerProfile.n}`;
+          // v2.1.6: 상대 닉네임 플레이트를 경기 화면에도 표시
+          this.dom.battleP2Name.classList.remove(...COS_IDS.map(x => 'nm-plate-' + x), 'nm-plate');
+          if (M.partnerProfile.cos?.plate) this.dom.battleP2Name.classList.add('nm-plate', 'nm-plate-' + M.partnerProfile.cos.plate);
           this.dom.battleP2Name.title = tierLabel(M.partnerProfile.tier);
         }
         if (M.active && this.dom.battleP1Name) this.dom.battleP1Name.textContent = `${flagOf(myCountry())} ${myName()}`;
+        if (M.active && this.dom.battleP1Name) { const pl = myCos().plate; this.dom.battleP1Name.classList.remove(...COS_IDS.map(x => 'nm-plate-' + x), 'nm-plate'); if (pl) this.dom.battleP1Name.classList.add('nm-plate', 'nm-plate-' + pl); }
       } catch (_) {}
       return r;
     };

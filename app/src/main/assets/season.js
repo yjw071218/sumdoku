@@ -41,7 +41,8 @@
     r_platinum: ['청록 보드 테두리', 'Platinum board frame', 'プラチナ盤面枠', '铂金棋盘边框', '白金棋盤邊框', 'Marco platino', 'Cadre platine', 'Platinrahmen'],
     r_diamond: ['보석 색 입력 숫자 · 다이아 승리 배너', 'Gem digits · Diamond victory banner', '宝石色の数字・ダイヤ勝利バナー', '宝石色数字 · 钻石胜利横幅', '寶石色數字 · 鑽石勝利橫幅', 'Dígitos joya · banner diamante', 'Chiffres gemme · bannière diamant', 'Edelstein-Ziffern · Diamant-Banner'],
     r_master: ['보라 빛 테두리 · 마스터 승리 배너', 'Master glow frame · Master victory banner', 'マスター枠・マスター勝利バナー', '大师边框 · 大师胜利横幅', '大師邊框 · 大師勝利橫幅', 'Marco maestro · banner maestro', 'Cadre maître · bannière maître', 'Meister-Rahmen · Meister-Banner'],
-    r_grandmaster: ['그랜드마스터 테마 · 홈 엠블럼 · 전용 승리 배너', 'Grandmaster theme · emblem · victory banner', 'グランドマスターテーマ・エンブレム・勝利バナー', '宗师主题 · 徽章 · 专属胜利横幅', '宗師主題 · 徽章 · 專屬勝利橫幅', 'Tema gran maestro · emblema · banner', 'Thème grand maître · emblème · bannière', 'Großmeister-Thema · Emblem · Banner'],
+    r_silver: ['은빛 보드 테두리', 'Silver board frame', '銀の盤面枠', '银色棋盘边框', '銀色棋盤邊框', 'Marco plateado', 'Cadre argenté', 'Silberrahmen'],
+    r_grandmaster: ['그랜드마스터 테마 · 전용 승리 배너', 'Grandmaster theme · victory banner', 'グランドマスターテーマ・エンブレム・勝利バナー', '宗师主题 · 徽章 · 专属胜利横幅', '宗師主題 · 徽章 · 專屬勝利橫幅', 'Tema gran maestro · emblema · banner', 'Thème grand maître · emblème · bannière', 'Großmeister-Thema · Emblem · Banner'],
     locked: ['잠김', 'Locked', 'ロック', '未解锁', '未解鎖', 'Bloqueado', 'Verrouillé', 'Gesperrt']
   };
   const t = k => T[k][L()] || T[k][1];
@@ -52,7 +53,8 @@
   const tierById = id => R.TIERS.find(x => x.id === id);
 
   /* ---------- 꾸미기 ---------- */
-  const REWARDS = ['gold', 'platinum', 'diamond', 'master', 'grandmaster']; // 티어 id = 보상 id
+  // v2.1.6: 실버 보상 추가. 상세 구성·컬렉션 화면은 tier-rewards.js가 담당합니다.
+  const REWARDS = ['silver', 'gold', 'platinum', 'diamond', 'master', 'grandmaster']; // 티어 id = 보상 id
   const CKEY = 'sumdoku_rank_cosmetics';
   const loadC = () => { try { return JSON.parse(localStorage.getItem(CKEY)) || {}; } catch (_) { return {}; } };
   const saveC = c => { try { localStorage.setItem(CKEY, JSON.stringify(c)); } catch (_) {} };
@@ -111,13 +113,10 @@
       b.classList.toggle('rkc-' + id, k >= idx && !!c[id]);
     });
     saveC(c);
-    // 그랜드마스터: 홈 화면 엠블럼
-    let em = document.getElementById('rkc-home-emblem');
-    const on = b.classList.contains('rkc-grandmaster');
-    if (on && !em) {
-      const home = document.querySelector('#view-home') || document.querySelector('.view');
-      if (home) { em = mk('div', 'rkc-home-emblem'); em.id = 'rkc-home-emblem'; em.innerHTML = R.tierSymbol('grandmaster', 56); home.append(em); }
-    } else if (!on && em) em.remove();
+    // v2.1.6: 홈 화면 그랜드마스터 엠블럼은 제거했습니다(이전 버전이 남긴 요소도 정리).
+    document.getElementById('rkc-home-emblem')?.remove();
+    // 새로 해금된 보상 축하 연출
+    try { window.SumdokuTierRewards?.onCosmeticsApplied?.(); } catch (_) {}
   }
 
   /* ---------- 랭킹 탭 섹션 ---------- */
@@ -180,6 +179,10 @@
     // 티어 보상
     const cos = document.getElementById('season-cos');
     cos.innerHTML = '';
+    // v2.1.6: 컬렉션형 티어 보상 화면(tier-rewards.js). 없으면 아래 기본 목록을 그립니다.
+    if (window.SumdokuTierRewards?.render) {
+      try { window.SumdokuTierRewards.render(cos, { REWARDS, loadC, saveC, unlockedIdx, applyCosmetics, title: t('rewards'), note: t('rewardsNote') }); return; } catch (e) { console.warn('tier-rewards', e); cos.innerHTML = ''; }
+    }
     cos.append(mk('h3', 'section-title', t('rewards')), mk('p', 'ranking-hint', t('rewardsNote')));
     const k = unlockedIdx(), c = loadC();
     REWARDS.forEach(id => {

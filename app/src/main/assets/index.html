@@ -12,6 +12,9 @@
       if (saved && BG[saved]) theme = saved;
       var st = JSON.parse(localStorage.getItem('sumdoku_settings') || 'null');
       if (st && st.darkTheme) theme = 'theme-dark';
+      // v2.1.7: 티어 테마는 다크 바탕 + 전용 색으로 시작합니다(첫 화면 깜빡임 방지).
+      var tt = localStorage.getItem('sumdoku_tier_theme');
+      if (tt && /^(platinum|diamond|master|grandmaster)$/.test(tt)) { theme = 'theme-dark'; root.classList.add('tt-' + tt); }
       var lang = localStorage.getItem('sumdoku_language');
       if (!lang) { // 첫 실행: 기기(Play 스토어) 언어
         var dl = String((window.AndroidBridge && AndroidBridge.getDeviceLocale && AndroidBridge.getDeviceLocale()) || navigator.language || 'ko').replace('_', '-');
@@ -47,6 +50,7 @@
   <link rel="stylesheet" href="lunatic-horror.css">
   <link rel="stylesheet" href="rank-result.css">
   <link rel="stylesheet" href="season.css">
+  <link rel="stylesheet" href="tier-rewards.css">
   <link rel="stylesheet" href="dev-mode.css">
   <link rel="stylesheet" href="online-match.css">
 </head>
@@ -1911,6 +1915,7 @@
   <script src="ranking.js"></script>
   <script src="rank-result.js"></script>
   <script src="season.js"></script>
+  <script src="tier-rewards.js"></script>
   <script src="integrity.js"></script>
   <script src="share.js"></script>
   <script src="lunatic-horror.js"></script>
