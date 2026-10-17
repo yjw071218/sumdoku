@@ -102,6 +102,11 @@ const DIST = process.env.DIST || 'play';
         const guestUi = await B.p.evaluate(() => ({ open: !document.getElementById('om-room-screen').classList.contains('hidden'), ro: document.querySelector('#om-room-screen .om-r-modes .om-chip').disabled, mode: OnlineMatch.roomCfg.mode }));
         console.log(!auto ? 'PASS: room did not auto-start after guest joined' : 'FAIL: room auto-started');
         console.log(guestUi.open && guestUi.ro && guestUi.mode === 'survival' ? 'PASS: guest sees room screen with read-only host settings' : 'FAIL: guest room ui ' + JSON.stringify(guestUi));
+        // v2.0.7: 참가자가 준비하기 전에는 시작 버튼이 꺼져 있어야 합니다.
+        const before = await A.p.evaluate(() => document.querySelector('#om-room-screen .om-room-start').disabled);
+        await B.p.click('#om-room-screen .om-room-ready');
+        await A.p.waitForFunction(() => OnlineMatch.guestReady && !document.querySelector('#om-room-screen .om-room-start').disabled, null, { timeout: 8000 });
+        console.log(before ? 'PASS: start disabled until guest is ready, enabled after Ready' : 'FAIL: start enabled before ready');
         await A.p.click('#om-room-screen .om-room-start');
         startedByHost = true;
       }
@@ -153,6 +158,11 @@ const DIST = process.env.DIST || 'play';
     await Promise.all([A, B].map(X => X.p.waitForFunction(() => !app.isBattle && OnlineMatch.rematch === null, null, { timeout: 10000 })));
     if (ROOM) {
       await A.p.waitForFunction(() => !document.getElementById('om-room-screen').classList.contains('hidden') && app.guestJoined, null, { timeout: 15000 });
+      const reset = await A.p.evaluate(() => !OnlineMatch.guestReady && document.querySelector('#om-room-screen .om-room-start').disabled);
+      console.log(reset ? 'PASS: rematch requires Ready again' : 'FAIL: ready not reset on rematch');
+      await B.p.waitForSelector('#om-room-screen .om-room-ready:not([hidden])', { timeout: 15000 });
+      await B.p.click('#om-room-screen .om-room-ready');
+      await A.p.waitForFunction(() => !document.querySelector('#om-room-screen .om-room-start').disabled, null, { timeout: 8000 });
       await A.p.click('#om-room-screen .om-room-start');
     }
     await Promise.all([A, B].map(X => X.p.waitForFunction(() => app.isBattle, null, { timeout: 60000 })));

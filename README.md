@@ -339,3 +339,6 @@ Java 서버 검증용 `BattleServerSmoke.java`, `TurnModeSmoke.java`, `RoomDisco
 #### v2.0.6
 - 랜덤 매칭 구역은 선택하지 않고 기기 시간대로 자동 결정합니다.
 - 첫 실행(저장된 언어 없음) 시 기기(Google Play 스토어) 언어를 따릅니다. `AndroidBridge.getDeviceLocale()` → 지원 8개 언어로 매핑(번체 지역은 zh-TW, 미지원은 영어).
+
+#### v2.0.7
+- 방 번호 배틀은 참가자가 **준비 완료**(DataChannel `rdy`)를 눌러야 방장의 '게임 시작'이 켜집니다. 방장이 설정을 바꾸거나 재대결하면 준비가 해제됩니다. 랜덤 매칭은 매칭 즉시 시작합니다.

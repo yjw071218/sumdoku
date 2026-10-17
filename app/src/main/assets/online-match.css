@@ -192,3 +192,10 @@ html.om-room-open body { overflow: hidden; }
 
 /* v2.0.6 · 구역 자동 선택 */
 .om-zone-auto { margin-top: 14px; padding: 9px 12px; border-radius: 12px; font-size: 12.5px; font-weight: 700; color: var(--ui-muted, var(--text-secondary)); background: var(--ui-soft, #f1f5f9); border: 1px solid var(--ui-line, #e2e8f0); }
+
+/* v2.0.7 · 방 번호 준비(레디) */
+.om-ready-tag { margin-top: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; white-space: nowrap; background: var(--bg-surface, #fff); color: var(--ui-muted, var(--text-muted)); border: 1px solid var(--ui-line, #e2e8f0); }
+.om-ready-tag.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+.om-room-players .om-player.is-ready { border-color: #16a34a; box-shadow: 0 0 0 2px #16a34a33; }
+.om-room-ready { width: 100%; min-height: 54px; font-size: 16.5px; font-weight: 900; white-space: nowrap; }
+.om-room-ready[hidden], .om-room-start[hidden], .om-room-wait[hidden] { display: none; }

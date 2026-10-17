@@ -183,6 +183,15 @@
     startGame: ['게임 시작', 'Start game', 'ゲーム開始', '开始游戏', '開始遊戲', 'Empezar', 'Lancer la partie', 'Spiel starten'],
     waitGuest: ['상대가 들어오기를 기다리는 중…', 'Waiting for your opponent to join…', '相手の参加を待っています…', '正在等待对手加入…', '正在等待對手加入…', 'Esperando a que se una tu rival…', 'En attente de l’adversaire…', 'Warte auf den Gegner…'],
     guestIn: ['상대가 들어왔습니다. 설정을 확인하고 시작하세요', 'Opponent joined. Check the settings and start', '相手が参加しました。設定を確認して開始してください', '对手已加入。确认设置后开始', '對手已加入。確認設定後開始', 'Tu rival se unió. Revisa los ajustes y empieza', 'Adversaire arrivé. Vérifiez les réglages puis lancez', 'Gegner ist da. Einstellungen prüfen und starten'],
+    readyBtn: ['✋ 준비 완료', '✋ Ready', '✋ 準備完了', '✋ 准备', '✋ 準備', '✋ Listo', '✋ Prêt', '✋ Bereit'],
+    unreadyBtn: ['준비 취소', 'Cancel ready', '準備を取り消す', '取消准备', '取消準備', 'Cancelar listo', 'Annuler prêt', 'Nicht bereit'],
+    readyTag: ['준비 완료', 'Ready', '準備完了', '已准备', '已準備', 'Listo', 'Prêt', 'Bereit'],
+    notReadyTag: ['준비 중', 'Not ready', '準備中', '未准备', '未準備', 'No listo', 'Pas prêt', 'Nicht bereit'],
+    waitReady: ['상대가 들어왔습니다. 상대가 준비를 누르면 시작할 수 있습니다', 'Opponent joined. You can start once they are ready', '相手が参加しました。相手が準備完了すると開始できます', '对手已加入。对手准备后即可开始', '對手已加入。對手準備後即可開始', 'Tu rival se unió. Podrás empezar cuando esté listo', 'Adversaire arrivé. Lancement possible dès qu’il est prêt', 'Gegner ist da. Start möglich, sobald er bereit ist'],
+    guestReadyNow: ['상대가 준비했습니다! 게임을 시작하세요', 'Opponent is ready! Start the game', '相手が準備完了！ゲームを開始してください', '对手已准备！开始游戏吧', '對手已準備！開始遊戲吧', '¡Tu rival está listo! Empieza', 'L’adversaire est prêt ! Lancez la partie', 'Gegner ist bereit! Starte das Spiel'],
+    pressReady: ['설정을 확인하고 준비를 눌러 주세요', 'Check the settings and tap Ready', '設定を確認して準備完了を押してください', '确认设置后点击准备', '確認設定後點選準備', 'Revisa los ajustes y pulsa Listo', 'Vérifiez les réglages et appuyez sur Prêt', 'Einstellungen prüfen und Bereit tippen'],
+    notReadyYet: ['상대가 아직 준비하지 않았습니다.', 'Your opponent is not ready yet.', '相手はまだ準備できていません。', '对手尚未准备。', '對手尚未準備。', 'Tu rival aún no está listo.', 'L’adversaire n’est pas encore prêt.', 'Der Gegner ist noch nicht bereit.'],
+    readyReset: ['방장이 설정을 바꿔 준비가 해제되었습니다', 'The host changed settings — ready was reset', 'ホストが設定を変更したため準備が解除されました', '房主更改了设置，准备已取消', '房主變更了設定，準備已取消', 'El anfitrión cambió los ajustes: listo se reinició', 'L’hôte a modifié les réglages : prêt annulé', 'Der Host hat Einstellungen geändert – Bereit zurückgesetzt'],
     waitHost: ['방장이 게임을 시작하기를 기다리는 중…', 'Waiting for the host to start…', 'ホストの開始を待っています…', '正在等待房主开始…', '正在等待房主開始…', 'Esperando a que el anfitrión empiece…', 'En attente du lancement par l’hôte…', 'Warte auf den Start durch den Host…'],
     roomNoGuest: ['상대가 아직 들어오지 않았습니다.', 'Your opponent hasn’t joined yet.', '相手がまだ参加していません。', '对手尚未加入。', '對手尚未加入。', 'Tu rival aún no se ha unido.', 'L’adversaire n’a pas encore rejoint.', 'Der Gegner ist noch nicht beigetreten.'],
     waitingSlot: ['대기 중', 'Waiting', '待機中', '等待中', '等待中', 'Esperando', 'En attente', 'Wartet'],
@@ -381,6 +390,7 @@
     roomRole: '',             // room일 때 create | join
     roomCode: '',
     roomCfg: loadRoomCfg(),
+    guestReady: false,        // v2.0.7 방 번호: 참가자 준비 상태(양쪽이 같은 값을 가짐)
     rematch: null,            // 재대결 상태: {out}|{in}|{rejected}|{youRejected}|{left}|{accepted}
     state: 'idle',            // idle | searching | proposing | matched
     role: 0,                  // 1 방장 / 2 참가자
@@ -681,6 +691,7 @@
         case 'res': return this.onTunnelResponse(msg);
         case 'bye': return this.onPeerGone(peer);
         case 'cfg': return this.onCfg(peer, msg);
+        case 'rdy': return this.onReady(peer, msg);
         case 'rq': return this.onRematchRequest(peer);
         case 'ra': return this.onRematchAccept(peer);
         case 'rn': return this.onRematchReject(peer);
@@ -765,6 +776,7 @@
     },
 
     confirmMatch(peer, role) {
+      this.guestReady = false;
       this.state = 'matched';
       this.role = role;
       this.partner = peer.id;
@@ -1055,6 +1067,7 @@
       this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
       const app = window.app;
       const peer = this.partner && this.peers.get(this.partner);
+      this.guestReady = false; // 설정이 바뀌면 참가자는 다시 확인하고 준비해야 합니다.
       if (peer) this.sendTo(peer, { t: 'cfg', cfg: this.roomCfg });
       if (this.role === 1 && app && !app.isBattle) {
         app.battleMode = this.mode; app.battleDiff = this.diff;
@@ -1068,7 +1081,9 @@
 
     onCfg(peer, msg) {
       if (peer.id !== this.partner || this.kind !== 'room' || this.roomRole !== 'join') return;
+      const before = JSON.stringify(this.roomCfg);
       this.roomCfg = cleanCfg(msg.cfg);
+      if (this.guestReady && !msg.start && before !== JSON.stringify(this.roomCfg)) { this.guestReady = false; window.app?.showToast?.(T('readyReset'), 2500); }
       this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
       const app = window.app;
       if (app && !app.isBattle) { app.battleMode = this.mode; app.battleDiff = this.diff; }
@@ -1081,6 +1096,7 @@
       if (this.kind !== 'room' || this.role !== 1 || this.state !== 'matched' || this.hostStarted || app.battleStarting) return;
       const peer = this.partner && this.peers.get(this.partner);
       if (!peer || !peer.open || !app.guestJoined) { app.showToast?.(T('roomNoGuest'), 2500); return; }
+      if (!this.guestReady) { app.showToast?.(T('notReadyYet'), 2500); return; }
       const c = this.roomCfg;
       this.mode = c.mode; this.diff = c.diff;
       app.battleMode = c.mode; app.battleDiff = c.diff;
@@ -1088,7 +1104,7 @@
         const dummy = { difficulty: c.diff, rules: window.normalizedRules(roomRules(c), c.mode), online: true };
         window.AndroidBridge?.updateBattleServer?.(c.mode, c.diff, c.mode === 'score' ? 300 : 0, JSON.stringify(dummy));
       } catch (_) {}
-      this.sendTo(peer, { t: 'cfg', cfg: c });
+      this.sendTo(peer, { t: 'cfg', cfg: c, start: true });
       const post = body => fetch('http://127.0.0.1:8888/api/ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
       await post({ player: 1, ready: true });
       await post({ player: 2, ready: true });
@@ -1155,12 +1171,30 @@
       if (peer.id !== this.partner || this.role !== 2) return;
       this.enterRematchLobby();
     },
+    /** 참가자: 준비 완료/취소 */
+    toggleReady() {
+      if (this.kind !== 'room' || this.roomRole !== 'join' || this.state !== 'matched') return;
+      const peer = this.partnerPeer();
+      if (!peer) return;
+      this.guestReady = !this.guestReady;
+      this.sendTo(peer, { t: 'rdy', v: this.guestReady });
+      try { navigator.vibrate?.(30); } catch (_) {}
+      UI.render();
+    },
+    onReady(peer, msg) {
+      if (peer.id !== this.partner || this.roomRole !== 'create') return;
+      this.guestReady = msg.v === true;
+      if (this.guestReady) { window.app?.sound?.play?.('click'); try { navigator.vibrate?.(40); } catch (_) {} }
+      UI.render();
+    },
+
     enterRematchLobby() {
       const app = window.app;
       if (!app) return;
       clearInterval(app.rematchCheckTimer);
       this.rematch = null;
       this.hostStarted = false;
+      this.guestReady = false; // 재대결도 참가자가 다시 준비해야 시작합니다.
       app.dom.modalBattleResult.classList.add('hidden');
       app.isRematchActive = true;
       app.returnToBattleLobby();
@@ -1294,6 +1328,7 @@
           </section>
           <footer class="om-room-foot">
             <button type="button" class="btn btn-primary om-room-start"></button>
+            <button type="button" class="btn btn-primary om-room-ready" hidden></button>
             <div class="om-room-wait"></div>
           </footer>
         </div>`;
@@ -1313,7 +1348,7 @@
         rStatus: r('.om-room-status'), rPlayers: r('.om-room-players'), rHostOnly: r('.om-host-only'),
         rModes: r('.om-r-modes'), rDesc: r('.om-r-desc'), rDiffs: r('.om-r-diffs'), rLives: r('.om-r-lives'), rLivesNote: r('.om-lives-note'),
         rHints: r('.om-r-hints'), rAuto: r('.om-r-auto'), rTurn: r('.om-r-turn'), rTurnSet: r('.om-set-turn'),
-        rStart: r('.om-room-start'), rWait: r('.om-room-wait')
+        rStart: r('.om-room-start'), rReady: r('.om-room-ready'), rWait: r('.om-room-wait')
       };
 
       // ---------------- 이벤트 ----------------
@@ -1363,6 +1398,7 @@
       this.el.rCopy.addEventListener('click', copy);
       this.el.rLeave.addEventListener('click', () => { click(); M.leave(); setTimeout(() => this.render(), 400); });
       this.el.rStart.addEventListener('click', () => { click(); M.roomStart(); });
+      this.el.rReady.addEventListener('click', () => { click(); M.toggleReady(); });
       // 안드로이드 뒤로 가기 등으로 로비가 닫히면 방 화면도 닫습니다.
       this.renderPickers();
       this.render();
@@ -1472,23 +1508,36 @@
       const players = document.createElement('div'); players.className = 'om-vs';
       const me = this.playerCard(host ? T('host') : T('me'), myProfile(M.roomCfg.diff), 'me');
       const opp = matched ? this.playerCard(host ? T('opp') : T('host'), M.partnerProfile || cleanProfile(null, M.partner), 'opp') : this.playerCard(T('opp'), null, 'empty');
+      // 참가자 카드(방장 화면에서는 상대, 참가자 화면에서는 나)에 준비 상태 배지
+      const guestCard = host ? opp : me;
+      if (matched) {
+        const tag = document.createElement('span');
+        tag.className = 'om-ready-tag' + (M.guestReady ? ' on' : '');
+        tag.textContent = M.guestReady ? '✔ ' + T('readyTag') : T('notReadyTag');
+        guestCard.append(tag);
+        guestCard.classList.toggle('is-ready', M.guestReady);
+      }
       const x = document.createElement('span'); x.className = 'om-vs-x'; x.textContent = 'VS';
       players.append(host ? me : opp, x, host ? opp : me);
-      const pkey = JSON.stringify([host, matched, M.partner, M.partnerProfile, myName(), langIdx(), M.roomCfg.diff]);
+      const pkey = JSON.stringify([M.guestReady, host, matched, M.partner, M.partnerProfile, myName(), langIdx(), M.roomCfg.diff]);
       if (e.rPlayers.dataset.key !== pkey) { e.rPlayers.dataset.key = pkey; e.rPlayers.replaceChildren(players); }
 
       // 상태 문구
       let status;
-      if (host) status = !matched ? T('waitGuest') : (app?.battleStarting || M.hostStarted ? T('matched') : T('guestIn'));
-      else status = !matched ? (Date.now() - M.startedAt > 45000 ? T('roomNotFound') : T('roomJoining')) : T('waitHost');
+      if (host) status = !matched ? T('waitGuest') : (app?.battleStarting || M.hostStarted ? T('matched') : (M.guestReady ? T('guestReadyNow') : T('waitReady')));
+      else status = !matched ? (Date.now() - M.startedAt > 45000 ? T('roomNotFound') : T('roomJoining')) : (M.guestReady ? T('waitHost') : T('pressReady'));
       e.rStatus.textContent = status;
       e.rStatus.classList.toggle('om-ok', matched);
 
       this.renderRoomSettings();
       e.rStart.hidden = !host;
       e.rStart.textContent = '▶ ' + T('startGame');
-      e.rStart.disabled = !(host && matched && app?.guestJoined && !M.hostStarted && !app?.battleStarting);
-      e.rWait.hidden = host;
+      e.rStart.disabled = !(host && matched && app?.guestJoined && M.guestReady && !M.hostStarted && !app?.battleStarting);
+      // 참가자: 준비 버튼(준비 후에는 '준비 취소'로 바뀜)
+      e.rReady.hidden = host || !matched || M.hostStarted || !!app?.battleStarting;
+      e.rReady.textContent = M.guestReady ? T('unreadyBtn') : T('readyBtn');
+      e.rReady.className = `btn ${M.guestReady ? 'btn-secondary' : 'btn-primary'} om-room-ready`;
+      e.rWait.hidden = host || (matched && !M.guestReady);
       e.rWait.textContent = matched ? T('waitHost') : T('roomJoining');
     },
 
