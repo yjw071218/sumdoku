@@ -292,7 +292,7 @@ public class BattleServer {
             // Serialize state transitions, but never hold this lock during socket I/O.
             synchronized (this) {
             if (path.startsWith("/api/status")) {
-                if ("waiting".equals(roomStatus) && guestJoined) {
+                if ("waiting".equals(roomStatus) && guestJoined && !loopbackOnly && generationProgress == null) {
                     if (lastGuestActiveTime > 0 && (System.currentTimeMillis() - lastGuestActiveTime) > 3500) {
                         guestJoined = false;
                         p2Ready = false;
@@ -309,7 +309,7 @@ public class BattleServer {
             } else if (path.startsWith("/api/join") && !"closed".equals(roomStatus) && !roomCode.isEmpty() && jsonString(body, "code") != null && !roomCode.equals(jsonString(body, "code"))) {
                 statusCode = 403;
                 responseJson = "{\"ok\":false,\"error\":\"wrong_code\"}";
-            } else if (path.startsWith("/api/join") && guestJoined && lastGuestActiveTime > 0 && System.currentTimeMillis() - lastGuestActiveTime <= 3500) {
+            } else if (path.startsWith("/api/join") && !loopbackOnly && guestJoined && lastGuestActiveTime > 0 && System.currentTimeMillis() - lastGuestActiveTime <= 3500) {
                 statusCode = 409;
                 responseJson = "{\"ok\":false,\"error\":\"room_full\"}";
             } else if (path.startsWith("/api/join")) {
@@ -346,6 +346,7 @@ public class BattleServer {
                     if (body.contains("\"player\":1") || body.contains("\"player\":\"1\"")) {
                         p1Ready = body.contains("\"ready\":true");
                     } else if (body.contains("\"player\":2") || body.contains("\"player\":\"2\"")) {
+                        guestJoined = true;
                         p2Ready = body.contains("\"ready\":true");
                         lastGuestActiveTime = System.currentTimeMillis();
                     }
@@ -371,10 +372,14 @@ public class BattleServer {
                     responseJson = String.format("{\"ok\":true,\"generation\":%s}", generationProgress == null ? "null" : generationProgress);
                 }
             } else if (path.startsWith("/api/start")) {
-                if (!"POST".equals(method) || !"waiting".equals(roomStatus) || !guestJoined || !p2Ready || !body.contains("\"solution\"") || !body.contains("\"cages\"")) {
+                if (!"POST".equals(method) || !"waiting".equals(roomStatus) || (!loopbackOnly && (!guestJoined || !p2Ready)) || !body.contains("\"solution\"") || !body.contains("\"cages\"")) {
                     statusCode = 409;
                     responseJson = "{\"ok\":false,\"error\":\"not_ready\"}";
                 } else {
+                    guestJoined = true;
+                    p1Ready = true;
+                    p2Ready = true;
+                    lastGuestActiveTime = System.currentTimeMillis();
                     puzzleJson = body;
                     generationProgress = null; resetTurns();
                     roomStatus = "playing";

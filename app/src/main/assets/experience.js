@@ -259,8 +259,8 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   clearInterval(this.hostPollTimer);
   clearInterval(this.guestWaitTimer);
 
-  // 게스트가 방을 나간 경우 서버에 즉시 /api/leave 전송
-  if (this.battleRole === 2 && this.battleHostUrl) {
+  // 게스트가 방을 나간 경우 서버에 즉시 /api/leave 전송 (온라인 매칭 내부 초기화 시에는 전송하지 않음)
+  if (!window.OnlineMatch?.internalCancel && this.battleRole === 2 && this.battleHostUrl) {
     try {
       fetch(`${this.battleHostUrl}/api/leave`, {
         method: 'POST',
@@ -273,7 +273,7 @@ SumdokuApp.prototype.cancelRoomPreparation = function() {
   // 방장이 방을 나간 경우 서버에 /api/close 전송 (방 폭파)
   // Android에서는 아래 stopBattleServer()가 서버를 직접 닫습니다. HTTP /api/close는 비동기라
   // 바로 이어서 새 방을 열면 새 서버에 늦게 도착해 새 방을 '닫힘'으로 바꿔 버립니다(참가 즉시 퇴장 버그).
-  if (this.battleRole === 1 && this.battleHostIp && hadHostRoom && !window.AndroidBridge?.stopBattleServer) {
+  if (!window.OnlineMatch?.internalCancel && this.battleRole === 1 && this.battleHostIp && hadHostRoom && !window.AndroidBridge?.stopBattleServer) {
     try {
       fetch(`http://${this.battleHostIp}:8888/api/close`, {
         method: 'POST'
@@ -407,7 +407,8 @@ SumdokuApp.prototype.toggleHostReady = async function() {
 };
 
 SumdokuApp.prototype.startBattleAsHost = function() {
-  if (this.battleStarting || !this.hostRoomCreated || !this.guestJoined || !this.hostP2Ready) {
+  const isOnlineAuto = !!(window.OnlineMatch?.active && (window.OnlineMatch.kind === 'random' || window.OnlineMatch.roomLaunching));
+  if (this.battleStarting || !this.hostRoomCreated || (!isOnlineAuto && (!this.guestJoined || !this.hostP2Ready))) {
     this.showToast('참가자가 준비를 완료해야 시작할 수 있습니다.');
     return;
   }
@@ -427,50 +428,67 @@ SumdokuApp.prototype.startBattleAsHost = function() {
   sendProgress({ generating: true, diff: this.battleDiff || 'expert', percent: 15, message: '1단계: 9×9 정답판 생성 중...' });
 
   let lastSentTime = 0;
-  this.generator.generateAsync(this.battleDiff || 'expert', null, (progress) => {
-    if (token !== this.roomGeneration) return;
-    this.updateGeneratingProgress(progress);
-    const now = Date.now();
-    if (now - lastSentTime > 90 || progress.percent === 100 || progress.stepStatus === 'completed') {
-      lastSentTime = now;
-      // v1.1.30: 정답(solution)·풀이 셀은 참가자에게 보내지 않습니다(생성 화면 캡처로 정답 유출 방지).
-      const { solution, solvedCells, ...safe } = progress || {};
-      const payload = { generating: true, diff: this.battleDiff || 'expert', ...safe };
-      sendProgress(payload);
-      try { window.OnlineMatch?.sendGenProgress?.(payload); } catch (_) {}
-    }
-  }).then(async (puzzleData) => {
-    if (token !== this.roomGeneration) return;
-    if (!puzzleData) throw new Error('퍼즐 생성에 실패했습니다.');
-    const finalProg = { generating: true, diff: this.battleDiff || 'expert', cages: puzzleData.cages, percent: 100, step: '3', stepStatus: 'completed' };
-    this.updateGeneratingProgress(finalProg);
-    sendProgress(finalProg);
-    try { window.OnlineMatch?.sendGenProgress?.(finalProg); } catch (_) {}
-    if (window.OnlineMatch?.waitCountdownReady) {
-      await window.OnlineMatch.waitCountdownReady();
-    }
-    if (token !== this.roomGeneration || (window.OnlineMatch && !window.OnlineMatch.active)) return;
-    const puzzle = { ...puzzleData, difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
-    this.battlePuzzleData = puzzle;
-    await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(puzzle)
+  Promise.resolve()
+    .then(() => new Promise(r => setTimeout(r, 80)))
+    .then(() => this.generator.generateAsync(this.battleDiff || 'expert', null, (progress) => {
+      if (token !== this.roomGeneration) return;
+      this.updateGeneratingProgress(progress);
+      const now = Date.now();
+      if (now - lastSentTime > 90 || progress.percent === 100 || progress.stepStatus === 'completed') {
+        lastSentTime = now;
+        // v1.1.30: 정답(solution)·풀이 셀은 참가자에게 보내지 않습니다(생성 화면 캡처로 정답 유출 방지).
+        const { solution, solvedCells, ...safe } = progress || {};
+        const payload = { generating: true, diff: this.battleDiff || 'expert', ...safe };
+        sendProgress(payload);
+        try { window.OnlineMatch?.sendGenProgress?.(payload); } catch (_) {}
+      }
+    }))
+    .then(async (puzzleData) => {
+      if (token !== this.roomGeneration) return;
+      if (!puzzleData) throw new Error('퍼즐 생성에 실패했습니다.');
+      const finalProg = { generating: true, diff: this.battleDiff || 'expert', cages: puzzleData.cages, percent: 100, step: '3', stepStatus: 'completed' };
+      this.updateGeneratingProgress(finalProg);
+      sendProgress(finalProg);
+      try { window.OnlineMatch?.sendGenProgress?.(finalProg); } catch (_) {}
+      if (window.OnlineMatch?.waitCountdownReady) {
+        await window.OnlineMatch.waitCountdownReady();
+      }
+      if (token !== this.roomGeneration || (window.OnlineMatch && !window.OnlineMatch.active)) return;
+      const puzzle = { ...puzzleData, difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
+      this.battlePuzzleData = puzzle;
+      try {
+        await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(puzzle)
+        });
+      } catch (startErr) {
+        if (isOnlineAuto) {
+          await this.battleFetch(`http://${this.battleHostIp}:8888/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+          await this.battleFetch(`http://${this.battleHostIp}:8888/api/ready`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: 2, ready: true }) }).catch(() => {});
+          await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(puzzle)
+          });
+        } else {
+          throw startErr;
+        }
+      }
+      if (token !== this.roomGeneration) return;
+      this.battleStarting = false;
+      clearInterval(this.hostPollTimer);
+      this.hideGeneratingOverlay();
+      this.dom.modalBattleLobby.classList.add('hidden');
+      this.startBattleMatch(1, puzzle, this.battleMode || 'race');
+    }).catch((err) => {
+      if (token !== this.roomGeneration) return;
+      sendProgress({ generating: false });
+      this.battleStarting = false;
+      this.hideGeneratingOverlay();
+      this.showToast(err?.message || '배틀 시작 중 오류가 발생했습니다.');
+      this.updateHostLobbyUI();
     });
-    if (token !== this.roomGeneration) return;
-    this.battleStarting = false;
-    clearInterval(this.hostPollTimer);
-    this.hideGeneratingOverlay();
-    this.dom.modalBattleLobby.classList.add('hidden');
-    this.startBattleMatch(1, puzzle, this.battleMode || 'race');
-  }).catch((err) => {
-    if (token !== this.roomGeneration) return;
-    sendProgress({ generating: false });
-    this.battleStarting = false;
-    this.hideGeneratingOverlay();
-    this.showToast(err?.message || '배틀 시작 중 오류가 발생했습니다.');
-    this.updateHostLobbyUI();
-  });
 };
 
 SumdokuApp.prototype.prepareBattleRoom = function() {

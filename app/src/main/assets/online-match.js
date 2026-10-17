@@ -925,7 +925,7 @@
         this.sendTo(peer, { t: 'room' });
         this.hostStarted = false;
         clearInterval(this.hostPoll);
-        // v2.1.3: 참가자가 준비되면 곧바로 백그라운드에서 맵 생성을 시작하고, 5..1 카운트다운 종료 시점에 맞춰 진입합니다.
+        // v2.1.3 / v2.1.4: 참가자 준비가 확인되거나 랜덤 매칭 성사 후 450ms가 지나면 즉시 백그라운드에서 맵 생성을 시작하고, 5..1 카운트다운 종료 시점에 맞춰 진입합니다.
         this.hostPoll = setInterval(async () => {
           if (epoch !== this.epoch || this.hostStarted) return;
           try {
@@ -934,13 +934,16 @@
             app.hostP1Ready = !!st.p1Ready;
             app.hostP2Ready = !!st.p2Ready;
             if (this.kind === 'room') { UI.render(); return; } // 방장이 '게임 시작'을 눌러야 시작합니다.
-            if (st.guestJoined && st.p2Ready && !this.hostStarted && !app.battleStarting) {
+            const autoReady = this.kind === 'random' && (Date.now() - (this.matchedAt || 0)) >= 450;
+            if (((st.guestJoined && st.p2Ready) || autoReady) && !this.hostStarted && !app.battleStarting) {
               this.hostStarted = true;
+              app.guestJoined = true;
+              app.hostP2Ready = true;
               clearInterval(this.hostPoll);
               app.startBattleAsHost();
             }
           } catch (_) {}
-        }, 200);
+        }, 160);
       } catch (e) {
         app.showToast?.(T('hostFail'), 3500);
         this.sendTo(peer, { t: 'bye' });
@@ -961,10 +964,23 @@
         app.battleHostUrl = HOST;
         app.guestP1Ready = true;
         app.guestP2Ready = false;
-        const join = await this.tunnelFetch(`${HOST}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-        const jr = await join.json().catch(() => ({}));
-        if (!join.ok || !jr.ok) throw new Error('join');
-        await this.tunnelFetch(`${HOST}/api/ready`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: 2, ready: true }) });
+        let joined = false;
+        for (let i = 0; i < 3; i++) {
+          try {
+            const join = await this.tunnelFetch(`${HOST}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const jr = await join.json().catch(() => ({}));
+            if (join.ok && jr.ok) { joined = true; break; }
+          } catch (_) {}
+          await new Promise(r => setTimeout(r, 200));
+        }
+        if (!joined && this.kind === 'room') throw new Error('join');
+        for (let i = 0; i < 3; i++) {
+          try {
+            const rdy = await this.tunnelFetch(`${HOST}/api/ready`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: 2, ready: true }) });
+            if (rdy.ok) break;
+          } catch (_) {}
+          await new Promise(r => setTimeout(r, 200));
+        }
         app.guestP2Ready = true;
         // 기존 참가자 폴링이 퍼즐 생성 진행·경기 시작을 그대로 처리합니다.
         app.startGuestPolling();
@@ -1954,7 +1970,7 @@
     '#ddd6fe', '#c7d2fe', '#99f6e4', '#fed7d7', '#e9d5ff'
   ];
   const MatchFx = {
-    el: null, key: '', watch: null, spinTimer: null, audioCtx: null, lastCountVal: 0,
+    el: null, key: '', watch: null, spinTimer: null, audioCtx: null, lastCountVal: 0, rouletteState: null,
     playTick(final, freqOverride) {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -1975,30 +1991,56 @@
         osc.stop(now + (final ? 0.25 : 0.06));
       } catch (_) {}
     },
+    lockRoulette() {
+      const st = this.rouletteState;
+      if (!st || st.locked) return;
+      st.locked = true;
+      clearTimeout(this.spinTimer);
+      this.spinTimer = null;
+      const { wrap, cards, slotText, statusEl, targetIdx } = st;
+      const targetMode = MODES[targetIdx] || MODES[0];
+      cards.forEach((c, idx) => {
+        c.classList.toggle('is-active', idx === targetIdx);
+        c.classList.toggle('is-locked', idx === targetIdx);
+      });
+      if (slotText) {
+        slotText.textContent = L(targetMode);
+        slotText.classList.remove('om-fx-r-flip');
+        void slotText.offsetWidth;
+        slotText.classList.add('om-fx-r-flip');
+      }
+      if (wrap) wrap.classList.add('is-locked');
+      if (statusEl) statusEl.textContent = T('rouletteLocked');
+      const metaEl = this.el?.querySelector('.om-fx-meta');
+      if (metaEl && M.kind === 'random' && M.queue === 'ranked') {
+        const di = DIFFS.find(x => x.id === M.diff) || DIFFS[0];
+        metaEl.textContent = `${T('queueRanked')} · ${L(targetMode)} · ${L(di)}`;
+      }
+      this.playTick(true);
+      try { navigator.vibrate?.([30, 40, 90]); } catch (_) {}
+    },
     spinRoulette(wrap, targetModeId) {
       clearTimeout(this.spinTimer);
+      this.spinTimer = null;
       const cards = Array.from(wrap.querySelectorAll('.om-fx-r-card'));
       const slotText = wrap.querySelector('.om-fx-r-slot-text');
       const statusEl = wrap.querySelector('.om-fx-r-status');
       if (!cards.length) return;
       const targetIdx = Math.max(0, MODES.findIndex(m => m.id === targetModeId));
+      const totalSteps = 16 + targetIdx;
+      this.rouletteState = {
+        wrap, cards, slotText, statusEl, targetIdx, totalSteps,
+        step: 0, locked: false, startedAt: Date.now()
+      };
       const reduced = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } })();
       if (reduced) {
-        cards.forEach((c, idx) => {
-          c.classList.toggle('is-active', idx === targetIdx);
-          c.classList.toggle('is-locked', idx === targetIdx);
-        });
-        if (slotText) slotText.textContent = L(MODES[targetIdx]);
-        if (statusEl) statusEl.textContent = T('rouletteLocked');
-        wrap.classList.add('is-locked');
+        this.lockRoulette();
         return;
       }
-      // 최소 3바퀴(12스텝) 이상 돌고 targetIdx에 정확히 멈추도록 총 스텝 계산
-      const totalSteps = 12 + targetIdx;
-      let step = 0;
       const tick = () => {
-        if (!this.el || !this.el.classList.contains('on')) return;
-        const curIdx = step % MODES.length;
+        const st = this.rouletteState;
+        if (!st || st.locked || !this.el || !wrap.isConnected || window.app?.isBattle || M.state !== 'matched') return;
+        const curIdx = st.step % MODES.length;
         const curMode = MODES[curIdx];
         cards.forEach((c, idx) => {
           c.classList.toggle('is-active', idx === curIdx);
@@ -2010,18 +2052,14 @@
           void slotText.offsetWidth;
           slotText.classList.add('om-fx-r-flip');
         }
-        if (step >= totalSteps) {
-          cards[targetIdx]?.classList.add('is-locked');
-          wrap.classList.add('is-locked');
-          if (statusEl) statusEl.textContent = T('rouletteLocked');
-          this.playTick(true);
-          try { navigator.vibrate?.([30, 40, 90]); } catch (_) {}
+        if (st.step >= st.totalSteps) {
+          this.lockRoulette();
           return;
         }
         this.playTick(false);
-        step++;
-        const progress = step / totalSteps;
-        const delay = Math.round(50 + Math.pow(progress, 2.0) * 145);
+        st.step++;
+        const progress = st.step / st.totalSteps;
+        const delay = Math.round(45 + Math.pow(progress, 2.0) * 125);
         this.spinTimer = setTimeout(tick, delay);
       };
       tick();
@@ -2091,6 +2129,9 @@
     },
     updateCountdown() {
       if (!this.el) return;
+      if (this.rouletteState && !this.rouletteState.locked && (Date.now() - this.rouletteState.startedAt) >= 2600) {
+        this.lockRoulette();
+      }
       const cdEl = this.el.querySelector('.om-fx-countdown');
       if (!cdEl) return;
       const dur = Number.isFinite(M.countdownMs) ? M.countdownMs : 5000;
@@ -2115,10 +2156,15 @@
         this.el.setAttribute('role', 'status');
         (document.getElementById('app') || document.body).append(this.el);
       }
+      if (!this.el.classList.contains('on')) {
+        this.el.classList.add('on');
+        try { navigator.vibrate?.([40, 60, 80]); } catch (_) {}
+      }
       const key = JSON.stringify([M.partner, M.partnerProfile, M.kind, M.queue, M.mode, M.diff, M.matchedAt, langIdx()]);
       if (this.key !== key) {
         this.key = key;
         this.lastCountVal = 0;
+        this.rouletteState = null;
         const mo = MODES.find(x => x.id === M.mode) || MODES[0], di = DIFFS.find(x => x.id === M.diff) || DIFFS[0];
         const qBadge = M.kind === 'room' ? T('roomTitle') : T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         const t = document.createElement('div'); t.className = 'om-fx-title'; t.textContent = T('matchFound');
@@ -2152,20 +2198,19 @@
         if (M.lastGenProgress) this.updateMiniBoard(M.lastGenProgress);
       }
       this.updateCountdown();
-      if (this.el.classList.contains('on')) return;
-      this.el.classList.add('on');
-      try { navigator.vibrate?.([40, 60, 80]); } catch (_) {}
-      clearInterval(this.watch);
-      this.watch = setInterval(() => {
-        if (window.app?.isBattle || M.state !== 'matched') { this.hide(); return; }
-        this.updateCountdown();
-      }, 100);
+      if (!this.watch) {
+        this.watch = setInterval(() => {
+          if (window.app?.isBattle || M.state !== 'matched') { this.hide(); return; }
+          this.updateCountdown();
+        }, 100);
+      }
     },
     hide() {
       clearInterval(this.watch);
       this.watch = null;
       clearTimeout(this.spinTimer);
       this.spinTimer = null;
+      this.rouletteState = null;
       this.lastCountVal = 0;
       if (this.el) { this.el.classList.remove('on'); this.key = ''; }
     }
@@ -2224,9 +2269,16 @@
               const st = await (await fetch('http://127.0.0.1:8888/api/status')).json();
               this.guestJoined = !!st.guestJoined; this.hostP2Ready = !!st.p2Ready;
               if (M.kind === 'room') { UI.render(); return; }
-              if (st.guestJoined && st.p2Ready && !this.battleStarting) { M.hostStarted = true; clearInterval(M.hostPoll); this.startBattleAsHost(); }
+              const autoReady = M.kind === 'random' && (Date.now() - (M.matchedAt || 0)) >= 450;
+              if (((st.guestJoined && st.p2Ready) || autoReady) && !M.hostStarted && !this.battleStarting) {
+                M.hostStarted = true;
+                this.guestJoined = true;
+                this.hostP2Ready = true;
+                clearInterval(M.hostPoll);
+                this.startBattleAsHost();
+              }
             } catch (_) {}
-          }, 200);
+          }, 160);
         }
       }
       return r;

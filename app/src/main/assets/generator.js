@@ -124,8 +124,18 @@ class SumdokuGenerator {
       await new Promise(r => setTimeout(r, 16));
     }
 
+    let lastYield = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const nowMs = () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const maybeYield = async (minWait = 4) => {
+      if (nowMs() - lastYield >= 12) {
+        await new Promise(r => setTimeout(r, minWait));
+        lastYield = nowMs();
+      }
+    };
+
     while (attempts < maxAttempts) {
       attempts++;
+      await maybeYield(4);
 
       if (diff === 'expert' && attempts % 60 === 0) {
         currentAnchors = [0, 1, 1, 2][Math.floor(rng() * 4)];
@@ -156,7 +166,8 @@ class SumdokuGenerator {
           cages,
           solution
         });
-        await new Promise(r => setTimeout(r, 10));
+        await new Promise(r => setTimeout(r, 12));
+        lastYield = nowMs();
       }
 
       // [★ 2.5단계: 초고속 유일해 검증 + 국소 수리 (Local Area Repair)]
