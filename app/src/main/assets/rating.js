@@ -825,7 +825,7 @@
       const sign = delta > 0 ? '+' : '';
       let msg = `${diffName(diff)} · ${sign}${delta} RP · ${after.name} (${s.rating})`;
       if (bonus) msg += ` · ${streakText(s.streak)} +${bonus} (+${Math.round(bonusRate * 100)}%)`;
-      if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
+      if (after.index > beforeTier.index) msg = `${after.name} ${tr('승급')} · ${msg}`;
       else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
 
       const change = { mode: 'battle', battleMode, oppForfeit: oppQuit, forfeitWinFactor: calc.forfeitWinFactor || null, streak: s.streak, bonus, difficulty: diff, before, after: s.rating, delta, tier: after, beforeTier, season, oppRating, msg };
@@ -943,7 +943,7 @@
       const sign = delta > 0 ? '+' : '';
       let msg = `${mode === 'timeattack' ? modeName(mode) + ' · ' : ''}${diffName(g.difficulty)} · ${sign}${delta} RP · ${after.name} (${s.rating})`;
       if (bonus) msg += ` · ${streakText(s.streak)} +${bonus} (+${Math.round(bonusRate * 100)}%)`;
-      if (after.index > beforeTier.index) msg = `🎉 ${after.name} ${tr('승급!')} ${msg}`;
+      if (after.index > beforeTier.index) msg = `${after.name} ${tr('승급')} · ${msg}`;
       else if (after.index < beforeTier.index) msg = `${after.name} ${tr('강등')} · ${msg}`;
       // v1.1.28: RP 변화·단계·승급 연출은 결과 화면의 랭크 패널(rank-result.js)에서 보여 줍니다.
       this.lastRatingChange.msg = msg;

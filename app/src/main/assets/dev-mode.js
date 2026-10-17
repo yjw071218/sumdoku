@@ -22,9 +22,9 @@
   const L = () => Math.max(0, LANGS.indexOf((window.I18N && I18N.currentLang) || 'ko'));
   const T = {
     hidden: ['개발자 코드', 'Developer code', '開発者コード', '开发者代码', '開發者代碼', 'Código de desarrollador', 'Code développeur', 'Entwicklercode'],
-    on: ['🛠 개발자 모드가 활성화되었습니다.', '🛠 Developer mode enabled.', '🛠 開発者モードを有効にしました。', '🛠 开发者模式已启用。', '🛠 開發者模式已啟用。', '🛠 Modo desarrollador activado.', '🛠 Mode développeur activé.', '🛠 Entwicklermodus aktiviert.'],
+    on: ['개발자 모드가 활성화되었습니다.', 'Developer mode enabled.', '開発者モードを有効にしました。', '开发者模式已启用。', '開發者模式已啟用。', 'Modo desarrollador activado.', 'Mode développeur activé.', 'Entwicklermodus aktiviert.'],
     off: ['개발자 모드를 껐습니다.', 'Developer mode disabled.', '開発者モードをオフにしました。', '开发者模式已关闭。', '開發者模式已關閉。', 'Modo desarrollador desactivado.', 'Mode développeur désactivé.', 'Entwicklermodus deaktiviert.'],
-    title: ['🛠 개발자 모드', '🛠 Developer mode', '🛠 開発者モード', '🛠 开发者模式', '🛠 開發者模式', '🛠 Modo desarrollador', '🛠 Mode développeur', '🛠 Entwicklermodus'],
+    title: ['개발자 모드', 'Developer mode', '開発者モード', '开发者模式', '開發者模式', 'Modo desarrollador', 'Mode développeur', 'Entwicklermodus'],
     warn: ['GitHub판 전용 테스트 도구입니다. 바꾼 값은 이 기기의 기록에 바로 저장됩니다.', 'Test tools for the GitHub build only. Changes are saved to this device immediately.', 'GitHub版専用のテストツールです。変更はこの端末の記録にすぐ保存されます。', '仅限 GitHub 版的测试工具。更改会立即保存到本机记录。', '僅限 GitHub 版的測試工具。變更會立即儲存到本機紀錄。', 'Herramientas de prueba solo para la versión de GitHub. Los cambios se guardan al instante.', 'Outils de test pour la version GitHub uniquement. Les changements sont enregistrés aussitôt.', 'Testwerkzeuge nur für die GitHub-Version. Änderungen werden sofort gespeichert.'],
     tierSec: ['티어 세팅', 'Tier setup', 'ティア設定', '段位设置', '段位設定', 'Ajuste de rango', 'Réglage du rang', 'Rang einstellen'],
     mode: ['모드', 'Mode', 'モード', '模式', '模式', 'Modo', 'Mode', 'Modus'],
@@ -166,7 +166,8 @@
     const prev = { mode: box.dataset.mode || 'battle', diff: box.dataset.diff || 'all' };
     box.replaceChildren();
 
-    box.append(mk('h3', 'dev-title', t('title')), mk('p', 'dev-warn', t('warn')));
+    const h3 = mk('h3', 'dev-title'); if (window.SumdokuIcon) h3.append(SumdokuIcon.el('wrench', 16), document.createTextNode(' ')); h3.append(document.createTextNode(t('title')));
+    box.append(h3, mk('p', 'dev-warn', t('warn')));
 
     // 1. 티어 세팅
     const sec1 = mk('div', 'dev-sec');

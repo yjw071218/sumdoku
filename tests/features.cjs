@@ -139,7 +139,7 @@ const url = 'file:///' + path.resolve('app/src/main/assets/index.html').split(pa
       await new Promise(r => setTimeout(r, 400));
       app.closeBattleChat();
       // 상대 메시지 주입은 Node 쪽에서
-      return { btnVisible, mine: [...document.querySelectorAll('.chat-msg.mine')].map(e => e.textContent), html: document.getElementById('chat-list').innerHTML.includes('<b>') };
+      return { btnVisible, mine: [...document.querySelectorAll('.chat-msg.mine')].map(e => e.querySelector('svg.sd-emo') ? 'svg:' + [...e.querySelector('svg.sd-emo').classList].find(c => c.startsWith('sd-emo-') ) + e.textContent : e.textContent), html: document.getElementById('chat-list').innerHTML.includes('<b>') };
     });
     log.push({ id: ++seq, player: 2, text: '잘하시네요' });
     await page.waitForTimeout(1600);
@@ -149,7 +149,7 @@ const url = 'file:///' + path.resolve('app/src/main/assets/index.html').split(pa
       pop: document.getElementById('chat-pop').textContent
     }));
     assert.ok(chatRes.btnVisible, 'chat button visible in battle');
-    assert.deepEqual(chatRes.mine, ['👍', '<b>안녕</b>']); assert.equal(chatRes.html, false, 'chat text is not HTML');
+    assert.deepEqual(chatRes.mine, ['svg:sd-emo-thumbs', '<b>안녕</b>']); assert.equal(chatRes.html, false, 'chat text is not HTML');
     assert.deepEqual(recv.theirs, ['잘하시네요']); assert.equal(recv.unread, '1'); assert.ok(recv.pop.includes('잘하시네요'));
     assert.equal(log.filter(m => m.player === 1).length, 2);
     checks.push('battle chat send/receive/unread');

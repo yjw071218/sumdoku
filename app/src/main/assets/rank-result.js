@@ -30,10 +30,10 @@
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
   const diffName = d => (window.SumdokuDiffNames && SumdokuDiffNames[d] && SumdokuDiffNames[d][L()]) || d;
   const MODES_NAMES = {
-    race: ['⚡ 스피드 레이스', '⚡ Speed race', '⚡ スピードレース', '⚡ 竞速赛', '⚡ 競速賽', '⚡ Carrera', '⚡ Course', '⚡ Wettrennen'],
-    score: ['⏱️ 타임어택', '⏱️ Time attack', '⏱️ タイムアタック', '⏱️ 计时赛', '⏱️ 計時賽', '⏱️ Contrarreloj', '⏱️ Contre-la-montre', '⏱️ Zeitangriff'],
-    survival: ['🛡️ 서바이벌', '🛡️ Survival', '🛡️ サバイバル', '🛡️ 生存赛', '🛡️ 生存賽', '🛡️ Supervivencia', '🛡️ Survie', '🛡️ Überleben'],
-    turn: ['♟️ 턴제', '♟️ Turn-based', '♟️ ターン制', '♟️ 回合制', '♟️ 回合制', '♟️ Por turnos', '♟️ Tour par tour', '♟️ Rundenbasiert']
+    race: ['스피드 레이스', 'Speed race', 'スピードレース', '竞速赛', '競速賽', 'Carrera', 'Course', 'Wettrennen'],
+    score: ['타임어택', 'Time attack', 'タイムアタック', '计时赛', '計時賽', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'],
+    survival: ['서바이벌', 'Survival', 'サバイバル', '生存赛', '生存賽', 'Supervivencia', 'Survie', 'Überleben'],
+    turn: ['턴제', 'Turn-based', 'ターン制', '回合制', '回合制', 'Por turnos', 'Tour par tour', 'Rundenbasiert']
   };
   const modeName = m => (MODES_NAMES[m] && (MODES_NAMES[m][L()] || MODES_NAMES[m][1])) || m;
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
@@ -364,13 +364,13 @@
     let chips = panel.querySelector('.rr-season');
     if (!chips) { chips = document.createElement('div'); chips.className = 'rr-season'; panel.querySelector('.rr-info').append(chips); }
     chips.innerHTML = '';
-    const chip = (cls, text) => { const c = document.createElement('span'); c.className = 'rr-chip ' + cls; c.textContent = text; chips.append(c); };
+    const chip = (cls, text, ico) => { const c = document.createElement('span'); c.className = 'rr-chip ' + cls; if (ico && window.SumdokuIcon) c.append(SumdokuIcon.el(ico, 12), document.createTextNode(' ')); c.append(document.createTextNode(text)); chips.append(c); };
     if (se.placing) chip('place', `${tr('배치 경기')} ${se.placementDone} / ${R.PLACEMENT}`);
     if (se.seriesResult === 'start') chip('series', t('seriesStart'));
     if (se.series) chip('series', `${tr('승급전')} ${'●'.repeat(se.series.w)}${'✕'.repeat(se.series.l)}${'○'.repeat(Math.max(0, 3 - se.series.w - se.series.l))}`);
     if (se.seriesResult === 'lost') chip('series', t('seriesFail'));
-    if (se.protectedHit || se.protect > 0) chip('protect', `🛡 ${tr('강등 보호')}${se.protect ? ' ' + se.protect + tr('판') : ''}`);
-    if (se.boosted) chip('boost', `⚡ ${tr('시즌 초반 가속')} +25%`);
+    if (se.protectedHit || se.protect > 0) chip('protect', `${tr('강등 보호')}${se.protect ? ' ' + se.protect + tr('판') : ''}`, 'shield');
+    if (se.boosted) chip('boost', `${tr('시즌 초반 가속')} +25%`, 'bolt');
     const token = (app._rrToken = (app._rrToken || 0) + 1);
     const unrankedOf = done => ({ ...R.UNRANKED, index: -1, division: `${done}/${R.PLACEMENT}`, name: tr(R.UNRANKED.ko) });
     const paintUnranked = done => {

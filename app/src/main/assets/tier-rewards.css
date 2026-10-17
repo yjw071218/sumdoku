@@ -148,7 +148,7 @@ body.rkc-silver:not(.rkc-gold):not(.rkc-platinum):not(.rkc-master):not(.rkc-gran
 .rkc-unlock-card h3 { margin: 4px 0 0; font-size: 19px; }
 .rkc-unlock-tier { font-size: 24px; color: var(--tier); filter: brightness(1.5); text-shadow: 0 0 16px var(--tier); }
 .rkc-unlock-list { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-.rkc-unlock-list li::before { content: '✦ '; color: var(--rar); }
+.rkc-unlock-list li::before { content: ''; display: inline-block; width: .8em; height: .8em; margin-right: 6px; vertical-align: -1px; background: var(--rar); -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202l2.2%207.8L22%2012l-7.8%202.2L12%2022l-2.2-7.8L2%2012l7.8-2.2z%22/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202l2.2%207.8L22%2012l-7.8%202.2L12%2022l-2.2-7.8L2%2012l7.8-2.2z%22/%3E%3C/svg%3E") center/contain no-repeat; }
 .rkc-unlock-card p { margin: 0; font-size: 11.5px; color: #94a3b8; }
 .rkc-unlock-card .btn { margin-top: 6px; min-width: 140px; }
 @keyframes rkc-in { from { opacity: 0; } }
@@ -179,7 +179,9 @@ body.rkc-silver:not(.rkc-gold):not(.rkc-platinum):not(.rkc-master):not(.rkc-gran
 @keyframes nm-sheen { from { transform: translateX(0); } to { transform: translateX(400%); } }
 /* 흐르는 그라데이션: 크기 200% + 위치 200% 이동 = 정확히 한 타일 → 이음매 없음(그라데이션 처음·끝 색이 같아야 함) */
 @keyframes nm-flow { from { background-position: 0 0; } to { background-position: 200% 0; } }
-.nm-plate::before { flex: 0 0 auto; font-size: .85em; line-height: 1; }
+.nm-plate::before { flex: 0 0 auto; width: .85em; height: .85em; background: currentColor; -webkit-mask: var(--nm-ico) center/contain no-repeat; mask: var(--nm-ico) center/contain no-repeat; }
+.sd-ico-wrap { display: inline-flex; vertical-align: -2px; }
+.sd-ico-wrap svg { display: block; }
 
 /* 실버: 단정한 금속 바 */
 .nm-plate-silver { --nm-dur: 4s; color: #0f172a; text-shadow: 0 1px 0 rgba(255,255,255,.7);
@@ -189,22 +191,22 @@ body.rkc-silver:not(.rkc-gold):not(.rkc-platinum):not(.rkc-master):not(.rkc-gran
 .nm-plate-gold { --nm-dur: 3.6s; color: #422006; text-shadow: 0 1px 0 rgba(255,255,255,.55); border-radius: 4px;
   background-image: linear-gradient(90deg, #ca8a04, #fde68a 25%, #eab308 50%, #fde68a 75%, #ca8a04); animation: nm-flow 6s linear infinite;
   box-shadow: inset 0 0 0 1px #fef3c7, inset 0 0 0 2.5px #a16207, 0 0 0 1px #713f12, 0 0 8px rgba(234,179,8,.5); }
-.nm-plate-gold::before { content: '✦'; color: #92400e; }
+.nm-plate-gold::before { content: ''; --nm-ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202l2.2%207.8L22%2012l-7.8%202.2L12%2022l-2.2-7.8L2%2012l7.8-2.2z%22/%3E%3C/svg%3E"); background: #92400e; }
 /* 플래티넘: 양끝이 각진 오로라 배지 + 문양 */
 .nm-plate-platinum { --nm-dur: 3.2s; padding: 2px 16px; border-radius: 3px 14px 3px 14px;
   background-image: linear-gradient(90deg, #0f766e, #2dd4bf 25%, #67e8f9 50%, #2dd4bf 75%, #0f766e); animation: nm-flow 5s linear infinite;
   box-shadow: inset 0 0 0 1px rgba(204,251,241,.7), 0 0 0 1.5px #134e4a, 0 0 12px rgba(45,212,191,.6); }
-.nm-plate-platinum::before { content: '❖'; color: #ccfbf1; }
+.nm-plate-platinum::before { content: ''; --nm-ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%201.5l3%203-3%203-3-3zM19.5%209l3%203-3%203-3-3zM12%2016.5l3%203-3%203-3-3zM4.5%209l3%203-3%203-3-3z%22/%3E%3C/svg%3E"); background: #ccfbf1; }
 /* 다이아: 이중 테두리 + 보석 장식 + 프리즘 */
 .nm-plate-diamond { --nm-dur: 2.8s; padding: 2px 16px; border-radius: 14px 4px 14px 4px; outline: 1.5px solid #93c5fd; outline-offset: 2px;
   background-image: linear-gradient(90deg, #1e3a8a, #3b82f6 20%, #a5b4fc 40%, #e0e7ff 50%, #a5b4fc 60%, #3b82f6 80%, #1e3a8a); animation: nm-flow 4s linear infinite;
   box-shadow: inset 0 0 0 1px rgba(224,231,255,.6), 0 0 14px rgba(96,165,250,.7); margin: 3px; }
-.nm-plate-diamond::before { content: '◆'; color: #e0e7ff; text-shadow: 0 0 6px #60a5fa; }
+.nm-plate-diamond::before { content: ''; --nm-ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%202l9%2010-9%2010-9-10z%22/%3E%3C/svg%3E"); background: #e0e7ff; filter: drop-shadow(0 0 3px #60a5fa); }
 /* 마스터: 숨쉬는 오라 링 + 룬 장식 */
 .nm-plate-master { --nm-dur: 2.4s; padding: 2px 18px; border-radius: 999px; outline: 1.5px solid #e879f9; outline-offset: 2px; margin: 3px;
   background-image: linear-gradient(90deg, #3b0764, #9333ea 25%, #f0abfc 50%, #9333ea 75%, #3b0764); animation: nm-flow 3.2s linear infinite, nm-breathe 2.4s ease-in-out infinite;
   box-shadow: inset 0 0 0 1px rgba(250,232,255,.55), 0 0 14px rgba(192,132,252,.75); }
-.nm-plate-master::before { content: '✧'; color: #fae8ff; text-shadow: 0 0 6px #e879f9; }
+.nm-plate-master::before { content: ''; --nm-ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M12%203c.6%204.6%203.4%207.4%209%209-5.6%201.6-8.4%204.4-9%209-.6-4.6-3.4-7.4-9-9%205.6-1.6%208.4-4.4%209-9z%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222%22/%3E%3C/svg%3E"); background: #fae8ff; filter: drop-shadow(0 0 3px #e879f9); }
 @keyframes nm-breathe { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(250,232,255,.55), 0 0 12px rgba(192,132,252,.6); }
   50% { box-shadow: inset 0 0 0 1px rgba(250,232,255,.8), 0 0 22px rgba(232,121,249,.95); } }
 /* 그랜드마스터: 왕관 + 금 이중 테두리 + 불꽃 그라데이션 + 맥동 */
@@ -213,7 +215,7 @@ body.rkc-silver:not(.rkc-gold):not(.rkc-platinum):not(.rkc-master):not(.rkc-gran
   background-image: linear-gradient(90deg, #7f1d1d, #dc2626 18%, #f59e0b 36%, #fde047 50%, #f59e0b 64%, #dc2626 82%, #7f1d1d);
   animation: nm-flow 2.6s linear infinite, nm-fire 2s ease-in-out infinite;
   box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 16px rgba(239,68,68,.8); }
-.nm-plate-grandmaster::before { content: '👑'; font-size: .95em; filter: drop-shadow(0 0 4px #fbbf24); }
+.nm-plate-grandmaster::before { content: ''; --nm-ico: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M3%208l4.5%204L12%204.5%2016.5%2012%2021%208l-2%2011H5L3%208z%22/%3E%3Crect%20x%3D%225%22%20y%3D%2220%22%20width%3D%2214%22%20height%3D%222%22%20rx%3D%221%22/%3E%3C/svg%3E"); width: 1em; height: 1em; background: #fde047; filter: drop-shadow(0 0 3px #f59e0b); }
 @keyframes nm-fire { 0%, 100% { box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 14px rgba(239,68,68,.75), 0 0 24px rgba(245,158,11,.3); }
   50% { box-shadow: inset 0 0 0 1px #fde68a, inset 0 0 0 2.5px #7f1d1d, 0 0 22px rgba(239,68,68,.95), 0 0 40px rgba(245,158,11,.55); } }
 .om-player-name.nm-plate { font-size: 13px; }
@@ -309,3 +311,4 @@ html.tt-grandmaster, html.tt-grandmaster body { background: #160404; }
 .app-root[class*="tt-"] .menu-btn.btn-secondary, .app-root[class*="tt-"] .menu-btn.btn-update { background: color-mix(in srgb, var(--bg-surface) 88%, var(--tt-a)) !important; border-color: color-mix(in srgb, var(--tt-a) 25%, transparent) !important; }
 .app-root[class*="tt-"] .menu-btn .btn-icon, .app-root[class*="tt-"] .menu-btn svg { color: var(--tt-a); }
 .app-root[class*="tt-"] .bottom-nav { background: color-mix(in srgb, var(--bg-primary) 92%, var(--tt-a)) !important; }
+.sd-share-ico { display: inline-flex; align-items: center; justify-content: center; gap: 2px; } .sd-share-ico svg { flex: 0 0 auto; }

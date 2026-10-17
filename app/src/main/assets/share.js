@@ -11,8 +11,8 @@
   const LANGS = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
   const li = () => Math.max(0, LANGS.indexOf((window.I18N && I18N.currentLang) || 'ko'));
   const T = {
-    share: ['📤 성과 공유', '📤 Share result', '📤 成果を共有', '📤 分享成绩', '📤 分享成績', '📤 Compartir', '📤 Partager', '📤 Teilen'],
-    shareRank: ['📤 내 랭크 공유', '📤 Share my rank', '📤 ランクを共有', '📤 分享我的段位', '📤 分享我的段位', '📤 Compartir rango', '📤 Partager mon rang', '📤 Rang teilen'],
+    share: ['성과 공유', 'Share result', '成果を共有', '分享成绩', '分享成績', 'Compartir', 'Partager', 'Teilen'],
+    shareRank: ['내 랭크 공유', 'Share my rank', 'ランクを共有', '分享我的段位', '分享我的段位', 'Compartir rango', 'Partager mon rang', 'Rang teilen'],
     clear: ['CLEAR', 'CLEAR', 'CLEAR', '通关', '通關', 'COMPLETADO', 'RÉUSSI', 'GESCHAFFT'],
     fail: ['FAILED', 'FAILED', 'FAILED', '失败', '失敗', 'FALLIDO', 'ÉCHEC', 'GESCHEITERT'],
     time: ['소요 시간', 'Time', 'タイム', '用时', '用時', 'Tiempo', 'Temps', 'Zeit'],
@@ -30,8 +30,8 @@
     streak: ['연속 클리어', 'Win streak', '連続クリア', '连胜', '連勝', 'Racha', 'Série', 'Serie'],
     placement: ['배치 경기 중', 'In placement', '配置戦中', '定级中', '定級中', 'En clasificación', 'En placement', 'In Platzierung'],
     tagline: ['킬러 스도쿠 · 100% 순수 연역 퍼즐', 'Killer Sudoku · 100% pure deduction', 'キラー数独 · 100%論理パズル', '杀手数独 · 100%纯逻辑', '殺手數獨 · 100%純邏輯', 'Killer Sudoku · 100% deducción', 'Killer Sudoku · 100 % déduction', 'Killer-Sudoku · 100 % Logik'],
-    textWin: ['썸도쿠 {0} 클리어! ⏱ {1} · 🎯 {2}점', 'Cleared Sumdoku {0}! ⏱ {1} · 🎯 {2}', 'サムドク{0}をクリア！⏱ {1} · 🎯 {2}', '通关 Sumdoku {0}！⏱ {1} · 🎯 {2}', '通關 Sumdoku {0}！⏱ {1} · 🎯 {2}', '¡Completé Sumdoku {0}! ⏱ {1} · 🎯 {2}', 'Sumdoku {0} réussi ! ⏱ {1} · 🎯 {2}', 'Sumdoku {0} geschafft! ⏱ {1} · 🎯 {2}'],
-    textFail: ['썸도쿠 {0} 도전 중! ⏱ {1} · 🎯 {2}점', 'Taking on Sumdoku {0}! ⏱ {1} · 🎯 {2}', 'サムドク{0}に挑戦中！⏱ {1} · 🎯 {2}', '挑战 Sumdoku {0}！⏱ {1} · 🎯 {2}', '挑戰 Sumdoku {0}！⏱ {1} · 🎯 {2}', '¡Desafiando Sumdoku {0}! ⏱ {1} · 🎯 {2}', 'Je relève Sumdoku {0} ! ⏱ {1} · 🎯 {2}', 'Sumdoku {0} im Visier! ⏱ {1} · 🎯 {2}'],
+    textWin: ['썸도쿠 {0} 클리어! 시간 {1} · 점수 {2}점', 'Cleared Sumdoku {0}! Time {1} · Score {2}', 'サムドク{0}をクリア！時間 {1}・スコア {2}', '通关 Sumdoku {0}！用时 {1} · 得分 {2}', '通關 Sumdoku {0}！用時 {1} · 得分 {2}', '¡Completé Sumdoku {0}! Tiempo {1} · Puntos {2}', 'Sumdoku {0} réussi ! Temps {1} · Score {2}', 'Sumdoku {0} geschafft! Zeit {1} · Punkte {2}'],
+    textFail: ['썸도쿠 {0} 도전 중! 시간 {1} · 점수 {2}점', 'Taking on Sumdoku {0}! Time {1} · Score {2}', 'サムドク{0}に挑戦中！時間 {1}・スコア {2}', '挑战 Sumdoku {0}！用时 {1} · 得分 {2}', '挑戰 Sumdoku {0}！用時 {1} · 得分 {2}', '¡Desafiando Sumdoku {0}! Tiempo {1} · Puntos {2}', 'Je relève Sumdoku {0} ! Temps {1} · Score {2}', 'Sumdoku {0} im Visier! Zeit {1} · Punkte {2}'],
     textRank: ['썸도쿠 {0} 랭크: {1} ({2} RP)', 'My Sumdoku {0} rank: {1} ({2} RP)', 'サムドク{0}ランク：{1}（{2} RP）', 'Sumdoku {0} 段位：{1}（{2} RP）', 'Sumdoku {0} 段位：{1}（{2} RP）', 'Mi rango en Sumdoku {0}: {1} ({2} RP)', 'Mon rang Sumdoku {0} : {1} ({2} RP)', 'Mein Sumdoku-{0}-Rang: {1} ({2} RP)'],
     fallbackSaved: ['공유 이미지를 저장했습니다.', 'Share image saved.', '共有画像を保存しました。', '已保存分享图片。', '已儲存分享圖片。', 'Imagen guardada.', 'Image enregistrée.', 'Bild gespeichert.']
   };
@@ -80,12 +80,17 @@
     ctx.font = `900 54px ${FONT}`; ctx.fillText('SUMDOKU', W / 2, 130);
     ctx.font = `700 28px ${FONT}`; ctx.fillStyle = 'rgba(226,232,240,.7)'; ctx.fillText(tx('tagline'), W / 2, 175);
   }
-  function statBox(ctx, x, y, w, h, label, value, color) {
+  // v2.1.8: 라벨 앞 아이콘은 이모지 대신 SVG(SumdokuEmoji)로 그립니다. icon = 아이콘 키 또는 미리 불러온 Image
+  function statBox(ctx, x, y, w, h, label, value, color, icon) {
     ctx.save();
     rr(ctx, x, y, w, h, 26); ctx.fillStyle = 'rgba(15,23,42,.72)'; ctx.fill();
     ctx.strokeStyle = color + '88'; ctx.lineWidth = 2; ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(203,213,225,.85)'; ctx.font = `800 28px ${FONT}`; ctx.fillText(label, x + w / 2, y + 50);
+    ctx.fillStyle = 'rgba(203,213,225,.85)'; ctx.font = `800 28px ${FONT}`;
+    if (icon && typeof icon === 'object') {
+      const tw = ctx.measureText(label).width, isz = 32, gap = 10, sx = x + w / 2 - (tw + isz + gap) / 2;
+      ctx.drawImage(icon, sx, y + 50 - 27, isz, isz); ctx.textAlign = 'left'; ctx.fillText(label, sx + isz + gap, y + 50); ctx.textAlign = 'center';
+    } else ctx.fillText(label, x + w / 2, y + 50);
     ctx.fillStyle = '#fff'; fitText(ctx, value, w - 30, 56); ctx.fillText(value, x + w / 2, y + 122);
     ctx.restore();
   }
@@ -109,7 +114,7 @@
     // 엠블럼
     const em = ranked && tier && R() ? await svgImage(R().tierSymbol(tier.id, 380, tier.division)) : null;
     if (em) ctx.drawImage(em, W / 2 - 190, 215, 380, 380);
-    else { ctx.textAlign = 'center'; ctx.font = `400 230px ${FONT}`; ctx.fillText(data?.status === 'win' ? '🏆' : '🧩', W / 2, 500); }
+    else await window.SumdokuEmoji?.draw?.(ctx, data?.status === 'win' ? 'trophy' : 'puzzle', W / 2 - 150, 250, 300);
     // 결과 타이틀
     const win = data?.status === 'win';
     ctx.textAlign = 'center';
@@ -132,14 +137,20 @@
     const mistTxt = data?.mistakes || `${app.mistakes || 0} / ${app.maxMistakes >= 999999 ? '∞' : app.maxMistakes}`;
     const hintTxt = String(app.hintsUsed || 0);
     const bx = 110, bw = (W - 220 - 30) / 2, bh = 160;
-    statBox(ctx, bx, 880, bw, bh, '⏱ ' + tx('time'), timeTxt, color);
-    statBox(ctx, bx + bw + 30, 880, bw, bh, '🎯 ' + tx('score'), scoreTxt, color);
-    statBox(ctx, bx, 1060, bw, bh, '⚠️ ' + tx('mistakes'), String(mistTxt), color);
-    statBox(ctx, bx + bw + 30, 1060, bw, bh, '💡 ' + tx('hints'), hintTxt, color);
+    const ico = k => window.SumdokuEmoji?.image?.(k, k === 'timer' ? '#cbd5e1' : undefined) || null;
+    const [iT, iS, iM, iH] = await Promise.all(['timer', 'target', 'warn', 'bulb'].map(ico));
+    statBox(ctx, bx, 880, bw, bh, tx('time'), timeTxt, color, iT);
+    statBox(ctx, bx + bw + 30, 880, bw, bh, tx('score'), scoreTxt, color, iS);
+    statBox(ctx, bx, 1060, bw, bh, tx('mistakes'), String(mistTxt), color, iM);
+    statBox(ctx, bx + bw + 30, 1060, bw, bh, tx('hints'), hintTxt, color, iH);
     footer(ctx);
     const text = tx(win ? 'textWin' : 'textFail', diffName(app.difficulty), timeTxt, scoreTxt) + (ranked && tier ? ` · ${rankLine}` : '');
     return { url: cv.toDataURL('image/png'), text };
   }
+
+  // v2.1.8: 공유 버튼 아이콘을 이모지 대신 SVG로 그립니다.
+  const SHARE_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
+  function setLabel(el, text) { el.innerHTML = SHARE_SVG; el.append(' ' + text); el.style.display = el.style.display || ''; el.classList.add('sd-share-ico'); }
 
   async function rankCard(app) {
     const r = R(); if (!r) return null;
@@ -163,7 +174,8 @@
     statBox(ctx, bx, 885, bw, bh, 'RP', unr ? tx('placement') : Number(s.rating).toLocaleString(), color);
     statBox(ctx, bx + bw + 30, 885, bw, bh, tx('best'), Number(s.peak || s.rating).toLocaleString(), color);
     statBox(ctx, bx, 1060, bw, bh, tx('games'), String(s.games || 0), color);
-    statBox(ctx, bx + bw + 30, 1060, bw, bh, '🔥 ' + tx('streak'), String(s.bestStreak || s.streak || 0), color);
+    const iF = await (window.SumdokuEmoji?.image?.('fire') || null);
+    statBox(ctx, bx + bw + 30, 1060, bw, bh, tx('streak'), String(s.bestStreak || s.streak || 0), color, iF);
     footer(ctx);
     return { url: cv.toDataURL('image/png'), text: tx('textRank', diffName(diff), tier.name, unr ? '-' : s.rating) };
   }
@@ -211,7 +223,7 @@
         btn.addEventListener('click', () => window.app?.shareResult?.());
         host.prepend(btn);
       }
-      if (btn) btn.textContent = tx('share');
+      if (btn) setLabel(btn, tx('share'));
     } catch (_) {}
     return r;
   };
@@ -222,7 +234,7 @@
       const card = document.getElementById('rating-card');
       if (card && !card.querySelector('.rc-share-row')) {
         const row = document.createElement('div'); row.className = 'rc-share-row';
-        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-secondary rc-share-btn'; b.textContent = tx('shareRank');
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-secondary rc-share-btn'; setLabel(b, tx('shareRank'));
         b.addEventListener('click', () => window.app?.shareRank?.());
         row.append(b); card.append(row);
       }

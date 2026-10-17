@@ -37,6 +37,7 @@
  '랭킹 보기':['View ranking','ランキングを見る','查看排行','查看排行','Ver clasificación','Voir le classement','Rangliste ansehen'],
  '전체 리더보드':['All leaderboards','全リーダーボード','全部排行榜','全部排行榜','Todas las clasificaciones','Tous les classements','Alle Bestenlisten'],
  '승급!':['promoted!','昇格！','晋级！','晉級！','¡ascenso!','promu !','Aufstieg!'],
+ '승급':['promoted','昇格','晋级','晉級','ascenso','promu','Aufstieg'],
  '강등':['demoted','降格','降级','降級','descenso','rétrogradé','Abstieg'],
  '리더보드가 아직 설정되지 않았습니다.':['Leaderboards are not set up yet.','リーダーボードはまだ設定されていません。','排行榜尚未设置。','排行榜尚未設定。','Las clasificaciones aún no están configuradas.','Les classements ne sont pas encore configurés.','Bestenlisten sind noch nicht eingerichtet.'],
  'Google Play 게임즈에 로그인하지 못했습니다.':['Could not sign in to Google Play Games.','Google Play ゲームにログインできませんでした。','无法登录 Google Play 游戏。','無法登入 Google Play 遊戲。','No se pudo iniciar sesión en Google Play Juegos.','Connexion à Google Play Jeux impossible.','Anmeldung bei Google Play Spiele fehlgeschlagen.'],

@@ -454,3 +454,7 @@ body[class*="rkc-"].battle-active #view-game .board-frame {
 }
 body[class*="rkc-"] #view-game .board-frame-wrapper,
 body[class*="rkc-"] #view-game .board-column { overflow: visible; }
+
+/* v2.1.8 · 이모지 대체 SVG(emoji-svg.js): 글자 크기를 따라가며 줄 높이를 흐트러뜨리지 않습니다. */
+.sd-emo { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: 0 0 auto; overflow: visible; }
+.sd-emo + .sd-emo { margin-left: .08em; }

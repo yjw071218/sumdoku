@@ -23,6 +23,7 @@
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
   const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const tierById = id => R.TIERS.find(x => x.id === id);
+  const I = window.SumdokuIcon || { el: () => document.createTextNode('') };
 
   const REWARDS = ['silver', 'gold', 'platinum', 'diamond', 'master', 'grandmaster'];
   const RARITY = { silver: 'rare', gold: 'rare', platinum: 'epic', diamond: 'epic', master: 'legendary', grandmaster: 'mythic' };
@@ -54,11 +55,10 @@
     rpLeft: ['{0} RP 남음', '{0} RP to go', 'あと{0} RP', '还差 {0} RP', '還差 {0} RP', 'Faltan {0} RP', 'Encore {0} RP', 'Noch {0} RP'],
     collected: ['수집 {0} / {1}', 'Collected {0} / {1}', '収集 {0} / {1}', '已收集 {0} / {1}', '已收集 {0} / {1}', 'Obtenidas {0} / {1}', 'Obtenues {0} / {1}', 'Gesammelt {0} / {1}'],
     nextReward: ['다음 보상 · {0}', 'Next reward · {0}', '次の報酬・{0}', '下一个奖励 · {0}', '下一個獎勵 · {0}', 'Siguiente · {0}', 'Prochaine · {0}', 'Nächste · {0}'],
-    nextHint: ['경쟁전 배틀에서 이기면 가까워집니다', 'Win ranked battles to get closer', 'ランク戦で勝つと近づきます', '赢得排位对战即可接近', '贏得排位對戰即可接近', 'Gana clasificatorias para acercarte', 'Gagnez des duels classés pour y arriver', 'Gewinne Ranglisten-Kämpfe, um näher zu kommen'],
-    allDone: ['모든 티어 보상을 모았습니다. 진정한 군주입니다!', 'Every tier reward collected. A true sovereign!', 'すべての報酬を収集しました。真の君主です！', '已集齐全部段位奖励，真正的君主！', '已集齊全部段位獎勵，真正的君主！', '¡Todas las recompensas! Un verdadero soberano.', 'Toutes les récompenses ! Un vrai souverain.', 'Alle Belohnungen gesammelt. Ein wahrer Herrscher!'],
-    newUnlock: ['새 티어 보상 해금!', 'New tier reward unlocked!', '新しいティア報酬を解放！', '解锁新的段位奖励！', '解鎖新的段位獎勵！', '¡Nueva recompensa desbloqueada!', 'Nouvelle récompense débloquée !', 'Neue Belohnung freigeschaltet!'],
+    allDone: ['모든 티어 보상 획득', 'All tier rewards collected', 'すべてのティア報酬を獲得', '已获得全部段位奖励', '已獲得全部段位獎勵', 'Todas las recompensas obtenidas', 'Toutes les récompenses obtenues', 'Alle Rangbelohnungen erhalten'],
+    newUnlock: ['티어 보상 해금', 'Tier reward unlocked', 'ティア報酬を解放', '段位奖励已解锁', '段位獎勵已解鎖', 'Recompensa desbloqueada', 'Récompense débloquée', 'Belohnung freigeschaltet'],
     newUnlockSub: ['랭킹 탭 › 티어 보상에서 켜고 끌 수 있습니다.', 'Toggle it in Ranking › Tier rewards.', 'ランキング › ティア報酬で切り替えられます。', '可在排名 › 段位奖励中开关。', '可在排名 › 段位獎勵中開關。', 'Actívala en Clasificación › Recompensas.', 'Activez-la dans Classement › Récompenses.', 'Unter Rangliste › Belohnungen umschaltbar.'],
-    great: ['멋져요!', 'Awesome!', 'やった！', '太棒了！', '太棒了！', '¡Genial!', 'Génial !', 'Super!'],
+    great: ['확인', 'OK', 'OK', '确定', '確定', 'Aceptar', 'OK', 'OK'],
     visible: ['상대에게 보임', 'Seen by rivals', '相手に表示', '对手可见', '對手可見', 'Lo ven rivales', 'Vu par l’adversaire', 'Für Gegner sichtbar'],
     i_plate_silver: ['닉네임 플레이트 · 실버 메탈', 'Nameplate · Silver metal', 'ネームプレート・シルバー', '昵称铭牌 · 银色金属', '暱稱銘牌 · 銀色金屬', 'Placa de nombre · plata', 'Plaque de pseudo · argent', 'Namensschild · Silber'],
     i_plate_gold: ['닉네임 플레이트 · 황금 각인', 'Nameplate · Engraved gold', 'ネームプレート・黄金刻印', '昵称铭牌 · 黄金刻印', '暱稱銘牌 · 黃金刻印', 'Placa de nombre · oro grabado', 'Plaque de pseudo · or gravé', 'Namensschild · Gravurgold'],
@@ -75,7 +75,7 @@
     th_master: ['아케인 바이올렛', 'Arcane Violet', 'アルカナバイオレット', '奥术紫', '奧術紫', 'Violeta arcano', 'Violet arcane', 'Arkanviolett'],
     th_grandmaster: ['황제의 진홍', 'Imperial Crimson', '皇帝の真紅', '帝王深红', '帝王深紅', 'Carmesí imperial', 'Pourpre impérial', 'Kaiserkarmesin'],
     th_none: ['기본', 'Default', 'デフォルト', '默认', '預設', 'Predeterminado', 'Par défaut', 'Standard'],
-    themeTitle: ['🎨 티어 테마', '🎨 Tier themes', '🎨 ティアテーマ', '🎨 段位主题', '🎨 段位主題', '🎨 Temas de rango', '🎨 Thèmes de rang', '🎨 Rang-Themes'],
+    themeTitle: ['티어 테마', 'Tier themes', 'ティアテーマ', '段位主题', '段位主題', 'Temas de rango', 'Thèmes de rang', 'Rang-Themes'],
     themeNote: ['플래티넘부터 티어마다 앱 전체 테마가 열립니다.', 'From Platinum, each tier unlocks an app-wide theme.', 'プラチナから各ティアでアプリ全体のテーマが解放されます。', '从铂金开始，每个段位解锁一套全应用主题。', '從白金開始，每個段位解鎖一套全應用主題。', 'Desde Platino, cada rango desbloquea un tema.', 'Dès Platine, chaque rang débloque un thème.', 'Ab Platin schaltet jeder Rang ein App-Theme frei.'],
     themeOn: ['테마 적용: {0}', 'Theme applied: {0}', 'テーマ適用：{0}', '已应用主题：{0}', '已套用主題：{0}', 'Tema aplicado: {0}', 'Thème appliqué : {0}', 'Theme angewendet: {0}'],
     themeOff: ['기본 테마로 돌아갔습니다.', 'Back to the default theme.', 'デフォルトテーマに戻しました。', '已恢复默认主题。', '已恢復預設主題。', 'Tema predeterminado.', 'Thème par défaut rétabli.', 'Standard-Theme wiederhergestellt.'],
@@ -173,7 +173,7 @@
       const b = mk('button', 'tt-chip' + (cur === id ? ' on' : '') + (open ? '' : ' locked'));
       b.type = 'button'; b.disabled = !open;
       b.setAttribute('aria-pressed', cur === id ? 'true' : 'false');
-      b.append(mk('span', 'tt-swatch tt-sw-' + (id || 'none')), mk('span', 'tt-chip-name', (open ? '' : '🔒 ') + t(id ? 'th_' + id : 'th_none')));
+      b.append(mk('span', 'tt-swatch tt-sw-' + (id || 'none')), (() => { const n = mk('span', 'tt-chip-name'); if (!open) n.append(I.el('lock', 11), document.createTextNode(' ')); n.append(document.createTextNode(t(id ? 'th_' + id : 'th_none'))); return n; })());
       b.onclick = () => setTheme(id);
       box.append(b);
     });
@@ -231,9 +231,9 @@
       const tx = mk('div', 'cos-next-tx');
       const bar = mk('div', 'cos-next-bar'); const fill = mk('i'); fill.style.width = pct.toFixed(1) + '%'; bar.append(fill);
       tx.append(mk('b', null, t('nextReward', tr(nt.ko))), mk('span', 'cos-next-items', ITEMS[nextId].map(x => t(x)).join(' · ')), bar,
-        mk('small', null, `${t('rpLeft', Math.max(0, nt.min - best).toLocaleString())} · ${t('nextHint')}`));
+        mk('small', null, `${t('rpLeft', Math.max(0, nt.min - best).toLocaleString())}`));
       nx.append(em, tx);
-    } else { nx.classList.add('done'); nx.append(mk('b', null, '👑 ' + t('allDone'))); }
+    } else { nx.classList.add('done'); const b0 = mk('b'); b0.append(I.el('crown', 16), document.createTextNode(' ' + t('allDone'))); nx.append(b0); }
     cos.append(nx, themePicker());
 
     const grid = mk('div', 'cos-grid');
@@ -247,7 +247,7 @@
       const nm = mk('div', 'cos-nm'); nm.append(mk('span', 'cos-rar rar-' + rar, t('rar_' + rar)), mk('b', null, tr(tier.ko)));
       top.append(em, nm, previewBoard(id));
       const ul = mk('ul', 'cos-items');
-      ITEMS[id].forEach(it => { const li = mk('li', null, t(it)); if (/^i_card_|^i_plate_/.test(it)) li.append(mk('em', 'cos-vis', '👁 ' + t('visible'))); ul.append(li); });
+      ITEMS[id].forEach(it => { const li = mk('li', null, t(it)); if (/^i_card_|^i_plate_/.test(it)) { const v = mk('em', 'cos-vis'); v.append(I.el('eye', 11), document.createTextNode(' ' + t('visible'))); li.append(v); }; ul.append(li); });
       const foot = mk('div', 'cos-foot');
       if (open) {
         const row = mk('label', 'cos-toggle');
@@ -255,10 +255,10 @@
         const cb = mk('input'); cb.type = 'checkbox'; cb.checked = c[id] !== false;
         cb.onchange = () => { const cc = ctx.loadC(); REWARDS.forEach(x => { if (cc[x] !== undefined) cc[x] = false; }); cc[id] = cb.checked; ctx.saveC(cc); ctx.applyCosmetics(); cos.closest('#season-cos') ? (cos.innerHTML = '', render(cos, ctx)) : cos.querySelectorAll('.cos-card').forEach(el => { const i2 = el.querySelector('.cos-toggle input'); if (i2) i2.checked = el.dataset.reward === id && cb.checked; }); };
         sw.append(cb, mk('span', 'slider'));
-        row.append(mk('span', 'cos-owned', '✓ ' + t('owned')), sw);
+        { const o = mk('span', 'cos-owned'); o.append(I.el('check', 13), document.createTextNode(' ' + t('owned'))); row.append(o, sw); }
         foot.append(row);
       } else {
-        foot.append(mk('span', 'cos-lock', `🔒 ${t('unlockAt', tr(tier.ko))} · ${t('rpLeft', Math.max(0, tier.min - best).toLocaleString())}`));
+        foot.append((() => { const l = mk('span', 'cos-lock'); l.append(I.el('lock', 12), document.createTextNode(' ' + `${t('unlockAt', tr(tier.ko))} · ${t('rpLeft', Math.max(0, tier.min - best).toLocaleString())}`)); return l; })());
       }
       // 닉네임 플레이트 미리보기(내 닉네임으로)
       const plate = mk('div', 'cos-plate-prev');

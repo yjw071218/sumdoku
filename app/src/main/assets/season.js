@@ -201,7 +201,7 @@
         const cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!c[id];
         cb.onchange = () => { const cc = loadC(); cc[id] = cb.checked; saveC(cc); applyCosmetics(); };
         sw.append(cb, mk('span', 'slider')); row.append(sw);
-      } else row.append(mk('span', 'cos-lock', '🔒 ' + t('locked')));
+      } else { const l = mk('span', 'cos-lock'); if (window.SumdokuIcon) l.append(SumdokuIcon.el('lock', 12)); l.append(document.createTextNode(' ' + t('locked'))); row.append(l); }
       cos.append(row);
     });
   }
