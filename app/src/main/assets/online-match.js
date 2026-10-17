@@ -155,6 +155,9 @@
     loginStoreOnly: ['배틀은 Google Play 스토어 버전에서 Google Play 게임즈에 로그인한 뒤 이용할 수 있습니다.', 'Battles are available in the Google Play Store version after signing in to Google Play Games.', 'バトルは Google Play ストア版で Google Play ゲームズにログインすると利用できます。', '对战需要在 Google Play 商店版中登录 Google Play 游戏后使用。', '對戰需在 Google Play 商店版登入 Google Play 遊戲後使用。', 'Las batallas están en la versión de Google Play Store tras iniciar sesión en Google Play Juegos.', 'Les duels sont disponibles dans la version Google Play Store après connexion à Google Play Jeux.', 'Kämpfe gibt es in der Google-Play-Store-Version nach Anmeldung bei Google Play Spiele.'],
     loginBusy: ['Google Play 게임즈에 로그인하는 중…', 'Signing in to Google Play Games…', 'Google Play ゲームズにログイン中…', '正在登录 Google Play 游戏…', '正在登入 Google Play 遊戲…', 'Iniciando sesión en Google Play Juegos…', 'Connexion à Google Play Jeux…', 'Anmeldung bei Google Play Spiele…'],
     // ---------------- v2.0.5 ----------------
+    rcLivesInf: ['목숨 무제한', 'Unlimited lives', 'ライフ無制限', '生命无限', '生命無限', 'Vidas ilimitadas', 'Vies illimitées', 'Unbegrenzte Leben'],
+    rcNoHints: ['힌트 없음', 'No hints', 'ヒントなし', '无提示', '無提示', 'Sin pistas', 'Sans indices', 'Keine Hinweise'],
+    rcTime5: ['제한 시간 5분', '5-minute limit', '制限時間5分', '限时 5 分钟', '限時 5 分鐘', 'Límite de 5 min', 'Limite de 5 min', '5-Minuten-Limit'],
     rulesChips: [
       ['목숨 3', '힌트 3', '자동 메모 끔', '턴 30초'],
       ['3 lives', '3 hints', 'No auto-notes', '30 s turns'],
@@ -696,6 +699,9 @@
         case 'ra': return this.onRematchAccept(peer);
         case 'rn': return this.onRematchReject(peer);
         case 'rgo': return this.onRematchGo(peer);
+        case 'ping': return this.sendTo(peer, { t: 'pong', ts: msg.ts });
+        case 'pong': return this.onPong(msg);
+        case 'go': return this.onGo(peer, msg);
       }
     },
 
@@ -775,7 +781,33 @@
       if (this.state === 'proposing' && this.proposeTarget === peer.id) this.backToSearching();
     },
 
+    // ----- v2.0.8 판 동시 표시: 왕복 지연(RTT)을 재서 방장은 RTT/2만큼 늦게, 참가자는 받자마자 판을 엽니다.
+    rtt: 0,
+    measureRtt() {
+      const peer = this.partnerPeer && this.partnerPeer();
+      if (!peer) return;
+      for (let i = 0; i < 3; i++) setTimeout(() => this.sendTo(peer, { t: 'ping', ts: performance.now() }), i * 250);
+    },
+    onPong(msg) {
+      const r = performance.now() - Number(msg.ts);
+      if (!(r >= 0 && r < 5000)) return;
+      this.rtt = this.rtt ? Math.round(this.rtt * 0.6 + r * 0.4) : Math.round(r);
+    },
+    /** 참가자: 방장이 DataChannel로 보낸 퍼즐로 즉시 시작합니다(폴링 지연 없음). */
+    onGo(peer, msg) {
+      const app = window.app;
+      if (peer.id !== this.partner || this.role !== 2 || !app || app.isBattle) return;
+      const pz = msg.puzzle;
+      if (!pz || typeof pz !== 'object' || !pz.solution) return;
+      clearInterval(app.guestWaitTimer);
+      try { app.hideGeneratingOverlay?.(); } catch (_) {}
+      app.dom.modalBattleLobby.classList.add('hidden');
+      app.battlePuzzleData = pz;
+      app.startBattleMatch(2, pz, MODES.some(x => x.id === msg.mode) ? msg.mode : this.mode);
+    },
+
     confirmMatch(peer, role) {
+      setTimeout(() => this.measureRtt(), 300);
       this.guestReady = false;
       this.state = 'matched';
       this.role = role;
@@ -1195,6 +1227,7 @@
       this.rematch = null;
       this.hostStarted = false;
       this.guestReady = false; // 재대결도 참가자가 다시 준비해야 시작합니다.
+      this.measureRtt();
       app.dom.modalBattleResult.classList.add('hidden');
       app.isRematchActive = true;
       app.returnToBattleLobby();
@@ -1589,7 +1622,14 @@
       const e = this.el;
       e.tab.textContent = T('tab');
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
-      const chips = T('rulesChips');
+      // v2.0.8: 공정 규칙은 선택한 배틀 모드에 따라 달라집니다(normalizedRules와 같은 기준).
+      const base = T('rulesChips'); // [목숨 3, 힌트 3, 자동 메모 끔, 턴 30초]
+      const chips = {
+        race: [T('rcLivesInf'), base[1], base[2]],
+        score: [T('rcTime5'), T('rcLivesInf'), base[1], base[2]],
+        survival: [base[0], base[1], base[2]],
+        turn: [base[0], T('rcNoHints'), base[2], base[3]]
+      }[M.mode] || base;
       e.rulesTitle.textContent = '⚖️ ' + T('rulesTitle');
       const ckey = JSON.stringify(chips);
       if (e.rulesChips.dataset.key !== ckey) {
@@ -1759,6 +1799,17 @@
         if (ok) gatedOpen.apply(this, args);
         else this.showToast?.(ID.reason === 'unavailable' ? T('loginStoreOnly') : T('loginNeed'), 4500);
       });
+    };
+
+    // v2.0.8: 방장은 퍼즐을 참가자에게 직접 보내고, 전달 시간(RTT/2)만큼 기다렸다가 판을 엽니다(가장 바깥 래퍼).
+    const baseStartSync = P.startBattleMatch;
+    if (baseStartSync) P.startBattleMatch = function (role, puzzle, mode) {
+      const peer = M.active && role === 1 && M.partnerPeer && M.partnerPeer();
+      if (!peer || !puzzle || this.isBattle) return baseStartSync.apply(this, arguments);
+      M.sendTo(peer, { t: 'go', puzzle, mode });
+      const wait = Math.max(0, Math.min(400, Math.round((M.rtt || 120) / 2)));
+      const args = arguments;
+      setTimeout(() => { if (!this.isBattle) baseStartSync.apply(this, args); }, wait);
     };
 
     // 결과 화면을 닫고 홈으로 가면 온라인 연결을 끝냅니다.

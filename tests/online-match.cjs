@@ -24,6 +24,8 @@ const DIST = process.env.DIST || 'play';
     await p.route('https://api.github.com/**', r => r.fulfill({ json: {} }));
     await p.addInitScript(({ zone, lang, nick, login, dist }) => {
       localStorage.setItem('sumdoku_language', lang);
+      // 판이 처음 뜬 시각 기록(양쪽 동시 표시 확인용)
+      setInterval(() => { if (window.app && app.isBattle && !window.__boardAt) window.__boardAt = Date.now(); if (window.app && !app.isBattle) window.__boardAt = 0; }, 5);
       localStorage.setItem('sumdoku_theme', 'theme-dark');
       localStorage.setItem('sumdoku_online_zone', zone);
       localStorage.setItem('sumdoku_online_mode', 'race');
@@ -124,6 +126,9 @@ const DIST = process.env.DIST || 'play';
   console.log('profiles', JSON.stringify(prof));
   const profOk = prof[0].p2.includes('PlayB') && prof[1].p2.includes('PlayA') && prof[0].p2.includes('🇯🇵') && prof[1].p2.includes('🇰🇷') && prof[1].tab.includes('オンライン') && prof[0].tab.includes('온라인');
   console.log(profOk ? 'PASS: Play Games names + Play country flags exchanged, HUD shows opponent, tab localized (ko/ja)' : 'FAIL: profile');
+  const at = await Promise.all([A, B].map(X => X.p.evaluate(() => window.__boardAt)));
+  const gap = Math.abs(at[0] - at[1]);
+  console.log(gap <= 150 ? `PASS: boards appeared ${gap} ms apart` : `FAIL: boards ${gap} ms apart`);
   const fin = await Promise.all([A, B].map(X => X.p.evaluate(() => ({ battle: !!app.isBattle, role: app.battleRole, url: app.battleHostUrl, sol: JSON.stringify(app.solution), rules: app.gameRules }))));
   const ok = fin[0].battle && fin[1].battle && fin[0].sol === fin[1].sol && fin[0].role !== fin[1].role;
   console.log('roles', fin.map(f => f.role), 'guest url', fin.find(f => f.role === 2)?.url);
