@@ -280,7 +280,10 @@
     w.forEach(fn => { try { fn(ID.signedIn); } catch (_) {} });
     try { UI.render(); } catch (_) {}
   };
-  const loginGateOn = () => !!window.AndroidBridge?.requestPlayerProfile;
+  // GitHub판(테스트·사이드로드)은 Play 게임즈가 없으므로 로그인 없이 배틀을 허용합니다. Play판만 로그인 필수.
+  const isPlayBuild = () => { try { return window.AndroidBridge?.getDistribution?.() === 'play'; } catch (_) { return false; } };
+  const loginGateOn = () => isPlayBuild() && !!window.AndroidBridge?.requestPlayerProfile;
+  // GitHub판에서도 Play 이름 대신 쓸 수 있도록 프로필 조회는 시도합니다(없으면 기기 지역·직접 입력 이름 사용).
   /** Play 게임즈 로그인을 확인합니다. interactive=true면 필요할 때 로그인 창을 띄웁니다. */
   function ensurePlayLogin(interactive) {
     if (!loginGateOn()) return Promise.resolve(true);

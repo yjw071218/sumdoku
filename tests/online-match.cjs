@@ -12,6 +12,7 @@ const SEPARATE = ZONE_B !== ZONE;
 // ROOM=1: A가 6자리 원격 방을 만들고 B가 번호로 참가합니다. LOGIN=0: B는 Play 게임즈 로그인 거부 → 배틀 진입 차단 확인.
 const ROOM = process.env.ROOM === '1';
 const NOLOGIN = process.env.LOGIN === '0';
+const DIST = process.env.DIST || 'play';
 
 (async () => {
   const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
@@ -21,14 +22,14 @@ const NOLOGIN = process.env.LOGIN === '0';
     const errs = [];
     p.on('pageerror', e => errs.push(e.message));
     await p.route('https://api.github.com/**', r => r.fulfill({ json: {} }));
-    await p.addInitScript(({ zone, lang, nick, login }) => {
+    await p.addInitScript(({ zone, lang, nick, login, dist }) => {
       localStorage.setItem('sumdoku_language', lang);
       localStorage.setItem('sumdoku_theme', 'theme-dark');
       localStorage.setItem('sumdoku_online_zone', zone);
       localStorage.setItem('sumdoku_online_mode', 'race');
       localStorage.setItem('sumdoku_online_diff', 'easy');
       window.AndroidBridge = {
-        getDistribution: () => 'github', isAdFree: () => true, setSecureScreen: () => {},
+        getDistribution: () => dist, isAdFree: () => true, setSecureScreen: () => {},
         isWifiConnected: () => false, setBattleNetwork: () => true,
         startOnlineBattleServer: () => JSON.stringify({ ok: true, ip: '127.0.0.1', port: 8888 }),
         stopBattleServer: () => {}, dhtStart: () => false, dhtStop: () => {}, dhtSend: () => {},
@@ -38,7 +39,7 @@ const NOLOGIN = process.env.LOGIN === '0';
           ? { signedIn: true, name: nick, id: 'g' + nick, cc: lang === 'ja' ? 'JP' : 'KR' }
           : { signedIn: false, reason: interactive ? 'canceled' : 'signed_out' }), 50)
       };
-    }, { zone, lang, nick: 'Play' + name, login });
+    }, { zone, lang, nick: 'Play' + name, login, dist: DIST });
     await p.goto(INDEX);
     await p.waitForFunction(() => window.app && window.OnlineMatch && !document.documentElement.classList.contains('boot-pending'));
     return { p, errs, name };
@@ -47,8 +48,9 @@ const NOLOGIN = process.env.LOGIN === '0';
   if (NOLOGIN) {
     await B.p.evaluate(() => app.openBattleLobby());
     await B.p.waitForTimeout(800);
-    const blocked = await B.p.evaluate(() => document.getElementById('modal-battle-lobby').classList.contains('hidden') && /Google Play/.test(document.getElementById('toast').textContent));
-    console.log(blocked ? 'PASS: battle lobby blocked without Google Play Games sign-in' : 'FAIL: lobby opened without login');
+    const hidden = await B.p.evaluate(() => document.getElementById('modal-battle-lobby').classList.contains('hidden'));
+    const blocked = DIST === 'github' ? !hidden : hidden;
+    console.log(blocked ? (DIST === 'github' ? 'PASS: GitHub build opens battle without sign-in' : 'PASS: Play build blocks battle without sign-in') : 'FAIL: login gate ' + DIST);
     await browser.close(); process.exit(blocked ? 0 : 1);
   }
 
