@@ -224,7 +224,11 @@
     rankedModeBadge: ['🎲 매칭 완료 후 4가지 모드 중 랜덤 결정', '🎲 Mode randomly selected from 4 modes on match', '🎲 マッチ完了後に4つのモードからランダム決定', '🎲 匹配完成后从4种模式中随机决定', '🎲 配對完成後從4種模式中隨機決定', '🎲 Modo elegido al azar entre los 4 al emparejar', '🎲 Mode tiré au sort parmi les 4 au match', '🎲 Modus wird nach dem Match zufällig aus 4 Modi gewählt'],
     rouletteSpinning: ['🎲 배틀 모드 랜덤 추첨 중…', '🎲 Selecting random battle mode…', '🎲 バトルモード抽選中…', '🎲 正在随机抽取对战模式…', '🎲 正在隨機抽取對戰模式…', '🎲 Sorteando modo de batalla…', '🎲 Tirage au sort du mode…', '🎲 Zufälliger Kampfmodus wird ausgelost…'],
     rouletteLocked: ['✨ 배틀 모드 확정!', '✨ Battle mode locked!', '✨ バトルモード決定！', '✨ 对战模式已确定！', '✨ 對戰模式已確定！', '✨ ¡Modo confirmado!', '✨ Mode verrouillé !', '✨ Kampfmodus festgelegt!'],
-    rulesRankedNote: ['공통 공정 규칙 (목숨 3 · 힌트 3 · 자동 메모 끔 · 턴 30초, 모드별 세부 적용)', 'Standard fair rules (3 lives · 3 hints · No auto-notes · 30 s turns, applied per mode)', '共通公平ルール（ライフ3・ヒント3・自動メモなし・ターン30秒、モード別適用）', '通用公平规则（3条命 · 3次提示 · 禁用自动笔记 · 30秒回合，按模式适用）', '通用公平規則（3條命 · 3次提示 · 停用自動筆記 · 30秒回合，依模式適用）', 'Reglas justas (3 vidas · 3 pistas · Sin notas auto · Turnos 30 s)', 'Règles équitables (3 vies · 3 indices · Sans notes auto · Tours 30 s)', 'Faire Regeln (3 Leben · 3 Hinweise · Keine Auto-Notizen · 30-s-Züge)']
+    rulesRankedNote: ['공통 공정 규칙 (목숨 3 · 힌트 3 · 자동 메모 끔 · 턴 30초, 모드별 세부 적용)', 'Standard fair rules (3 lives · 3 hints · No auto-notes · 30 s turns, applied per mode)', '共通公平ルール（ライフ3・ヒント3・自動メモなし・ターン30秒、モード別適用）', '通用公平规则（3条命 · 3次提示 · 禁用自动笔记 · 30秒回合，按模式适用）', '通用公平規則（3條命 · 3次提示 · 停用自動筆記 · 30秒回合，依模式適用）', 'Reglas justas (3 vidas · 3 pistas · Sin notas auto · Turnos 30 s)', 'Règles équitables (3 vies · 3 indices · Sans notes auto · Tours 30 s)', 'Faire Regeln (3 Leben · 3 Hinweise · Keine Auto-Notizen · 30-s-Züge)'],
+    countdownLabel: ['게임 시작까지', 'Match starts in', '試合開始まで', '距离对局开始', '距離對局開始', 'La partida empieza en', 'Début du match dans', 'Spielstart in'],
+    searchTitle: ['매칭 상대 탐색 중', 'Searching for Opponent', '対戦相手を検索中', '正在匹配对手', '正在配對對手', 'Buscando rival', 'Recherche d’adversaire', 'Suche nach Gegner'],
+    searchFoundTitle: ['상대 발견! 연결 확정 중', 'Opponent Found! Connecting', '相手発見！接続確定中', '找到对手！正在确认连接', '找到對手！正在確認連線', '¡Rival encontrado! Conectando', 'Adversaire trouvé ! Connexion', 'Gegner gefunden! Verbinde'],
+    random4Modes: ['🎲 4가지 모드 랜덤', '🎲 Random (4 modes)', '🎲 4モードランダム', '🎲 4种模式随机', '🎲 4種模式隨機', '🎲 Aleatorio (4 modos)', '🎲 Aléatoire (4 modes)', '🎲 Zufällig (4 Modi)']
   };
   const T = k => (STR[k] ? pickLang(STR[k]) : k);
   const L = o => pickLang(o.names);
@@ -536,11 +540,14 @@
       this.partner = null;
       this.state = 'idle';
       this.role = 0;
+      this.roomLaunching = false;
+      this.lastGenProgress = null;
       if (!keepActive) {
         this.active = false;
         this.mode = pick(MODES, store.get('sumdoku_online_mode', ''), 'race');
         this.diff = pick(DIFFS, store.get('sumdoku_online_diff', ''), 'expert');
       }
+      try { SearchFx.hide(); MatchFx.hide(); } catch (_) {}
       UI.render();
     },
 
@@ -723,7 +730,36 @@
         case 'ping': return this.sendTo(peer, { t: 'pong', ts: msg.ts });
         case 'pong': return this.onPong(msg);
         case 'go': return this.onGo(peer, msg);
+        case 'gen': return this.onGenMessage(peer, msg);
       }
+    },
+
+    countdownMs: 5000,
+    lastGenProgress: null,
+    roomLaunching: false,
+    resetMiniBoard() {
+      this.lastGenProgress = null;
+      try { MatchFx.resetMiniBoard(); } catch (_) {}
+    },
+    onGenProgress(p) {
+      if (!p) return;
+      this.lastGenProgress = p;
+      try { MatchFx.updateMiniBoard(p); } catch (_) {}
+    },
+    sendGenProgress(p) {
+      const peer = this.partnerPeer && this.partnerPeer();
+      if (peer && p) this.sendTo(peer, { t: 'gen', p });
+    },
+    onGenMessage(peer, msg) {
+      if (peer.id !== this.partner || !msg?.p) return;
+      this.onGenProgress(msg.p);
+    },
+    waitCountdownReady() {
+      const dur = Number.isFinite(this.countdownMs) ? this.countdownMs : 5000;
+      const targetAt = (this.matchedAt || Date.now()) + dur;
+      const remain = targetAt - Date.now();
+      if (remain <= 0) return Promise.resolve();
+      return new Promise(resolve => setTimeout(resolve, remain));
     },
 
     onHello(peer, msg) {
@@ -844,6 +880,8 @@
     confirmMatch(peer, role) {
       setTimeout(() => this.measureRtt(), 300);
       this.guestReady = false;
+      this.roomLaunching = false;
+      this.lastGenProgress = null;
       this.state = 'matched';
       this.matchedAt = Date.now();
       this.role = role;
@@ -852,6 +890,7 @@
       this.proposeTarget = null;
       this.stopDiscovery();
       for (const p of [...this.peers.values()]) if (p !== peer) { this.sendTo(p, { t: 'bye' }); this.closePeer(p); this.peers.delete(p.id); }
+      try { SearchFx.hide(); } catch (_) {}
       window.app?.sound?.play?.('click');
       try { navigator.vibrate?.(60); } catch (_) {}
       UI.render();
@@ -886,6 +925,7 @@
         this.sendTo(peer, { t: 'room' });
         this.hostStarted = false;
         clearInterval(this.hostPoll);
+        // v2.1.3: 참가자가 준비되면 곧바로 백그라운드에서 맵 생성을 시작하고, 5..1 카운트다운 종료 시점에 맞춰 진입합니다.
         this.hostPoll = setInterval(async () => {
           if (epoch !== this.epoch || this.hostStarted) return;
           try {
@@ -894,15 +934,13 @@
             app.hostP1Ready = !!st.p1Ready;
             app.hostP2Ready = !!st.p2Ready;
             if (this.kind === 'room') { UI.render(); return; } // 방장이 '게임 시작'을 눌러야 시작합니다.
-            // 경쟁전에서는 매칭 후 랜덤 모드 룰렛 연출(약 1.8초)이 끝난 뒤 경기를 시작합니다.
-            if (this.kind === 'random' && this.queue === 'ranked' && (Date.now() - (this.matchedAt || 0)) < 1850) return;
             if (st.guestJoined && st.p2Ready && !this.hostStarted && !app.battleStarting) {
               this.hostStarted = true;
               clearInterval(this.hostPoll);
               app.startBattleAsHost();
             }
           } catch (_) {}
-        }, 500);
+        }, 200);
       } catch (e) {
         app.showToast?.(T('hostFail'), 3500);
         this.sendTo(peer, { t: 'bye' });
@@ -1157,6 +1195,12 @@
       this.mode = this.roomCfg.mode; this.diff = this.roomCfg.diff;
       const app = window.app;
       if (app && !app.isBattle) { app.battleMode = this.mode; app.battleDiff = this.diff; }
+      if (msg.start) {
+        this.state = 'matched';
+        this.matchedAt = Date.now();
+        this.lastGenProgress = null;
+        this.roomLaunching = true;
+      }
       UI.render();
     },
 
@@ -1174,6 +1218,10 @@
         const dummy = { difficulty: c.diff, rules: window.normalizedRules(roomRules(c), c.mode), online: true };
         window.AndroidBridge?.updateBattleServer?.(c.mode, c.diff, c.mode === 'score' ? 300 : 0, JSON.stringify(dummy));
       } catch (_) {}
+      this.state = 'matched';
+      this.matchedAt = Date.now();
+      this.lastGenProgress = null;
+      this.roomLaunching = true;
       this.sendTo(peer, { t: 'cfg', cfg: c, start: true });
       const post = body => fetch('http://127.0.0.1:8888/api/ready', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
       await post({ player: 1, ready: true });
@@ -1277,6 +1325,9 @@
       this.rematch = null;
       this.hostStarted = false;
       this.guestReady = false; // 재대결도 참가자가 다시 준비해야 시작합니다.
+      this.roomLaunching = false;
+      this.lastGenProgress = null;
+      this.state = 'matched';
       this.matchedAt = Date.now();
       this.measureRtt();
       app.dom.modalBattleResult.classList.add('hidden');
@@ -1316,9 +1367,10 @@
   if (typeof window.normalizedRules === 'function') {
     const baseRules = window.normalizedRules;
     window.normalizedRules = function (settings, battleMode) {
+      const inMatch = M.state === 'matched' || M.state === 'playing' || !!window.app?.isBattle;
       // 랜덤 매칭만 공정 고정 규칙. 방 번호 배틀은 같은 Wi-Fi 방처럼 방장 설정을 씁니다.
-      if (M.active && M.kind === 'random' && (M.state === 'matched' || window.app?.isBattle)) return baseRules(FIXED_RULES, battleMode);
-      if (M.active && M.kind === 'room' && (M.state === 'matched' || window.app?.isBattle)) return baseRules(roomRules(M.roomCfg), battleMode || M.roomCfg.mode);
+      if (M.active && M.kind === 'random' && inMatch) return baseRules(FIXED_RULES, battleMode);
+      if (M.active && M.kind === 'room' && inMatch) return baseRules(roomRules(M.roomCfg), battleMode || M.roomCfg.mode);
       return baseRules(settings, battleMode);
     };
   }
@@ -1462,7 +1514,7 @@
       const click = () => app.sound?.play?.('click');
       this.el.start.addEventListener('click', () => {
         click();
-        if (M.state === 'idle') M.startRandom(); else { M.leave(); setTimeout(() => this.render(), 400); }
+        if (M.state === 'idle' || M.state === 'postgame') M.startRandom(); else { M.leave(); setTimeout(() => this.render(), 400); }
       });
       // 닉네임: 비워 두거나 Play 이름과 같으면 Google Play 게임즈 이름을 계속 따라갑니다.
       this.el.nameInput.value = customName();
@@ -1474,14 +1526,14 @@
         this.render();
       });
       this.el.kinds.forEach(b => b.addEventListener('click', () => {
-        if (M.state !== 'idle') return;
+        if (M.state !== 'idle' && M.state !== 'postgame') return;
         click();
         M.kind = b.dataset.kind === 'room' ? 'room' : 'random';
         store.set('sumdoku_online_kind', M.kind);
         this.render();
       }));
       this.el.queues.forEach(b => b.addEventListener('click', () => {
-        if (M.state === 'matched') return;
+        if (M.state === 'matched' || M.state === 'playing') return;
         click();
         M.setQueue(b.dataset.queue);
       }));
@@ -1552,7 +1604,7 @@
 
     renderPickers() {
       if (!this.built) return;
-      const locked = M.state === 'matched';
+      const locked = M.state === 'matched' || M.state === 'playing';
       const isRanked = M.queue === 'ranked';
       this.el.queues.forEach(b => {
         const on = b.dataset.queue === M.queue;
@@ -1621,7 +1673,8 @@
     renderRoom() {
       const e = this.el;
       const lobby = window.app?.dom?.modalBattleLobby;
-      const open = M.kind === 'room' && M.state !== 'idle' && !(window.app && window.app.isBattle) && !!lobby && !lobby.classList.contains('hidden');
+      const inRoomLobbyState = M.state === 'searching' || M.state === 'proposing' || (M.state === 'matched' && !M.roomLaunching);
+      const open = M.kind === 'room' && inRoomLobbyState && !(window.app && window.app.isBattle) && !!lobby && !lobby.classList.contains('hidden');
       e.room.classList.toggle('hidden', !open);
       document.documentElement.classList.toggle('om-room-open', open);
       if (!open) return;
@@ -1723,7 +1776,7 @@
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
       // v2.1.2: 경쟁전은 매칭 전에 모드가 정해지지 않으므로 공통 공정 규칙을 표시하고, 일반전·매칭 완료 후에는 모드별 세부 규칙을 표시합니다.
       const base = T('rulesChips'); // [목숨 3, 힌트 3, 자동 메모 끔, 턴 30초]
-      const showModeRules = M.queue === 'normal' || M.state === 'matched';
+      const showModeRules = M.queue === 'normal' || M.state === 'matched' || M.state === 'playing';
       const chips = showModeRules ? ({
         race: [T('rcLivesInf'), base[1], base[2]],
         score: [T('rcTime5'), T('rcLivesInf'), base[1], base[2]],
@@ -1742,7 +1795,7 @@
         b.textContent = T(b.dataset.kind === 'room' ? 'kindRoom' : 'kindRandom');
         b.classList.toggle('active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
-        b.disabled = M.state !== 'idle' && !on;
+        b.disabled = (M.state !== 'idle' && M.state !== 'postgame') && !on;
       });
       e.view.classList.toggle('om-kind-room', M.kind === 'room');
       e.roomLead.textContent = T('roomLead');
@@ -1753,30 +1806,32 @@
       e.nats.forEach(n => { n.textContent = T('nat'); });
       e.nameInput.placeholder = ID.name || T('namePh');
       if (document.activeElement !== e.nameInput) e.nameInput.value = customName();
-      e.nameInput.disabled = M.state !== 'idle';
+      e.nameInput.disabled = M.state !== 'idle' && M.state !== 'postgame';
       e.nameFlag.textContent = flagOf(myCountry());
       const mt = myTier(M.diff);
       const tkey = JSON.stringify(mt);
       if (e.nameTier.dataset.key !== tkey) { e.nameTier.dataset.key = tkey; e.nameTier.innerHTML = tierSvg(mt, 30); }
       e.nameTier.title = tierLabel(mt);
 
-      const busy = M.state !== 'idle' && M.kind === 'random';
+      const isSearching = M.state === 'searching' || M.state === 'proposing';
+      const isMatched = M.state === 'matched';
+      const busy = (isSearching || isMatched) && M.kind === 'random';
       e.view.classList.toggle('om-busy', busy);
-      e.view.classList.toggle('om-is-matched', M.state === 'matched');
+      e.view.classList.toggle('om-is-matched', isMatched);
       e.start.textContent = busy ? T('cancel') : T('start');
       e.start.className = `btn ${busy ? 'btn-secondary' : 'btn-primary'} om-start`;
-      e.status.classList.toggle('hidden', !busy || M.state === 'matched');
-      e.matched.classList.toggle('hidden', !(busy && M.state === 'matched'));
+      e.status.classList.toggle('hidden', !busy || isMatched);
+      e.matched.classList.toggle('hidden', !(busy && isMatched));
       this.renderPickers();
 
-      if (busy && M.state !== 'matched') {
+      if (busy && isSearching) {
         const sec = Math.floor((Date.now() - M.startedAt) / 1000);
         const z = ZONES.find(x => x.id === M.zone);
         const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         e.statusText.textContent = `${qBadge} · ` + (M.state === 'proposing' ? T('found') : T('searching')) + ` ${z.flag}`;
         e.stats.innerHTML = `<div class="om-elapsed">${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</div>`;
       }
-      if (busy && M.state === 'matched') {
+      if (busy && isMatched) {
         const z = ZONES.find(x => x.id === M.zone), mo = MODES.find(x => x.id === M.mode), di = DIFFS.find(x => x.id === M.diff);
         const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         e.matched.innerHTML = '';
@@ -1789,14 +1844,118 @@
         e.matched.append(h, vs, meta);
       }
       this.renderRoom();
-      if (busy && M.state === 'matched') MatchFx.show(); else if (M.state !== 'matched') MatchFx.hide();
+      const showSearchFx = !(window.app && window.app.isBattle) && M.kind === 'random' && isSearching;
+      if (showSearchFx) SearchFx.show(); else SearchFx.hide();
+      const showMatchFx = !(window.app && window.app.isBattle) && isMatched && (M.kind === 'random' || M.roomLaunching);
+      if (showMatchFx) MatchFx.show(); else MatchFx.hide();
     }
   };
 
-  // v2.0.9 / v2.1.2 · 랜덤 매칭 성사 시 전체 화면 VS 연출 + 경쟁전 랜덤 모드 슬롯/룰렛 추첨 모션
+  // v2.1.3 · 매칭 탐색 중 화면 전체에 크게 뜨는 전용 매칭 탐색 UI
+  const SearchFx = {
+    el: null, key: '', timer: null,
+    show() {
+      if (window.app?.isBattle || M.kind !== 'random' || (M.state !== 'searching' && M.state !== 'proposing')) {
+        this.hide();
+        return;
+      }
+      if (!this.el) {
+        this.el = document.createElement('div');
+        this.el.id = 'om-search-fx';
+        this.el.className = 'om-search-fx';
+        this.el.setAttribute('role', 'dialog');
+        this.el.setAttribute('aria-modal', 'true');
+        (document.getElementById('app') || document.body).append(this.el);
+      }
+      const isRanked = M.queue === 'ranked';
+      this.el.classList.toggle('is-ranked', isRanked);
+      this.el.classList.toggle('is-proposing', M.state === 'proposing');
+
+      const z = ZONES.find(x => x.id === M.zone) || ZONES[0];
+      const mo = MODES.find(x => x.id === M.mode) || MODES[0];
+      const di = DIFFS.find(x => x.id === M.diff) || DIFFS[0];
+      const qBadge = T(isRanked ? 'queueRanked' : 'queueNormal');
+      const modeLabel = isRanked ? T('random4Modes') : L(mo);
+      const prof = myProfile(M.diff);
+
+      const key = JSON.stringify([M.queue, M.zone, M.mode, M.diff, M.state, prof.n, prof.cc, prof.tier, langIdx()]);
+      if (this.key !== key) {
+        this.key = key;
+        this.el.innerHTML = `
+          <div class="om-sfx-inner">
+            <div class="om-sfx-badges">
+              <span class="om-sfx-pill om-sfx-queue">${qBadge}</span>
+              <span class="om-sfx-pill om-sfx-zone">${z.flag} ${L(z)}</span>
+            </div>
+            <div class="om-sfx-radar-wrap" aria-hidden="true">
+              <div class="om-sfx-radar">
+                <span class="om-sfx-ring r1"></span>
+                <span class="om-sfx-ring r2"></span>
+                <span class="om-sfx-ring r3"></span>
+                <div class="om-sfx-sweep"></div>
+                <div class="om-sfx-center">${tierSvg(prof.tier, 64)}</div>
+              </div>
+            </div>
+            <div class="om-sfx-title">${T(M.state === 'proposing' ? 'searchFoundTitle' : 'searchTitle')}</div>
+            <div class="om-sfx-sub">${T(M.state === 'proposing' ? 'found' : 'searching')}</div>
+            <div class="om-sfx-chips">
+              <span class="om-sfx-chip">${modeLabel}</span>
+              <span class="om-sfx-chip">${L(di)}</span>
+            </div>
+            <div class="om-sfx-timer">0:00</div>
+            <div class="om-sfx-me-wrap"></div>
+            <button type="button" class="btn btn-secondary om-sfx-cancel">${T('cancel')}</button>
+          </div>`;
+        const meWrap = this.el.querySelector('.om-sfx-me-wrap');
+        if (meWrap) meWrap.append(UI.playerCard(T('me'), prof, 'om-sfx-player'));
+        const cancelBtn = this.el.querySelector('.om-sfx-cancel');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', () => {
+            window.app?.sound?.play?.('click');
+            M.leave();
+            this.hide();
+            setTimeout(() => UI.render(), 350);
+          });
+        }
+      }
+      this.updateTimer();
+      if (!this.el.classList.contains('on')) {
+        this.el.classList.add('on');
+        clearInterval(this.timer);
+        this.timer = setInterval(() => {
+          if (window.app?.isBattle || M.kind !== 'random' || (M.state !== 'searching' && M.state !== 'proposing')) {
+            this.hide();
+            return;
+          }
+          this.updateTimer();
+        }, 250);
+      }
+    },
+    updateTimer() {
+      if (!this.el) return;
+      const tEl = this.el.querySelector('.om-sfx-timer');
+      if (!tEl) return;
+      const sec = Math.max(0, Math.floor((Date.now() - (M.startedAt || Date.now())) / 1000));
+      tEl.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    },
+    hide() {
+      clearInterval(this.timer);
+      this.timer = null;
+      if (this.el) {
+        this.el.classList.remove('on');
+        this.key = '';
+      }
+    }
+  };
+
+  // v2.0.9 / v2.1.2 / v2.1.3 · 매칭 성사 시 전체 화면 VS 연출 + 경쟁전 랜덤 모드 룰렛 + 5,4,3,2,1 카운트다운 + 하단 소형 미니보드
+  const MINI_PALETTE = [
+    '#bfdbfe', '#bbf7d0', '#fef08a', '#fed7aa', '#fbcfe8',
+    '#ddd6fe', '#c7d2fe', '#99f6e4', '#fed7d7', '#e9d5ff'
+  ];
   const MatchFx = {
-    el: null, key: '', watch: null, spinTimer: null, audioCtx: null,
-    playTick(final) {
+    el: null, key: '', watch: null, spinTimer: null, audioCtx: null, lastCountVal: 0,
+    playTick(final, freqOverride) {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
@@ -1806,7 +1965,7 @@
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
         osc.type = final ? 'triangle' : 'sine';
-        osc.frequency.setValueAtTime(final ? 880 : 520, now);
+        osc.frequency.setValueAtTime(freqOverride || (final ? 880 : 520), now);
         if (final) osc.frequency.exponentialRampToValueAtTime(1320, now + 0.18);
         gain.gain.setValueAtTime(final ? 0.14 : 0.06, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + (final ? 0.24 : 0.055));
@@ -1862,13 +2021,93 @@
         this.playTick(false);
         step++;
         const progress = step / totalSteps;
-        const delay = Math.round(55 + Math.pow(progress, 2.1) * 165);
+        const delay = Math.round(50 + Math.pow(progress, 2.0) * 145);
         this.spinTimer = setTimeout(tick, delay);
       };
       tick();
     },
+    buildMiniBoard() {
+      const board = document.createElement('div');
+      board.id = 'om-fx-miniboard';
+      board.className = 'om-fx-miniboard';
+      board.setAttribute('aria-hidden', 'true');
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'om-fx-minicell';
+          cell.id = `om-fx-cell-${r}-${c}`;
+          cell.dataset.r = String(r);
+          cell.dataset.c = String(c);
+          board.appendChild(cell);
+        }
+      }
+      return board;
+    },
+    resetMiniBoard() {
+      if (!this.el) return;
+      const cells = this.el.querySelectorAll('.om-fx-minicell');
+      cells.forEach(cell => {
+        cell.style.backgroundColor = '';
+        cell.className = 'om-fx-minicell';
+        cell.textContent = '';
+      });
+    },
+    updateMiniBoard(p) {
+      if (!this.el || !p) return;
+      const board = this.el.querySelector('#om-fx-miniboard');
+      if (!board) return;
+      if (Array.isArray(p.cages) && p.cages.length) {
+        board.classList.add('has-cages');
+        const glyphs = (typeof SumdokuApp !== 'undefined' && SumdokuApp.CIPHER_GLYPHS) || ['◈', '◇', '◆', '❖', '✦', '✧', '⬢', '⬡', '∆'];
+        const cipher = () => glyphs[Math.floor(Math.random() * glyphs.length)];
+        p.cages.forEach((cage, idx) => {
+          const color = MINI_PALETTE[idx % MINI_PALETTE.length];
+          const isSingleAnchor = Array.isArray(cage.cells) && cage.cells.length === 1;
+          (cage.cells || []).forEach(([r, c]) => {
+            const el = board.querySelector(`#om-fx-cell-${r}-${c}`);
+            if (el) {
+              el.style.backgroundColor = isSingleAnchor ? '#fbbf24' : color;
+              el.classList.add('caged');
+              if (isSingleAnchor) {
+                el.classList.add('anchor', 'cipher');
+                el.textContent = cipher();
+              } else {
+                el.classList.remove('anchor');
+                el.textContent = '';
+              }
+            }
+          });
+        });
+        if (Array.isArray(p.solvedCells)) {
+          p.solvedCells.forEach(([r, c]) => {
+            const el = board.querySelector(`#om-fx-cell-${r}-${c}`);
+            if (el && !el.classList.contains('anchor')) {
+              el.classList.add('solved', 'cipher');
+              el.textContent = cipher();
+            }
+          });
+        }
+      }
+    },
+    updateCountdown() {
+      if (!this.el) return;
+      const cdEl = this.el.querySelector('.om-fx-countdown');
+      if (!cdEl) return;
+      const dur = Number.isFinite(M.countdownMs) ? M.countdownMs : 5000;
+      const elapsed = Math.max(0, Date.now() - (M.matchedAt || Date.now()));
+      const remSec = Math.max(1, Math.min(5, Math.ceil((dur - elapsed) / 1000)));
+      if (this.lastCountVal !== remSec) {
+        this.lastCountVal = remSec;
+        cdEl.textContent = String(remSec);
+        cdEl.dataset.count = String(remSec);
+        cdEl.classList.remove('om-fx-cd-pop');
+        void cdEl.offsetWidth;
+        cdEl.classList.add('om-fx-cd-pop');
+        this.playTick(false, 640 + (5 - remSec) * 60);
+      }
+    },
     show() {
-      if (window.app?.isBattle) { this.hide(); return; }
+      if (window.app?.isBattle || M.state !== 'matched') { this.hide(); return; }
       if (!this.el) {
         this.el = document.createElement('div');
         this.el.id = 'om-match-fx';
@@ -1876,18 +2115,25 @@
         this.el.setAttribute('role', 'status');
         (document.getElementById('app') || document.body).append(this.el);
       }
-      const key = JSON.stringify([M.partner, M.partnerProfile, M.queue, M.mode, M.diff, M.matchedAt, langIdx()]);
+      const key = JSON.stringify([M.partner, M.partnerProfile, M.kind, M.queue, M.mode, M.diff, M.matchedAt, langIdx()]);
       if (this.key !== key) {
         this.key = key;
+        this.lastCountVal = 0;
         const mo = MODES.find(x => x.id === M.mode) || MODES[0], di = DIFFS.find(x => x.id === M.diff) || DIFFS[0];
-        const qBadge = T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
+        const qBadge = M.kind === 'room' ? T('roomTitle') : T(M.queue === 'normal' ? 'queueNormal' : 'queueRanked');
         const t = document.createElement('div'); t.className = 'om-fx-title'; t.textContent = T('matchFound');
         const row = document.createElement('div'); row.className = 'om-fx-row';
         const x = document.createElement('div'); x.className = 'om-fx-vs'; x.textContent = 'VS';
         row.append(UI.playerCard(T('me'), myProfile(M.diff), 'om-fx-me'), x, UI.playerCard(T('opp'), M.partnerProfile || cleanProfile(null, M.partner), 'om-fx-opp'));
         const meta = document.createElement('div'); meta.className = 'om-fx-meta';
-        const sub = document.createElement('div'); sub.className = 'om-fx-sub'; sub.textContent = T('matched');
-        if (M.queue === 'ranked') {
+
+        const cdBox = document.createElement('div');
+        cdBox.className = 'om-fx-cd-box';
+        cdBox.innerHTML = `<div class="om-fx-cd-label">${T('countdownLabel')}</div><div class="om-fx-countdown" data-count="5">5</div>`;
+
+        const miniBoard = this.buildMiniBoard();
+
+        if (M.kind === 'random' && M.queue === 'ranked') {
           meta.textContent = `${qBadge} · ${L(di)}`;
           const roulette = document.createElement('div');
           roulette.className = 'om-fx-roulette';
@@ -1897,22 +2143,30 @@
             <div class="om-fx-r-grid">
               ${MODES.map(m => `<div class="om-fx-r-card" data-mode="${m.id}">${L(m)}</div>`).join('')}
             </div>`;
-          this.el.replaceChildren(t, row, meta, roulette, sub);
+          this.el.replaceChildren(t, row, meta, roulette, cdBox, miniBoard);
           this.spinRoulette(roulette, M.mode);
         } else {
           meta.textContent = `${qBadge} · ${L(mo)} · ${L(di)}`;
-          this.el.replaceChildren(t, row, meta, sub);
+          this.el.replaceChildren(t, row, meta, cdBox, miniBoard);
         }
+        if (M.lastGenProgress) this.updateMiniBoard(M.lastGenProgress);
       }
+      this.updateCountdown();
       if (this.el.classList.contains('on')) return;
       this.el.classList.add('on');
       try { navigator.vibrate?.([40, 60, 80]); } catch (_) {}
       clearInterval(this.watch);
-      this.watch = setInterval(() => { if (window.app?.isBattle || M.state !== 'matched') this.hide(); }, 100);
+      this.watch = setInterval(() => {
+        if (window.app?.isBattle || M.state !== 'matched') { this.hide(); return; }
+        this.updateCountdown();
+      }, 100);
     },
     hide() {
       clearInterval(this.watch);
+      this.watch = null;
       clearTimeout(this.spinTimer);
+      this.spinTimer = null;
+      this.lastCountVal = 0;
       if (this.el) { this.el.classList.remove('on'); this.key = ''; }
     }
   };
@@ -1938,7 +2192,9 @@
     P.openBattleLobby = function () {
       this.isRematchActive = false;
       if (M.state !== 'idle' && !M.partnerPeer()) M.stop(false);
+      else if (M.state === 'postgame') M.stop(false);
       M.rematch = null;
+      SearchFx.hide();
       MatchFx.hide();
       try { this.cancelRoomPreparation?.(); } catch (_) {}
       this.dom.modalBattleLobby.classList.remove('hidden');
@@ -1968,10 +2224,9 @@
               const st = await (await fetch('http://127.0.0.1:8888/api/status')).json();
               this.guestJoined = !!st.guestJoined; this.hostP2Ready = !!st.p2Ready;
               if (M.kind === 'room') { UI.render(); return; }
-              if (M.kind === 'random' && M.queue === 'ranked' && (Date.now() - (M.matchedAt || 0)) < 1850) return;
               if (st.guestJoined && st.p2Ready && !this.battleStarting) { M.hostStarted = true; clearInterval(M.hostPoll); this.startBattleAsHost(); }
             } catch (_) {}
-          }, 600);
+          }, 200);
         }
       }
       return r;
@@ -1986,6 +2241,12 @@
     // 기존 '상대가 재도전 신청 → 자동 복귀' 폴링을 끕니다(수락 절차로 대체).
     const baseEnd = P.handleBattleEnd;
     P.handleBattleEnd = function () {
+      if (M.active || M.state !== 'idle') {
+        M.state = 'postgame';
+        M.roomLaunching = false;
+        SearchFx.hide();
+        MatchFx.hide();
+      }
       const r = baseEnd.apply(this, arguments);
       if (M.active || M.state !== 'idle') {
         clearInterval(this.rematchCheckTimer); setTimeout(() => clearInterval(this.rematchCheckTimer), 0);
@@ -2019,6 +2280,12 @@
     const baseStartMatch = P.startBattleMatch;
     if (baseStartMatch) P.startBattleMatch = function () {
       M.rematch = null;
+      if (M.active) {
+        M.state = 'playing';
+        M.roomLaunching = false;
+      }
+      SearchFx.hide();
+      MatchFx.hide();
       // 방 번호 참가자는 방장에게 받은 방 설정의 모드로 시작합니다(서버 설정 반영이 늦어도 어긋나지 않게).
       if (M.active && M.kind === 'room' && arguments[0] === 2) arguments[2] = M.roomCfg.mode;
       const r = baseStartMatch.apply(this, arguments);
@@ -2087,5 +2354,7 @@
   const retry = setInterval(() => { if (UI.build() || ++tries > 40) clearInterval(retry); }, 100);
 
   M.ui = UI;
+  M.searchFx = SearchFx;
+  M.matchFx = MatchFx;
   window.OnlineMatch = M;
 })();

@@ -1384,6 +1384,12 @@ class SumdokuApp {
       this.dom.genPreviewSubtext.textContent = '컴퓨터 솔버 0.1ms 컷트 & 연역 엔진 가동 중';
     }
 
+    const inBattleGen = !!(this.battleStarting || this.isBattle || window.OnlineMatch?.active || (customTitle && String(customTitle).includes('배틀')));
+    if (inBattleGen) {
+      this.dom.generatingOverlay.classList.add('hidden');
+      try { window.OnlineMatch?.resetMiniBoard?.(); } catch (_) {}
+      return;
+    }
     this.dom.generatingOverlay.classList.remove('hidden');
   }
 
@@ -1414,6 +1420,7 @@ class SumdokuApp {
   }
 
   updateGeneratingProgress(p) {
+    try { if (p) window.OnlineMatch?.onGenProgress?.(p); } catch (_) {}
     if (!this.dom.generatingOverlay || this.dom.generatingOverlay.classList.contains('hidden')) return;
     if (this.dom.genProgressBar) {
       this.dom.genProgressBar.style.width = `${p.percent || 15}%`;
@@ -2626,8 +2633,9 @@ class SumdokuApp {
     }
     this.endBattleSession(false);
 
-    // 상대방의 재도전 신청 감지 폴링
+    // 상대방의 재도전 신청 감지 폴링 (오프라인/레거시 전용 · 온라인 매칭은 DataChannel 수락 절차를 씀)
     clearInterval(this.rematchCheckTimer);
+    if (window.OnlineMatch?.active) return;
     const targetUrl = (this.battleRole === 1) ? `http://${this.battleHostIp}:8888` : this.battleHostUrl;
     if (targetUrl) {
       this.rematchCheckTimer = setInterval(async () => {

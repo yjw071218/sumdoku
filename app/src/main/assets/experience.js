@@ -431,15 +431,25 @@ SumdokuApp.prototype.startBattleAsHost = function() {
     if (token !== this.roomGeneration) return;
     this.updateGeneratingProgress(progress);
     const now = Date.now();
-    if (now - lastSentTime > 120 || progress.percent === 100 || progress.stepStatus === 'completed') {
+    if (now - lastSentTime > 90 || progress.percent === 100 || progress.stepStatus === 'completed') {
       lastSentTime = now;
       // v1.1.30: 정답(solution)·풀이 셀은 참가자에게 보내지 않습니다(생성 화면 캡처로 정답 유출 방지).
       const { solution, solvedCells, ...safe } = progress || {};
-      sendProgress({ generating: true, diff: this.battleDiff || 'expert', ...safe });
+      const payload = { generating: true, diff: this.battleDiff || 'expert', ...safe };
+      sendProgress(payload);
+      try { window.OnlineMatch?.sendGenProgress?.(payload); } catch (_) {}
     }
   }).then(async (puzzleData) => {
     if (token !== this.roomGeneration) return;
     if (!puzzleData) throw new Error('퍼즐 생성에 실패했습니다.');
+    const finalProg = { generating: true, diff: this.battleDiff || 'expert', cages: puzzleData.cages, percent: 100, step: '3', stepStatus: 'completed' };
+    this.updateGeneratingProgress(finalProg);
+    sendProgress(finalProg);
+    try { window.OnlineMatch?.sendGenProgress?.(finalProg); } catch (_) {}
+    if (window.OnlineMatch?.waitCountdownReady) {
+      await window.OnlineMatch.waitCountdownReady();
+    }
+    if (token !== this.roomGeneration || (window.OnlineMatch && !window.OnlineMatch.active)) return;
     const puzzle = { ...puzzleData, difficulty: this.battleDiff || 'expert', rules: normalizedRules(this.settings) };
     this.battlePuzzleData = puzzle;
     await this.battleRequest(`http://${this.battleHostIp}:8888/api/start`, {
@@ -657,14 +667,18 @@ SumdokuApp.prototype.startGuestPolling = function() {
         }
       }
 
-      // 방장이 배틀 시작을 눌러 맵을 생성 중일 때 참가자 화면에도 동일하게 맵 생성 진행 오버레이 표시
+      // 방장이 배틀 시작을 눌러 맵을 생성 중일 때 참가자 화면에도 동일하게 맵 생성 진행 표시
       if (room.generation && room.generation.generating) {
-        if (!this.dom.generatingOverlay || this.dom.generatingOverlay.classList.contains('hidden')) {
+        if (!this._guestGenInited) {
+          this._guestGenInited = true;
           this.showGeneratingOverlay(room.generation.diff || room.diff || 'expert', '배틀 퍼즐 생성 중 (방장 생성 중)');
         }
         this.updateGeneratingProgress(room.generation);
-      } else if (this.dom.generatingOverlay && !this.dom.generatingOverlay.classList.contains('hidden') && room.status === 'waiting') {
-        this.hideGeneratingOverlay();
+      } else if (room.status === 'waiting') {
+        this._guestGenInited = false;
+        if (this.dom.generatingOverlay && !this.dom.generatingOverlay.classList.contains('hidden')) {
+          this.hideGeneratingOverlay();
+        }
       }
 
       if (room.status === 'playing' && room.puzzle && room.puzzle.solution) {

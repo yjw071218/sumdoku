@@ -30,8 +30,13 @@
   };
   const bridge = () => window.AndroidBridge;
 
-  const isRankedPlay = app => !!app && app.currentView === 'game' && !app.isBattle && app.gameMode !== 'battle' &&
-    (app.isDaily || app.isRanked !== false) && !app.isWin && !app.resultReason;
+  const isCompetitiveBattle = app => !!app && !!app.isBattle &&
+    !(window.OnlineMatch?.active && (window.OnlineMatch.kind === 'room' || window.OnlineMatch.queue === 'normal'));
+
+  const isRankedPlay = app => !!app && app.currentView === 'game' && !app.isWin && !app.resultReason && (
+    isCompetitiveBattle(app) ||
+    (!app.isBattle && app.gameMode !== 'battle' && (app.isDaily || app.isRanked !== false))
+  );
 
   const fresh = () => ({ count: 0, ms: 0, since: 0 });
   // 이탈 기록에 따른 승리 RP 배율
@@ -47,57 +52,113 @@
   let secureOn = null;
   function syncSecure(app) {
     const want = isRankedPlay(app);
-    if (want === secureOn) return;
-    secureOn = want;
-    try { bridge()?.setSecureScreen?.(want); } catch (_) {}
-    document.body.classList.toggle('ranked-protected', want);
+    if (want !== secureOn) {
+      secureOn = want;
+      try { bridge()?.setSecureScreen?.(want); } catch (_) {}
+      document.body.classList.toggle('ranked-protected', want);
+    }
+    if (!want) veil(false);
   }
 
-  // ---------------- 이탈 감지 ----------------
+  // ---------------- 이탈 감지 및 앱 외부 전환 시 화면 가림 ----------------
+  let hideTimer = null;
   function veil(show) {
+    clearTimeout(hideTimer);
     let v = document.getElementById('integrity-veil');
     if (show) {
       if (!v) {
         v = document.createElement('div');
         v.id = 'integrity-veil'; v.className = 'integrity-veil'; v.setAttribute('aria-hidden', 'true');
-        (document.getElementById('view-game') || document.body).append(v);
+        (document.getElementById('app') || document.body).append(v);
       }
       v.textContent = '🛡️ ' + tx('veil');
       v.hidden = false;
-    } else if (v) v.hidden = true;
-  }
-  document.addEventListener('visibilitychange', () => {
-    const app = window.app;
-    if (!app) return;
-    if (document.hidden) {
-      if (!isRankedPlay(app)) return;
-      app._away = app._away || fresh();
-      app._away.since = Date.now();
-      veil(true);
-      return;
+      document.body.classList.add('integrity-veiled');
+    } else {
+      if (v) v.hidden = true;
+      document.body.classList.remove('integrity-veiled');
     }
+  }
+
+  function handleAppLeave() {
+    const app = window.app;
+    if (!app || !isRankedPlay(app)) return;
+    app._away = app._away || fresh();
+    if (!app._away.since) app._away.since = Date.now();
+    veil(true);
+  }
+
+  function handleAppReturn() {
+    const app = window.app;
+    if (!app) { veil(false); return; }
     const a = app._away;
     if (a && a.since) {
       const gone = Math.max(0, Date.now() - a.since);
       a.since = 0;
       // 1초 미만 깜빡임(알림창 내리기 등)은 세지 않습니다.
-      if (gone >= 1000) {
+      if (gone >= 1000 && isRankedPlay(app)) {
         a.count++; a.ms += gone;
         try { app.saveOngoingGame?.(); } catch (_) {}
         setTimeout(() => app.showToast?.(tx('away', a.count, Math.round(a.ms / 1000)), 3600), 250);
       }
     }
-    setTimeout(() => veil(false), 350);
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      if (!document.hidden) veil(false);
+    }, 180);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) handleAppLeave();
+    else handleAppReturn();
   });
+  window.addEventListener('blur', () => handleAppLeave());
+  window.addEventListener('focus', () => { if (!document.hidden) handleAppReturn(); });
+  window.addEventListener('pagehide', () => handleAppLeave());
+  window.addEventListener('pageshow', () => { if (!document.hidden) handleAppReturn(); });
+  window.onAppFocusChanged = function (hasFocus) {
+    if (!hasFocus) handleAppLeave();
+    else if (!document.hidden) handleAppReturn();
+  };
 
   // ---------------- 게임 흐름 연결 ----------------
   const baseStart = P.startNewGame;
   P.startNewGame = function (...args) {
     this._away = fresh();
     const r = baseStart.apply(this, args);
+    syncSecure(this);
     Promise.resolve(r).then(() => syncSecure(this));
     return r;
   };
+  const baseBattleStart = P.startBattleMatch;
+  if (baseBattleStart) {
+    P.startBattleMatch = function (...args) {
+      this._away = fresh();
+      const r = baseBattleStart.apply(this, args);
+      syncSecure(this);
+      return r;
+    };
+  }
+  const baseBattleEnd = P.handleBattleEnd;
+  if (baseBattleEnd) {
+    P.handleBattleEnd = function (...args) {
+      const r = baseBattleEnd.apply(this, args);
+      secureOn = null;
+      syncSecure(this);
+      veil(false);
+      return r;
+    };
+  }
+  const baseEndSession = P.endBattleSession;
+  if (baseEndSession) {
+    P.endBattleSession = function (...args) {
+      const r = baseEndSession.apply(this, args);
+      secureOn = null;
+      syncSecure(this);
+      veil(false);
+      return r;
+    };
+  }
   const baseSwitch = P.switchView;
   P.switchView = function (...args) {
     const r = baseSwitch.apply(this, args);
@@ -126,11 +187,10 @@
   };
   // rating.js 가 승리 RP 계산 직후 이 배율을 곱합니다.
   P.integrityFactor = function () { return factorOf(this._away); };
-  // 이탈 기록은 승리 RP에 영향을 주지 않습니다(화면 보호·보드 가림만 유지).
   const baseRecord = P.recordGameEnd;
   P.recordGameEnd = function (...a) { const r = baseRecord.apply(this, a); syncSecure(this); return r; };
   const baseResult = P.showGameResultModal;
-  if (baseResult) P.showGameResultModal = function (...a) { const r = baseResult.apply(this, a); secureOn = null; try { bridge()?.setSecureScreen?.(false); } catch (_) {} document.body.classList.remove('ranked-protected'); return r; };
+  if (baseResult) P.showGameResultModal = function (...a) { const r = baseResult.apply(this, a); secureOn = null; try { bridge()?.setSecureScreen?.(false); } catch (_) {} document.body.classList.remove('ranked-protected'); veil(false); return r; };
 
-  window.SumdokuIntegrity = { factorOf, syncSecure };
+  window.SumdokuIntegrity = { factorOf, syncSecure, veil, isRankedPlay, isCompetitiveBattle };
 })();

@@ -393,11 +393,14 @@ html, body { overflow-x: clip; }
 .gen-preview-cell.cipher { font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', system-ui, sans-serif; color: rgba(15,23,42,.72); animation: gen-cipher 0.9s steps(2, end) infinite; }
 @keyframes gen-cipher { 0% { opacity: .55; filter: blur(.3px); } 50% { opacity: 1; filter: none; } 100% { opacity: .7; } }
 
-/* v1.1.30 · 랭크전 앱 이탈 시 보드 가림 */
-.integrity-veil { position: fixed; inset: 0; z-index: 9700; display: grid; place-items: center; padding: 24px; text-align: center;
-  font-size: 1rem; font-weight: 900; color: #e2e8f0; letter-spacing: .3px;
-  background: radial-gradient(circle at 50% 40%, rgba(30,41,59,.96), rgba(2,6,23,.99)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
-.integrity-veil[hidden] { display: none; }
+/* v1.1.30 / v2.1.3 · 랭크전/경쟁전 앱 이탈 시 보드 및 화면 가림 */
+.integrity-veil { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 24px; text-align: center;
+  font-size: 1.05rem; font-weight: 900; color: #e2e8f0; letter-spacing: .3px;
+  background: radial-gradient(circle at 50% 40%, #1e293b 0%, #020617 100%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.integrity-veil[hidden] { display: none !important; }
+body.integrity-veiled #view-game .board-container,
+body.integrity-veiled #view-game #sudoku-board,
+body.integrity-veiled #view-game .battle-hud { visibility: hidden !important; opacity: 0 !important; }
 
 /* v1.1.30 · 성과 공유 버튼 */
 .result-sub-actions .btn-result-share { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: 0; }

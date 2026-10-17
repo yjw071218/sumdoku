@@ -86,10 +86,12 @@ public class MainActivity extends Activity {
             cm.registerDefaultNetworkCallback(deviceNetworkCallback);
         }
         requestStatusRefresh();
+        postJs("window.onAppFocusChanged&&window.onAppFocusChanged(true)");
     }
 
     @Override
     protected void onPause() {
+        postJs("window.onAppFocusChanged&&window.onAppFocusChanged(false)");
         if (deviceStatusReceiver != null) { unregisterReceiver(deviceStatusReceiver); deviceStatusReceiver = null; }
         android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         if (cm != null && deviceNetworkCallback != null) cm.unregisterNetworkCallback(deviceNetworkCallback);
@@ -424,6 +426,7 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) { applyImmersive(); requestStatusRefresh(); }
+        postJs("window.onAppFocusChanged&&window.onAppFocusChanged(" + hasFocus + ")");
     }
 
     /** 배틀 중에는 모든 소켓을 Wi-Fi에 고정합니다. Wi-Fi에 인터넷이 없으면 Android가 모바일 데이터를 기본 경로로 써서 방 탐색·접속이 실패할 수 있습니다. */

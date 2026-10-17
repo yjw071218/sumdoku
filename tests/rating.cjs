@@ -149,6 +149,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       OM.setQueue('ranked');
       OM.setDiff('hard');
       OM.startRandom();
+      const searchFx = document.getElementById('om-search-fx');
+      o.searchFxVisibleWhenSearching = !!searchFx && searchFx.classList.contains('on');
+      o.searchFxHasRadar = !!searchFx?.querySelector('.om-sfx-radar');
       OM.selfId = 'AAAAAAAAAAAAAAAAAAAA';
       const fakePeer = {
         id: 'ZZZZZZZZZZZZZZZZZZZZ',
@@ -171,8 +174,50 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       await new Promise(res => setTimeout(res, 150));
       const fx = document.getElementById('om-match-fx');
       o.fxVisible = fx?.classList.contains('on');
+      o.searchFxHiddenAfterMatch = !searchFx?.classList.contains('on');
       o.fxHasRoulette = !!fx?.querySelector('.om-fx-roulette');
       o.fxRouletteCards = fx?.querySelectorAll('.om-fx-r-card').length || 0;
+      const cdEl = fx?.querySelector('.om-fx-countdown');
+      o.fxHasCountdown = !!cdEl;
+      o.fxCountdownInitial = cdEl?.textContent?.trim();
+      o.fxMiniBoardCells = document.querySelectorAll('#om-fx-miniboard .om-fx-minicell').length;
+
+      // 배틀 중 백그라운드 맵 생성 시 전체 오버레이는 숨겨지고 매칭 완료창 하단 미니 보드만 갱신되는지 검증
+      app.battleStarting = true;
+      app.showGeneratingOverlay('배틀 맵 생성 중...');
+      o.fullGenOverlayHiddenInBattle = document.getElementById('generating-overlay')?.classList.contains('hidden');
+      app.updateGeneratingProgress({
+        phase: 'cage',
+        step: 18,
+        total: 81,
+        cages: [{ sum: 12, cells: [[0, 0], [0, 1], [1, 0]] }]
+      });
+      o.miniBoardColoredCount = document.querySelectorAll('#om-fx-miniboard .om-fx-minicell.caged').length;
+      app.battleStarting = false;
+
+      // 배틀 시작 -> 경쟁전 화면 보호(FLAG_SECURE & 앱 전환 시 화면 가림) -> 배틀 종료 후 매칭창 재등장 방지 검증
+      app.isBattle = true;
+      app.isWin = false;
+      app.resultReason = '';
+      app.battleMode = OM.mode;
+      app.difficulty = 'hard';
+      app.switchView('game');
+      OM.state = 'playing';
+      OM.ui.render();
+      window.SumdokuIntegrity?.syncSecure(app);
+      o.competitiveProtectedActive = document.body.classList.contains('ranked-protected');
+      window.onAppFocusChanged?.(false);
+      const veil = document.getElementById('integrity-veil');
+      o.veilShownOnBlur = document.body.classList.contains('integrity-veiled') && !!veil && !veil.hidden;
+      window.onAppFocusChanged?.(true);
+      await new Promise(res => setTimeout(res, 220));
+      o.veilHiddenOnFocus = !document.body.classList.contains('integrity-veiled');
+
+      // 경기 종료 호출 시 매칭 완료창이 다시 뜨지 않고 postgame 상태로 유지되는지 검증
+      app.handleBattleEnd(true, '테스트 승리');
+      await new Promise(res => setTimeout(res, 1200));
+      o.stateAfterBattleEnd = OM.state;
+      o.fxHiddenAfterBattleEnd = !fx?.classList.contains('on');
       OM.stop(false);
 
       return o;
@@ -198,11 +243,18 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert(r.rankedModePickerHidden && r.rankedRandomBoxVisible, 'competitive queue hides manual mode picker and shows random pool box');
     assert(r.normalModePickerVisible && r.normalRandomBoxHidden, 'normal queue shows manual mode picker and hides random pool box');
     assert(r.hashesSeparated, 'competitive and normal queues must use distinct info_hash values');
+    assert(r.searchFxVisibleWhenSearching && r.searchFxHasRadar, 'searching state must open full-screen search UI with radar');
     assert.equal(r.proposedState, 'proposing', 'competitive peer should enter proposing state');
     assert(r.pickedRandomModeValid, 'competitive match must pick a valid random mode');
-    assert(r.fxVisible && r.fxHasRoulette && r.fxRouletteCards === 4, 'competitive match found must show 4-mode roulette spin animation');
+    assert(r.fxVisible && r.searchFxHiddenAfterMatch && r.fxHasRoulette && r.fxRouletteCards === 4, 'competitive match found must show 4-mode roulette spin animation and hide search UI');
+    assert(r.fxHasCountdown && ['5', '4'].includes(r.fxCountdownInitial), 'match found screen must show 5..1 countdown');
+    assert.equal(r.fxMiniBoardCells, 81, 'match found screen must render 81 mini-board cells at the bottom');
+    assert(r.fullGenOverlayHiddenInBattle && r.miniBoardColoredCount === 3, 'battle map generation must hide full overlay and update mini-board cells');
+    assert(r.competitiveProtectedActive && r.veilShownOnBlur && r.veilHiddenOnFocus, 'competitive battle must enable screen capture protection and veil screen on app blur');
+    assert.equal(r.stateAfterBattleEnd, 'postgame', 'OM.state must be postgame after battle ends');
+    assert(r.fxHiddenAfterBattleEnd, 'match-found overlay must NOT reappear after battle ends');
     assert.deepEqual(errors, []);
-    console.log('PASS: Ranking cleanup, Competitive/Normal battle split, and random mode roulette verified');
+    console.log('PASS: All v2.1.3 matchmaking, countdown, mini-board, post-match fix, and integrity veil checks verified');
   } finally {
     await b.close();
   }
