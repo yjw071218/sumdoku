@@ -1815,6 +1815,13 @@
             window.SumdokuRating?.runBattleResult?.(this, ch);
           }
         }
+        try {
+          window.SumdokuSeason?.applyCosmetics?.();
+          const isVictory = this.isWin || this.battleResult === 'win';
+          if (isVictory) {
+            window.SumdokuSeason?.applyVictoryBannerSkin?.(this, { status: 'win' }, document.getElementById('battle-result-banner'));
+          }
+        } catch (_) {}
         UI.renderRematch();
       }
       return r;

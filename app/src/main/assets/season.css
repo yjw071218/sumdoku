@@ -61,14 +61,16 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
 @media (prefers-reduced-motion: reduce) { body.rkc-master #view-game .board-frame { animation: none; } }
 
 /* ---------- v1.1.29 · 시즌 최고 티어(다이아몬드·마스터·그랜드마스터) 전용 승리 배너 스킨 ---------- */
-.result-banner.tier-banner-skin {
+.result-banner.tier-banner-skin,
+.battle-result-banner.tier-banner-skin {
   padding: 28px 18px 20px;
   border-radius: 18px;
   position: relative;
   overflow: hidden;
   isolation: isolate;
 }
-.result-banner.tier-banner-skin::after {
+.result-banner.tier-banner-skin::after,
+.battle-result-banner.tier-banner-skin::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -81,7 +83,8 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
 @keyframes rbs-sheen { 0%, 35% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
 
 /* 다이아몬드 승리 배너 스킨: 사파이어 크리스탈 & 실버-골드 베젤 */
-.result-banner.tier-banner-skin.skin-diamond {
+.result-banner.tier-banner-skin.skin-diamond,
+.battle-result-banner.tier-banner-skin.skin-diamond {
   background:
     radial-gradient(circle at 50% 15%, rgba(147, 197, 253, .55) 0%, transparent 58%),
     linear-gradient(135deg, #0b1e54 0%, #1d4ed8 48%, #0f172a 100%) !important;
@@ -93,7 +96,8 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
 }
 
 /* 마스터 승리 배너 스킨: 아케인 퍼플 & 임페리얼 골드 아머 프레임 */
-.result-banner.tier-banner-skin.skin-master {
+.result-banner.tier-banner-skin.skin-master,
+.battle-result-banner.tier-banner-skin.skin-master {
   background:
     radial-gradient(circle at 50% 12%, rgba(232, 121, 249, .5) 0%, transparent 60%),
     linear-gradient(135deg, #2b0656 0%, #7e22ce 48%, #170332 100%) !important;
@@ -105,7 +109,8 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
 }
 
 /* 그랜드마스터 승리 배너 스킨: PUBG 컨커러/프레데터 크림슨-골드 신화 프레임 */
-.result-banner.tier-banner-skin.skin-grandmaster {
+.result-banner.tier-banner-skin.skin-grandmaster,
+.battle-result-banner.tier-banner-skin.skin-grandmaster {
   background:
     radial-gradient(circle at 50% 10%, rgba(251, 191, 36, .58) 0%, rgba(239, 35, 60, .35) 45%, transparent 72%),
     linear-gradient(135deg, #3d030a 0%, #b91c1c 46%, #1f0206 100%) !important;
@@ -116,7 +121,8 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
     0 12px 34px rgba(220, 38, 38, .55) !important;
 }
 
-.result-banner.tier-banner-skin .rb-skin-decor {
+.result-banner.tier-banner-skin .rb-skin-decor,
+.battle-result-banner.tier-banner-skin .rb-skin-decor {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -124,11 +130,15 @@ body.rkc-grandmaster #view-game:not(.lunatic-mode) .cell.selected { box-shadow: 
 }
 .result-banner.tier-banner-skin .result-icon-bounce,
 .result-banner.tier-banner-skin .result-title,
-.result-banner.tier-banner-skin .result-sub {
+.result-banner.tier-banner-skin .result-sub,
+.battle-result-banner.tier-banner-skin #battle-result-icon,
+.battle-result-banner.tier-banner-skin #battle-result-title,
+.battle-result-banner.tier-banner-skin #battle-result-sub {
   position: relative;
   z-index: 2;
 }
-.result-banner.tier-banner-skin .result-title {
+.result-banner.tier-banner-skin .result-title,
+.battle-result-banner.tier-banner-skin #battle-result-title {
   text-shadow: 0 0 16px var(--skin-tier, #facc15), 0 3px 6px rgba(0, 0, 0, .75);
 }
 

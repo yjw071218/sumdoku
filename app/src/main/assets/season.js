@@ -47,7 +47,7 @@
   const t = k => T[k][L()] || T[k][1];
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
   const diffName = d => (window.SumdokuDiffNames && SumdokuDiffNames[d] && SumdokuDiffNames[d][L()]) || d;
-  const modeName = m => m === 'timeattack' ? ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'][L()] : '';
+  const modeName = m => m === 'timeattack' ? ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'][L()] : (m === 'battle' ? ['배틀', 'Battle', 'バトル', '对战', '對戰', 'Batalla', 'Duel', 'Kampf'][L()] : '');
   const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const tierById = id => R.TIERS.find(x => x.id === id);
 
@@ -63,9 +63,10 @@
     const all = R.loadAll();
     let k = R.bestTierIndex(all);
     // 현재 난이도·모드의 최고 기록(peak)이나 현재 레이팅으로 다이아 이상 달성한 경우도 함께 인정
-    if (app && R.DIFFS.includes(app.difficulty)) {
-      const m = app.gameMode === 'timeattack' && !app.isDaily ? 'timeattack' : 'standard';
-      const s = R.ladder(all, m).byDiff[app.difficulty];
+    const diff = (app && (app.isBattle || app.gameMode === 'battle') ? app.battleDiff : app?.difficulty) || app?.difficulty;
+    if (app && R.DIFFS.includes(diff)) {
+      const m = (app.isBattle || app.gameMode === 'battle') ? 'battle' : (app.gameMode === 'timeattack' && !app.isDaily ? 'timeattack' : 'standard');
+      const s = R.ladder(all, m).byDiff[diff];
       if (s && !(s.placement > 0) && s.games > 0) {
         k = Math.max(k, R.tierOf(Math.max(s.peak || 0, s.rating || 0)).index);
       }
@@ -78,9 +79,9 @@
     return null;
   }
 
-  // 결과 모달(#result-banner)에 다이아몬드·마스터·그랜드마스터 전용 금속 프레임 승리 배너 스킨 적용
-  function applyVictoryBannerSkin(app, data) {
-    const banner = document.getElementById('result-banner');
+  // 결과 모달(#result-banner 또는 #battle-result-banner)에 다이아몬드·마스터·그랜드마스터 전용 금속 프레임 승리 배너 스킨 적용
+  function applyVictoryBannerSkin(app, data, targetEl) {
+    const banner = targetEl || (app?.isBattle ? document.getElementById('battle-result-banner') : null) || document.getElementById('result-banner') || document.getElementById('battle-result-banner');
     if (!banner) return;
     banner.classList.remove('tier-banner-skin', 'skin-diamond', 'skin-master', 'skin-grandmaster');
     banner.querySelector('.rb-skin-decor')?.remove();
@@ -207,6 +208,17 @@
     P.showGameResultModal = function (data, ...rest) {
       const r = showRes.call(this, data, ...rest);
       try { applyVictoryBannerSkin(this, data); } catch (e) { console.warn('banner-skin', e); }
+      return r;
+    };
+  }
+  const hbe = P.handleBattleEnd;
+  if (hbe) {
+    P.handleBattleEnd = function (isVictory, ...rest) {
+      const r = hbe.apply(this, [isVictory, ...rest]);
+      try {
+        if (isVictory) applyVictoryBannerSkin(this, { status: 'win' }, document.getElementById('battle-result-banner'));
+        applyCosmetics();
+      } catch (e) { console.warn('season-battle-end', e); }
       return r;
     };
   }

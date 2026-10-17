@@ -101,6 +101,27 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       const modeBtns = Array.from(document.querySelectorAll('.rc-modes .rc-mode') || []).map(b => b.dataset.mode || b.textContent.trim());
       o.modeBtns = modeBtns;
 
+      // 5. 랭크 시즌제 및 티어 꾸미기 보상 / 배틀 승리 배너 스킨 검증
+      const S = window.SumdokuSeason;
+      o.hasSeason = !!S && typeof S.applyCosmetics === 'function';
+      // 배틀 모드에서 다이아몬드 티어일 때 배틀 승리 배너 스킨 확인
+      const allRatings = R.loadAll();
+      allRatings.battle.byDiff.hard = { rating: 3100, peak: 3100, games: 15, seasonGames: 15, seasonBest: 3100, streak: 2, placement: 0, lastActive: Date.now(), history: [] };
+      R.saveAll(allRatings);
+      app.isBattle = true;
+      app.battleDiff = 'hard';
+      const skin = S ? S.getVictoryBannerSkinTier(app) : null;
+      o.skinTier = skin ? skin.id : null;
+
+      const banner = document.getElementById('battle-result-banner');
+      if (S && banner) {
+        S.applyVictoryBannerSkin(app, { status: 'win' }, banner);
+        o.bannerHasSkin = banner.classList.contains('tier-banner-skin');
+        o.bannerSkinClass = banner.className;
+      }
+      S?.applyCosmetics?.();
+      o.cosmeticsApplied = true;
+
       return o;
     });
 
@@ -114,8 +135,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert(r.ch1Recorded && r.bGames === 1 && r.bRatingAfterWin > 1000, 'battle rating recorded properly');
     assert(r.noAbandonModalInSingle, 'singleplayer has no abandon modal (stress-free)');
     assert(r.hasBattleHeader, 'ranking grid must include battle mode header');
+    assert(r.hasSeason, 'SumdokuSeason must be available');
+    assert.equal(r.skinTier, 'diamond', '3100 RP should resolve to diamond banner skin');
+    assert(r.bannerHasSkin, 'battle victory banner must have tier-banner-skin class');
+    assert(r.bannerSkinClass.includes('skin-diamond'), 'banner skin must include skin-diamond class');
     assert.deepEqual(errors, []);
-    console.log('PASS: Battle rating and singleplayer stress-free verification');
+    console.log('PASS: Battle rating, singleplayer stress-free, and rank season cosmetics verified');
   } finally {
     await b.close();
   }

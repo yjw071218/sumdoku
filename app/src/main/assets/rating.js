@@ -626,11 +626,16 @@
     if (s && s.placement > 0) return { ...UNRANKED, index: -1, division: '', name: tr(UNRANKED.ko), divMin: 0, divMax: null, next: TIERS[0], placementDone: PLACEMENT - s.placement };
     return tierOf(s ? s.rating : 1000);
   }
-  // 지금까지 도달한 최고 티어(명예의 전당 시즌 기록 + 이번 시즌 배치를 마친 랭크)
+  // 지금까지 도달한 최고 티어(명예의 전당 시즌 기록 + 이번 시즌/통산 배치를 마친 랭크)
   function bestTierIndex(all) {
     let k = -1;
-    (all.hof || []).forEach(h => { if (h.season > 0) k = Math.max(k, tierOf(h.best).index); });
-    MODES.forEach(m => DIFFS.forEach(d => { const s = ladder(all, m).byDiff[d]; if (!(s.placement > 0) && s.seasonGames > 0) k = Math.max(k, tierOf(Math.max(s.seasonBest || 0, s.rating)).index); }));
+    (all.hof || []).forEach(h => { if (h && Number.isFinite(h.best)) k = Math.max(k, tierOf(h.best).index); });
+    MODES.forEach(m => DIFFS.forEach(d => {
+      const s = ladder(all, m).byDiff[d];
+      if (s && !(s.placement > 0) && ((s.seasonGames || 0) > 0 || (s.games || 0) > 0)) {
+        k = Math.max(k, tierOf(Math.max(s.seasonBest || 0, s.peak || 0, s.rating || 0)).index);
+      }
+    }));
     return k;
   }
   function tierOf(rating) {
@@ -802,6 +807,7 @@
       lad.lastDiff = diff;
       all.lastMode = 'battle';
       saveAll(all);
+      try { window.SumdokuSeason?.applyCosmetics?.(); } catch (_) {}
 
       app._rankDiff = diff;
       app._rankMode = 'battle';
@@ -955,7 +961,7 @@
       if (rankHost) rankHost.append(card); else host.insertBefore(card, anchor || host.firstChild);
     }
     const all = loadAll();
-    const mode = MODES.includes(this._rankMode) ? this._rankMode : (all.lastMode || 'standard');
+    const mode = MODES.includes(this._rankMode) ? this._rankMode : (all.lastMode || 'battle');
     const lad = ladder(all, mode);
     const cur = DIFFS.includes(this._rankDiff) ? this._rankDiff : (lad.lastDiff || 'easy');
     let lost = 0;
@@ -975,11 +981,11 @@
     info.append(el('div', 'rc-tier', t.name), el('div', 'rc-rp', unr ? `${tr('배치 경기')} ${t.placementDone} / ${PLACEMENT}` : `${s.rating} RP · ${tr('최고')} ${s.peak}`));
     head.append(badge, info); card.append(el('h3', 'section-title', tr('난이도별 랭크')));
     // 난이도 탭: 이름과 그 난이도의 티어(티어 색 밑줄)를 함께 보여 줍니다.
-    // 모드 전환(일반 / 타임어택)
+    // 모드 전환(배틀 / 일반 / 타임어택)
     const modes = el('div', 'rc-modes'); modes.setAttribute('role', 'tablist');
     MODES.forEach(m => {
       const b = el('button', 'rc-mode' + (m === mode ? ' on' : ''), modeName(m));
-      b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', m === mode ? 'true' : 'false');
+      b.type = 'button'; b.dataset.mode = m; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', m === mode ? 'true' : 'false');
       b.onclick = () => { this._rankMode = m; this._rankDiff = ladder(loadAll(), m).lastDiff || this._rankDiff; this.renderRatingCard(); };
       modes.append(b);
     });
