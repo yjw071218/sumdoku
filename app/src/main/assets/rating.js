@@ -841,16 +841,11 @@
       } else {
         if (s.boost > 0) { if (delta > 0) { delta = Math.round(delta * 1.25); boosted = true; } s.boost--; }
         const bt = tierOf(s.rating);
-        if (s.series) {
-          if (win) s.series.w++; else s.series.l++;
-          if (s.series.w >= 2) { delta = s.series.target - s.rating; s.series = null; seriesResult = 'won'; s.protect = 3; }
-          else if (s.series.l >= 2) { delta = Math.min(0, delta); s.series = null; seriesResult = 'lost'; }
-          else { delta = 0; seriesResult = 'progress'; }
-        } else if (delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index) {
-          delta = bt.next.min - 1 - s.rating;
-          s.series = { w: 0, l: 0, target: bt.next.min, tier: bt.next.id };
-          seriesResult = 'start';
-        }
+        // v2.2.0: 승급전 폐지 — RP가 다음 티어 기준에 닿으면 바로 승급하고 3판 강등 보호를 받습니다.
+        if (s.series) s.series = null;
+        const promoted = delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index;
+        if (promoted) s.protect = 3;
+        if (promoted) seriesResult = 'won';
         if (delta < 0 && s.protect > 0 && seriesResult !== 'won') {
           const floor = TIERS[Math.max(0, bt.index)].min;
           if (s.rating + delta < floor) { delta = floor - s.rating; protectedHit = true; }
@@ -932,18 +927,11 @@
       } else {
         if (s.boost > 0) { if (delta > 0) { delta = Math.round(delta * 1.25); boosted = true; } s.boost--; }
         const bt = tierOf(s.rating);
-        if (s.series) {
-          // 승급전: RP는 움직이지 않고 승패만 셉니다. 타임어택은 RP를 얻은 판을 승리로 봅니다.
-          const sWin = mode === 'timeattack' ? rawDelta > 0 : win;
-          if (sWin) s.series.w++; else s.series.l++;
-          if (s.series.w >= 2) { delta = s.series.target - s.rating; s.series = null; seriesResult = 'won'; s.protect = 3; }
-          else if (s.series.l >= 2) { delta = Math.min(0, delta); s.series = null; seriesResult = 'lost'; }
-          else { delta = 0; seriesResult = 'progress'; }
-        } else if (delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index) {
-          delta = bt.next.min - 1 - s.rating;
-          s.series = { w: 0, l: 0, target: bt.next.min, tier: bt.next.id };
-          seriesResult = 'start';
-        }
+        // v2.2.0: 승급전 폐지 — RP가 다음 티어 기준에 닿으면 바로 승급하고 3판 강등 보호를 받습니다.
+        if (s.series) s.series = null;
+        const promoted = delta > 0 && bt.next && tierOf(s.rating + delta).index > bt.index;
+        if (promoted) s.protect = 3;
+        if (promoted) seriesResult = 'won';
         if (delta < 0 && s.protect > 0 && seriesResult !== 'won') {
           const floor = TIERS[Math.max(0, bt.index)].min;
           if (s.rating + delta < floor) { delta = floor - s.rating; protectedHit = true; }
@@ -1057,7 +1045,7 @@
     card.append(tabs, head);
     const bar = el('div', 'rc-bar'); const fill = el('div', 'rc-fill'); fill.style.width = pct.toFixed(1) + '%'; bar.append(fill); card.append(bar);
     if ((s.streak || 0) >= 1) card.append(el('div', 'rc-streak', `${streakText(s.streak)} · ${tr('다음 클리어 보너스')} +${Math.round(streakBonus(s.streak + 1) * 100)}%`));
-    if (s.series) card.append(el('div', 'rc-series', `${tr('승급전')} ${'●'.repeat(s.series.w)}${'✕'.repeat(s.series.l)}${'○'.repeat(Math.max(0, 3 - s.series.w - s.series.l))} · ${tr('3판 2선승')}`));
+    if (false && s.series) card.append(el('div', 'rc-series', `${tr('승급전')} ${'●'.repeat(s.series.w)}${'✕'.repeat(s.series.l)}${'○'.repeat(Math.max(0, 3 - s.series.w - s.series.l))} · ${tr('3판 2선승')}`));
     if (s.protect > 0) card.append(el('div', 'rc-protect', `🛡 ${tr('강등 보호')} ${s.protect}${tr('판')}`));
     if (s.boost > 0) card.append(el('div', 'rc-boost', `⚡ ${tr('시즌 초반 가속')} +25% · ${s.boost}${tr('판')}`));
     if (unr) card.append(el('div', 'rc-next', `${tr('배치 경기')} ${PLACEMENT - t.placementDone}${tr('판')} ${tr('남음')} · ${tr('얻는 RP')} ×1.5`));
@@ -1203,8 +1191,7 @@
     } else {
       if (s.boost > 0) s.boost--;
       if (s.series) {
-        s.series.l++;
-        if (s.series.l >= 2) s.series = null;
+        s.series = null;
       }
       if (s.protect > 0) s.protect--;
     }

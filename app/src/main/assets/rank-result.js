@@ -366,9 +366,9 @@
     chips.innerHTML = '';
     const chip = (cls, text, ico) => { const c = document.createElement('span'); c.className = 'rr-chip ' + cls; if (ico && window.SumdokuIcon) c.append(SumdokuIcon.el(ico, 12), document.createTextNode(' ')); c.append(document.createTextNode(text)); chips.append(c); };
     if (se.placing) chip('place', `${tr('배치 경기')} ${se.placementDone} / ${R.PLACEMENT}`);
-    if (se.seriesResult === 'start') chip('series', t('seriesStart'));
-    if (se.series) chip('series', `${tr('승급전')} ${'●'.repeat(se.series.w)}${'✕'.repeat(se.series.l)}${'○'.repeat(Math.max(0, 3 - se.series.w - se.series.l))}`);
-    if (se.seriesResult === 'lost') chip('series', t('seriesFail'));
+    if (false && se.seriesResult === 'start') chip('series', t('seriesStart'));
+    if (false && se.series) chip('series', `${tr('승급전')} ${'●'.repeat(se.series.w)}${'✕'.repeat(se.series.l)}${'○'.repeat(Math.max(0, 3 - se.series.w - se.series.l))}`);
+    if (false && se.seriesResult === 'lost') chip('series', t('seriesFail'));
     if (se.protectedHit || se.protect > 0) chip('protect', `${tr('강등 보호')}${se.protect ? ' ' + se.protect + tr('판') : ''}`, 'shield');
     if (se.boosted) chip('boost', `${tr('시즌 초반 가속')} +25%`, 'bolt');
     const token = (app._rrToken = (app._rrToken || 0) + 1);
