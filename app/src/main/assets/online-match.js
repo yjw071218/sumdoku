@@ -28,12 +28,24 @@
   'use strict';
 
   const PROTO = 'sd-online-2';
-  const TRACKERS = [
+  // v2.2.1: 기본 트래커 + 공개 목록(ngosang/trackerslist)에서 받아 온 트래커를 함께 쓰고, 연결되지 않는 트래커는 자동으로 건너뜁니다.
+  const SEED_TRACKERS = [
     'wss://tracker.openwebtorrent.com',
     'wss://tracker.webtorrent.dev',
-    'wss://tracker.btorrent.xyz',
-    'wss://tracker.files.fm:7073/announce'
+    'wss://open.ftorrent.com',
+    'wss://tracker.novage.com.ua'
   ];
+  const TRACKER_LIST_URLS = [
+    'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt',
+    'https://fastly.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt',
+    'https://gcore.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt'
+  ];
+  const TRACKER_MAX = 6;                       // 동시에 쓰는 트래커 수
+  const TRACKER_LIST_TTL_MS = 12 * 3600e3;     // 받아 온 목록 재사용 시간
+  const TRACKER_DEAD_MS = 6 * 3600e3;          // 연속 실패한 트래커를 건너뛰는 시간
+  const TRACKER_DEAD_FAILS = 2;                // 이만큼 연속 실패하면 죽은 트래커로 봅니다
+  const TRACKER_CONNECT_MS = 6000;             // 연결 대기 한도
+  const TRACKER_SESSION_FAILS = 2;             // 한 번의 탐색에서 이만큼 실패하면 예비 트래커로 교체
   const ICE_SERVERS = [
     { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
     { urls: 'stun:stun.cloudflare.com:3478' },
@@ -302,6 +314,65 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
   };
 
+  // ---------------------------------------------------------------------------
+  // 트래커 목록 · 상태: 성공/실패를 기기에 기억해 죽은 트래커는 빼고, 공개 목록에서 새 트래커를 가져옵니다.
+  // ---------------------------------------------------------------------------
+  const Trackers = {
+    norm(u) {
+      const m = /^wss:\/\/([a-z0-9.-]+)(?::(\d{1,5}))?(\/[A-Za-z0-9._~\/-]*)?$/i.exec(String(u || '').trim());
+      if (!m) return '';
+      const port = m[2] && m[2] !== '443' ? ':' + m[2] : '';
+      const p = (m[3] || '').replace(/\/+$/, '');
+      return `wss://${m[1].toLowerCase()}${port}${p}`;
+    },
+    load(k, d) { try { return JSON.parse(store.get(k, '')) || d; } catch (_) { return d; } },
+    health() { return this._h || (this._h = this.load('sumdoku_tracker_health', {})); },
+    saveHealth() { store.set('sumdoku_tracker_health', JSON.stringify(this.health())); },
+    markOk(url) {
+      const h = this.health(), e = h[url] || (h[url] = {});
+      if (e.fails === 0 && Date.now() - (e.ok || 0) < 60e3) return;
+      e.ok = Date.now(); e.fails = 0;
+      this.saveHealth();
+    },
+    markFail(url) {
+      if (navigator.onLine === false) return; // 내 인터넷이 끊긴 것은 트래커 탓이 아닙니다.
+      const h = this.health(), e = h[url] || (h[url] = {});
+      e.fail = Date.now(); e.fails = (e.fails || 0) + 1;
+      this.saveHealth();
+    },
+    isDead(url) {
+      const e = this.health()[url];
+      return !!e && e.fails >= TRACKER_DEAD_FAILS && Date.now() - (e.fail || 0) < TRACKER_DEAD_MS;
+    },
+    fetched() { const v = this.load('sumdoku_tracker_list', null); return v && Array.isArray(v.list) ? v : { at: 0, list: [] }; },
+    /** 공개 트래커 목록을 받아 옵니다(12시간마다, 실패하면 다음 주소). */
+    async refresh() {
+      if (this._busy || Date.now() - this.fetched().at < TRACKER_LIST_TTL_MS) return;
+      this._busy = true;
+      try {
+        for (const src of TRACKER_LIST_URLS) {
+          try {
+            const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
+            const res = await fetch(src, { signal: ctl.signal, cache: 'no-store' });
+            clearTimeout(to);
+            if (!res.ok) continue;
+            const list = [...new Set((await res.text()).split(/\s+/).map(x => this.norm(x)).filter(Boolean))].slice(0, 30);
+            if (!list.length) continue;
+            store.set('sumdoku_tracker_list', JSON.stringify({ at: Date.now(), list }));
+            return;
+          } catch (_) {}
+        }
+      } finally { this._busy = false; }
+    },
+    /** 쓸 트래커와 예비 트래커. 기본 트래커를 앞에 두어 기기끼리 같은 트래커에서 만나도록 합니다. */
+    pick() {
+      const all = [...new Set([...SEED_TRACKERS, ...this.fetched().list].map(x => this.norm(x)).filter(Boolean))];
+      let alive = all.filter(u => !this.isDead(u));
+      if (!alive.length) alive = all; // 전부 실패로 기록돼 있으면(오프라인 등) 다시 모두 시도합니다.
+      return { use: alive.slice(0, TRACKER_MAX), spare: alive.slice(TRACKER_MAX) };
+    }
+  };
+
   const pick = (list, v, d) => (list.some(x => x.id === v) ? v : d);
   function pickRandomMode() {
     const a = new Uint32Array(1);
@@ -393,20 +464,24 @@
     c = c && typeof c === 'object' ? c : {};
     return { card: ['diamond', 'master', 'grandmaster'].includes(c.card) ? c.card : '', plate: COS_IDS.includes(c.plate) ? c.plate : '' };
   }
-  // v2.1.9: 이름 옆 배지 = 지난 시즌 배틀 최종 티어 엠블럼 + 그 시즌 심볼(구버전은 ps 필드를 무시합니다)
-  function myPrev() { try { const f = window.SumdokuRating?.lastSeasonFinal?.(window.SumdokuRating.loadAll()); return f ? { t: f.tier, s: f.season } : null; } catch (_) { return null; } }
+  // v2.2.1: 이름 옆 배지 = 배틀에서 도달한 최고 티어 엠블럼(시즌 심볼 없음). 구버전은 s 필드가 없으면 배지를 숨깁니다.
+  function myPrev() {
+    try {
+      const R = window.SumdokuRating, k = R?.rewardTierIndex?.(R.loadAll());
+      return Number.isInteger(k) && k >= 0 && R.TIERS[k] ? { t: R.TIERS[k].id } : null;
+    } catch (_) { return null; }
+  }
   function cleanPrev(p) {
     if (!p || typeof p !== 'object') return null;
     const ids = ((window.SumdokuRating && SumdokuRating.TIERS) || []).map(x => x.id);
-    const sn = Number(p.s);
-    return ids.includes(p.t) && Number.isInteger(sn) && sn >= 0 && sn < 1000 ? { t: p.t, s: sn } : null;
+    return ids.includes(p.t) ? { t: p.t } : null;
   }
   function nameBadge(ps) {
     const R = window.SumdokuRating; if (!ps || !R) return null;
     const b = document.createElement('span'); b.className = 'nm-badge';
-    try { b.innerHTML = R.tierSymbol(ps.t, 20) + (R.seasonSymbol ? R.seasonSymbol(ps.s, 15) : ''); } catch (_) { return null; }
+    try { b.innerHTML = R.tierSymbol(ps.t, 20); } catch (_) { return null; }
     const def = R.TIERS.find(x => x.id === ps.t); const tr = window.I18N && typeof I18N.text === 'function' ? I18N.text : (x => x);
-    b.title = (ps.s ? 'S' + ps.s : 'PS') + ' · ' + (def ? tr(def.ko) : ps.t);
+    b.title = def ? tr(def.ko) : ps.t;
     return b;
   }
   window.SumdokuNameBadge = { mine: () => nameBadge(myPrev()), of: ps => nameBadge(cleanPrev(ps)) };
@@ -542,7 +617,10 @@
       // v2.1.5: 트래커 연결과 동시에 offer 풀을 미리 만들어 첫 등록 지연을 없앱니다.
       this._pool = null; this._poolBusy = null;
       this.offerPool().catch(() => {});
-      TRACKERS.forEach(url => this.openTracker(url));
+      Trackers.refresh().catch(() => {});
+      const tp = Trackers.pick();
+      this.spareTrackers = tp.spare;
+      tp.use.forEach(url => this.openTracker(url));
       try { window.AndroidBridge?.dhtStart?.(this.hashHex, this.selfId); } catch (_) {}
       clearInterval(this.statusTimer);
       this.statusTimer = setInterval(() => { this.gcOffers(); UI.render(); }, 1000);
@@ -552,7 +630,7 @@
     /** 탐색만 멈춥니다(매칭 확정 후). 상대 연결은 유지합니다. */
     stopDiscovery() {
       for (const t of this.trackers) {
-        clearTimeout(t.timer);
+        clearTimeout(t.timer); clearTimeout(t.connTimer);
         try { if (t.ws && t.ws.readyState === 1) t.ws.send(JSON.stringify({ action: 'announce', event: 'stopped', info_hash: this.hashBin, peer_id: this.selfId, numwant: 0, uploaded: 0, downloaded: 0, left: 0 })); } catch (_) {}
         try { t.ws && t.ws.close(); } catch (_) {}
       }
@@ -1090,14 +1168,28 @@
         let ws;
         try { ws = new WebSocket(url); } catch (_) { return; }
         t.ws = ws;
-        ws.onopen = () => { t.open = true; t.fails = 0; this.announce(t, true); UI.render(); };
+        // 응답 없는 트래커는 6초 만에 포기합니다(브라우저 기본 대기는 훨씬 깁니다).
+        t.connTimer = setTimeout(() => { if (ws.readyState !== 1) try { ws.close(); } catch (_) {} }, TRACKER_CONNECT_MS);
+        ws.onopen = () => { clearTimeout(t.connTimer); t.open = true; t.fails = 0; this.announce(t, true); UI.render(); };
         ws.onmessage = e => this.onTrackerMessage(t, e.data);
         ws.onerror = () => {};
         ws.onclose = () => {
           t.open = false;
           clearTimeout(t.timer);
+          clearTimeout(t.connTimer);
           UI.render();
           if (t.epoch !== this.epoch || this.state === 'matched' || this.state === 'idle') return;
+          if (!t.ok) {
+            // 이번 탐색에서 한 번도 응답하지 않은 트래커: 실패를 기록하고, 거듭 실패하면 예비 트래커로 바꿉니다.
+            t.badRuns = (t.badRuns || 0) + 1;
+            if (t.badRuns === 1) Trackers.markFail(url);
+            if (t.badRuns >= TRACKER_SESSION_FAILS) {
+              this.trackers = this.trackers.filter(x => x !== t);
+              const next = (this.spareTrackers || []).shift();
+              if (next) this.openTracker(next);
+              return;
+            }
+          }
           t.fails++;
           t.timer = setTimeout(connect, Math.min(15000, 1000 * Math.pow(2, t.fails)));
         };
@@ -1159,6 +1251,7 @@
       try { msg = JSON.parse(raw); } catch (_) { return; }
       if (!msg || msg.info_hash !== this.hashBin) return;
       if (msg['failure reason']) return;
+      if (!t.ok) { t.ok = true; Trackers.markOk(t.url); }
       if (msg.interval) t.interval = Math.max(ANNOUNCE_MIN_SEC, Math.min(120, +msg.interval || ANNOUNCE_MIN_SEC));
       if (typeof msg.complete === 'number' || typeof msg.incomplete === 'number') { t.waiting = (+msg.complete || 0) + (+msg.incomplete || 0); UI.render(); }
       const remote = msg.peer_id;
@@ -2462,6 +2555,8 @@
 
   install();
   setTimeout(() => { if (loginGateOn()) ensurePlayLogin(false); }, 1200);
+  // 첫 탐색 전에 공개 트래커 목록을 미리 받아 둡니다.
+  setTimeout(() => Trackers.refresh().catch(() => {}), 3000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => UI.build());
   else UI.build();
   // window.app은 app.js의 DOMContentLoaded에서 만들어지므로, 아직 없으면 잠시 후 다시 시도합니다.
@@ -2471,5 +2566,6 @@
   M.ui = UI;
   M.searchFx = SearchFx;
   M.matchFx = MatchFx;
+  M.trackerList = Trackers;
   window.OnlineMatch = M;
 })();

@@ -1,0 +1,39 @@
+/* v2.2.1 · UI 정리 (마지막에 로드) */
+
+/* 엠블럼: 날개·왕관이 viewBox 밖으로 나와도 잘리지 않게 */
+svg.tier-symbol { overflow: visible; }
+
+/* 랭킹 · 난이도 칩: 티어 이름이 두 줄로 끊기지 않게 */
+.app-root .rating-card .rc-tab { min-width: 0; padding: 7px 2px 6px; }
+.app-root .rating-card .rc-tab-name, .app-root .rating-card .rc-tab-tier { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.app-root .rating-card .rc-tab-tier { font-size: clamp(8.5px, 2.3vw, 10.5px); letter-spacing: -.4px; line-height: 1.3; }
+
+/* 다크 모드: 티어 색 글자가 어두운 배경에 묻히지 않게(티어 색 + 흰색) */
+.app-root.theme-dark .ranking-grid .rk-tier, .app-root[class*="tt-"] .ranking-grid .rk-tier,
+.app-root.theme-dark .rating-card .rc-tab-tier { color: color-mix(in srgb, var(--tier, var(--tab-tier)) 62%, #fff) !important; filter: none; }
+
+/* 새 게임 창 · 모드 버튼: 한 줄, 같은 높이 */
+.mode-select-btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 48px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: .84rem !important; }
+.mode-select-btn.active { box-shadow: 0 0 0 2px var(--accent-blue) inset; outline: none; }
+
+/* 설정 목록 · 배지와 화살표 간격 */
+.hub-item-badge { margin-right: 10px; }
+
+/* 전체 공통: 카드 모서리·테두리·그림자 통일 */
+.info-card, .settings-list-card, .rating-card, .ranking-ladder, .menu-btn, .daily-hero-card {
+  border-radius: 18px;
+}
+.menu-btn.btn-secondary, .info-card, .settings-list-card {
+  box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 4px 14px rgba(15,23,42,.05);
+}
+.app-root.theme-dark .menu-btn.btn-secondary, .app-root.theme-dark .info-card, .app-root.theme-dark .settings-list-card {
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.btn { letter-spacing: -.1px; }
+.btn:active { transform: scale(.98); }
+.section-title { letter-spacing: -.3px; }
+
+/* 하단 탭: 위 경계선을 얇게, 아이콘·글자 간격 정돈 */
+.bottom-nav { border-top-width: 1px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.nav-tab .tab-label { margin-top: 2px; font-size: 11.5px; }

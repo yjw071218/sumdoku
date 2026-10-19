@@ -109,8 +109,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       R.saveAll(allRatings);
       app.isBattle = true;
       app.battleDiff = 'hard';
-      // v2.1.9: 보상은 '지난 시즌 배틀 최종 티어' 기준 → 지난 시즌을 다이아(3100 RP)로 마친 상태를 흉내 냅니다.
-      const _rti = R.rewardTierIndex; R.rewardTierIndex = () => R.tierOf(3100).index;
+      // v2.2.1: 시즌제 삭제 — 보상은 배틀에서 도달한 최고 티어로 영구 해금됩니다.
+      o.rewardIdx = R.rewardTierIndex(R.loadAll());
+      { const a2 = R.loadAll(); a2.battle.byDiff.hard.rating = 1200; R.saveAll(a2); } // RP가 떨어져도 해금은 유지
+      o.rewardIdxAfterDrop = R.rewardTierIndex(R.loadAll());
+      o.noSeasonApi = typeof R.seasonOf === 'undefined' && typeof R.lastSeasonFinal === 'undefined';
       const skin = S ? S.getVictoryBannerSkinTier(app) : null;
       o.skinTier = skin ? skin.id : null;
 
@@ -119,7 +122,6 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
         S.applyVictoryBannerSkin(app, { status: 'win' }, banner);
         o.bannerHasSkin = banner.classList.contains('tier-banner-skin');
         o.bannerSkinClass = banner.className;
-        R.rewardTierIndex = _rti;
       }
       S?.applyCosmetics?.();
       o.cosmeticsApplied = true;
@@ -247,6 +249,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     assert(r.hasSeason, 'SumdokuSeason must be available');
     assert.equal(r.skinTier, 'diamond', '3100 RP should resolve to diamond banner skin');
     assert(r.bannerHasSkin, 'battle victory banner must have tier-banner-skin class');
+    assert.equal(r.rewardIdx, 4, 'reaching diamond in battle must unlock rewards up to diamond');
+    assert.equal(r.rewardIdxAfterDrop, 4, 'tier rewards must stay unlocked after RP drops');
+    assert(r.noSeasonApi, 'season API must be removed');
     assert(r.bannerSkinClass.includes('skin-diamond'), 'banner skin must include skin-diamond class');
     assert(r.rankedModePickerHidden && r.rankedRandomBoxVisible, 'competitive queue hides manual mode picker and shows random pool box');
     assert(r.normalModePickerVisible && r.normalRandomBoxHidden, 'normal queue shows manual mode picker and hides random pool box');

@@ -1,14 +1,6 @@
-/* v1.1.28 · 시즌 화면(랭킹 탭) · 명예의 전당 · 티어 보상 꾸미기
- *
- * 랭킹 탭 맨 위: 시즌 번호, 남은 기간, 이번 시즌 규칙(배치 5판·승급전·강등 보호·초반 가속)
- * 지난 시즌 보상 안내: 시즌이 바뀐 뒤 처음 열면 지난 시즌 최고 티어와 해금된 보상을 보여 줍니다.
- * 명예의 전당: 시즌별 최고 티어 엠블럼(프리시즌 포함).
- * 티어 보상: 지금까지 도달한 최고 티어로 영구 해금. 켜고 끌 수 있습니다.
- *   골드      금빛 보드 테두리
- *   플래티넘  청록 보드 테두리
- *   다이아몬드 입력 숫자 보석 색
- *   마스터    보라 빛 테두리
- *   그랜드마스터 그랜드마스터 테마(붉은·금색 보드) + 홈 화면 엠블럼
+/* v1.1.28 · 랭킹 탭 티어 보상 꾸미기
+ * v2.2.1: 시즌제 삭제 — 시즌 정보·지난 시즌 보상 안내·명예의 전당을 없앴습니다.
+ * 티어 보상: 배틀에서 도달한 최고 티어로 영구 해금. 하나만 장착하며 켜고 끌 수 있습니다(구성은 tier-rewards.js).
  */
 (() => {
   const R = window.SumdokuRating;
@@ -17,26 +9,8 @@
   const LANGS = ['ko', 'en', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de'];
   const L = () => Math.max(0, LANGS.indexOf((window.I18N && I18N.currentLang) || 'ko'));
   const T = {
-    season: ['시즌', 'Season', 'シーズン', '赛季', '賽季', 'Temporada', 'Saison', 'Saison'],
-    left: ['{0}일 남음', '{0} days left', '残り{0}日', '剩余{0}天', '剩餘{0}天', 'Quedan {0} días', '{0} jours restants', 'Noch {0} Tage'],
-    rules: ['배치 5판(언랭크) · 승급 후 3판 강등 보호 · 배치 후 5판 RP +25%',
-      '5 placement games (unranked) · 3-game shield after promotion · +25% RP for 5 games after placement',
-      '配置5試合（アンランク）・昇格後3試合は降格保護・配置後5試合RP+25%',
-      '定级赛5局（未定级）· 晋级后3局降级保护 · 定级后5局RP+25%',
-      '定級賽5局（未定級）· 晉級後3局降級保護 · 定級後5局RP+25%',
-      '5 clasificatorias (sin rango) · 3 partidas protegidas tras subir · +25% RP 5 partidas',
-      '5 parties de placement (non classé) · 3 parties protégées après promotion · +25% RP sur 5 parties',
-      '5 Platzierungsspiele (unplatziert) · 3 Spiele Schutz nach Aufstieg · +25% RP für 5 Spiele'],
-    reset: ['시즌이 끝나면 RP가 1000 쪽으로 절반 압축되고 다시 배치 경기를 치릅니다.', 'At season end, RP is pulled halfway toward 1000 and placements restart.', 'シーズン終了時、RPは1000に向けて半分に圧縮され、再び配置試合を行います。', '赛季结束时RP向1000压缩一半，并重新进行定级赛。', '賽季結束時RP向1000壓縮一半，並重新進行定級賽。', 'Al final de temporada el RP se acerca a 1000 a la mitad y se repiten las clasificatorias.', 'En fin de saison, le RP est rapproché de moitié vers 1000 et les placements recommencent.', 'Am Saisonende wird RP zur Hälfte Richtung 1000 gezogen, dann neue Platzierungsspiele.'],
-    rewardTitle: ['지난 시즌 보상', 'Last season reward', '前シーズン報酬', '上赛季奖励', '上賽季獎勵', 'Recompensa anterior', 'Récompense de saison', 'Saisonbelohnung'],
-    rewardText: ['시즌 {0} 최종 티어: {1}. 이번 시즌 동안 아래 티어 보상을 쓸 수 있습니다.', 'Season {0} final tier: {1}. The tier rewards below are yours for this season.', 'シーズン{0}最終ティア：{1}。今シーズンは下のティア報酬を使えます。', '赛季{0}最终段位：{1}。本赛季可使用下方段位奖励。', '賽季{0}最終段位：{1}。本賽季可使用下方段位獎勵。', 'Rango final de la temporada {0}: {1}. Puedes usar estas recompensas esta temporada.', 'Rang final saison {0} : {1}. Ces récompenses sont à vous cette saison.', 'Finaler Rang Saison {0}: {1}. Diese Belohnungen gelten diese Saison.'],
-    ok: ['확인', 'OK', 'OK', '确定', '確定', 'OK', 'OK', 'OK'],
-    hof: ['명예의 전당', 'Hall of fame', '殿堂', '名人堂', '名人堂', 'Salón de la fama', 'Panthéon', 'Ruhmeshalle'],
-    hofEmpty: ['시즌이 끝나면 그 시즌 최고 티어가 여기에 영구히 남습니다.', 'Each season\'s best tier is kept here forever when the season ends.', 'シーズン終了時、その最高ティアがここに永久に残ります。', '赛季结束后，该赛季最高段位会永久保存在这里。', '賽季結束後，該賽季最高段位會永久保存在這裡。', 'Al terminar cada temporada su mejor rango queda aquí para siempre.', 'À la fin de chaque saison, son meilleur rang reste ici.', 'Am Saisonende bleibt der beste Rang hier dauerhaft.'],
-    startsIn: ['시즌 1 시작까지 {0}일', 'Season 1 starts in {0} days', 'シーズン1開始まで{0}日', '距赛季1开始还有{0}天', '距賽季1開始還有{0}天', 'La temporada 1 empieza en {0} días', 'Saison 1 dans {0} jours', 'Saison 1 beginnt in {0} Tagen'],
-    pre: ['프리시즌', 'Preseason', 'プレシーズン', '季前赛', '季前賽', 'Pretemporada', 'Présaison', 'Vorsaison'],
     rewards: ['티어 보상', 'Tier rewards', 'ティア報酬', '段位奖励', '段位獎勵', 'Recompensas', 'Récompenses', 'Belohnungen'],
-    rewardsNote: ['지난 시즌 배틀 최종 티어에 따라 이번 시즌 동안 쓸 수 있는 보상입니다. 시즌이 바뀌면 초기화됩니다.', 'Rewards for this season, based on your final ranked battle tier last season. They reset every season.', '前シーズンのバトル最終ティアに応じて今シーズン使える報酬です。シーズンごとにリセットされます。', '根据上赛季对战最终段位，本赛季可使用的奖励。每赛季重置。', '依上賽季對戰最終段位，本賽季可使用的獎勵。每賽季重設。', 'Recompensas de esta temporada según tu rango final de batalla anterior. Se reinician cada temporada.', 'Récompenses de la saison selon votre rang final en duel la saison passée. Réinitialisées à chaque saison.', 'Belohnungen dieser Saison nach deinem finalen Kampfrang der Vorsaison. Werden jede Saison zurückgesetzt.'],
+    rewardsNote: ['경쟁전 배틀에서 해당 티어에 한 번이라도 도달하면 보상이 영구히 해금됩니다.', 'Reach a tier in ranked battles once and its reward is yours forever.', 'ランク戦バトルで一度でもそのティアに到達すると、報酬が永久に解放されます。', '在排位对战中达到该段位一次，奖励即永久解锁。', '在排位對戰中達到該段位一次，獎勵即永久解鎖。', 'Alcanza un rango en duelos clasificatorios una vez y su recompensa será tuya para siempre.', 'Atteignez un rang une fois en duel classé et sa récompense vous appartient pour toujours.', 'Erreiche einen Rang einmal in Ranglisten-Kämpfen und die Belohnung gehört dir für immer.'],
     r_gold: ['금빛 보드 테두리', 'Gold board frame', '金の盤面枠', '金色棋盘边框', '金色棋盤邊框', 'Marco dorado', 'Cadre doré', 'Goldrahmen'],
     r_platinum: ['청록 보드 테두리', 'Platinum board frame', 'プラチナ盤面枠', '铂金棋盘边框', '白金棋盤邊框', 'Marco platino', 'Cadre platine', 'Platinrahmen'],
     r_diamond: ['보석 색 입력 숫자 · 다이아 승리 배너', 'Gem digits · Diamond victory banner', '宝石色の数字・ダイヤ勝利バナー', '宝石色数字 · 钻石胜利横幅', '寶石色數字 · 鑽石勝利橫幅', 'Dígitos joya · banner diamante', 'Chiffres gemme · bannière diamant', 'Edelstein-Ziffern · Diamant-Banner'],
@@ -47,8 +21,6 @@
   };
   const t = k => T[k][L()] || T[k][1];
   const tr = s => (window.I18N && typeof I18N.text === 'function' ? I18N.text(s) : s);
-  const diffName = d => (window.SumdokuDiffNames && SumdokuDiffNames[d] && SumdokuDiffNames[d][L()]) || d;
-  const modeName = m => m === 'timeattack' ? ['타임어택', 'Time Attack', 'タイムアタック', '限时挑战', '限時挑戰', 'Contrarreloj', 'Contre-la-montre', 'Zeitangriff'][L()] : (m === 'battle' ? ['배틀', 'Battle', 'バトル', '对战', '對戰', 'Batalla', 'Duel', 'Kampf'][L()] : '');
   const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const tierById = id => R.TIERS.find(x => x.id === id);
 
@@ -58,7 +30,7 @@
   const CKEY = 'sumdoku_rank_cosmetics';
   const loadC = () => { try { return JSON.parse(localStorage.getItem(CKEY)) || {}; } catch (_) { return {}; } };
   const saveC = c => { try { localStorage.setItem(CKEY, JSON.stringify(c)); } catch (_) {} };
-  // v2.1.9: 보상 = 직전 시즌 배틀 최종 티어(매 시즌 초기화). 개발자 모드는 rewardTierIndex 를 덮어씁니다.
+  // v2.2.1: 보상 = 배틀에서 도달한 최고 티어(영구). 개발자 모드는 rewardTierIndex 를 덮어씁니다.
   const unlockedIdx = () => (R.rewardTierIndex ? R.rewardTierIndex(R.loadAll()) : R.bestTierIndex(R.loadAll()));
 
   // 다이아몬드(4) · 마스터(5) · 그랜드마스터(6) 중 해금 및 활성화된 가장 높은 승리 배너 스킨 티어 반환
@@ -108,10 +80,8 @@
 
   function applyCosmetics() {
     const k = unlockedIdx(), b = document.body;
-    let c = loadC();
-    // v2.1.9: 시즌이 바뀌면 장착 상태를 초기화합니다(새 시즌 보상은 다시 자동 장착).
-    const sn = R.seasonOf();
-    if (c._season !== sn) c = { _season: sn };
+    const c = loadC();
+    delete c._season; // v2.1.9 시즌 초기화 표식(더 이상 쓰지 않음)
     // v2.1.7: 티어 보상은 하나만 장착합니다(여러 개가 켜지면 테두리·배너가 겹쳤습니다).
     //   새로 해금된 보상은 자동 장착, 기존 저장값에 여러 개가 켜져 있으면 가장 높은 것만 남깁니다.
     let fresh = '';
@@ -133,60 +103,15 @@
   /* ---------- 랭킹 탭 섹션 ---------- */
   function ensureSections() {
     const main = document.querySelector('#view-ranking .ranking-main');
-    if (!main || document.getElementById('season-head')) return main;
-    const head = mk('section', 'season-head'); head.id = 'season-head';
-    const reward = mk('section', 'season-reward hidden'); reward.id = 'season-reward';
-    main.prepend(head, reward);
-    const hof = mk('section', 'ranking-ladder season-hof'); hof.id = 'season-hof';
-    const cos = mk('section', 'ranking-ladder season-cos'); cos.id = 'season-cos';
-    main.append(hof, cos);
+    if (!main) return null;
+    // v2.2.1: 이전 버전이 만든 시즌 섹션이 남아 있으면 지웁니다.
+    ['season-head', 'season-reward', 'season-hof'].forEach(id => document.getElementById(id)?.remove());
+    if (!document.getElementById('season-cos')) { const cos = mk('section', 'ranking-ladder season-cos'); cos.id = 'season-cos'; main.append(cos); }
     return main;
   }
 
   function renderSeason() {
     if (!ensureSections()) return;
-    const all = R.loadAll(), n = R.seasonOf();
-    const left = Math.max(0, Math.ceil((R.seasonEnd(n) - Date.now()) / 86400000));
-    const head = document.getElementById('season-head');
-    head.innerHTML = '';
-    const top = mk('div', 'sh-top');
-    top.append(mk('b', 'sh-n', n ? `${t('season')} ${n}` : t('pre')), mk('span', 'sh-left', n ? t('left').replace('{0}', left) : t('startsIn').replace('{0}', left)));
-    const bar = mk('div', 'sh-bar'); const fill = mk('i'); fill.style.width = n ? Math.min(100, (56 - left) / 56 * 100).toFixed(1) + '%' : '0%'; bar.append(fill);
-    head.append(top, bar, mk('p', 'sh-rules', t('rules')), mk('p', 'sh-reset', t('reset')));
-
-    // 지난 시즌 보상 안내(한 번)
-    const rw = document.getElementById('season-reward');
-    const sr = all.seasonReward;
-    if (sr && !sr.seen) {
-      const tier = tierById(sr.tier);
-      rw.classList.remove('hidden'); rw.innerHTML = '';
-      rw.style.setProperty('--tier', tier.color);
-      const em = mk('div', 'sr-em'); em.innerHTML = R.tierSymbol(tier.id, 72);
-      const tx = mk('div', 'sr-tx'); tx.append(mk('b', null, t('rewardTitle')), mk('span', null, t('rewardText').replace('{0}', sr.season).replace('{1}', tr(tier.ko))));
-      const ok = mk('button', 'btn btn-secondary', t('ok')); ok.type = 'button';
-      ok.onclick = () => { const a = R.loadAll(); if (a.seasonReward) a.seasonReward.seen = true; R.saveAll(a); rw.classList.add('hidden'); };
-      rw.append(em, tx, ok);
-    } else rw.classList.add('hidden');
-
-    // 명예의 전당
-    const hof = document.getElementById('season-hof');
-    hof.innerHTML = '';
-    hof.append(mk('h3', 'section-title', t('hof')));
-    const list = (all.hof || []).slice(0, 30);
-    if (!list.length) hof.append(mk('p', 'ranking-hint', t('hofEmpty')));
-    else {
-      const grid = mk('div', 'hof-grid');
-      list.forEach(h => {
-        const tier = R.tierOf(h.best);
-        const c = mk('div', 'hof-item'); c.style.setProperty('--tier', tier.color);
-        const em = mk('div', 'hof-em'); em.innerHTML = R.tierSymbol(tier.id, 52, tier.division);
-        c.append(em, mk('b', 'hof-s', h.season ? `${t('season')} ${h.season}` : t('pre')),
-          mk('span', 'hof-d', `${diffName(h.diff)}`.trim()), mk('span', 'hof-t', `${tier.name} · ${h.best}`));
-        grid.append(c);
-      });
-      hof.append(grid);
-    }
-
     // 티어 보상
     const cos = document.getElementById('season-cos');
     cos.innerHTML = '';

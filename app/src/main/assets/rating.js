@@ -423,7 +423,7 @@
       `<path class="te-spark" d="M73 16 L74.8 21.2 L80 23 L74.8 24.8 L73 30 L71.2 24.8 L66 23 L71.2 21.2Z" fill="#fff"/>` +
       (k >= 4 ? `<path class="te-spark te-spark-2" d="M26 20 L27.3 23.7 L31 25 L27.3 26.3 L26 30 L24.7 26.3 L21 25 L24.7 23.7Z" fill="${lt}"/>` : '')
     ) : '';
-    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k} te-div-${divRank}" style="--tier:${c}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-hidden="true"><defs>${defs}</defs><g class="te-body">${art}</g>${plate}${spark}</svg>`;
+    return `<svg class="tier-symbol tier-symbol-${t.id} te-k${k} te-div-${divRank}" style="--tier:${c}" width="${size}" height="${size}" viewBox="-9 -11 118 118" overflow="visible" role="img" aria-hidden="true"><defs>${defs}</defs><g class="te-body">${art}</g>${plate}${spark}</svg>`;
   }
 
   /* v1.1.29 · PUBG 경쟁전 스타일 사운드:
@@ -585,51 +585,28 @@
 
   const DIV_RP = 100;
 
-  /* ---------- v1.1.28 · 시즌 ----------
-   * 8주(56일) 시즌. 2027-01-21부터 시즌 1(그 전은 프리시즌). 기기 날짜 기준으로 계산합니다.
-   * 시즌이 바뀌면 모든 랭크를 소프트 리셋: 새 RP = 1000 + (이전 RP − 1000) × 0.5
-   *   → 배치 경기 5판(그동안 '언랭크', 얻는 RP ×1.5) → 이후 5판 시즌 초반 가속(얻는 RP ×1.25)
-   * 지난 시즌 최고 티어는 명예의 전당에 남고, 티어 보상(꾸미기)은 지금까지 도달한 최고 티어로 영구 해금됩니다.
-   * 승급전: 다음 티어로 넘어갈 RP를 얻으면 경계 바로 아래에서 멈추고 3판 2선승 승급전을 치릅니다.
-   * 강등 보호: 승급 직후 3판은 티어 시작점 아래로 떨어지지 않습니다. */
-  const SEASON_EPOCH = new Date(2027, 0, 21).getTime(), SEASON_DAYS = 56, PLACEMENT = 5, BOOST_GAMES = 5;
-  // 시즌 1 시작 전은 0(프리시즌): 리셋·배치 경기 없이 지금처럼 랭크가 쌓입니다.
-  const seasonOf = (now = Date.now()) => now < SEASON_EPOCH ? 0 : Math.floor((now - SEASON_EPOCH) / (SEASON_DAYS * DAY)) + 1;
-  const seasonEnd = n => SEASON_EPOCH + n * SEASON_DAYS * DAY;
+  /* ---------- 랭크 규칙 ----------
+   * v2.2.1: 시즌제를 없앴습니다(RP 초기화·배치 경기·시즌 보상 없음). 랭크는 계속 쌓입니다.
+   * 승급: 다음 티어 RP에 닿으면 바로 승급하고, 승급 직후 3판은 티어 시작점 아래로 떨어지지 않습니다(강등 보호).
+   * 티어 보상: 배틀(경쟁전)에서 한 번이라도 도달한 최고 티어로 영구 해금됩니다(최고 RP = peak 기준). */
+  const PLACEMENT = 5, BOOST_GAMES = 5;
   const UNRANKED = { id: 'unranked', ko: '언랭크', min: 0, color: '#64748b' };
+  // 예전 시즌제가 남긴 배치 경기·시즌 보상 상태를 정리합니다.
   function ensureSeason(all) {
-    const cur = seasonOf();
-    if (!cur || all.season === cur) return false;
-    const first = !all.season;
-    if (!Array.isArray(all.hof)) all.hof = [];
-    let bestIdx = -1;
+    let changed = false;
     MODES.forEach(m => DIFFS.forEach(d => {
       const s = ladder(all, m).byDiff[d];
-      if (first) {
-        // 시즌 도입 전 기록은 '프리시즌'으로 남깁니다.
-        if (s.games > 0) all.hof.unshift({ season: 0, mode: m, diff: d, best: Math.max(s.peak || 0, s.rating), final: s.rating });
-      } else if ((s.seasonGames || 0) > 0 && !(s.placement > 0)) {
-        const best = Math.max(s.seasonBest || 0, s.rating);
-        all.hof.unshift({ season: all.season, mode: m, diff: d, best, final: s.rating });
-        bestIdx = Math.max(bestIdx, tierOf(best).index);
-      }
-      s.rating = Math.round(1000 + (s.rating - 1000) * 0.5);
-      s.placement = PLACEMENT; s.seasonGames = 0; s.seasonBest = 0; s.series = null; s.protect = 0; s.boost = 0; s.streak = 0;
+      if (s && (s.placement > 0 || s.boost > 0)) { s.placement = 0; s.boost = 0; changed = true; }
     }));
-    all.hof = all.hof.slice(0, 80);
-    // v2.1.9: 보상은 배틀(경쟁전) 최종 티어 기준입니다(프리시즌 → 시즌 1 포함).
-    { const prevS = first ? 0 : all.season; let fin = -1; all.hof.forEach(h => { if (h && h.season === prevS && h.mode === 'battle' && Number.isFinite(h.final)) fin = Math.max(fin, h.final); });
-      if (fin >= 0) all.seasonReward = { season: prevS, tier: tierOf(fin).id, seen: false }; else delete all.seasonReward; }
-    void bestIdx;
-    all.season = cur;
-    return true;
+    if (all.seasonReward) { delete all.seasonReward; changed = true; }
+    return changed;
   }
   // 화면에 보일 티어: 배치 중이면 언랭크
   function shownTier(s) {
     if (s && s.placement > 0) return { ...UNRANKED, index: -1, division: '', name: tr(UNRANKED.ko), divMin: 0, divMax: null, next: TIERS[0], placementDone: PLACEMENT - s.placement };
     return tierOf(s ? s.rating : 1000);
   }
-  // 지금까지 도달한 최고 티어(명예의 전당 시즌 기록 + 이번 시즌/통산 배치를 마친 랭크)
+  // 지금까지 도달한 최고 티어(모든 랭크 기록)
   function bestTierIndex(all) {
     let k = -1;
     (all.hof || []).forEach(h => { if (h && Number.isFinite(h.best)) k = Math.max(k, tierOf(h.best).index); });
@@ -641,56 +618,15 @@
     }));
     return k;
   }
-
-  /* ---------- v2.1.9 · 시즌 보상 ----------
-   * 티어 보상은 '직전 시즌의 배틀(경쟁전) 최종 티어'로 다음 시즌 한 시즌 동안만 쓸 수 있습니다(매 시즌 초기화).
-   *  - 최종 티어 = 시즌이 끝날 때의 RP(final) 중 가장 높은 난이도 기록
-   *  - 시즌 1은 프리시즌 기록으로 보상을 받습니다. 프리시즌 동안에는 받을 보상이 없습니다.
-   *  - 이름 옆에는 같은 기록의 티어 엠블럼과 그 시즌 심볼이 표시됩니다. */
-  function lastSeasonFinal(all) {
-    const cur = seasonOf();
-    try {
-      const dev = window.SumdokuDevMode?.isOn?.() && JSON.parse(localStorage.getItem('sumdoku_dev_prev_season') || 'null');
-      if (dev && TIERS.some(t => t.id === dev.t)) return { season: Math.max(0, dev.s | 0), tier: dev.t, index: TIERS.findIndex(t => t.id === dev.t), rp: dev.rp || TIERS.find(t => t.id === dev.t).min };
-    } catch (_) {}
-    if (!cur) return null;
-    const prev = cur - 1;
-    let best = null;
-    (all.hof || []).forEach(h => {
-      if (!h || h.season !== prev || h.mode !== 'battle' || !Number.isFinite(h.final)) return;
-      if (!best || h.final > best.rp) best = { season: prev, rp: h.final };
+  // v2.2.1: 티어 보상 해금 = 배틀에서 도달한 최고 티어(영구). RP가 다시 떨어져도 잠기지 않습니다.
+  function rewardTierIndex(all) {
+    let k = -1;
+    DIFFS.forEach(d => {
+      const s = ladder(all, 'battle')?.byDiff?.[d];
+      if (s && (s.games || 0) > 0) k = Math.max(k, tierOf(Math.max(s.peak || 0, s.rating || 0)).index);
     });
-    if (!best) return null;
-    const t = tierOf(best.rp);
-    return { season: prev, tier: t.id, index: t.index, rp: best.rp };
-  }
-  function rewardTierIndex(all) { const f = lastSeasonFinal(all); return f ? f.index : -1; }
-  // 이번 시즌이 지금 끝나면 받을 티어(배치를 마친 배틀 난이도 중 현재 RP 최고)
-  function currentSeasonFinal(all) {
-    let rp = -1;
-    DIFFS.forEach(d => { const s = ladder(all, 'battle')?.byDiff?.[d]; if (s && !(s.placement > 0) && ((s.seasonGames || 0) > 0 || (s.games || 0) > 0)) rp = Math.max(rp, s.rating || 0); });
-    if (rp < 0) return null;
-    const t = tierOf(rp); return { tier: t.id, index: t.index, rp };
-  }
-  // 시즌 심볼: 시즌마다 색과 모양(육각·방패·마름모·원 순환)이 다른 작은 배지. 0 = 프리시즌
-  const SEASON_HUES = [210, 330, 160, 35, 265, 0, 190, 95];
-  function seasonSymbol(n, size = 18) {
-    n = Math.max(0, n | 0);
-    const hue = n ? SEASON_HUES[(n - 1) % SEASON_HUES.length] : 220, sat = n ? 80 : 12;
-    const c1 = `hsl(${hue},${sat}%,62%)`, c2 = `hsl(${hue},${sat}%,34%)`, id = 'ss' + n + '_' + Math.random().toString(36).slice(2, 7);
-    const shapes = [
-      'M12 1.5l9.1 5.25v10.5L12 22.5l-9.1-5.25V6.75z',
-      'M12 1.5l9 3.3v6.4c0 5.4-3.8 9.6-9 11.3-5.2-1.7-9-5.9-9-11.3V4.8z',
-      'M12 1l11 11-11 11L1 12z',
-      'M12 1.5a10.5 10.5 0 1 1 0 21 10.5 10.5 0 0 1 0-21z'
-    ];
-    const d = shapes[n ? (n - 1) % shapes.length : 0];
-    const label = n ? String(n) : 'P';
-    const fs = label.length > 1 ? 8.5 : 10.5;
-    return `<svg class="season-sym" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false">`
-      + `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`
-      + `<path d="${d}" fill="url(#${id})" stroke="rgba(255,255,255,.75)" stroke-width="1.3"/>`
-      + `<text x="12" y="${12 + fs * 0.36}" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="${fs}" fill="#fff">${label}</text></svg>`;
+    (all.hof || []).forEach(h => { if (h && h.mode === 'battle' && Number.isFinite(h.best)) k = Math.max(k, tierOf(h.best).index); });
+    return k;
   }
   function tierOf(rating) {
     let k = 0; for (let i = 0; i < TIERS.length; i++) if (rating >= TIERS[i].min) k = i;
@@ -1509,7 +1445,7 @@
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 
   window.SumdokuRating = {
-    shownTier, seasonOf, seasonEnd, bestTierIndex, lastSeasonFinal, rewardTierIndex, currentSeasonFinal, seasonSymbol, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
+    shownTier, bestTierIndex, rewardTierIndex, PLACEMENT, UNRANKED, tierSymbol, playPromotion, promoSound,
     load, loadAll, saveAll, ladder, tierOf, applyDecay, computeDelta, RP_MULT, streakBonus, taExpected, TA_WEIGHT,
     TIERS, KEY, DIFFS, MODES,
     getAbandonableOngoingGame, previewAbandonPenalty, applyAbandonPenalty, showAbandonWarningModal,
