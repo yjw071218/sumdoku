@@ -446,8 +446,8 @@ body.integrity-veiled #view-game .battle-hud { visibility: hidden !important; op
 
 /* v2.1.7 · 티어 보상 테두리(최대 6px + 빛)가 화면 좌우에서 잘리지 않도록 보드를 조금 줄입니다. */
 body[class*="rkc-"]:not(.battle-active) #view-game .board-frame {
-  width: min(calc(100vw - 48px), 420px, 48vh) !important;
-  height: min(calc(100vw - 48px), 420px, 48vh) !important;
+  width: min(calc(100vw - 38px), 440px, 52vh) !important;
+  height: min(calc(100vw - 38px), 440px, 52vh) !important;
 }
 body[class*="rkc-"].battle-active #view-game .board-frame {
   width: calc(var(--battle-board-size, 200px) - 20px) !important;

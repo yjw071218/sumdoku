@@ -53,14 +53,15 @@
   ];
   const OFFER_POOL = 5;            // announce 한 번에 실어 보내는 offer 수
   const ANNOUNCE_MIN_SEC = 25;     // 트래커 재등록 최소 간격(트래커 권장값 하한)
-  const FAST_ANNOUNCE_SEC = 6;     // v2.1.5: 탐색 초반 90초는 6초마다 재등록해 서로를 빨리 발견합니다.
-  const FAST_WINDOW_MS = 90000;
+  const FAST_ANNOUNCE_SEC = 3;     // v2.2.2: 탐색 초반 2분은 3초마다 재등록해 서로를 빨리 발견합니다(6초 → 3초).
+  const FAST_WINDOW_MS = 120000;
   const POOL_REFRESH_MS = 20000;   // offer 풀 재사용 시간
   const ROOM_ANNOUNCE_SEC = 3;     // v2.1.6: 방 번호 탐색은 상대가 정해져 있으므로 끝까지 3초 간격으로 등록합니다.
-  const SLOW_ANNOUNCE_SEC = 10;    // v2.1.6: 랜덤 탐색 90초 이후에도 트래커 권장값(최대 120초) 대신 10초 간격 유지
-  const PEER_OPEN_TIMEOUT_MS = 12000; // 열리지 않는 연결 정리(20초 → 12초)
+  const SLOW_ANNOUNCE_SEC = 6;     // v2.2.2: 그 뒤에도 6초 간격 유지(10초 → 6초)
+  const PEER_OPEN_TIMEOUT_MS = 8000; // 열리지 않는 연결 정리(20초 → 12초 → v2.2.2: 8초) 후 새 offer로 재시도
+  const WARM_TTL_MS = 45000;       // v2.2.2: 로비에서 미리 열어 둔 트래커 연결·offer를 유지하는 시간
   const OFFER_TTL_MS = 55000;      // 응답 없는 offer 정리
-  const ICE_WAIT_MS = 1500;        // v2.1.5: 2.5초 → 1.5초 (srflx 후보가 모이면 더 일찍 끝냅니다)
+  const ICE_WAIT_MS = 1200;        // v2.1.5: 2.5초 → 1.5초 → v2.2.2: 1.2초 (srflx 후보가 모이면 더 일찍 끝냅니다)
   const ICE_EARLY_MS = 250;        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
   const PROPOSE_TIMEOUT_MS = 4000;
   const TUNNEL_TIMEOUT_MS = 9000;
@@ -99,14 +100,14 @@
     tab: ['🌐 온라인', '🌐 Online', '🌐 オンライン', '🌐 在线', '🌐 線上', '🌐 En línea', '🌐 En ligne', '🌐 Online'],
     title: ['전 세계 랜덤 매칭', 'Worldwide random match', '世界ランダムマッチ', '全球随机匹配', '全球隨機配對', 'Partida aleatoria mundial', 'Match aléatoire mondial', 'Weltweites Zufallsmatch'],
     zone: ['매칭 구역', 'Match zone', 'マッチ地域', '匹配区域', '配對區域', 'Zona de partida', 'Zone de match', 'Match-Zone'],
-    zoneAuto: ['매칭 구역은 기기 시간대로 자동 선택', 'Match zone auto-selected from your time zone', 'マッチ地域は端末のタイムゾーンで自動選択', '匹配区域按设备时区自动选择', '配對區域依裝置時區自動選擇', 'Zona elegida según tu zona horaria', 'Zone choisie selon votre fuseau horaire', 'Zone automatisch nach Zeitzone'],
+    zoneAuto: ['전 세계 플레이어와 매칭합니다', 'Matching with players worldwide', '世界中のプレイヤーとマッチングします', '与全球玩家匹配', '與全球玩家配對', 'Emparejamiento con jugadores de todo el mundo', 'Matchmaking avec des joueurs du monde entier', 'Matchmaking mit Spielern weltweit'],
     mode: ['배틀 모드', 'Battle mode', 'バトルモード', '对战模式', '對戰模式', 'Modo de batalla', 'Mode de duel', 'Kampfmodus'],
     diff: ['난이도', 'Difficulty', '難易度', '难度', '難度', 'Dificultad', 'Difficulté', 'Schwierigkeit'],
     name: ['내 닉네임', 'My nickname', 'ニックネーム', '我的昵称', '我的暱稱', 'Mi apodo', 'Mon pseudo', 'Mein Spitzname'],
     namePh: ['상대에게 보일 이름', 'Name shown to your opponent', '相手に表示される名前', '对手看到的名字', '對手看到的名稱', 'Nombre que verá tu rival', 'Nom vu par votre adversaire', 'Name, den dein Gegner sieht'],
     start: ['랜덤 매칭 시작', 'Find a match', 'マッチング開始', '开始随机匹配', '開始隨機配對', 'Buscar partida', 'Trouver un match', 'Match suchen'],
     cancel: ['매칭 취소', 'Cancel', 'キャンセル', '取消匹配', '取消配對', 'Cancelar', 'Annuler', 'Abbrechen'],
-    searching: ['같은 구역의 상대를 찾는 중…', 'Looking for an opponent in this zone…', '同じ地域の対戦相手を探しています…', '正在寻找同一区域的对手…', '正在尋找同一區域的對手…', 'Buscando rival en esta zona…', 'Recherche d’un adversaire dans cette zone…', 'Suche Gegner in dieser Zone…'],
+    searching: ['상대를 찾는 중…', 'Looking for an opponent…', '対戦相手を探しています…', '正在寻找对手…', '正在尋找對手…', 'Buscando rival…', 'Recherche d’un adversaire…', 'Suche Gegner…'],
     found: ['상대를 찾았습니다! 연결을 확정하는 중…', 'Opponent found! Confirming…', '相手が見つかりました！確定中…', '找到对手！正在确认…', '找到對手！正在確認…', '¡Rival encontrado! Confirmando…', 'Adversaire trouvé ! Confirmation…', 'Gegner gefunden! Bestätige…'],
     matched: ['매칭 완료! 퍼즐을 준비하는 중…', 'Matched! Preparing the puzzle…', 'マッチ成立！パズルを準備中…', '匹配成功！正在准备谜题…', '配對成功！正在準備謎題…', '¡Emparejado! Preparando el puzle…', 'Match trouvé ! Préparation de la grille…', 'Match gefunden! Rätsel wird vorbereitet…'],
     trackers: ['트래커', 'Trackers', 'トラッカー', 'Tracker', 'Tracker', 'Trackers', 'Trackers', 'Tracker'],
@@ -300,14 +301,9 @@
   const toHex = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
   const toBinStr = b => String.fromCharCode.apply(null, Array.from(b));
 
-  function guessZone() {
-    let tz = '';
-    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (_) {}
-    if (/^(Asia|Australia|Pacific|Indian)\//.test(tz)) return 'asia';
-    if (/^(Europe|Africa|Atlantic\/(Reykjavik|Canary|Madeira|Faroe))/.test(tz)) return 'europe';
-    if (/^America\//.test(tz)) return 'americas';
-    return 'global';
-  }
+  // v2.2.2: 매칭 구역을 하나로 통합했습니다(전 세계). 대기열이 나뉘지 않아 상대를 훨씬 빨리 찾습니다.
+  //   구버전 중 '전 세계' 구역(시간대가 아시아·유럽·아메리카가 아닌 기기)과도 그대로 매칭됩니다.
+  function guessZone() { return 'global'; }
 
   const store = {
     get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (_) { return d; } },
@@ -485,7 +481,12 @@
     return b;
   }
   window.SumdokuNameBadge = { mine: () => nameBadge(myPrev()), of: ps => nameBadge(cleanPrev(ps)) };
-  function setName(el, text, ps) { el.textContent = text; const b = nameBadge(ps); if (b) el.prepend(b); }
+  // v2.2.2: 이름은 .nm-text 로 감싸 길면 말줄임(…) 처리합니다(엠블럼·플레이트 아이콘은 그대로 보임).
+  function setName(el, text, ps) {
+    const t = document.createElement('span'); t.className = 'nm-text'; t.textContent = text;
+    el.replaceChildren(t); el.title = text;
+    const b = nameBadge(ps); if (b) el.prepend(b);
+  }
   function myProfile(diff) { return { n: myName(), cc: myCountry(), tier: myTier(diff), cos: myCos(), ps: myPrev() }; }
   function cleanProfile(p, fallbackId) {
     const n = cleanName(p && p.n) || ('Player-' + String(fallbackId || '').slice(0, 4).toUpperCase());
@@ -615,12 +616,16 @@
       this.hashHex = toHex(hb);
       this.startedAt = Date.now();
       // v2.1.5: 트래커 연결과 동시에 offer 풀을 미리 만들어 첫 등록 지연을 없앱니다.
+      // v2.2.2: 로비에서 미리 만들어 둔 offer 풀이 있으면 그대로 씁니다(ICE 수집 대기 없음).
       this._pool = null; this._poolBusy = null;
-      this.offerPool().catch(() => {});
+      this.adoptWarm();
+      if (!this._pool) this.offerPool().catch(() => {});
       Trackers.refresh().catch(() => {});
       const tp = Trackers.pick();
       this.spareTrackers = tp.spare;
       tp.use.forEach(url => this.openTracker(url));
+      for (const ws of (this._adoptWs || new Map()).values()) { try { ws.close(); } catch (_) {} }
+      this._adoptWs = null;
       try { window.AndroidBridge?.dhtStart?.(this.hashHex, this.selfId); } catch (_) {}
       clearInterval(this.statusTimer);
       this.statusTimer = setInterval(() => { this.gcOffers(); UI.render(); }, 1000);
@@ -741,7 +746,13 @@
         }
       });
       // 열리지 않는 연결은 12초 뒤 정리하고, 새 offer로 곧바로 다시 등록합니다(원거리·VPN에서 첫 연결이 실패한 경우).
-      setTimeout(() => { if (!peer.open && this.peers.get(remoteId) === peer) { this.closePeer(peer); this.peers.delete(remoteId); this.seen.delete(remoteId); this.kickAnnounce(); } }, PEER_OPEN_TIMEOUT_MS);
+      // v2.2.2: 원거리에서는 경로(ICE)를 이미 찾고 암호화 연결(DTLS)·채널을 맺는 중일 수 있으므로, 그때는 한 번 더 기다립니다.
+      const openCheck = extended => {
+        if (peer.open || this.peers.get(remoteId) !== peer) return;
+        if (!extended && ['connected', 'completed'].includes(pc.iceConnectionState)) { setTimeout(() => openCheck(true), PEER_OPEN_TIMEOUT_MS); return; }
+        this.closePeer(peer); this.peers.delete(remoteId); this.seen.delete(remoteId); this.kickAnnounce();
+      };
+      setTimeout(() => openCheck(false), PEER_OPEN_TIMEOUT_MS);
       return peer;
     },
 
@@ -749,7 +760,12 @@
       peer.dc = dc;
       dc.onopen = () => {
         peer.open = true;
-        this.sendTo(peer, { t: 'hello', id: this.selfId, proto: PROTO, kind: this.kind, queue: this.queue, roomRole: this.roomRole, code: this.roomCode, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) });
+        const hello = { t: 'hello', id: this.selfId, proto: PROTO, kind: this.kind, queue: this.queue, roomRole: this.roomRole, code: this.roomCode, zone: this.zone, mode: this.mode, diff: this.diff, free: this.state === 'searching', ver: window.AndroidBridge?.getVersion?.() || '', p: myProfile(this.diff) };
+        // v2.2.2: 내가 제안하는 쪽이면 제안을 인사에 실어 0.5 왕복을 줄입니다. 구버전 상대를 위해 기존 제안 메시지도 이어서 보냅니다.
+        const prop = this.state === 'searching' && (this.kind === 'room' ? this.roomRole === 'join' : this.selfId < peer.id) ? this.beginPropose(peer) : null;
+        if (prop) hello.prop = prop;
+        this.sendTo(peer, hello);
+        if (prop) this.sendTo(peer, { t: 'propose', id: this.selfId, ...prop });
         UI.render();
       };
       dc.onmessage = e => this.onData(peer, e.data);
@@ -898,6 +914,7 @@
       peer.hello = msg;
       peer.profile = cleanProfile(msg.p, peer.id);
       UI.render();
+      if (msg.prop && typeof msg.prop === 'object') { this.onPropose(peer, msg.prop); return; }
       this.tryPropose();
     },
 
@@ -910,17 +927,22 @@
         && (this.kind === 'room' ? p.hello.roomRole === 'create' : this.selfId < p.id));
       if (!candidates.length) return;
       const target = candidates[0];
+      this.sendTo(target, { t: 'propose', id: this.selfId, ...this.beginPropose(target) });
+    },
+
+    /** 제안 상태로 들어가고 보낼 제안 내용을 돌려줍니다(tryPropose · 인사에 실은 제안 공용). */
+    beginPropose(target) {
       this.state = 'proposing';
       this.proposeTarget = target.id;
       if (this.kind === 'random' && this.queue === 'ranked') {
         this.mode = pickRandomMode();
       }
-      this.sendTo(target, { t: 'propose', id: this.selfId, mode: this.mode, queue: this.queue });
       clearTimeout(this.proposeTimer);
       this.proposeTimer = setTimeout(() => {
         if (this.state === 'proposing' && this.proposeTarget === target.id) { target.rejectedAt = Date.now(); this.backToSearching(); }
       }, PROPOSE_TIMEOUT_MS);
       UI.render();
+      return { mode: this.mode, queue: this.queue };
     },
 
     backToSearching() {
@@ -933,6 +955,7 @@
     },
 
     onPropose(peer, msg) {
+      if (this.partner === peer.id) return; // v2.2.2: 인사에 실린 제안으로 이미 매칭됨(뒤따르는 중복 제안)
       // 제안은 항상 작은 ID 쪽이 보냅니다. 나는 찾는 중일 때만 수락합니다.
       if (this.kind === 'room') {
         // 방장만 수락합니다. 먼저 온 참가자 한 명과 연결되고, 방장이 경기 호스트가 됩니다.
@@ -1165,14 +1188,18 @@
       this.trackers.push(t);
       const connect = () => {
         if (t.epoch !== this.epoch || this.state === 'matched' || this.state === 'idle') return;
-        let ws;
-        try { ws = new WebSocket(url); } catch (_) { return; }
+        let ws = null;
+        // v2.2.2: 로비에서 미리 열어 둔 연결이 있으면 그대로 씁니다(TLS 연결 대기 없음).
+        const pre = this._adoptWs?.get(url);
+        if (pre && pre.readyState <= 1) { this._adoptWs.delete(url); ws = pre; }
+        else { try { ws = new WebSocket(url); } catch (_) { return; } }
         t.ws = ws;
         // 응답 없는 트래커는 6초 만에 포기합니다(브라우저 기본 대기는 훨씬 깁니다).
         t.connTimer = setTimeout(() => { if (ws.readyState !== 1) try { ws.close(); } catch (_) {} }, TRACKER_CONNECT_MS);
         ws.onopen = () => { clearTimeout(t.connTimer); t.open = true; t.fails = 0; this.announce(t, true); UI.render(); };
         ws.onmessage = e => this.onTrackerMessage(t, e.data);
         ws.onerror = () => {};
+        if (ws.readyState === 1) setTimeout(() => { if (t.ws === ws && !t.open) ws.onopen(); }, 0);
         ws.onclose = () => {
           t.open = false;
           clearTimeout(t.timer);
@@ -1200,6 +1227,11 @@
     async announce(t, first) {
       if (!t.open || t.epoch !== this.epoch || (this.state !== 'searching' && this.state !== 'proposing')) return;
       clearTimeout(t.timer);
+      // v2.2.2: offer가 아직 준비 중이면 offer 없이 먼저 등록해, 이미 기다리는 상대의 offer를 바로 받습니다.
+      if (first && !this._pool) {
+        try { t.ws.send(JSON.stringify({ action: 'announce', event: 'started', info_hash: this.hashBin, peer_id: this.selfId, numwant: OFFER_POOL, uploaded: 0, downloaded: 0, left: 1, offers: [] })); } catch (_) {}
+        first = false;
+      }
       // offer 풀은 모든 트래커가 함께 씁니다(같은 offer에 먼저 도착한 answer만 사용).
       const offers = await this.offerPool();
       if (!t.open || t.epoch !== this.epoch) return;
@@ -1209,6 +1241,60 @@
       const fast = Date.now() - (this.startedAt || 0) < FAST_WINDOW_MS;
       const every = this.kind === 'room' ? ROOM_ANNOUNCE_SEC : (fast ? FAST_ANNOUNCE_SEC : Math.min(t.interval, SLOW_ANNOUNCE_SEC));
       t.timer = setTimeout(() => this.announce(t, false), every * 1000);
+    },
+
+    /* ----- v2.2.2 · 사전 준비: 로비를 열면 트래커 연결과 offer(ICE 수집)를 미리 해 둡니다 -----
+     * 시작 버튼을 누르는 즉시 첫 등록이 나가도록 합니다. 45초 동안 쓰지 않으면 정리하고, 로비가 열려 있으면 다시 준비합니다. */
+    warm() {
+      if (this.state !== 'idle' || this.canRun()) return;
+      if (this._warm && Date.now() - this._warm.at < WARM_TTL_MS - 5000) return;
+      this.dropWarm();
+      const w = { at: Date.now(), ws: new Map(), list: null, dropped: false, adopted: false };
+      this._warm = w;
+      Trackers.refresh().catch(() => {});
+      for (const url of Trackers.pick().use) {
+        try {
+          const ws = new WebSocket(url);
+          ws.onerror = () => {};
+          ws.onclose = () => { if (w.ws.get(url) === ws) w.ws.delete(url); };
+          w.ws.set(url, ws);
+        } catch (_) {}
+      }
+      w.promise = Promise.all(Array.from({ length: OFFER_POOL }, () => this.makeOffer().catch(() => null))).then(made => {
+        const list = made.filter(Boolean).map(o => ({ id: randId(20), pc: o.pc, dc: o.dc, sdp: o.sdp }));
+        if (w.dropped) { list.forEach(o => { try { o.pc.close(); } catch (_) {} }); return []; }
+        w.list = list; w.at = Date.now();
+        return list;
+      });
+      clearTimeout(this._warmTimer);
+      this._warmTimer = setTimeout(() => { if (this._warm === w) this.dropWarm(); }, WARM_TTL_MS);
+    },
+    dropWarm() {
+      const w = this._warm; this._warm = null;
+      clearTimeout(this._warmTimer);
+      if (!w || w.adopted) return;
+      w.dropped = true;
+      for (const ws of w.ws.values()) { try { ws.close(); } catch (_) {} }
+      (w.list || []).forEach(o => { try { o.pc.close(); } catch (_) {} });
+    },
+    /** 탐색 시작 시 미리 준비한 연결·offer를 가져옵니다. */
+    adoptWarm() {
+      const w = this._warm; this._warm = null;
+      clearTimeout(this._warmTimer);
+      this._adoptWs = new Map();
+      if (!w || w.dropped) return;
+      w.adopted = true;
+      this._adoptWs = w.ws;
+      const epoch = this.epoch;
+      const take = list => {
+        if (epoch !== this.epoch) { list.forEach(o => { try { o.pc.close(); } catch (_) {} }); return null; }
+        const now = Date.now();
+        list.forEach(o => this.offers.set(o.id, { pc: o.pc, dc: o.dc, at: now }));
+        this._pool = list.map(o => ({ id: o.id, sdp: o.sdp })); this._poolAt = w.at; this._poolBusy = null;
+        return this._pool;
+      };
+      if (w.list) { if (Date.now() - w.at < POOL_REFRESH_MS) take(w.list); else w.list.forEach(o => { try { o.pc.close(); } catch (_) {} }); }
+      else if (w.promise) this._poolBusy = w.promise.then(list => take(list) || []);
     },
 
     async offerPool() {
@@ -1794,7 +1880,7 @@
       this.chips(this.el.diffs, DIFFS, M.diff, id => { M.setDiff(id); this.renderPickers(); }, L, locked);
       M.zone = guessZone();
       const gz = ZONES.find(z => z.id === M.zone);
-      this.el.zoneAuto.textContent = `${gz.flag} ${T('zoneAuto')} · ${L(gz)}`;
+      this.el.zoneAuto.textContent = `${gz.flag} ${T('zoneAuto')}`;
     },
 
     renderRoomSettings() {
@@ -1939,6 +2025,8 @@
     render() {
       if (!this.built) return;
       const e = this.el;
+      // v2.2.2: 로비가 열려 있고 대기 중이면 사전 준비를 유지합니다(warm 은 스스로 횟수를 제한합니다).
+      if (M.state === 'idle' && window.app?.dom?.modalBattleLobby && !window.app.dom.modalBattleLobby.classList.contains('hidden')) try { M.warm(); } catch (_) {}
       e.tab.textContent = T('tab');
       e.view.querySelectorAll('.om-label').forEach(l => { l.textContent = T(l.dataset.k); });
       // v2.1.2: 경쟁전은 매칭 전에 모드가 정해지지 않으므로 공통 공정 규칙을 표시하고, 일반전·매칭 완료 후에는 모드별 세부 규칙을 표시합니다.
@@ -2396,6 +2484,7 @@
       this.dom.modalBattleLobby.classList.remove('hidden');
       this.dom.modalBattleLobby.querySelectorAll('.quick-settings').forEach(p => { p.open = false; });
       UI.show(false);
+      try { M.warm(); } catch (_) {} // v2.2.2: 시작 버튼을 누르기 전에 연결을 미리 준비합니다.
     };
 
     // 재대결 로비: 온라인 경기라면 Wi-Fi 방 UI 대신 자동으로 다시 준비합니다.

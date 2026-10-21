@@ -319,4 +319,15 @@ html.tt-grandmaster, html.tt-grandmaster body { background: #160404; }
 .nm-badge { display: inline-flex; align-items: center; gap: 1px; margin-right: 5px; vertical-align: middle; flex: 0 0 auto; }
 .nm-badge svg { display: block; filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); }
 .nm-plate .nm-badge { margin-left: -4px; }
+/* v2.2.2: 긴 닉네임이 플레이트 밖으로 넘치지 않게 — 이름만 줄어들며 말줄임, 엠블럼·아이콘은 고정 */
+.nm-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nm-plate { min-width: 0; box-sizing: border-box; }
+.nm-plate > .nm-text { flex: 0 1 auto; }
+.nm-plate::before, .nm-plate .nm-badge { flex: 0 0 auto; }
+.om-player-name, .battle-player-name { min-width: 0; max-width: 100%; }
+.om-player-name:has(.nm-text), .battle-player-name:has(.nm-text) { display: inline-flex; align-items: center; justify-content: center; }
+/* 매칭 카드는 폭이 좁으므로 이름을 두 줄까지 보여 줍니다(16자 닉네임도 대부분 다 보임). */
+.om-player-name.nm-plate { padding-left: 9px; padding-right: 9px; gap: 3px; }
+.om-player-name .nm-text { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  word-break: break-all; overflow-wrap: anywhere; line-height: 1.2; text-align: center; }
 .om-player-name:has(.nm-badge), .battle-player-name:has(.nm-badge) { display: inline-flex; align-items: center; justify-content: center; }

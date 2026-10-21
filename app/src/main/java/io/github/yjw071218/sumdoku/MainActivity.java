@@ -708,6 +708,34 @@ public class MainActivity extends Activity {
             return BattleServer.getLocalIpAddress();
         }
 
+        /**
+         * v2.2.2: 이 기기의 공인 IPv6 주소(2000::/3) 목록(JSON 배열).
+         * WebView의 WebRTC는 내 주소를 mDNS(.local) 이름으로 숨겨 상대가 IPv6로 직접 연결할 수 없습니다.
+         * 이동통신망(한국·일본 등)은 IPv4가 통신사 NAT 뒤에 있어 직접 연결이 자주 실패하므로, IPv6 주소를 연결 정보에 직접 넣습니다.
+         */
+        @JavascriptInterface
+        public String getPublicIpv6() {
+            org.json.JSONArray out = new org.json.JSONArray();
+            try {
+                java.util.Enumeration<java.net.NetworkInterface> ifs = java.net.NetworkInterface.getNetworkInterfaces();
+                while (ifs != null && ifs.hasMoreElements()) {
+                    java.net.NetworkInterface ni = ifs.nextElement();
+                    if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
+                    for (java.net.InetAddress a : java.util.Collections.list(ni.getInetAddresses())) {
+                        if (!(a instanceof java.net.Inet6Address)) continue;
+                        byte[] b = a.getAddress();
+                        if ((b[0] & 0xE0) != 0x20) continue; // 전역 유니캐스트(2000::/3)만
+                        String s = a.getHostAddress();
+                        int pct = s.indexOf('%');
+                        if (pct >= 0) s = s.substring(0, pct);
+                        out.put(s);
+                        if (out.length() >= 4) return out.toString();
+                    }
+                }
+            } catch (Exception ignored) {}
+            return out.toString();
+        }
+
         @JavascriptInterface
         public String startBattleServer(String mode, String diff, int timeLimitSec, String puzzleJson) {
             if (battleServer == null) {
@@ -838,10 +866,7 @@ public class MainActivity extends Activity {
 
                         sendProgress(100, "업데이트 완료! 앱을 즉시 재시작합니다...");
 
-                        mainHandler.postDelayed(() -> {
-                            Toast.makeText(MainActivity.this, "v" + versionTag + " 버전으로 인앱 업데이트되었습니다!", Toast.LENGTH_SHORT).show();
-                            loadApp();
-                        }, 500);
+                        mainHandler.postDelayed(() -> nativeToast("v" + versionTag + " 버전으로 인앱 업데이트되었습니다!", Toast.LENGTH_SHORT, MainActivity.this::loadApp), 500);
                     } else {
                         sendError("다운로드된 파일 검증에 실패했습니다.");
                     }
@@ -982,7 +1007,7 @@ public class MainActivity extends Activity {
             // Android 8.0+ 출처를 알 수 없는 앱 설치 권한 확인
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!getPackageManager().canRequestPackageInstalls()) {
-                    Toast.makeText(this, "업데이트 설치를 위해 '이 출처의 앱 허용'을 활성화해 주세요.", Toast.LENGTH_LONG).show();
+                    nativeToast("업데이트 설치를 위해 '이 출처의 앱 허용'을 활성화해 주세요.", Toast.LENGTH_LONG, null);
                     Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
                     settingsIntent.setData(Uri.parse("package:" + getPackageName()));
                     settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -998,7 +1023,7 @@ public class MainActivity extends Activity {
             installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(installIntent);
         } catch (Exception e) {
-            Toast.makeText(this, "설치 관리자 호출 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            nativeToast("설치 관리자 호출 실패: " + e.getMessage(), Toast.LENGTH_SHORT, null);
         }
     }
 
@@ -1050,7 +1075,24 @@ public class MainActivity extends Activity {
         mainHandler.post(() -> {
             String escaped = errorMessage.replace("'", "\\'");
             webView.evaluateJavascript("if (window.onUpdateError) { window.onUpdateError('" + escaped + "'); }", null);
-            Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+            nativeToast(errorMessage, Toast.LENGTH_SHORT, null);
+        });
+    }
+
+    /** v2.2.1: 네이티브 토스트도 앱 언어로 보여 줍니다(웹의 I18N.text 로 번역한 뒤 표시). */
+    private void nativeToast(final String ko, final int length, final Runnable after) {
+        mainHandler.post(() -> {
+            if (webView == null) {
+                Toast.makeText(MainActivity.this, ko, length).show();
+                if (after != null) after.run();
+                return;
+            }
+            webView.evaluateJavascript("(window.I18N&&typeof I18N.text==='function')?I18N.text(" + jsStr(ko) + "):" + jsStr(ko), value -> {
+                String text = ko;
+                try { if (value != null && value.startsWith("\"")) text = new org.json.JSONArray("[" + value + "]").getString(0); } catch (Exception ignored) {}
+                Toast.makeText(MainActivity.this, text, length).show();
+                if (after != null) after.run();
+            });
         });
     }
 

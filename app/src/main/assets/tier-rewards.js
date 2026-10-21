@@ -273,7 +273,7 @@
       }
       // 닉네임 플레이트 미리보기(내 닉네임으로)
       const plate = mk('div', 'cos-plate-prev');
-      { const pl = mk('span', 'nm-plate nm-plate-' + id, (window.SumdokuMyName?.() || 'Player')); const bd = window.SumdokuNameBadge?.mine?.(); if (bd) pl.prepend(bd); plate.append(pl); }
+      { const pl = mk('span', 'nm-plate nm-plate-' + id); pl.append(mk('span', 'nm-text', window.SumdokuMyName?.() || 'Player')); const bd = window.SumdokuNameBadge?.mine?.(); if (bd) pl.prepend(bd); plate.append(pl); }
       card.append(top, plate, ul, foot);
       grid.append(card);
     });
@@ -285,6 +285,8 @@
   function celebrate() {
     const app = window.app;
     if (!app || app.isBattle || app.currentView === 'game' || document.getElementById('rkc-unlock')) return;
+    // v2.2.2: 다른 창(모달)이 열려 있으면 겹치지 않도록 닫힌 뒤 다시 확인합니다.
+    if ([...document.querySelectorAll('[id^="modal-"], .modal-backdrop, .abandon-modal-backdrop')].some(m => !m.classList.contains('hidden') && m.getBoundingClientRect().width > 0)) { onCosmeticsApplied(); return; }
     const k = unlockedIdx();
     let seen = -1;
     try { const v = parseInt(localStorage.getItem(SEEN_KEY), 10); if (Number.isFinite(v)) seen = v; } catch (_) {}
