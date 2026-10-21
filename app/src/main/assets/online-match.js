@@ -40,30 +40,30 @@
     'https://fastly.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt',
     'https://gcore.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_all_ws.txt'
   ];
-  const TRACKER_MAX = 6;                       // 동시에 쓰는 트래커 수
+  const TRACKER_MAX = 8;  // v2.2.3: 6 → 8 (발견 경로를 늘립니다)                       // 동시에 쓰는 트래커 수
   const TRACKER_LIST_TTL_MS = 12 * 3600e3;     // 받아 온 목록 재사용 시간
   const TRACKER_DEAD_MS = 6 * 3600e3;          // 연속 실패한 트래커를 건너뛰는 시간
   const TRACKER_DEAD_FAILS = 2;                // 이만큼 연속 실패하면 죽은 트래커로 봅니다
-  const TRACKER_CONNECT_MS = 6000;             // 연결 대기 한도
+  const TRACKER_CONNECT_MS = 3500;  // v2.2.3: 6초 → 3.5초 (느린 트래커는 빨리 예비로 교체)             // 연결 대기 한도
   const TRACKER_SESSION_FAILS = 2;             // 한 번의 탐색에서 이만큼 실패하면 예비 트래커로 교체
   const ICE_SERVERS = [
     { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
     { urls: 'stun:stun.cloudflare.com:3478' },
     { urls: 'stun:global.stun.twilio.com:3478' }
   ];
-  const OFFER_POOL = 5;            // announce 한 번에 실어 보내는 offer 수
+  const OFFER_POOL = 8; // v2.2.3: 5 → 8            // announce 한 번에 실어 보내는 offer 수
   const ANNOUNCE_MIN_SEC = 25;     // 트래커 재등록 최소 간격(트래커 권장값 하한)
-  const FAST_ANNOUNCE_SEC = 3;     // v2.2.2: 탐색 초반 2분은 3초마다 재등록해 서로를 빨리 발견합니다(6초 → 3초).
+  const FAST_ANNOUNCE_SEC = 2; // v2.2.3: 3초 → 2초     // v2.2.2: 탐색 초반 2분은 3초마다 재등록해 서로를 빨리 발견합니다(6초 → 3초).
   const FAST_WINDOW_MS = 120000;
   const POOL_REFRESH_MS = 20000;   // offer 풀 재사용 시간
-  const ROOM_ANNOUNCE_SEC = 3;     // v2.1.6: 방 번호 탐색은 상대가 정해져 있으므로 끝까지 3초 간격으로 등록합니다.
-  const SLOW_ANNOUNCE_SEC = 6;     // v2.2.2: 그 뒤에도 6초 간격 유지(10초 → 6초)
-  const PEER_OPEN_TIMEOUT_MS = 8000; // 열리지 않는 연결 정리(20초 → 12초 → v2.2.2: 8초) 후 새 offer로 재시도
+  const ROOM_ANNOUNCE_SEC = 2; // v2.2.3: 3초 → 2초     // v2.1.6: 방 번호 탐색은 상대가 정해져 있으므로 끝까지 3초 간격으로 등록합니다.
+  const SLOW_ANNOUNCE_SEC = 4; // v2.2.3: 6초 → 4초     // v2.2.2: 그 뒤에도 6초 간격 유지(10초 → 6초)
+  const PEER_OPEN_TIMEOUT_MS = 6000; // v2.2.3: 8초 → 6초 // 열리지 않는 연결 정리(20초 → 12초 → v2.2.2: 8초) 후 새 offer로 재시도
   const WARM_TTL_MS = 45000;       // v2.2.2: 로비에서 미리 열어 둔 트래커 연결·offer를 유지하는 시간
   const OFFER_TTL_MS = 55000;      // 응답 없는 offer 정리
-  const ICE_WAIT_MS = 1200;        // v2.1.5: 2.5초 → 1.5초 → v2.2.2: 1.2초 (srflx 후보가 모이면 더 일찍 끝냅니다)
-  const ICE_EARLY_MS = 250;        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
-  const PROPOSE_TIMEOUT_MS = 4000;
+  const ICE_WAIT_MS = 900; // v2.2.3: 1.2초 → 0.9초        // v2.1.5: 2.5초 → 1.5초 → v2.2.2: 1.2초 (srflx 후보가 모이면 더 일찍 끝냅니다)
+  const ICE_EARLY_MS = 120; // v2.2.3: 0.25초 → 0.12초        // 트래커는 trickle ICE를 지원하지 않으므로 후보 수집을 기다립니다.
+  const PROPOSE_TIMEOUT_MS = 2500; // v2.2.3: 4초 → 2.5초
   const TUNNEL_TIMEOUT_MS = 9000;
   const HOST = 'p2p://host';
 
@@ -923,7 +923,7 @@
       const now = Date.now();
       // 랜덤: 작은 ID가 제안 / 방 번호: 참가자가 방장에게 제안합니다.
       if (this.kind === 'room' && this.roomRole !== 'join') return;
-      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && now - p.rejectedAt > 4000
+      const candidates = [...this.peers.values()].filter(p => p.open && p.hello && p.hello.free && now - p.rejectedAt > 1500
         && (this.kind === 'room' ? p.hello.roomRole === 'create' : this.selfId < p.id));
       if (!candidates.length) return;
       const target = candidates[0];
@@ -1218,7 +1218,7 @@
             }
           }
           t.fails++;
-          t.timer = setTimeout(connect, Math.min(15000, 1000 * Math.pow(2, t.fails)));
+          t.timer = setTimeout(connect, Math.min(8000, 600 * Math.pow(2, t.fails)));
         };
       };
       connect();
